@@ -23,14 +23,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          # cache dihapus sementara karena package-lock.json belum ada
 
       - name: Composer install (backend)
         working-directory: backend
         run: |
           composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs || true
-          # pastikan public/index.php dari framework ada
           if [ ! -f public/index.php ] || grep -q "Placeholder" public/index.php 2>/dev/null; then
             if [ -f vendor/codeigniter4/framework/public/index.php ]; then
               cp vendor/codeigniter4/framework/public/index.php public/index.php
@@ -40,7 +38,7 @@ jobs:
       - name: NPM install & build (frontend)
         working-directory: frontend
         run: |
-          npm ci || npm install
+          npm install
           npm run build
 
       - name: Syntax check PHP
@@ -49,19 +47,15 @@ jobs:
       - name: Prepare deploy folders
         run: |
           mkdir -p deploy-out/warga deploy-out/pengurus deploy-out/rt-app
-          # Frontend builds
           if [ -d frontend/dist/warga ]; then cp -a frontend/dist/warga/. deploy-out/warga/; fi
           if [ -d frontend/dist/pengurus ]; then cp -a frontend/dist/pengurus/. deploy-out/pengurus/; fi
-          # Thin proxy + htaccess
           mkdir -p deploy-out/warga/api deploy-out/pengurus/api
           cp deploy/warga/api/index.php deploy-out/warga/api/
           cp deploy/pengurus/api/index.php deploy-out/pengurus/api/
           cp deploy/warga/.htaccess deploy-out/warga/
           cp deploy/pengurus/.htaccess deploy-out/pengurus/
-          # Backend (tanpa writable isi, tanpa .env)
           cp -a backend/app backend/public backend/composer.json backend/spark deploy-out/rt-app/ 2>/dev/null || true
           if [ -d backend/vendor ]; then cp -a backend/vendor deploy-out/rt-app/; fi
-          # writable kosong + index.html
           mkdir -p deploy-out/rt-app/writable/{cache,logs,session,uploads}
           touch deploy-out/rt-app/writable/cache/index.html
           touch deploy-out/rt-app/writable/logs/index.html
