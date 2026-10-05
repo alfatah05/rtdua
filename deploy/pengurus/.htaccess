@@ -1,12 +1,12 @@
-# SPA + API proxy untuk subdomain pengurus
+# SPA + API proxy untuk subdomain pengurus-dev
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
 
-    # API ke backend
+    # API ke thin proxy
     RewriteRule ^api/(.*)$ api/index.php [QSA,L]
 
-    # File yang ada → biarkan
+    # File/folder yang ada → biarkan
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
@@ -14,4 +14,3 @@
     # Sisanya → index.html (SPA)
     RewriteRule ^ index.html [L]
 </IfModule>
-EOF
