@@ -6,9 +6,7 @@ export default {
   darkMode: ['selector', '[data-mode="dark"]'],
   theme: {
     extend: {
-      colors: {
-        // Token dari dokumen 03 — dipakai via CSS variable di styles
-      },
+      colors: {},
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
       },
@@ -21,4 +19,3 @@ export default {
   },
   plugins: [],
 }
-EOF
