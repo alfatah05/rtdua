@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Token warna & desain dari dokumen 03 */
+:root {
+  --bg: #FFFFFF;
+  --card: #FFFFFF;
+  --card2: #E9EDEA;
+  --text: #101614;
+  --mut: rgba(16, 22, 20, 0.6);
+  --g: #0A8F44;
+  --gh: #0A8F44;
+  --line: rgba(0, 0, 0, 0.09);
+  --search: #F1F3F2;
+  --ok: rgba(10, 143, 68, 0.14);
+  --gd: #CDEBD8;
+  --gm: #0B6B34;
+  --sh: 0 1px 2px rgba(16, 22, 20, 0.04), 0 4px 12px rgba(16, 22, 20, 0.04);
+  --rs: 12px;
+  --r: 20px;
+  --rm: 9999px;
+  color-scheme: light;
+}
+
+:root[data-mode="dark"] {
+  --bg: #111314;
+  --card: #1A1D1F;
+  --card2: #25292C;
+  --text: #FFFFFF;
+  --mut: rgba(255, 255, 255, 0.62);
+  --g: #10A24F;
+  --gh: #3DDC84;
+  --line: rgba(255, 255, 255, 0.1);
+  --search: #1A1D1F;
+  --ok: rgba(61, 220, 132, 0.22);
+  --gd: #12392A;
+  --gm: #D5F7E1;
+  --sh: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  color-scheme: dark;
+}
+
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Safe area */
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gh);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+EOF

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Preview dashboard manajemen warga</title>
+<script>try{if(localStorage.getItem('theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{--bg:#111314;--card:#1A1D1F;--card2:#25292C;--text:#fff;--mut:rgba(255,255,255,.62);--g:#10A24F;--gh:#3DDC84;--gd:#12392A;--gm:#D5F7E1;--menu:#25292C;--line:transparent;--search:#1A1D1F;--hov:rgba(255,255,255,.07);--sw:rgba(255,255,255,.2);--rs:12px;--r:20px;--rm:999px;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="light"]{--bg:#FFFFFF;--card:#FFFFFF;--card2:#E9EDEA;--text:#101614;--mut:rgba(16,22,20,.6);--g:#0A8F44;--gh:#0A8F44;--gd:#CDEBD8;--gm:#0B6B34;--menu:#FFFFFF;--hov:rgba(0,0,0,.05);--sw:rgba(0,0,0,.2);--line:rgba(0,0,0,.09);--search:#F1F3F2;color-scheme:light}
+:root[data-theme="light"] .hero{--mut:rgba(255,255,255,.88);background:radial-gradient(110% 100% at 100% 0%,rgba(255,255,255,.28),transparent 55%),linear-gradient(145deg,#22B863 0%,#0F9D4E 55%,#0B8442 100%)}
+:root[data-theme="light"] .hero::after{background:rgba(255,255,255,.1)}
+:root[data-theme="light"] .pill{background:rgba(255,255,255,.2)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:500 15px/1.45 "Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:1000px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+.grid{display:grid;gap:16px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;text-align:inherit}
+:focus-visible{outline:2px solid var(--gh);outline-offset:2px}
+.lucide{width:22px;height:22px}
+h1{font-size:24px;font-weight:800;margin:0;letter-spacing:-.01em;color:var(--gh)}
+h2{font-size:17px;font-weight:700;margin:0}
+.muted{color:var(--mut);font-size:13px;margin:2px 0 0}
+.top,.row{display:flex;justify-content:space-between;align-items:center}
+.top{position:relative;margin-bottom:6px}
+.more{width:44px;height:44px;display:grid;place-items:center;margin-right:-10px}
+.menu{display:none;position:absolute;right:0;top:48px;z-index:20;min-width:230px;background:var(--menu);border-radius:var(--r);padding:8px;border:1px solid var(--line)}
+.menu.open{display:block}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:var(--rs);font-weight:600}
+.menu button:hover{background:var(--hov)}
+.menu .grow{flex:1}
+.sw{width:40px;height:24px;border-radius:var(--rm);background:var(--sw);position:relative;flex:none}
+.sw i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff}
+[aria-checked="true"] .sw{background:var(--g)}
+[aria-checked="true"] .sw i{transform:translateX(16px)}
+@media(prefers-reduced-motion:no-preference){.sw i{transition:transform .15s}}
+.search{display:flex;align-items:center;gap:10px;background:var(--search);border-radius:var(--rm);padding:0 18px;height:48px;color:var(--mut)}
+.search input{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--text);outline:0}
+.search input::placeholder{color:var(--mut)}
+.search:focus-within{outline:2px solid var(--gh)}
+.hero{color:#fff;--text:#fff;--mut:rgba(255,255,255,.62);position:relative;overflow:hidden;border-radius:var(--r);padding:20px;background:radial-gradient(120% 110% at 100% 0%,rgba(61,220,132,.26),transparent 55%),linear-gradient(150deg,#134230 0%,#0D211A 55%,#14181A 100%)}
+.hero::after{content:"";position:absolute;right:-60px;bottom:-90px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.04)}
+.hero>*{position:relative;z-index:1}
+.hero .row small{font-size:13px;font-weight:600;color:var(--mut)}
+.pill{font-size:12px;font-weight:600;padding:5px 12px;border-radius:var(--rm);background:rgba(255,255,255,.1)}
+.big{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
+.hero .muted{margin:0}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.stat .n{display:flex;align-items:center;gap:8px}
+.stat .n .lucide{width:22px;height:22px}
+.stat b{font-size:22px;font-weight:800;line-height:1.2;letter-spacing:-.01em}
+.stat span{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-top:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.prog{display:block;width:100%}
+.prog .right{display:flex;align-items:center;gap:4px}
+.pct{font-size:24px;font-weight:800}
+.prog .lucide{color:var(--mut)}
+.bar{height:10px;border-radius:var(--rm);background:var(--card2);margin:14px 0 10px;overflow:hidden}
+.bar i{display:block;height:100%;width:73%;background:var(--g);border-radius:var(--rm)}
+.acts{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px;text-align:center;margin-top:6px}
+.act{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;font-weight:600;text-align:center}
+.act i{width:56px;height:56px;border-radius:var(--rm);background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+.sec{margin-top:6px}
+.acts-list{display:grid;gap:8px;margin-top:12px}
+.ar{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.ic{width:40px;height:40px;border-radius:var(--rm);display:grid;place-items:center;flex:none;background:var(--card2)}
+.t{flex:1;min-width:0}
+.t b{display:block;font-weight:700}
+.t span{color:var(--mut);font-size:13px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--bg);display:flex;padding:10px 0 calc(14px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text);padding:0;text-align:center}
+nav button.on{font-weight:700}
+nav .ni{width:60px;height:30px;border-radius:var(--rm);display:grid;place-items:center}
+nav button.on .ni{background:var(--gd);color:var(--gm)}
+nav .lucide{width:20px;height:20px}
+@media(min-width:1024px){
+body{padding-left:248px}
+main{padding:32px}
+nav{top:0;right:auto;width:248px;flex-direction:column;gap:4px;padding:24px 16px}
+nav button{flex:none;flex-direction:row;gap:12px;font-size:15px;padding:12px 16px;border-radius:var(--rm);text-align:left}
+nav .ni{width:auto;height:auto}
+nav .lucide{width:22px;height:22px}
+nav button.on{background:var(--gd)}
+nav button.on .ni{background:none}
+.grid{grid-template-columns:1fr 1fr;gap:20px}
+.full{grid-column:1/-1}
+.hero{order:1}.prog-wrap{order:2}.stats{order:3}.acts{order:4}.sec{order:5}
+}
+</style>
+</head>
+<body>
+<main class="grid">
+  <header class="top full">
+    <h1>Warga RT 002</h1>
+    <button class="more" id="moreBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><i data-lucide="ellipsis-vertical"></i></button>
+    <div class="menu" id="menu" role="menu">
+      <button role="menuitemcheckbox" id="themeBtn" aria-checked="false"><i data-lucide="sun-moon"></i><span class="grow">Mode terang</span><span class="sw"><i></i></span></button>
+      <button role="menuitem"><i data-lucide="user-cog"></i>Kelola pengurus</button>
+      <button role="menuitem"><i data-lucide="settings"></i>Pengaturan</button>
+      <button role="menuitem"><i data-lucide="log-out"></i>Keluar</button>
+    </div>
+  </header>
+
+  <label class="search full"><i data-lucide="search"></i><input type="search" placeholder="Cari warga, nomor rumah, atau NIK"></label>
+
+  <section class="hero">
+    <div class="row"><small>Saldo kas</small><span class="pill">Oktober 2026</span></div>
+    <div class="big">Rp 12.450.000</div>
+    <p class="muted">Diperbarui 2 jam lalu</p>
+  </section>
+
+  <section class="stats full">
+    <div class="stat"><div class="n"><i data-lucide="house"></i><b>52</b></div><span>Keluarga (KK)</span></div>
+    <div class="stat"><div class="n"><i data-lucide="users"></i><b>187</b></div><span>Warga</span></div>
+  </section>
+
+  <div class="prog-wrap">
+    <button class="card prog" aria-label="Lihat status iuran warga">
+      <div class="row"><div><h2>Iuran Oktober</h2><p class="muted">38 dari 52 keluarga sudah bayar</p></div><div class="right"><span class="pct">73%</span><i data-lucide="chevron-right"></i></div></div>
+      <div class="bar"><i></i></div>
+      <p class="muted">14 keluarga belum bayar</p>
+    </button>
+  </div>
+
+  <section class="acts full">
+    <button class="act"><i><span data-lucide="banknote"></span></i>Catat iuran</button>
+    <button class="act"><i><span data-lucide="arrow-down-left"></span></i>Kas masuk</button>
+    <button class="act"><i><span data-lucide="arrow-up-right"></span></i>Kas keluar</button>
+    <button class="act"><i><span data-lucide="file-text"></span></i>Laporan</button>
+  </section>
+
+  <section class="sec full">
+    <h2>Aktivitas terakhir</h2>
+    <div class="acts-list">
+      <div class="ar"><div class="ic"><i data-lucide="check"></i></div><div class="t"><b>Bendahara mengonfirmasi pembayaran Keluarga Hartono (Transfer)</b><span>2 jam lalu</span></div></div>
+      <div class="ar"><div class="ic"><i data-lucide="user-plus"></i></div><div class="t"><b>Sekretaris menambah data Keluarga Pratama dari KK</b><span>Kemarin</span></div></div>
+      <div class="ar"><div class="ic"><i data-lucide="banknote"></i></div><div class="t"><b>Bendahara mengonfirmasi pembayaran Keluarga Siregar (Tunai)</b><span>2 hari lalu</span></div></div>
+    </div>
+  </section>
+</main>
+
+<nav aria-label="Navigasi utama">
+  <button class="on"><span class="ni"><i data-lucide="house"></i></span>Beranda</button>
+  <button><span class="ni"><i data-lucide="users"></i></span>Warga</button>
+  <button><span class="ni"><i data-lucide="wallet"></i></span>Keuangan</button>
+  <button><span class="ni"><i data-lucide="activity"></i></span>Aktivitas</button>
+</nav>
+
+<script>
+try{lucide.createIcons()}catch(e){}
+document.querySelectorAll('nav button').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('nav button').forEach(function(x){x.classList.remove('on')});b.classList.add('on')})});
+var mb=document.getElementById('moreBtn'),mn=document.getElementById('menu');
+function setMenu(o){mn.classList.toggle('open',o);mb.setAttribute('aria-expanded',o)}
+mb.addEventListener('click',function(e){e.stopPropagation();setMenu(!mn.classList.contains('open'))});
+document.addEventListener('click',function(e){if(!mn.contains(e.target))setMenu(false)});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')setMenu(false)});
+var tb=document.getElementById('themeBtn'),root=document.documentElement;
+function applyTheme(t){if(t==='light')root.setAttribute('data-theme','light');else root.removeAttribute('data-theme');tb.setAttribute('aria-checked',t==='light');try{localStorage.setItem('theme',t)}catch(e){}}
+tb.setAttribute('aria-checked',root.getAttribute('data-theme')==='light');
+tb.addEventListener('click',function(){applyTheme(root.getAttribute('data-theme')==='light'?'dark':'light')});
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "rtdua-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:warga": "vite --config vite.config.warga.js",
+    "dev:pengurus": "vite --config vite.config.pengurus.js",
+    "build": "npm run build:warga && npm run build:pengurus",
+    "build:warga": "vite build --config vite.config.warga.js",
+    "build:pengurus": "vite build --config vite.config.pengurus.js",
+    "preview:warga": "vite preview --config vite.config.warga.js",
+    "preview:pengurus": "vite preview --config vite.config.pengurus.js"
+  },
+  "dependencies": {
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "lucide-vue-next": "^0.469.0",
+    "@fontsource/plus-jakarta-sans": "^5.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.7",
+    "vite-plugin-pwa": "^0.21.1"
+  }
+}
+EOF
