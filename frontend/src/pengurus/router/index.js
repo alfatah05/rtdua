@@ -20,6 +20,16 @@ import AktivitasDetailView from '../views/AktivitasDetailView.vue'
 import ProfilView from '../views/ProfilView.vue'
 import LainnyaView from '../views/LainnyaView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
+import PengumumanListView from '../views/PengumumanListView.vue'
+import PengumumanFormView from '../views/PengumumanFormView.vue'
+import ProgramListView from '../views/ProgramListView.vue'
+import GaleriListView from '../views/GaleriListView.vue'
+import StrukturView from '../views/StrukturView.vue'
+import RondaView from '../views/RondaView.vue'
+import RondaMalamView from '../views/RondaMalamView.vue'
+import PengaturanWargaView from '../views/PengaturanWargaView.vue'
+import PengaturanAplikasiView from '../views/PengaturanAplikasiView.vue'
+import KelolaPengurusView from '../views/KelolaPengurusView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 
 const routes = [
@@ -65,14 +75,32 @@ const routes = [
       { path: 'lainnya', name: 'lainnya', component: LainnyaView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
 
-      { path: 'pengaturan-warga', component: PlaceholderView, meta: { title: 'Tarif iuran & denda' } },
-      { path: 'ronda', component: PlaceholderView, meta: { title: 'Jadwal ronda' } },
-      { path: 'konten/pengumuman', component: PlaceholderView, meta: { title: 'Pengumuman' } },
-      { path: 'konten/program', component: PlaceholderView, meta: { title: 'Program RT' } },
-      { path: 'konten/galeri', component: PlaceholderView, meta: { title: 'Galeri' } },
-      { path: 'konten/struktur', component: PlaceholderView, meta: { title: 'Struktur pengurus' } },
-      { path: 'pengaturan-aplikasi', component: PlaceholderView, meta: { title: 'Pengaturan aplikasi' } },
-      { path: 'kelola-pengurus', component: PlaceholderView, meta: { title: 'Kelola pengurus' } },
+      // Konten
+      { path: 'konten/pengumuman', component: PengumumanListView },
+      { path: 'konten/pengumuman/tambah', component: PengumumanFormView },
+      { path: 'konten/pengumuman/:id', component: PengumumanFormView },
+      { path: 'konten/program', component: ProgramListView },
+      { path: 'konten/program/tambah', component: PlaceholderView, meta: { title: 'Tambah program' } },
+      { path: 'konten/program/:id', component: PlaceholderView, meta: { title: 'Detail program' } },
+      { path: 'konten/galeri', component: GaleriListView },
+      { path: 'konten/galeri/tambah', component: PlaceholderView, meta: { title: 'Buat album' } },
+      { path: 'konten/galeri/:id', component: PlaceholderView, meta: { title: 'Isi album' } },
+      { path: 'konten/struktur', component: StrukturView },
+
+      // Ronda
+      { path: 'ronda', component: RondaView },
+      { path: 'ronda/malam/:date', component: RondaMalamView },
+      { path: 'ronda/malam/edit', component: PlaceholderView, meta: { title: 'Ganti keluarga' } },
+      { path: 'ronda/jadwal-tetap', component: PlaceholderView, meta: { title: 'Jadwal tetap' } },
+      { path: 'ronda/jadwal-khusus', component: PlaceholderView, meta: { title: 'Jadwal khusus' } },
+      { path: 'ronda/isi-otomatis', component: PlaceholderView, meta: { title: 'Isi otomatis' } },
+
+      // Pengaturan
+      { path: 'pengaturan-warga', component: PengaturanWargaView },
+      { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
+      { path: 'kelola-pengurus', component: KelolaPengurusView },
+      { path: 'kelola-pengurus/angkat', component: PlaceholderView, meta: { title: 'Angkat pengurus' } },
+      { path: 'kelola-pengurus/:id', component: PlaceholderView, meta: { title: 'Kelola pengurus' } },
     ],
   },
 ]
@@ -88,7 +116,7 @@ router.beforeEach((to) => {
   restore('pengurus')
   if (!to.meta.public && !isLoggedIn.value) return { name: 'login' }
   if (to.name === 'login' && isLoggedIn.value) return { name: 'home' }
-  if ((to.path === '/pengaturan-aplikasi' || to.path === '/kelola-pengurus') && !isKetua.value) {
+  if ((to.path.startsWith('/pengaturan-aplikasi') || to.path.startsWith('/kelola-pengurus')) && !isKetua.value) {
     return { name: 'home' }
   }
 })
