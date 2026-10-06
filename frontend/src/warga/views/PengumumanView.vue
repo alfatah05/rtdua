@@ -1,9 +1,6 @@
 <template>
   <div>
-    <header class="flex items-center gap-3 mb-5">
-      <button type="button" class="min-h-[44px] px-3 -ml-2 font-semibold text-[var(--g)]" @click="$router.back()">← Kembali</button>
-      <h1 class="text-xl font-extrabold m-0">Pengumuman</h1>
-    </header>
+    <AppBackHeader title="Pengumuman" />
 
     <div v-for="(group, bulan) in grouped" :key="bulan" class="mb-6">
       <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2">{{ bulan }}</h2>

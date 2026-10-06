@@ -1,9 +1,6 @@
 <template>
   <div>
-    <header class="flex items-center gap-3 mb-5">
-      <button v-if="!forced" type="button" class="min-h-[44px] px-3 -ml-2 font-semibold text-[var(--g)]" @click="$router.back()">← Kembali</button>
-      <h1 class="text-xl font-extrabold m-0">Ganti PIN</h1>
-    </header>
+    <AppBackHeader title="Ganti PIN" />
 
     <p v-if="forced" class="text-[13px] text-[var(--mut)] mb-4">
       PIN masih default. Anda wajib mengganti PIN sebelum melanjutkan.

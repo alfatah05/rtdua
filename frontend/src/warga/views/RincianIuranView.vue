@@ -1,9 +1,6 @@
 <template>
   <div>
-    <header class="flex items-center gap-3 mb-5">
-      <button type="button" class="min-h-[44px] px-3 -ml-2 font-semibold text-[var(--g)]" @click="$router.back()">← Kembali</button>
-      <h1 class="text-xl font-extrabold m-0">Rincian iuran</h1>
-    </header>
+    <AppBackHeader title="Rincian iuran" />
 
     <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4 text-center">
       <p class="text-[13px] font-semibold text-[var(--mut)]">Total tagihan</p>

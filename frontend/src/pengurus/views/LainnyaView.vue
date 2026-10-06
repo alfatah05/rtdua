@@ -1,9 +1,6 @@
 <template>
   <div>
-    <header class="flex items-center gap-3 mb-5">
-      <button type="button" class="min-h-[44px] px-3 -ml-2 font-semibold text-[var(--g)]" @click="$router.back()">← Kembali</button>
-      <h1 class="text-xl font-extrabold m-0">Lainnya</h1>
-    </header>
+    <AppBackHeader title="Lainnya" />
 
     <div v-for="group in visibleGroups" :key="group.title" class="mb-6">
       <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2 px-1">{{ group.title }}</h2>
@@ -15,10 +12,7 @@
           class="flex flex-col items-center gap-1.5 text-center"
           @click="$router.push(item.to)"
         >
-          <span
-            class="w-12 h-12 rounded-full grid place-items-center"
-            :style="{ background: item.bg, color: item.color }"
-          >
+          <span class="w-12 h-12 rounded-full grid place-items-center" :style="{ background: item.bg, color: item.color }">
             <component :is="item.icon" :size="20" />
           </span>
           <span class="text-[11px] font-semibold leading-tight">{{ item.label }}</span>
@@ -34,6 +28,7 @@ import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2,
   UserPlus, ScanLine, Download, Shield, Clock, Megaphone, Images, Network, Users, Settings
 } from 'lucide-vue-next'
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
 
 const { isKetua } = useAuth()
@@ -85,7 +80,5 @@ const groups = [
   },
 ]
 
-const visibleGroups = computed(() =>
-  groups.filter(g => !g.ketuaOnly || isKetua.value)
-)
+const visibleGroups = computed(() => groups.filter(g => !g.ketuaOnly || isKetua.value))
 </script>
