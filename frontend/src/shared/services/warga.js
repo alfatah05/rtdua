@@ -7,6 +7,28 @@ const impl = () => (USE_MOCK.warga ? mock : real)
 export function listKeluarga(params) {
   return impl().listKeluarga(params)
 }
-export function getKeluarga(id) {
-  return impl().getKeluarga(id)
+export function getKeluarga(id, opts) {
+  return USE_MOCK.warga ? mock.getKeluarga(id) : real.getKeluarga(id, opts)
+}
+export function createKeluarga(payload) {
+  return USE_MOCK.warga
+    ? Promise.resolve({ ok: true, data: { id: 99, username: 'dummy', pin_awal: '123456' } })
+    : real.createKeluarga(payload)
+}
+export function updateKeluarga(id, payload) {
+  return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.updateKeluarga(id, payload)
+}
+export function resetPin(id) {
+  return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.resetPin(id)
+}
+export function pindahKeluarga(id, payload) {
+  return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.pindahKeluarga(id, payload)
+}
+export function listPortalWarga() {
+  return USE_MOCK.warga
+    ? mock.listKeluarga({ status: 'aktif' }).then((r) => ({
+        ok: r.ok,
+        data: (r.data || []).map((k) => ({ id: k.id, nama: k.nama, alamat: k.alamat })),
+      }))
+    : real.listPortalWarga()
 }

@@ -17,15 +17,15 @@ trait KeluargaHelpers
         }
         $user = $db->table('users')->where('keluarga_id', $r['id'])->where('role', 'warga')->get()->getRowArray();
         return [
-            'id' => (int) $r['id'],
-            'nama' => $kepala,
-            'alamat' => $this->labelAlamat($r),
-            'blok' => $r['blok_nama'],
-            'jumlah_anggota' => count(array_filter($anggota, static fn ($a) => $a['status'] === 'aktif')),
+            'id'                 => (int) $r['id'],
+            'nama'               => $kepala,
+            'alamat'             => $this->labelAlamat($r),
+            'blok'               => $r['blok_nama'],
+            'jumlah_anggota'     => count(array_filter($anggota, static fn ($a) => $a['status'] === 'aktif')),
             'data_belum_lengkap' => $this->cekBelumLengkap($r, $anggota),
-            'belum_ganti_pin' => $user ? (bool) $user['harus_ganti_kredensial'] : false,
-            'mulai_bulan_depan' => empty($r['mulai_periode']),
-            'status' => $r['status'],
+            'belum_ganti_pin'    => $user ? (bool) $user['harus_ganti_kredensial'] : false,
+            'mulai_bulan_depan'  => empty($r['mulai_periode']),
+            'status'             => $r['status'],
         ];
     }
 
@@ -53,7 +53,11 @@ trait KeluargaHelpers
     private function alamatDuplikat(int $blokId, string $nomor, string $akhiran, ?int $kecualiId = null): bool
     {
         $db = \Config\Database::connect();
-        $q = $db->table('keluarga')->where('blok_id', $blokId)->where('nomor', $nomor)->where('akhiran', $akhiran)->where('status', 'aktif');
+        $q = $db->table('keluarga')
+            ->where('blok_id', $blokId)
+            ->where('nomor', $nomor)
+            ->where('akhiran', $akhiran)
+            ->where('status', 'aktif');
         if ($kecualiId) {
             $q->where('id !=', $kecualiId);
         }
@@ -63,7 +67,9 @@ trait KeluargaHelpers
     private function nikDuplikat(string $hash, ?int $kecualiId = null): bool
     {
         $db = \Config\Database::connect();
-        $q = $db->table('warga')->where('nik_hash', $hash)->whereIn('status', ['aktif']);
+        $q = $db->table('warga')
+            ->where('nik_hash', $hash)
+            ->whereIn('status', ['aktif']);
         if ($kecualiId) {
             $q->where('id !=', $kecualiId);
         }

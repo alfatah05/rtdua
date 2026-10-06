@@ -10,3 +10,18 @@ export function getPengaturan() {
 export function getBlok() {
   return impl().getBlok()
 }
+export function updateAplikasi(payload) {
+  return (USE_MOCK.pengaturan ? mock : real).updateAplikasi
+    ? (USE_MOCK.pengaturan ? Promise.resolve({ ok: true, data: null }) : real.updateAplikasi(payload))
+    : Promise.resolve({ ok: true })
+}
+export function updateWarga(payload) {
+  return USE_MOCK.pengaturan
+    ? Promise.resolve({ ok: true, data: null })
+    : real.updateWarga(payload)
+}
+export function tambahBlok(nama) {
+  return USE_MOCK.pengaturan
+    ? Promise.resolve({ ok: true, data: { nama } })
+    : real.tambahBlok(nama)
+}

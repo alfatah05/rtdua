@@ -1,6 +1,6 @@
 <template>
   <div>
-        <AppMainHeader show-profil />
+    <AppMainHeader show-profil />
 
     <div class="mb-4">
       <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12">
@@ -45,28 +45,42 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
-import { ref, computed } from 'vue'
-import { Bell, UserRound, Search, UserPlus, ScanLine, Download, SlidersHorizontal, ChevronRight } from 'lucide-vue-next'
+import { listKeluarga } from '@shared/services/warga.js'
+import { Search, UserPlus, ScanLine, Download, SlidersHorizontal, ChevronRight } from 'lucide-vue-next'
 
 const q = ref('')
+const list = ref([])
+
 const aksi = [
-  { label: 'Tambah', icon: UserPlus, to: '/warga/tambah', bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
-  { label: 'Scan KK', icon: ScanLine, to: '/warga/scan-kk', bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
-  { label: 'Ekspor', icon: Download, to: '/warga/ekspor', bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
-  { label: 'Filter', icon: SlidersHorizontal, to: '/warga/filter', bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
+  { label: 'Tambah', icon: UserPlus, to: '/warga/tambah', bg: 'rgba(16,185,129,.18)', color: '#059669' },
+  { label: 'Scan KK', icon: ScanLine, to: '/warga/scan-kk', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
+  { label: 'Ekspor', icon: Download, to: '/warga/ekspor', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
+  { label: 'Filter', icon: SlidersHorizontal, to: '/warga/filter', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
 ]
-const keluarga = [
-  { id: 1, nama: 'Budi Santoso', alamat: 'AB2-22', inisial: 'BS', belumLengkap: false, penanda: null },
-  { id: 2, nama: 'Siti Aminah', alamat: 'AB2-22a', inisial: 'SA', belumLengkap: true, penanda: 'Belum ganti PIN' },
-  { id: 3, nama: 'Andi Wijaya', alamat: 'AB1-05', inisial: 'AW', belumLengkap: false, penanda: 'Mulai bulan depan' },
-  { id: 4, nama: 'Rina Marlina', alamat: 'AB11-12', inisial: 'RM', belumLengkap: false, penanda: null },
-  { id: 5, nama: 'Joko Prasetyo', alamat: 'AB12-03', inisial: 'JP', belumLengkap: true, penanda: null },
-  { id: 6, nama: 'Dewi Lestari', alamat: 'AB1-08', inisial: 'DL', belumLengkap: false, penanda: null },
-]
+
+function inisial(nama) {
+  return String(nama || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+onMounted(async () => {
+  const res = await listKeluarga({ status: 'aktif' })
+  if (res.ok) {
+    list.value = (res.data || []).map((k) => ({
+      id: k.id,
+      nama: k.nama,
+      alamat: k.alamat,
+      inisial: inisial(k.nama),
+      belumLengkap: !!k.data_belum_lengkap,
+      penanda: k.mulai_bulan_depan ? 'Mulai bulan depan' : (k.belum_ganti_pin ? 'Belum ganti PIN' : ''),
+    }))
+  }
+})
+
 const filtered = computed(() => {
   const s = q.value.trim().toLowerCase()
-  if (!s) return keluarga
-  return keluarga.filter(k => k.nama.toLowerCase().includes(s) || k.alamat.toLowerCase().includes(s))
+  if (!s) return list.value
+  return list.value.filter((k) => k.nama.toLowerCase().includes(s) || k.alamat.toLowerCase().includes(s))
 })
 </script>
