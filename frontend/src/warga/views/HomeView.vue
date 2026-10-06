@@ -9,8 +9,8 @@
         <Landmark :size="26" class="text-[var(--mut)]" />
       </div>
       <div>
-        <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">Rukun Warga 002</p>
-        <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">Perum. Pesona Gading Cibitung 2</small>
+        <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt }}</p>
+        <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
       </div>
       <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center">
         <Handshake :size="26" class="text-[var(--mut)]" />
@@ -27,11 +27,11 @@
         :class="i === 0 ? 'text-white' : 'bg-[var(--card)] border border-[var(--line)] shadow-[var(--sh)]'"
         :style="i === 0 ? heroStyle : null"
       >
-        <div class="p-5 relative z-10" :class="i === 0 ? '' : ''">
+        <div class="p-5 relative z-10">
           <div class="flex items-center justify-between gap-2">
             <span class="flex items-center gap-2 text-[13px] font-semibold" :class="i === 0 ? 'text-white/90' : 'text-[var(--mut)]'">
               <Megaphone :size="16" />
-              {{ p.pin ? 'Pengumuman' : 'Pengumuman' }}
+              Pengumuman
             </span>
             <span class="text-[12px] font-semibold px-3 py-1 rounded-full" :class="i === 0 ? 'bg-white/20' : 'bg-[var(--search)] text-[var(--mut)]'">
               {{ p.tanggal }}
@@ -100,9 +100,11 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
+import { getPengaturan } from '@shared/services/pengaturan.js'
 import {
-  Landmark, Handshake, Bell, Megaphone, ChevronRight,
+  Landmark, Handshake, Megaphone, ChevronRight,
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
 } from 'lucide-vue-next'
 
@@ -110,8 +112,18 @@ const heroStyle = {
   background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)'
 }
 
-// Dummy: 3 kondisi bisa diganti nanti (ada tagihan / lunas / kelebihan)
-const iuranStatus = 'ada' // 'ada' | 'lunas' | 'lebih'
+const namaRt = ref('')
+const namaPerumahan = ref('')
+
+onMounted(async () => {
+  const res = await getPengaturan()
+  if (res.ok && res.data) {
+    namaRt.value = res.data.nama_rt || ''
+    namaPerumahan.value = res.data.nama_perumahan || ''
+  }
+})
+
+const iuranStatus = 'ada'
 const iuranLabel = iuranStatus === 'lunas'
   ? 'Semua iuran sudah lunas'
   : iuranStatus === 'lebih'
