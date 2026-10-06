@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen bg-[var(--bg)] text-[var(--text)] flex">
-    <!-- Desktop sidebar -->
     <aside class="hidden lg:flex flex-col w-56 shrink-0 border-r border-[var(--line)] bg-[var(--card)] sticky top-0 h-screen p-4">
       <p class="text-[20px] font-extrabold mb-6 px-2">rtdua</p>
       <nav class="flex flex-col gap-1 flex-1">
@@ -22,7 +21,7 @@
     </aside>
 
     <div class="flex-1 min-w-0">
-      <main class="max-w-[1000px] mx-auto px-4 pt-4 pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-8">
+      <main class="max-w-[1000px] mx-auto px-4 pt-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-8">
         <router-view />
       </main>
       <div class="lg:hidden">

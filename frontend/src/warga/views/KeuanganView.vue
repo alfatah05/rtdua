@@ -1,18 +1,17 @@
 <template>
   <div>
-    <header class="sticky top-0 z-30 -mx-4 px-4 pt-1 pb-3 mb-3 flex items-center justify-between bg-[var(--bg)]">
-      <h1 class="text-[24px] font-extrabold text-[var(--text)] tracking-tight m-0">rtdua</h1>
-      <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Notifikasi">
-        <Bell :size="20" />
-      </router-link>
-    </header>
+        <AppMainHeader />
     <h2 class="text-[17px] font-bold mb-3">Keuangan</h2>
 
     <div class="rounded-[20px] p-5 text-white mb-4 relative overflow-hidden"
-      style="background: linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)">
-      <p class="text-[13px] font-semibold text-white/90">Total kas RT</p>
-      <p class="text-[28px] font-extrabold mt-1">Rp 12.450.000</p>
-      <p class="text-[13px] text-white/80 mt-1">Transparansi kas RT</p>
+      style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)">
+      <div class="flex items-center justify-between">
+        <p class="text-[13px] font-semibold text-white/90">Saldo kas</p>
+        <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">Oktober 2026</span>
+      </div>
+      <p class="text-[32px] font-extrabold mt-2.5 tracking-tight leading-none">Rp 12.450.000</p>
+      <p class="text-[13px] text-white/80 mt-2">Transparansi kas RT</p>
+      <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
     </div>
 
     <button
@@ -44,6 +43,7 @@
 </template>
 
 <script setup>
+import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { ChevronRight } from 'lucide-vue-next'
 
 const transaksi = [

@@ -1,17 +1,6 @@
 <template>
   <div>
-    <header class="sticky top-0 z-30 -mx-4 px-4 pt-1 pb-3 mb-3 flex items-center justify-between bg-[var(--bg)]">
-      <h1 class="text-[24px] font-extrabold text-[var(--text)] tracking-tight m-0">rtdua</h1>
-      <div class="flex items-center gap-0.5">
-        <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full relative" aria-label="Notifikasi">
-          <Bell :size="20" />
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--g)]"></span>
-        </router-link>
-        <router-link to="/profil" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Profil">
-          <UserRound :size="20" />
-        </router-link>
-      </div>
-    </header>
+        <AppMainHeader show-profil />
 
     <div class="mb-4">
       <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12 text-[var(--mut)]">
@@ -104,6 +93,7 @@
 </template>
 
 <script setup>
+import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import {
   Bell, UserRound, Search, Banknote, ArrowDownLeft, ArrowUpRight,
   FileText, LayoutGrid, House, Users, ChevronRight, Check, UserPlus

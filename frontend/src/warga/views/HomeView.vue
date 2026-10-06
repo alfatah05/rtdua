@@ -1,12 +1,7 @@
 <template>
   <div>
     <!-- Header utama: rtdua + lonceng -->
-    <header class="sticky top-0 z-30 -mx-4 px-4 pt-1 pb-3 mb-3 flex items-center justify-between bg-[var(--bg)]">
-      <h1 class="text-[24px] font-extrabold text-[var(--text)] tracking-tight m-0">rtdua</h1>
-      <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Notifikasi">
-        <Bell :size="20" />
-      </router-link>
-    </header>
+        <AppMainHeader />
 
     <!-- Kop RT -->
     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
@@ -105,6 +100,7 @@
 </template>
 
 <script setup>
+import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import {
   Landmark, Handshake, Bell, Megaphone, ChevronRight,
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
