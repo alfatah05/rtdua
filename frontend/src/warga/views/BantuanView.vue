@@ -25,6 +25,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { MessageCircle } from 'lucide-vue-next'
 import { useAuth } from '@shared/composables/useAuth.js'
 

@@ -40,6 +40,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 const tagihan = [
   { id: 1, nama: 'Kas', periode: 'Oktober 2026', sisa: 'Rp 10.000' },
   { id: 2, nama: 'Denda ronda', periode: 'September 2026', sisa: 'Rp 0' },

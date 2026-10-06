@@ -24,6 +24,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 const daftar = [
   { id: 1, hari: 'Hari ini', judul: 'Tagihan bulan baru', isi: 'Tagihan kas Oktober sudah terbit.', waktu: '08.00', dibaca: false },
   { id: 2, hari: 'Hari ini', judul: 'Pengumuman baru', isi: 'Kerja bakti membersihkan selokan.', waktu: '07.30', dibaca: false },

@@ -33,6 +33,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 

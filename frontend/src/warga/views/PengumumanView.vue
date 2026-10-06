@@ -25,6 +25,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 const daftar = [
   { id: 1, pin: true, tanggal: '3 Okt', bulan: 'Oktober 2026', judul: 'Kerja bakti membersihkan selokan', ringkas: 'Hari Minggu, 12 Oktober pukul 07.00. Semua warga diharapkan hadir.' },
   { id: 2, pin: true, tanggal: '1 Okt', bulan: 'Oktober 2026', judul: 'Tagihan kas Oktober sudah terbit', ringkas: 'Silakan cek rincian iuran di menu Keuangan.' },

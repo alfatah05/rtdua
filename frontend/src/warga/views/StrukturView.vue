@@ -24,6 +24,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 const pengurus = [
   { id: 2, nama: 'Ani Wijaya', jabatan: 'Bendahara', inisial: 'AW' },
   { id: 3, nama: 'Rina Marlina', jabatan: 'Sekretaris', inisial: 'RM' },

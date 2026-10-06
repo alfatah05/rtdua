@@ -11,3 +11,7 @@
     </div>
   </div>
 </template>
+
+<script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
+</script>

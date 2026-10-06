@@ -35,6 +35,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ref } from 'vue'
 const absenMsg = ref('')
 const malam = [
