@@ -6,14 +6,23 @@ use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Libraries\SideContext;
-use App\Libraries\ApiResponse;
 
+/**
+ * Mengenali sisi (warga|pengurus) dan menyetel nama cookie sesi
+ * menjadi sesi_warga / sesi_pengurus sebelum session dipakai.
+ */
 class SideFilter implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        // Pastikan sisi dikenali; tidak ada pemblokiran di sini kecuali path khusus
-        SideContext::fromRequest();
+        $side = SideContext::fromRequest();
+
+        // Cookie terpisah per sisi (dokumen 01) — set sebelum session start
+        $sessionConfig = config('Session');
+        if ($sessionConfig) {
+            $sessionConfig->cookieName = SideContext::cookieName($side);
+        }
+
         return null;
     }
 
