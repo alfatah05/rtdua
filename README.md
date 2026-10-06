@@ -1,45 +1,31 @@
 # rtdua — Aplikasi Manajemen Warga RT
 
-Aplikasi PWA manajemen warga untuk satu RT.
+## Stage saat ini: Stage 10
 
-- **Aplikasi warga** + **Aplikasi pengurus** (dua PWA, satu kode, satu database, satu backend)
-- Frontend: Vue 3 + Vite + Tailwind CSS (JavaScript biasa)
-- Backend: CodeIgniter 4 (API JSON)
-- Hosting: shared hosting cPanel (tanpa SSH)
-- Deploy: GitHub Actions → FTP
+Backend data warga, blok, pengaturan, pengurus, aktivitas. UI default masih **mock** sampai saklar di `frontend/src/shared/config/dataSource.js` diganti.
 
-## Stage saat ini
+### API utama
 
-**Stage 9 selesai (fondasi backend).** Siap menuju **Stage 10** (data warga, blok, pengaturan + hubungkan UI).
+| Modul | Route |
+|-------|-------|
+| Pengaturan | `GET/PUT /api/pengaturan/*`, `GET/POST /api/blok` |
+| Keluarga | `GET/POST /api/warga`, `GET/PUT /api/warga/:id`, anggota, pindah, reset-pin |
+| Pengurus | `GET/POST /api/pengurus`, `GET /api/struktur`, `GET /api/bantuan` |
+| Aktivitas | `GET /api/aktivitas` |
+| Portal warga | `GET /api/portal/warga` (tanpa NIK) |
 
-| Area | Status |
-|------|--------|
-| UI warga & pengurus (Stage 1–8) | Ada, data masih mock |
-| Backend auth, setup, audit, skema SQL | Ada |
-| Lapisan service mock/real di frontend | Ada (`shared/services`, `shared/mock`) |
-| Hubungkan UI ke API | Belum (Stage 10) |
+### Hubungkan UI ke API
 
-## Struktur repo
-
-```
-backend/          CodeIgniter 4 (API)
-frontend/         Vue 3 (shared + warga + pengurus)
-  src/shared/
-    mock/         Data dummy terpusat
-    services/     Facade mock | real per modul
-    config/       Saklar USE_MOCK per modul
-    utils/        Fungsi murni (alokasi pembayaran, format)
-sql/              Migrasi SQL bernomor (001_....sql, ...)
-deploy/           File tipis subdomain (api/, .htaccess)
-docs/             Spesifikasi (01–04)
-.github/workflows Deploy
+```js
+// frontend/src/shared/config/dataSource.js
+export const USE_MOCK = {
+  auth: false,
+  pengaturan: false,
+  warga: false,
+  aktivitas: false,
+}
 ```
 
-## Cara kerja patch
+### Env
 
-1. AI mengirim **zip patch** (atau commit langsung ke branch `dev`)
-2. Commit + push ke GitHub
-3. GitHub Actions: `composer install`, build frontend, upload FTP
-4. Bila ada SQL: **import SQL dulu lewat phpMyAdmin**, baru push kode
-
-Lihat `docs/04-prompt-build-bertahap.md` untuk daftar Stage lengkap.
+Set `encryption.key` di `backend/.env` (unik per RT, cadangkan aman).
