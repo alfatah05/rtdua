@@ -5,7 +5,7 @@
       'bg-[var(--card)] rounded-[20px] p-[18px]',
       border ? 'border border-[var(--line)]' : '',
       shadow ? 'shadow-[var(--sh)]' : '',
-      clickable ? 'clickable cursor-pointer' : '',
+      clickable ? 'cursor-pointer active:scale-[0.98] transition-transform' : '',
     ]"
     @click="clickable ? $emit('click', $event) : null"
   >

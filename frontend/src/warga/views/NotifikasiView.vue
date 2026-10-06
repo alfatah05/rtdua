@@ -4,11 +4,11 @@
 
     <div v-for="(group, hari) in grouped" :key="hari" class="mb-5">
       <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2">{{ hari }}</h2>
-      <div class="list-wrap">
+      <div class="px-1 space-y-0.5">
         <div
           v-for="n in group"
           :key="n.id"
-          class="list-item !items-start"
+          class="w-full flex flex-row items-start gap-3 px-2 py-3 rounded-[12px]"
           :class="!n.dibaca ? 'bg-[var(--ok)]/40' : ''"
         >
           <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 flex-none"></div>

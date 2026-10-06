@@ -21,31 +21,31 @@
     </div>
 
     <div class="grid grid-cols-4 gap-2 text-center mb-5">
-      <button v-for="a in aksi" :key="a.label" type="button" class="qa-btn" @click="$router.push(a.to)">
-        <span class="qa-icon" :style="{ background: a.bg, color: a.color }">
+      <button v-for="a in aksi" :key="a.label" type="button" class="flex flex-col items-center gap-1.5 active:scale-95 transition-transform" @click="$router.push(a.to)">
+        <span class="w-12 h-12 rounded-full grid place-items-center" :style="{ background: a.bg, color: a.color }">
           <component :is="a.icon" :size="20" />
         </span>
         <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>
       </button>
     </div>
 
-    <p class="text-[13px] text-[var(--mut)] mb-1 px-1">{{ filtered.length }} keluarga</p>
+    <p class="text-[13px] text-[var(--mut)] mb-1 px-2">{{ filtered.length }} keluarga</p>
 
-    <div class="list-wrap">
+    <div class="px-1 space-y-0.5">
       <button
         v-for="k in filtered"
         :key="k.id"
         type="button"
-        class="list-item list-item-press"
+        class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
         @click="$router.push('/warga/' + k.id)"
       >
-        <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm flex-none relative">
+        <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0 relative">
           {{ k.inisial }}
           <span v-if="k.belumLengkap" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500"></span>
         </div>
         <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0">{{ k.nama }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0">{{ k.alamat }}</p>
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ k.nama }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ k.alamat }}</p>
           <span v-if="k.penanda" class="inline-block mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--search)] text-[var(--mut)]">{{ k.penanda }}</span>
         </div>
         <ChevronRight :size="18" class="text-[var(--mut)] shrink-0" />

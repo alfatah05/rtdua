@@ -18,8 +18,8 @@
 
     <!-- Aksi -->
     <div class="grid grid-cols-3 gap-2 text-center mb-5">
-      <button v-for="a in aksi" :key="a.label" type="button" class="qa-btn" @click="$router.push(a.to)">
-        <span class="qa-icon" :style="{ background: a.bg, color: a.color }">
+      <button v-for="a in aksi" :key="a.label" type="button" class="flex flex-col items-center gap-1.5 active:scale-95 transition-transform" @click="$router.push(a.to)">
+        <span class="w-12 h-12 rounded-full grid place-items-center" :style="{ background: a.bg, color: a.color }">
           <component :is="a.icon" :size="20" />
         </span>
         <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>

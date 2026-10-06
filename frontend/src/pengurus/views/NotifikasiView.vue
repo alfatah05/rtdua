@@ -1,14 +1,15 @@
 <template>
   <div>
     <AppBackHeader title="Notifikasi" />
-    <div v-for="(group, hari) in grouped" :key="hari" class="mb-5">
-      <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2">{{ hari }}</h2>
-      <div class="list-wrap">
-        <div v-for="n in group" :key="n.id" class="list-item !items-start"
+    <div v-for="(group, hari) in grouped" :key="hari" class="mb-4">
+      <h2 class="text-[13px] font-bold text-[var(--mut)] mb-1 px-2">{{ hari }}</h2>
+      <div class="px-1 space-y-0.5">
+        <div v-for="n in group" :key="n.id"
+          class="w-full flex flex-row items-start gap-3 px-2 py-3 rounded-[12px]"
           :class="!n.dibaca ? 'bg-[var(--ok)]/40' : ''">
-          <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 flex-none"></div>
-          <div class="min-w-0">
-            <p class="font-bold text-[15px] m-0">{{ n.judul }}</p>
+          <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 shrink-0"></div>
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-[15px] m-0 leading-tight">{{ n.judul }}</p>
             <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ n.isi }}</p>
             <p class="text-[12px] text-[var(--mut)] m-0 mt-1">{{ n.waktu }}</p>
           </div>

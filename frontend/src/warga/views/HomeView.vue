@@ -1,26 +1,27 @@
 <template>
   <div>
-    <!-- Kop (seperti preview + dokumen) -->
-    <header class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] shadow-[var(--sh)] grid place-items-center">
+    <!-- Header utama: rtdua + lonceng -->
+    <header class="flex items-center justify-between mb-4">
+      <h1 class="text-[24px] font-extrabold text-[var(--text)] tracking-tight m-0">rtdua</h1>
+      <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Notifikasi">
+        <Bell :size="20" />
+      </router-link>
+    </header>
+
+    <!-- Kop RT -->
+    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
+      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center">
         <Landmark :size="26" class="text-[var(--mut)]" />
       </div>
       <div>
-        <h1 class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">Rukun Warga 002</h1>
+        <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">Rukun Warga 002</p>
         <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">Perum. Pesona Gading Cibitung 2</small>
       </div>
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] shadow-[var(--sh)] grid place-items-center">
+      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center">
         <Handshake :size="26" class="text-[var(--mut)]" />
       </div>
-    </header>
-    <div class="h-px bg-[var(--line)] my-4"></div>
-
-    <!-- Lonceng di pojok kanan atas area konten -->
-    <div class="flex justify-end -mt-2 mb-3">
-      <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full bg-[var(--search)]" aria-label="Notifikasi">
-        <Bell :size="20" />
-      </router-link>
     </div>
+    <div class="h-px bg-[var(--line)] my-4"></div>
 
     <!-- Pengumuman (max 3, pin dulu) -->
     <div class="space-y-3 mb-4">

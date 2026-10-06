@@ -16,7 +16,6 @@
   --gd: #CDEBD8;
   --gm: #0B6B34;
   --sh: 0 1px 2px rgba(16, 22, 20, 0.04), 0 4px 12px rgba(16, 22, 20, 0.04);
-  --sh-click: 0 1px 3px rgba(16, 22, 20, 0.08), 0 2px 8px rgba(16, 22, 20, 0.06);
   --rs: 12px;
   --r: 20px;
   --rm: 9999px;
@@ -37,7 +36,6 @@
   --gd: #12392A;
   --gm: #D5F7E1;
   --sh: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  --sh-click: 0 1px 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
   color-scheme: dark;
 }
 
@@ -68,35 +66,5 @@ body {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* List item — tanpa card, tanpa divider, gap saja */
-@layer components {
-  .list-wrap {
-    @apply px-1 space-y-1;
-  }
-  .list-item {
-    @apply w-full flex items-center gap-3 px-3 py-3.5 text-left rounded-[14px] transition-transform duration-150;
-  }
-  .list-item-press {
-    @apply active:scale-[0.98];
-  }
-  .clickable {
-    box-shadow: var(--sh-click);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .clickable:active {
-    transform: scale(0.97);
-  }
-  .qa-btn {
-    @apply flex flex-col items-center gap-1.5;
-  }
-  .qa-icon {
-    @apply w-12 h-12 rounded-full grid place-items-center transition-transform duration-150;
-    box-shadow: var(--sh-click);
-  }
-  .qa-btn:active .qa-icon {
-    transform: scale(0.92);
   }
 }

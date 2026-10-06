@@ -1,15 +1,17 @@
 <template>
   <div>
     <AppBackHeader title="Galeri" />
-    <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-4 clickable" @click="$router.push('/konten/galeri/tambah')">
+    <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-4 active:scale-[0.98] transition-transform" @click="$router.push('/konten/galeri/tambah')">
       + Buat album
     </button>
-    <div class="list-wrap">
-      <button v-for="a in album" :key="a.id" type="button" class="list-item list-item-press" @click="$router.push('/konten/galeri/' + a.id)">
+    <div class="px-1 space-y-0.5">
+      <button v-for="a in album" :key="a.id" type="button"
+        class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
+        @click="$router.push('/konten/galeri/' + a.id)">
         <div class="w-14 h-14 rounded-[12px] bg-[var(--search)] grid place-items-center text-[var(--mut)] text-xs shrink-0">{{ a.jumlah }} foto</div>
         <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0">{{ a.judul }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0">{{ a.tanggal }}</p>
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ a.judul }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ a.tanggal }}</p>
         </div>
       </button>
     </div>

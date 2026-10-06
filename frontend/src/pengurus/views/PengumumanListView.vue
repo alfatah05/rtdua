@@ -1,15 +1,15 @@
 <template>
   <div>
     <AppBackHeader title="Pengumuman" />
-    <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-4 clickable" @click="$router.push('/konten/pengumuman/tambah')">
+    <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-4 active:scale-[0.98] transition-transform" @click="$router.push('/konten/pengumuman/tambah')">
       + Tambah pengumuman
     </button>
-    <div class="list-wrap">
+    <div class="px-1 space-y-0.5">
       <button
         v-for="p in daftar"
         :key="p.id"
         type="button"
-        class="list-item list-item-press !items-start"
+        class="w-full flex flex-row items-start gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
         @click="$router.push('/konten/pengumuman/' + p.id)"
       >
         <div class="min-w-0 flex-1">
@@ -17,7 +17,7 @@
             <span v-if="p.pin" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--ok)] text-[var(--g)]">Pin</span>
             <span class="text-[12px] text-[var(--mut)] ml-auto">{{ p.tanggal }}</span>
           </div>
-          <p class="font-bold text-[15px] m-0">{{ p.judul }}</p>
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ p.judul }}</p>
           <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5 line-clamp-2">{{ p.ringkas }}</p>
         </div>
       </button>

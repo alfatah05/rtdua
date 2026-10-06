@@ -1,29 +1,18 @@
 <template>
   <div>
-    <header class="flex items-center gap-3 mb-6">
-      <button
-        v-if="showBack"
-        type="button"
-        class="min-h-[44px] px-3 -ml-2 font-semibold text-[var(--g)]"
-        @click="$router.back()"
-      >
-        ← Kembali
-      </button>
-      <h1 class="text-xl font-extrabold">{{ title }}</h1>
-    </header>
-    <UiCard>
-      <p class="text-[var(--mut)]">Halaman {{ title }} — Stage 1 (placeholder).</p>
-      <p class="text-[13px] text-[var(--mut)] mt-2">Fitur lengkap menyusul di Stage berikutnya.</p>
-    </UiCard>
+    <AppBackHeader :title="title" />
+    <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5">
+      <p class="text-[var(--mut)] m-0">Halaman {{ title }}.</p>
+      <p class="text-[13px] text-[var(--mut)] mt-2 m-0">Fitur lengkap menyusul.</p>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import UiCard from '@shared/components/UiCard.vue'
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 
 const route = useRoute()
 const title = computed(() => route.meta.title || 'Halaman')
-const showBack = computed(() => route.meta.showBack !== false)
 </script>

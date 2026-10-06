@@ -17,25 +17,25 @@
       </select>
     </div>
 
-    <p class="text-[13px] text-[var(--mut)] mb-1 px-1">{{ bulan }} {{ tahun }} · {{ filtered.length }} aktivitas</p>
+    <p class="text-[13px] text-[var(--mut)] mb-1 px-2">{{ bulan }} {{ tahun }} · {{ filtered.length }} aktivitas</p>
 
-    <div v-if="filtered.length === 0" class="px-1 py-8 text-center text-[var(--mut)] text-[14px]">Tidak ada aktivitas di bulan ini</div>
-    <div v-else class="list-wrap">
+    <div v-if="filtered.length === 0" class="px-2 py-8 text-center text-[var(--mut)] text-[14px]">Tidak ada aktivitas di bulan ini</div>
+    <div v-else class="px-1 space-y-0.5">
       <button
         v-for="act in filtered"
         :key="act.id"
         type="button"
-        class="list-item list-item-press"
+        class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
         @click="$router.push('/aktivitas/' + act.id)"
       >
-        <div class="w-10 h-10 rounded-full grid place-items-center flex-none" :style="{ background: act.bg, color: act.color }">
+        <div class="w-10 h-10 rounded-full grid place-items-center shrink-0" :style="{ background: act.bg, color: act.color }">
           <component :is="act.icon" :size="18" />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0">{{ act.text }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0">{{ act.waktu }}</p>
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ act.text }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ act.waktu }}</p>
         </div>
-        <ChevronRight :size="18" class="text-[var(--mut)]" />
+        <ChevronRight :size="18" class="text-[var(--mut)] shrink-0" />
       </button>
     </div>
   </div>
