@@ -26,7 +26,20 @@ jobs:
 
       - name: Composer install (backend)
         working-directory: backend
-        run: composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+          # Pastikan index.php CI4 terpasang (bukan placeholder)
+          if [ -f vendor/codeigniter4/framework/public/index.php ]; then
+            cp vendor/codeigniter4/framework/public/index.php public/index.php
+          fi
+          # Salin Config inti yang belum ada dari framework (Paths, Boot, dll)
+          for f in Paths Boot Modules Routing; do
+            src="vendor/codeigniter4/framework/app/Config/${f}.php"
+            dst="app/Config/${f}.php"
+            if [ -f "$src" ] && [ ! -f "$dst" ]; then cp "$src" "$dst"; fi
+          done
+          ls -la public/index.php
+          head -5 public/index.php
 
       - name: NPM install & build (frontend)
         working-directory: frontend

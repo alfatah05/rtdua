@@ -1,17 +1,16 @@
-# SPA + API proxy untuk subdomain pengurus
+# SPA + API — tanpa baris sampah di akhir file
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
 
-    # API ke backend
-    RewriteRule ^api/(.*)$ api/index.php [QSA,L]
-
-    # File yang ada → biarkan
+    # File/folder yang benar-benar ada → biarkan (termasuk assets)
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Sisanya → index.html (SPA)
+    # Semua /api/* → thin proxy
+    RewriteRule ^api(?:/|$) api/index.php [QSA,L]
+
+    # SPA
     RewriteRule ^ index.html [L]
 </IfModule>
-EOF
