@@ -1,21 +1,25 @@
 <?php
 /**
- * Thin proxy — subdomain pengurus-dev
- * Meneruskan /api/* ke backend CI4 di /home/rtdx8123/rt-app
- *
- * Path relatif dari file ini:
- *   api/ → pengurus-dev... → aa_sub_domain → public_html → home → rt-app/public/index.php
+ * Thin proxy — subdomain pengurus
  */
-$backend = dirname(__DIR__, 4) . '/rt-app/public/index.php';
+$_SERVER['HTTP_X_APP_SIDE'] = 'pengurus';
 
-if (file_exists($backend)) {
+$candidates = [
+    dirname(__DIR__, 3) . '/rt-app/public/index.php',
+    dirname(__DIR__, 4) . '/rt-app/public/index.php',
+    dirname(__DIR__, 2) . '/rt-app/public/index.php',
+];
+$backend = null;
+foreach ($candidates as $p) {
+    if (is_file($p)) {
+        $backend = $p;
+        break;
+    }
+}
+if ($backend) {
     require $backend;
 } else {
     http_response_code(503);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode([
-        'ok'    => false,
-        'error' => 'Backend belum terpasang atau path salah',
-        'debug' => 'Mencari: ' . $backend,
-    ]);
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => false, 'message' => 'Backend belum terpasang', 'data' => null]);
 }

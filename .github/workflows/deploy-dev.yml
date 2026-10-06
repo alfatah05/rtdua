@@ -23,17 +23,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache dihapus sementara karena package-lock.json belum ada
 
       - name: Composer install (backend)
         working-directory: backend
-        run: |
-          composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs || true
-          if [ ! -f public/index.php ] || grep -q "Placeholder" public/index.php 2>/dev/null; then
-            if [ -f vendor/codeigniter4/framework/public/index.php ]; then
-              cp vendor/codeigniter4/framework/public/index.php public/index.php
-            fi
-          fi
+        run: composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
       - name: NPM install & build (frontend)
         working-directory: frontend
@@ -41,53 +34,55 @@ jobs:
           npm install
           npm run build
 
-      - name: Syntax check PHP
-        run: find backend -name '*.php' -not -path '*/vendor/*' -print0 | xargs -0 -n1 php -l || true
-
-      - name: Prepare deploy folders
+      - name: Siapkan paket deploy
         run: |
-          mkdir -p deploy-out/warga deploy-out/pengurus deploy-out/rt-app
-          if [ -d frontend/dist/warga ]; then cp -a frontend/dist/warga/. deploy-out/warga/; fi
-          if [ -d frontend/dist/pengurus ]; then cp -a frontend/dist/pengurus/. deploy-out/pengurus/; fi
-          mkdir -p deploy-out/warga/api deploy-out/pengurus/api
-          cp deploy/warga/api/index.php deploy-out/warga/api/
-          cp deploy/pengurus/api/index.php deploy-out/pengurus/api/
-          cp deploy/warga/.htaccess deploy-out/warga/
-          cp deploy/pengurus/.htaccess deploy-out/pengurus/
-          cp -a backend/app backend/public backend/composer.json backend/spark deploy-out/rt-app/ 2>/dev/null || true
-          if [ -d backend/vendor ]; then cp -a backend/vendor deploy-out/rt-app/; fi
-          mkdir -p deploy-out/rt-app/writable/{cache,logs,session,uploads}
-          touch deploy-out/rt-app/writable/cache/index.html
-          touch deploy-out/rt-app/writable/logs/index.html
-          touch deploy-out/rt-app/writable/session/index.html
-          touch deploy-out/rt-app/writable/uploads/index.html
+          set -e
+          mkdir -p dist/warga dist/pengurus dist/rt-app
 
-      - name: Deploy warga-dev via FTP
+          # Frontend (Vite outDir: frontend/dist/warga & frontend/dist/pengurus)
+          cp -a frontend/dist/warga/. dist/warga/
+          cp -a frontend/dist/pengurus/. dist/pengurus/
+
+          # Thin proxy + SPA htaccess
+          cp deploy/warga/.htaccess dist/warga/
+          mkdir -p dist/warga/api && cp deploy/warga/api/index.php dist/warga/api/
+          cp deploy/pengurus/.htaccess dist/pengurus/
+          mkdir -p dist/pengurus/api && cp deploy/pengurus/api/index.php dist/pengurus/api/
+
+          # Backend CI4 — JANGAN ikutkan .env (rahasia, hanya di server)
+          rsync -a --exclude='.env' --exclude='writable/logs/*' --exclude='writable/cache/*' backend/ dist/rt-app/
+          mkdir -p dist/rt-app/writable/{cache,logs,session,uploads}
+          touch dist/rt-app/writable/cache/.gitkeep dist/rt-app/writable/logs/.gitkeep
+
+          echo "=== paket deploy ==="
+          du -sh dist/warga dist/pengurus dist/rt-app
+
+      - name: Deploy WARGA-DEV (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./deploy-out/warga/
-          server-dir: /public_html/aa_sub_domain/warga-dev.rtdua.my.id/
+          local-dir: ./dist/warga/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA }}
           dangerous-clean-slate: false
 
-      - name: Deploy pengurus-dev via FTP
+      - name: Deploy PENGURUS-DEV (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./deploy-out/pengurus/
-          server-dir: /public_html/aa_sub_domain/pengurus-dev.rtdua.my.id/
+          local-dir: ./dist/pengurus/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS }}
           dangerous-clean-slate: false
 
-      - name: Deploy backend (rt-app) via FTP
+      - name: Deploy BACKEND rt-app (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./deploy-out/rt-app/
-          server-dir: /rt-app/
+          local-dir: ./dist/rt-app/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_BACKEND }}
           dangerous-clean-slate: false
