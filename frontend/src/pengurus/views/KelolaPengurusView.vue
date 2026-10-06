@@ -1,11 +1,11 @@
 <template>
   <div>
     <AppBackHeader title="Kelola pengurus" />
-    <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-4" @click="$router.push('/kelola-pengurus/angkat')">
+    <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-4 clickable" @click="$router.push('/kelola-pengurus/angkat')">
       + Angkat pengurus
     </button>
-    <div class="space-y-2">
-      <div v-for="p in daftar" :key="p.id" class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
+    <div class="list-wrap">
+      <div v-for="p in daftar" :key="p.id" class="list-item">
         <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm">{{ p.inisial }}</div>
         <div class="flex-1 min-w-0">
           <p class="font-bold text-[15px] m-0">{{ p.nama }}</p>

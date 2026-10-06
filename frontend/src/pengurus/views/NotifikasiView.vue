@@ -3,9 +3,9 @@
     <AppBackHeader title="Notifikasi" />
     <div v-for="(group, hari) in grouped" :key="hari" class="mb-5">
       <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2">{{ hari }}</h2>
-      <div class="space-y-2">
-        <div v-for="n in group" :key="n.id" class="flex gap-3 rounded-[16px] p-4 border border-[var(--line)]"
-          :class="!n.dibaca ? 'bg-[var(--ok)]/40' : 'bg-[var(--card)]'">
+      <div class="list-wrap">
+        <div v-for="n in group" :key="n.id" class="list-item !items-start"
+          :class="!n.dibaca ? 'bg-[var(--ok)]/40' : ''">
           <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 flex-none"></div>
           <div class="min-w-0">
             <p class="font-bold text-[15px] m-0">{{ n.judul }}</p>

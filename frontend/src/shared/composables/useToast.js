@@ -1,16 +1,19 @@
 import { ref } from 'vue'
 
 const message = ref('')
-const type = ref('info') // info | success | error
+const type = ref('info')
 const visible = ref(false)
 let timer = null
 
 export function useToast() {
-  function show(msg, t = 'info', ms = 2800) {
-    message.value = msg
+  function show(msg, t = 'info', ms = 2500) {
+    // Satu toast saja, ganti pesan sebelumnya (tidak bertumpuk)
+    if (timer) clearTimeout(timer)
+    // Potong teks panjang
+    const short = String(msg || '').trim()
+    message.value = short.length > 60 ? short.slice(0, 57) + '…' : short
     type.value = t
     visible.value = true
-    if (timer) clearTimeout(timer)
     timer = setTimeout(() => { visible.value = false }, ms)
   }
   function success(msg) { show(msg, 'success') }

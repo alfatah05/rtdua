@@ -7,8 +7,8 @@
     </div>
 
     <h2 class="text-[15px] font-bold mb-2">Bertugas</h2>
-    <div class="space-y-2 mb-5">
-      <div v-for="k in keluarga" :key="k.id" class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5">
+    <div class="list-wrap mb-5">
+      <div v-for="k in keluarga" :key="k.id" class="list-item">
         <div class="flex-1 min-w-0">
           <p class="font-bold text-[15px] m-0">{{ k.nama }}</p>
           <p class="text-[13px] m-0" :class="k.status === 'Hadir' ? 'text-[var(--g)]' : 'text-amber-600'">{{ k.status }}{{ k.jam ? ' · ' + k.jam : '' }}</p>

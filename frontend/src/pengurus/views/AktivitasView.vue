@@ -3,12 +3,8 @@
     <header class="flex items-center justify-between mb-4">
       <h1 class="text-[24px] font-extrabold text-[var(--text)] tracking-tight m-0">rtdua</h1>
       <div class="flex items-center gap-0.5">
-        <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Notifikasi">
-          <Bell :size="20" />
-        </router-link>
-        <router-link to="/profil" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Profil">
-          <UserRound :size="20" />
-        </router-link>
+        <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Notifikasi"><Bell :size="20" /></router-link>
+        <router-link to="/profil" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Profil"><UserRound :size="20" /></router-link>
       </div>
     </header>
 
@@ -21,21 +17,18 @@
       </select>
     </div>
 
-    <p class="text-[13px] text-[var(--mut)] mb-3">{{ bulan }} {{ tahun }} · {{ filtered.length }} aktivitas</p>
+    <p class="text-[13px] text-[var(--mut)] mb-1 px-1">{{ bulan }} {{ tahun }} · {{ filtered.length }} aktivitas</p>
 
-    <div v-if="filtered.length === 0" class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-6 text-center text-[var(--mut)]">
-      Tidak ada aktivitas di bulan ini
-    </div>
-
-    <div v-else class="space-y-2">
+    <div v-if="filtered.length === 0" class="px-1 py-8 text-center text-[var(--mut)] text-[14px]">Tidak ada aktivitas di bulan ini</div>
+    <div v-else class="list-wrap">
       <button
         v-for="act in filtered"
         :key="act.id"
         type="button"
-        class="w-full flex gap-3 items-center bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-3 text-left active:scale-[0.98] transition"
+        class="list-item list-item-press"
         @click="$router.push('/aktivitas/' + act.id)"
       >
-        <div class="w-10 h-10 rounded-full bg-[var(--card2)] grid place-items-center flex-none">
+        <div class="w-10 h-10 rounded-full grid place-items-center flex-none" :style="{ background: act.bg, color: act.color }">
           <component :is="act.icon" :size="18" />
         </div>
         <div class="min-w-0 flex-1">
@@ -47,26 +40,19 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed } from 'vue'
 import { Bell, UserRound, Check, UserPlus, Banknote, ChevronRight, Settings, Eye } from 'lucide-vue-next'
-
 const bulan = ref('Oktober')
 const tahun = ref('2026')
 const daftarBulan = ['Oktober', 'September', 'Agustus']
 const daftarTahun = ['2026', '2025']
-
 const semua = [
-  { id: 1, bulan: 'Oktober', tahun: '2026', text: 'Budi (Bendahara) mengonfirmasi pembayaran Keluarga Hartono', waktu: '2 jam lalu', icon: Check },
-  { id: 2, bulan: 'Oktober', tahun: '2026', text: 'Ani (Sekretaris) menambah data Keluarga Pratama', waktu: 'Kemarin', icon: UserPlus },
-  { id: 3, bulan: 'Oktober', tahun: '2026', text: 'Sistem membuat tagihan bulan baru', waktu: '1 Okt', icon: Banknote },
-  { id: 4, bulan: 'Oktober', tahun: '2026', text: 'Budi membuka data sensitif keluarga AB2-22', waktu: '1 Okt', icon: Eye },
-  { id: 5, bulan: 'September', tahun: '2026', text: 'Ketua mengubah nominal kas', waktu: '28 Sep', icon: Settings },
-  { id: 6, bulan: 'September', tahun: '2026', text: 'Sistem menghitung denda ronda', waktu: '1 Sep', icon: Banknote },
+  { id: 1, bulan: 'Oktober', tahun: '2026', text: 'Budi mengonfirmasi pembayaran Keluarga Hartono', waktu: '2 jam lalu', icon: Check, bg: 'rgba(16,185,129,.18)', color: '#059669' },
+  { id: 2, bulan: 'Oktober', tahun: '2026', text: 'Ani menambah data Keluarga Pratama', waktu: 'Kemarin', icon: UserPlus, bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
+  { id: 3, bulan: 'Oktober', tahun: '2026', text: 'Sistem membuat tagihan bulan baru', waktu: '1 Okt', icon: Banknote, bg: 'rgba(16,185,129,.18)', color: '#059669' },
+  { id: 4, bulan: 'Oktober', tahun: '2026', text: 'Budi membuka data sensitif AB2-22', waktu: '1 Okt', icon: Eye, bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
+  { id: 5, bulan: 'September', tahun: '2026', text: 'Ketua mengubah nominal kas', waktu: '28 Sep', icon: Settings, bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
 ]
-
-const filtered = computed(() =>
-  semua.filter(a => a.bulan === bulan.value && a.tahun === tahun.value)
-)
+const filtered = computed(() => semua.filter(a => a.bulan === bulan.value && a.tahun === tahun.value))
 </script>

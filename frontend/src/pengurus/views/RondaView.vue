@@ -18,8 +18,8 @@
 
     <!-- Aksi -->
     <div class="grid grid-cols-3 gap-2 text-center mb-5">
-      <button v-for="a in aksi" :key="a.label" type="button" class="flex flex-col items-center gap-1.5" @click="$router.push(a.to)">
-        <span class="w-12 h-12 rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center shadow-[var(--sh)]">
+      <button v-for="a in aksi" :key="a.label" type="button" class="qa-btn" @click="$router.push(a.to)">
+        <span class="qa-icon" :style="{ background: a.bg, color: a.color }">
           <component :is="a.icon" :size="20" />
         </span>
         <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>
@@ -53,9 +53,9 @@ import { Calendar, List, Wand2 } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 
 const aksi = [
-  { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap' },
-  { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus' },
-  { label: 'Isi otomatis', icon: Wand2, to: '/ronda/isi-otomatis' },
+  { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
+  { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
+  { label: 'Isi otomatis', icon: Wand2, to: '/ronda/isi-otomatis', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
 ]
 
 // Simple Oct 2026 calendar starting Thursday

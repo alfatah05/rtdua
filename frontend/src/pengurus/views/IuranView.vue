@@ -2,7 +2,6 @@
   <div>
     <AppBackHeader title="Iuran" />
 
-    <!-- Ringkasan -->
     <div class="grid grid-cols-3 gap-2 mb-4">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3 text-center">
         <p class="text-[18px] font-extrabold m-0">73%</p>
@@ -18,51 +17,37 @@
       </div>
     </div>
 
-    <!-- Permintaan konfirmasi -->
-    <div class="mb-4">
-      <h2 class="text-[15px] font-bold mb-2">Permintaan konfirmasi</h2>
-      <div class="space-y-2">
-        <button
-          v-for="p in permintaan"
-          :key="p.id"
-          type="button"
-          class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5 text-left active:scale-[0.98] transition"
-          @click="$router.push('/keuangan/permintaan/' + p.id)"
-        >
-          <div class="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 grid place-items-center flex-none">
-            <Banknote :size="18" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-bold text-[15px] m-0">{{ p.keluarga }}</p>
-            <p class="text-[13px] text-[var(--mut)] m-0">{{ p.nominal }} · {{ p.pengirim }} · {{ p.bank }}</p>
-          </div>
-          <ChevronRight :size="18" class="text-[var(--mut)]" />
-        </button>
-      </div>
+    <h2 class="text-[15px] font-bold mb-1 px-1">Permintaan konfirmasi</h2>
+    <div class="list-wrap mb-4">
+      <button v-for="p in permintaan" :key="p.id" type="button" class="list-item list-item-press"
+        @click="$router.push('/keuangan/permintaan/' + p.id)">
+        <div class="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 grid place-items-center flex-none">
+          <Banknote :size="18" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-[15px] m-0">{{ p.keluarga }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0">{{ p.nominal }} · {{ p.pengirim }} · {{ p.bank }}</p>
+        </div>
+        <ChevronRight :size="18" class="text-[var(--mut)]" />
+      </button>
     </div>
 
-    <!-- Search + aksi -->
-    <div class="flex gap-2 mb-3">
+    <div class="flex gap-2 mb-2">
       <div class="flex-1 flex items-center gap-2 bg-[var(--search)] rounded-full px-4 h-11">
         <Search :size="16" class="text-[var(--mut)]" />
         <input v-model="q" type="search" placeholder="Cari keluarga" class="flex-1 bg-transparent outline-none text-[14px]" />
       </div>
-      <button type="button" class="w-11 h-11 rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center" @click="$router.push('/keuangan/filter-iuran')">
+      <button type="button" class="w-11 h-11 rounded-full grid place-items-center clickable" style="background:rgba(107,114,128,.12);color:#4B5563" @click="$router.push('/keuangan/filter-iuran')">
         <SlidersHorizontal :size="18" />
       </button>
-      <button type="button" class="w-11 h-11 rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center" @click="$router.push('/keuangan/ekspor-iuran')">
+      <button type="button" class="w-11 h-11 rounded-full grid place-items-center clickable" style="background:rgba(16,185,129,.15);color:#059669" @click="$router.push('/keuangan/ekspor-iuran')">
         <Download :size="18" />
       </button>
     </div>
 
-    <div class="space-y-2">
-      <button
-        v-for="k in filtered"
-        :key="k.id"
-        type="button"
-        class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5 text-left active:scale-[0.98] transition"
-        @click="$router.push('/keuangan/tagihan/' + k.id)"
-      >
+    <div class="list-wrap">
+      <button v-for="k in filtered" :key="k.id" type="button" class="list-item list-item-press"
+        @click="$router.push('/keuangan/tagihan/' + k.id)">
         <div class="flex-1 min-w-0">
           <p class="font-bold text-[15px] m-0">{{ k.nama }}</p>
           <p class="text-[13px] text-[var(--mut)] m-0">{{ k.alamat }}</p>
@@ -75,12 +60,11 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed } from 'vue'
-import { Banknote, ChevronRight, Search, SlidersHorizontal, Download } from 'lucide-vue-next'
+import { Banknote, ChevronRight, Search, Download } from 'lucide-vue-next'
+import { SlidersHorizontal } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-
 const q = ref('')
 const permintaan = [
   { id: 1, keluarga: 'AB2-22 · Budi Santoso', nominal: 'Rp 50.000', pengirim: 'Budi S', bank: 'BCA' },

@@ -11,8 +11,8 @@
       :class="{ 'font-bold': isActive(item.to) }"
     >
       <span
-        class="w-[60px] h-[30px] rounded-full grid place-items-center"
-        :class="isActive(item.to) ? 'bg-[var(--gd)] text-[var(--gm)]' : ''"
+        class="nav-pill grid place-items-center"
+        :class="isActive(item.to) ? 'nav-pill-active' : 'nav-pill-idle'"
       >
         <component :is="item.icon" :size="20" />
       </span>
@@ -26,7 +26,7 @@ import { useRoute } from 'vue-router'
 import { Home, Users, Wallet, UserRound, Activity } from 'lucide-vue-next'
 
 const props = defineProps({
-  side: { type: String, required: true }, // 'warga' | 'pengurus'
+  side: { type: String, required: true },
 })
 
 const route = useRoute()
@@ -52,3 +52,43 @@ function isActive(path) {
   return route.path.startsWith(path)
 }
 </script>
+
+<style scoped>
+.nav-pill {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  color: var(--text);
+}
+.nav-pill-idle {
+  background: transparent;
+  transform: scale(1);
+}
+.nav-pill-active {
+  width: 60px;
+  background: var(--gd);
+  color: var(--gm);
+  animation: navPillIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes navPillIn {
+  0% {
+    width: 30px;
+    transform: scale(0.8);
+  }
+  45% {
+    width: 30px;
+    transform: scale(1);
+  }
+  100% {
+    width: 60px;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-pill-active {
+    animation: none;
+    width: 60px;
+    transform: scale(1);
+  }
+}
+</style>

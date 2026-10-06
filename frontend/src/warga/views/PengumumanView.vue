@@ -4,12 +4,12 @@
 
     <div v-for="(group, bulan) in grouped" :key="bulan" class="mb-6">
       <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2">{{ bulan }}</h2>
-      <div class="space-y-2">
+      <div class="list-wrap">
         <button
           v-for="p in group"
           :key="p.id"
           type="button"
-          class="w-full text-left bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 shadow-[var(--sh)] active:scale-[0.98] transition"
+          class="list-item list-item-press !items-start"
           @click="$router.push('/pengumuman/' + p.id)"
         >
           <div class="flex items-center justify-between gap-2 mb-1">

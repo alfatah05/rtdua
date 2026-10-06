@@ -11,7 +11,7 @@
 
     <button
       type="button"
-      class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition mb-4"
+      class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] clickable text-left mb-4"
       @click="$router.push('/rincian-iuran')"
     >
       <div class="flex-1">
@@ -23,8 +23,8 @@
     </button>
 
     <h2 class="text-[17px] font-bold mb-3">Riwayat kas</h2>
-    <div class="space-y-2">
-      <div v-for="(t, i) in transaksi" :key="i" class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
+    <div class="list-wrap">
+      <div v-for="(t, i) in transaksi" :key="i" class="list-item">
         <div class="flex-1 min-w-0">
           <p class="font-bold text-[15px]">{{ t.keterangan }}</p>
           <p class="text-[13px] text-[var(--mut)]">{{ t.tanggal }}</p>

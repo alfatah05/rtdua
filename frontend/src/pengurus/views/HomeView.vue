@@ -48,8 +48,8 @@
     </button>
 
     <div class="grid grid-cols-5 gap-2 text-center mb-5">
-      <button v-for="a in aksi" :key="a.label" type="button" class="flex flex-col items-center gap-2" @click="$router.push(a.to)">
-        <span class="w-12 h-12 rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center shadow-[var(--sh)] relative">
+      <button v-for="a in aksi" :key="a.label" type="button" class="qa-btn" @click="$router.push(a.to)">
+        <span class="qa-icon relative" :style="{ background: a.bg, color: a.color }">
           <component :is="a.icon" :size="20" />
           <span v-if="a.badge" class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center px-1">{{ a.badge }}</span>
         </span>
@@ -89,8 +89,8 @@
       <h2 class="text-[17px] font-bold m-0">Aktivitas terakhir</h2>
       <router-link to="/aktivitas" class="text-[13px] font-semibold text-[var(--g)] no-underline">Lihat semua</router-link>
     </div>
-    <div class="space-y-2">
-      <div v-for="(act, i) in aktivitas" :key="i" class="flex gap-3 items-center bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-3">
+    <div class="list-wrap">
+      <div v-for="(act, i) in aktivitas" :key="i" class="list-item">
         <div class="w-10 h-10 rounded-full bg-[var(--card2)] grid place-items-center flex-none">
           <component :is="act.icon" :size="18" />
         </div>
@@ -110,11 +110,11 @@ import {
 } from 'lucide-vue-next'
 
 const aksi = [
-  { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat' },
-  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk' },
-  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar' },
-  { label: 'Laporan', icon: FileText, to: '/keuangan/laporan' },
-  { label: 'Lainnya', icon: LayoutGrid, to: '/lainnya', badge: 2 },
+  { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat', bg: 'rgba(16,185,129,.18)', color: '#059669' },
+  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: 'rgba(16,185,129,.18)', color: '#059669' },
+  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: 'rgba(239,68,68,.15)', color: '#DC2626' },
+  { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
+  { label: 'Lainnya', icon: LayoutGrid, to: '/lainnya', bg: 'rgba(107,114,128,.18)', color: '#4B5563', badge: 2 },
 ]
 
 const aktivitas = [
