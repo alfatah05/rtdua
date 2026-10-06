@@ -5,7 +5,7 @@
     <div class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 mb-4">
       <p class="text-[13px] text-[var(--mut)] m-0">Keluarga</p>
       <p class="font-bold text-[15px] m-0">AB1-05 · Andi Wijaya</p>
-      <p class="text-[13px] text-[var(--mut)] m-0 mt-1">Total tagihan: <b>Rp 70.000</b></p>
+      <p class="text-[13px] text-[var(--mut)] m-0 mt-1">Total tagihan: <b>{{ formatRp(totalTagihan) }}</b></p>
     </div>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
@@ -38,36 +38,64 @@
       <div v-if="showPreview" class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4">
         <p class="text-[13px] font-bold mb-2">Pratinjau potongan</p>
         <div class="space-y-1 text-[14px]">
-          <div class="flex justify-between"><span>Kas Oktober</span><span class="font-bold text-[var(--g)]">− Rp 40.000 (lunas)</span></div>
-          <div class="flex justify-between"><span>Denda ronda</span><span class="font-bold">− Rp 10.000</span></div>
-          <div class="flex justify-between border-t border-[var(--line)] pt-2 mt-2"><span>Sisa denda</span><span class="font-bold">Rp 20.000</span></div>
+          <div v-for="p in hasilAlokasi.potongan" :key="p.tagihan_id" class="flex justify-between gap-2">
+            <span>{{ labelJenis[p.jenis] || p.jenis }} {{ p.periode }}</span>
+            <span class="font-bold text-[var(--g)]">− {{ formatRp(p.jumlah) }}</span>
+          </div>
+          <div v-if="hasilAlokasi.sisaBayar > 0" class="flex justify-between text-[var(--mut)] pt-1">
+            <span>Kelebihan bayar</span>
+            <span class="font-bold">{{ formatRp(hasilAlokasi.sisaBayar) }}</span>
+          </div>
         </div>
       </div>
+
+      <p v-if="saved" class="text-[13px] text-[var(--g)] text-center">Pembayaran tersimpan (dummy).</p>
 
       <button type="submit" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold">
         {{ showPreview ? 'Simpan pembayaran' : 'Lihat pratinjau' }}
       </button>
-      <p v-if="saved" class="text-[13px] text-[var(--g)] text-center">Pembayaran tersimpan (dummy). Contoh alokasi: kas lunas, sisa denda Rp 20.000</p>
     </form>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
+import { alokasiPembayaran } from '@shared/utils/alokasiPembayaran.js'
+import { formatRp } from '@shared/utils/format.js'
+import { useToast } from '@shared/composables/useToast.js'
+
+const { success } = useToast()
+
+const tagihanContoh = [
+  { id: 201, jenis: 'kas', periode: '2026-08', sisa: 40000 },
+  { id: 202, jenis: 'denda_ronda', periode: '2026-09', sisa: 10000 },
+  { id: 203, jenis: 'denda_ronda', periode: '2026-09', sisa: 10000 },
+  { id: 204, jenis: 'denda_ronda', periode: '2026-10', sisa: 10000 },
+]
+const totalTagihan = tagihanContoh.reduce((s, t) => s + t.sisa, 0)
 
 const nominal = ref('50000')
 const metode = ref('tunai')
-const tanggal = ref('2026-10-06')
+const tanggal = ref(new Date().toISOString().slice(0, 10))
 const catatan = ref('')
 const showPreview = ref(false)
 const saved = ref(false)
 
+const hasilAlokasi = computed(() => {
+  const n = parseInt(String(nominal.value).replace(/\D/g, ''), 10) || 0
+  return alokasiPembayaran(tagihanContoh, n)
+})
+
+const labelJenis = { kas: 'Kas', denda_ronda: 'Denda ronda', khusus: 'Iuran khusus' }
+
 function onSubmit() {
   if (!showPreview.value) {
     showPreview.value = true
+    saved.value = false
     return
   }
   saved.value = true
+  success('Pembayaran tersimpan')
 }
 </script>
