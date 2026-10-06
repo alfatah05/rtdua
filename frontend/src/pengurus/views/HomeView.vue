@@ -1,11 +1,11 @@
 <template>
   <div>
-    <!-- Header tetap: rtdua hitam + lonceng + profil -->
     <header class="flex items-center justify-between mb-4">
       <h1 class="text-[24px] font-extrabold text-[var(--text)] tracking-tight m-0">rtdua</h1>
       <div class="flex items-center gap-0.5">
-        <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Notifikasi">
+        <router-link to="/notifikasi" class="w-11 h-11 grid place-items-center rounded-full relative" aria-label="Notifikasi">
           <Bell :size="20" />
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--g)]"></span>
         </router-link>
         <router-link to="/profil" class="w-11 h-11 grid place-items-center rounded-full" aria-label="Profil">
           <UserRound :size="20" />
@@ -27,21 +27,31 @@
         <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">Oktober 2026</span>
       </div>
       <p class="text-[34px] font-extrabold mt-2.5 tracking-tight leading-none">Rp 12.450.000</p>
-      <p class="text-[13px] text-white/80 mt-2">Data dummy Stage 2</p>
+      <p class="text-[13px] text-white/80 mt-2">Data dummy Stage 4</p>
       <div class="absolute -right-14 -bottom-20 w-52 h-52 rounded-full bg-white/10 pointer-events-none"></div>
     </div>
 
-    <!-- Aksi cepat 5 kolom 48px -->
+    <!-- Permintaan konfirmasi (hanya tampil bila ada) -->
+    <button
+      type="button"
+      class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 shadow-[var(--sh)] text-left mb-4 active:scale-[0.98] transition"
+      @click="$router.push('/keuangan/iuran')"
+    >
+      <div class="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 grid place-items-center flex-none">
+        <Banknote :size="18" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-[15px] m-0">Permintaan konfirmasi</p>
+        <p class="text-[13px] text-[var(--mut)] m-0">2 menunggu diperiksa</p>
+      </div>
+      <ChevronRight :size="18" class="text-[var(--mut)]" />
+    </button>
+
     <div class="grid grid-cols-5 gap-2 text-center mb-5">
-      <button
-        v-for="a in aksi"
-        :key="a.label"
-        type="button"
-        class="flex flex-col items-center gap-2"
-        @click="$router.push(a.to)"
-      >
-        <span class="w-12 h-12 rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center shadow-[var(--sh)]">
+      <button v-for="a in aksi" :key="a.label" type="button" class="flex flex-col items-center gap-2" @click="$router.push(a.to)">
+        <span class="w-12 h-12 rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center shadow-[var(--sh)] relative">
           <component :is="a.icon" :size="20" />
+          <span v-if="a.badge" class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center px-1">{{ a.badge }}</span>
         </span>
         <span class="text-[11px] font-semibold leading-tight text-center">{{ a.label }}</span>
       </button>
@@ -49,22 +59,16 @@
 
     <div class="grid grid-cols-2 gap-2 mb-5">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
-        <div class="flex items-center gap-2">
-          <House :size="20" />
-          <b class="text-[22px] font-extrabold">52</b>
-        </div>
+        <div class="flex items-center gap-2"><House :size="20" /><b class="text-[22px] font-extrabold">52</b></div>
         <span class="block text-[12px] font-semibold text-[var(--mut)] mt-1">Keluarga (KK)</span>
       </div>
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
-        <div class="flex items-center gap-2">
-          <Users :size="20" />
-          <b class="text-[22px] font-extrabold">187</b>
-        </div>
+        <div class="flex items-center gap-2"><Users :size="20" /><b class="text-[22px] font-extrabold">187</b></div>
         <span class="block text-[12px] font-semibold text-[var(--mut)] mt-1">Warga</span>
       </div>
     </div>
 
-    <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] mb-5 active:scale-[0.98] transition cursor-pointer" @click="$router.push('/keuangan')">
+    <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] mb-5 active:scale-[0.98] transition cursor-pointer" @click="$router.push('/keuangan/iuran')">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-[17px] font-bold m-0">Iuran Oktober</h2>
@@ -81,13 +85,12 @@
       <p class="text-[13px] text-[var(--mut)] mt-2.5 mb-0">14 keluarga belum bayar</p>
     </div>
 
-    <h2 class="text-[17px] font-bold mb-3">Aktivitas terakhir</h2>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-[17px] font-bold m-0">Aktivitas terakhir</h2>
+      <router-link to="/aktivitas" class="text-[13px] font-semibold text-[var(--g)] no-underline">Lihat semua</router-link>
+    </div>
     <div class="space-y-2">
-      <div
-        v-for="(act, i) in aktivitas"
-        :key="i"
-        class="flex gap-3 items-center bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-3"
-      >
+      <div v-for="(act, i) in aktivitas" :key="i" class="flex gap-3 items-center bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-3">
         <div class="w-10 h-10 rounded-full bg-[var(--card2)] grid place-items-center flex-none">
           <component :is="act.icon" :size="18" />
         </div>
@@ -107,11 +110,11 @@ import {
 } from 'lucide-vue-next'
 
 const aksi = [
-  { label: 'Catat iuran', icon: Banknote, to: '/keuangan' },
-  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan' },
-  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan' },
-  { label: 'Laporan', icon: FileText, to: '/keuangan' },
-  { label: 'Lainnya', icon: LayoutGrid, to: '/lainnya' },
+  { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat' },
+  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk' },
+  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar' },
+  { label: 'Laporan', icon: FileText, to: '/keuangan/laporan' },
+  { label: 'Lainnya', icon: LayoutGrid, to: '/lainnya', badge: 2 },
 ]
 
 const aktivitas = [
