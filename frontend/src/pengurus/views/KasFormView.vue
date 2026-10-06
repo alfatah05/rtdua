@@ -2,7 +2,7 @@
   <div>
     <AppBackHeader :title="isMasuk ? 'Kas masuk' : 'Kas keluar'" />
 
-    <form class="space-y-4" @submit.prevent="msg = 'Transaksi tersimpan (dummy)'">
+    <form class="space-y-4" @submit.prevent="onSave">
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Nominal</label>
         <input v-model="nominal" type="text" inputmode="numeric" placeholder="100000"
@@ -44,6 +44,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
+import { useToast } from '@shared/composables/useToast.js'
 
 const route = useRoute()
 const isMasuk = computed(() => route.path.includes('kas-masuk'))
@@ -53,6 +54,9 @@ const metode = ref('tunai')
 const ket = ref('')
 const tanggal = ref('2026-10-06')
 const msg = ref('')
+const { success } = useToast()
+
+function onSave() { success('Transaksi tersimpan'); msg.value = 'Transaksi tersimpan (dummy)' }
 
 const kategoriList = computed(() =>
   isMasuk.value

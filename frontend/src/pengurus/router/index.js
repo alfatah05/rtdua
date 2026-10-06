@@ -30,6 +30,10 @@ import RondaMalamView from '../views/RondaMalamView.vue'
 import PengaturanWargaView from '../views/PengaturanWargaView.vue'
 import PengaturanAplikasiView from '../views/PengaturanAplikasiView.vue'
 import KelolaPengurusView from '../views/KelolaPengurusView.vue'
+import KonfirmasiTransferView from '../views/KonfirmasiTransferView.vue'
+import TolakPermintaanView from '../views/TolakPermintaanView.vue'
+import IuranKhususView from '../views/IuranKhususView.vue'
+import DetailKasView from '../views/DetailKasView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 
 const routes = [
@@ -57,16 +61,16 @@ const routes = [
       { path: 'keuangan/tagihan/:id/bayar', component: CatatBayarView },
       { path: 'keuangan/tagihan/:id/batal-denda', component: PlaceholderView, meta: { title: 'Batalkan denda' } },
       { path: 'keuangan/permintaan/:id', component: PermintaanDetailView },
-      { path: 'keuangan/permintaan/:id/konfirmasi', component: PlaceholderView, meta: { title: 'Konfirmasi transfer' } },
-      { path: 'keuangan/permintaan/:id/tolak', component: PlaceholderView, meta: { title: 'Tolak permintaan' } },
+      { path: 'keuangan/permintaan/:id/konfirmasi', component: KonfirmasiTransferView },
+      { path: 'keuangan/permintaan/:id/tolak', component: TolakPermintaanView },
       { path: 'keuangan/kas-masuk', component: KasFormView },
       { path: 'keuangan/kas-keluar', component: KasFormView },
-      { path: 'keuangan/kas/:id', component: PlaceholderView, meta: { title: 'Detail kas' } },
+      { path: 'keuangan/kas/:id', component: DetailKasView },
       { path: 'keuangan/filter-kas', component: PlaceholderView, meta: { title: 'Filter riwayat kas' } },
       { path: 'keuangan/filter-iuran', component: PlaceholderView, meta: { title: 'Filter iuran' } },
       { path: 'keuangan/ekspor-iuran', component: PlaceholderView, meta: { title: 'Ekspor iuran' } },
       { path: 'keuangan/laporan', component: LaporanView },
-      { path: 'keuangan/iuran-khusus', component: PlaceholderView, meta: { title: 'Iuran khusus' } },
+      { path: 'keuangan/iuran-khusus', component: IuranKhususView },
       { path: 'keuangan/catat', component: PlaceholderView, meta: { title: 'Catat iuran' } },
 
       { path: 'aktivitas', name: 'aktivitas', component: AktivitasView },
