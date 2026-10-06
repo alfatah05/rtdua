@@ -3,6 +3,9 @@ import { useAuth } from '@shared/composables/useAuth.js'
 import MainLayout from '../layouts/MainLayout.vue'
 import LoginView from '../views/LoginView.vue'
 import HomeView from '../views/HomeView.vue'
+import WargaView from '../views/WargaView.vue'
+import KeuanganView from '../views/KeuanganView.vue'
+import AktivitasView from '../views/AktivitasView.vue'
 import ProfilView from '../views/ProfilView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 
@@ -17,11 +20,11 @@ const routes = [
     path: '/',
     component: MainLayout,
     children: [
-      { path: '', name: 'home', component: HomeView, meta: { title: 'Beranda' } },
-      { path: 'warga', name: 'warga', component: PlaceholderView, meta: { title: 'Warga' } },
-      { path: 'keuangan', name: 'keuangan', component: PlaceholderView, meta: { title: 'Keuangan' } },
-      { path: 'aktivitas', name: 'aktivitas', component: PlaceholderView, meta: { title: 'Aktivitas' } },
-      { path: 'profil', name: 'profil', component: ProfilView, meta: { title: 'Profil' } },
+      { path: '', name: 'home', component: HomeView },
+      { path: 'warga', name: 'warga', component: WargaView },
+      { path: 'keuangan', name: 'keuangan', component: KeuanganView },
+      { path: 'aktivitas', name: 'aktivitas', component: AktivitasView },
+      { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'lainnya', name: 'lainnya', component: PlaceholderView, meta: { title: 'Lainnya' } },
       { path: 'notifikasi', name: 'notifikasi', component: PlaceholderView, meta: { title: 'Notifikasi' } },
     ],
@@ -39,12 +42,8 @@ const router = createRouter({
 router.beforeEach((to) => {
   const { isLoggedIn, restore } = useAuth()
   restore('pengurus')
-  if (!to.meta.public && !isLoggedIn.value) {
-    return { name: 'login' }
-  }
-  if (to.name === 'login' && isLoggedIn.value) {
-    return { name: 'home' }
-  }
+  if (!to.meta.public && !isLoggedIn.value) return { name: 'login' }
+  if (to.name === 'login' && isLoggedIn.value) return { name: 'home' }
 })
 
 export default router

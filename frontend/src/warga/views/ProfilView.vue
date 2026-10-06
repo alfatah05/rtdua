@@ -1,27 +1,36 @@
 <template>
   <div>
-    <h1 class="text-xl font-extrabold mb-4">Profil</h1>
+    <h1 class="text-[22px] font-extrabold mb-4 text-[var(--text)]">Profil</h1>
 
-    <UiCard class="mb-4">
+    <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] mb-4">
       <p class="font-bold text-lg">{{ user?.nama }}</p>
       <p class="text-[13px] text-[var(--mut)]">{{ user?.username }}</p>
-    </UiCard>
+    </div>
 
-    <UiCard class="mb-3" clickable @click="toggle">
-      <div class="flex items-center justify-between">
+    <div class="space-y-2">
+      <button type="button" class="w-full flex items-center justify-between bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 text-left" @click="toggle">
         <span class="font-semibold">Mode gelap</span>
         <span class="text-[13px] text-[var(--mut)]">{{ mode === 'dark' ? 'Aktif' : 'Nonaktif' }}</span>
-      </div>
-    </UiCard>
+      </button>
+      <button type="button" class="w-full flex items-center justify-between bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 text-left" @click="$router.push('/ganti-pin')">
+        <span class="font-semibold">Ganti PIN</span>
+        <ChevronRight :size="18" class="text-[var(--mut)]" />
+      </button>
+    </div>
 
-    <UiButton variant="secondary" block class="mt-6" @click="doLogout">Keluar</UiButton>
+    <button
+      type="button"
+      class="w-full min-h-[44px] mt-8 rounded-full bg-[var(--card2)] font-bold"
+      @click="doLogout"
+    >
+      Keluar
+    </button>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
-import UiCard from '@shared/components/UiCard.vue'
-import UiButton from '@shared/components/UiButton.vue'
+import { ChevronRight } from 'lucide-vue-next'
 import { useAuth } from '@shared/composables/useAuth.js'
 import { useTheme } from '@shared/composables/useTheme.js'
 
