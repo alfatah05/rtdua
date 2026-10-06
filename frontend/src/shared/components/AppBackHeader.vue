@@ -1,5 +1,5 @@
 <template>
-  <header class="flex items-center gap-1 mb-5">
+  <header class="sticky top-0 z-30 -mx-4 px-4 pt-1 pb-3 mb-3 flex items-center gap-1 bg-[var(--bg)]">
     <button
       type="button"
       class="w-11 h-11 -ml-2 grid place-items-center rounded-full text-[var(--text)] shrink-0"

@@ -55,34 +55,28 @@ function isActive(path) {
 
 <style scoped>
 .nav-pill {
-  width: 30px;
   height: 30px;
   border-radius: 9999px;
   color: var(--text);
 }
 .nav-pill-idle {
+  width: 30px;
   background: transparent;
   transform: scale(1);
 }
 .nav-pill-active {
-  width: 60px;
   background: var(--gd);
   color: var(--gm);
-  animation: navPillIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: navScale 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+             navExpand 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-@keyframes navPillIn {
-  0% {
-    width: 30px;
-    transform: scale(0.8);
-  }
-  45% {
-    width: 30px;
-    transform: scale(1);
-  }
-  100% {
-    width: 60px;
-    transform: scale(1);
-  }
+@keyframes navScale {
+  from { transform: scale(0.8); }
+  to { transform: scale(1); }
+}
+@keyframes navExpand {
+  from { width: 30px; }
+  to { width: 60px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-pill-active {
