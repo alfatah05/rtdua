@@ -17,11 +17,17 @@ export async function api(path, options = {}) {
   }
 
   const res = await fetch('/api' + path, opts)
+  const text = await res.text()
   let json = null
   try {
-    json = await res.json()
+    json = text ? JSON.parse(text) : null
   } catch {
-    json = { ok: false, error: 'Respons bukan JSON', data: null }
+    const snippet = (text || '').replace(/\s+/g, ' ').slice(0, 180)
+    json = {
+      ok: false,
+      error: `Respons bukan JSON (HTTP ${res.status})${snippet ? ': ' + snippet : ''}`,
+      data: null,
+    }
   }
 
   if (!res.ok || json?.ok === false) {
