@@ -1,0 +1,25 @@
+name: Tes alokasi pembayaran
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'backend/app/Libraries/AlokasiPembayaran.php'
+      - 'backend/tests/unit/AlokasiPembayaranTest.php'
+      - '.github/workflows/test-alokasi.yml'
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+jobs:
+  alokasi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - name: Jalankan tes alokasi
+        run: php backend/tests/unit/AlokasiPembayaranTest.php

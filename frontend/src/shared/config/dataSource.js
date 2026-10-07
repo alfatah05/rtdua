@@ -2,14 +2,14 @@
  * Saklar sumber data per modul.
  * true  = mock | false = API real
  *
- * Setelah backend Stage 10 deploy + setup + login API jalan:
- * set auth/pengaturan/warga/aktivitas ke false.
+ * Stage 10: auth/pengaturan/warga/aktivitas → real
+ * Stage 11: keuangan → real
  */
 export const USE_MOCK = {
   auth: false,
   pengaturan: false,
   warga: false,
-  keuangan: true,
+  keuangan: false,
   ronda: true,
   konten: true,
   notifikasi: true,
