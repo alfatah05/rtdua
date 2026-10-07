@@ -6,6 +6,8 @@ use App\Libraries\NikCrypto;
 
 class KeluargaService
 {
+    use KeluargaHelpers;
+
     public function list(array $filter = []): array
     {
         $db = \Config\Database::connect();
@@ -439,6 +441,4 @@ class KeluargaService
         return ['ok' => true];
     }
 
-    // --- helpers ---
-    use KeluargaHelpers;
 }

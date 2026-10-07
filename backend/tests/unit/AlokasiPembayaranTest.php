@@ -34,9 +34,11 @@ $r = AlokasiPembayaran::alokasi($tagihan, 50000);
 assert_eq(0, $r['sisaBayar'], 'contoh dok: tidak ada kelebihan');
 assert_eq(40000, $r['potongan'][0]['jumlah'], 'contoh dok: kas terpotong penuh');
 assert_eq('kas', $r['potongan'][0]['jenis'], 'contoh dok: pertama kas');
+// sisa 10rb ke denda terlama (2026-09)
 assert_eq(10000, $r['potongan'][1]['jumlah'], 'contoh dok: denda 09 terpotong 10rb');
 assert_eq(2, $r['potongan'][1]['tagihan_id'], 'contoh dok: id denda 09');
 
+// Prioritas khusus sebelum kas
 $tagihan2 = [
     ['id' => 10, 'jenis' => 'kas', 'periode' => '2026-08', 'sisa' => 40000],
     ['id' => 11, 'jenis' => 'khusus', 'periode' => '2026-10', 'sisa' => 25000],
@@ -47,15 +49,18 @@ assert_eq(25000, $r2['potongan'][0]['jumlah'], 'khusus penuh');
 assert_eq('kas', $r2['potongan'][1]['jenis'], 'sisa ke kas');
 assert_eq(5000, $r2['potongan'][1]['jumlah'], 'kas terpotong sisa');
 
+// Kelebihan bayar
 $r3 = AlokasiPembayaran::alokasi([
     ['id' => 1, 'jenis' => 'kas', 'periode' => '2026-10', 'sisa' => 40000],
 ], 50000);
 assert_eq(10000, $r3['sisaBayar'], 'kelebihan 10rb');
 
+// Bayar nol / kosong
 $r4 = AlokasiPembayaran::alokasi([], 1000);
 assert_eq(1000, $r4['sisaBayar'], 'tanpa tagihan: semua kelebihan');
 assert_eq([], $r4['potongan'], 'tanpa tagihan: potongan kosong');
 
+// Bulan terlama dalam jenis yang sama
 $tagihan5 = [
     ['id' => 1, 'jenis' => 'kas', 'periode' => '2026-10', 'sisa' => 40000],
     ['id' => 2, 'jenis' => 'kas', 'periode' => '2026-08', 'sisa' => 40000],
@@ -63,6 +68,7 @@ $tagihan5 = [
 $r5 = AlokasiPembayaran::alokasi($tagihan5, 40000);
 assert_eq(2, $r5['potongan'][0]['tagihan_id'], 'bulan 08 lebih dulu dari 10');
 
+// Cicil sebagian
 $r6 = AlokasiPembayaran::alokasi([
     ['id' => 1, 'jenis' => 'kas', 'periode' => '2026-10', 'sisa' => 40000],
 ], 15000);

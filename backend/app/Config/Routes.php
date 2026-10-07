@@ -41,3 +41,35 @@ $routes->get('bantuan', 'PengurusController::bantuan', ['filter' => 'auth']);
 $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
+
+// ---- Stage 11: Keuangan (pengurus) ----
+$routes->get('keuangan/iuran', 'KeuanganController::daftarIuran', ['filter' => 'auth']);
+$routes->get('keuangan/keluarga/(:num)', 'KeuanganController::ringkasanKeluarga/$1', ['filter' => 'auth']);
+$routes->post('keuangan/keluarga/(:num)/pratinjau', 'KeuanganController::pratinjauAlokasi/$1', ['filter' => 'auth']);
+$routes->post('keuangan/nominal', 'KeuanganController::ubahNominal', ['filter' => 'auth']);
+$routes->post('keuangan/pastikan-tagihan-kas', 'KeuanganController::pastikanTagihanKas', ['filter' => 'auth']);
+
+$routes->post('keuangan/pembayaran', 'KeuanganController::catatPembayaran', ['filter' => 'auth']);
+$routes->post('keuangan/pembayaran/(:num)/batal', 'KeuanganController::batalkanPembayaran/$1', ['filter' => 'auth']);
+$routes->post('keuangan/denda/(:num)/batal', 'KeuanganController::batalkanDenda/$1', ['filter' => 'auth']);
+
+$routes->get('keuangan/permintaan', 'KeuanganController::listPermintaan', ['filter' => 'auth']);
+$routes->post('keuangan/permintaan/(:num)/konfirmasi', 'KeuanganController::konfirmasiPermintaan/$1', ['filter' => 'auth']);
+$routes->post('keuangan/permintaan/(:num)/tolak', 'KeuanganController::tolakPermintaan/$1', ['filter' => 'auth']);
+
+$routes->get('keuangan/kas/saldo', 'KeuanganController::saldoKas', ['filter' => 'auth']);
+$routes->get('keuangan/kas', 'KeuanganController::listKas', ['filter' => 'auth']);
+$routes->post('keuangan/kas', 'KeuanganController::tambahKas', ['filter' => 'auth']);
+$routes->post('keuangan/kas/(:num)/batal', 'KeuanganController::batalkanKas/$1', ['filter' => 'auth']);
+
+$routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['filter' => 'auth']);
+$routes->post('keuangan/iuran-khusus', 'KeuanganController::buatIuranKhusus', ['filter' => 'auth']);
+$routes->put('keuangan/iuran-khusus/(:num)', 'KeuanganController::ubahIuranKhusus/$1', ['filter' => 'auth']);
+$routes->post('keuangan/iuran-khusus/(:num)/batal', 'KeuanganController::batalkanIuranKhusus/$1', ['filter' => 'auth']);
+
+$routes->get('keuangan/laporan', 'KeuanganController::laporan', ['filter' => 'auth']);
+
+// ---- Stage 11: Keuangan portal warga ----
+$routes->get('portal/keuangan', 'PortalKeuanganController::ringkasanSaya', ['filter' => 'auth']);
+$routes->post('portal/keuangan/transfer', 'PortalKeuanganController::ajukanTransfer', ['filter' => 'auth']);
+$routes->get('portal/keuangan/permintaan', 'PortalKeuanganController::statusPermintaan', ['filter' => 'auth']);
