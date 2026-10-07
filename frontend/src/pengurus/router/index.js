@@ -36,6 +36,12 @@ import TolakPermintaanView from '../views/TolakPermintaanView.vue'
 import IuranKhususView from '../views/IuranKhususView.vue'
 import DetailKasView from '../views/DetailKasView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
+import RondaJadwalTetapView from '../views/RondaJadwalTetapView.vue'
+import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
+import ProgramFormView from '../views/ProgramFormView.vue'
+import GaleriAlbumFormView from '../views/GaleriAlbumFormView.vue'
+import FilterKasView from '../views/FilterKasView.vue'
+import FilterIuranView from '../views/FilterIuranView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -67,8 +73,8 @@ const routes = [
       { path: 'keuangan/kas-masuk', component: KasFormView },
       { path: 'keuangan/kas-keluar', component: KasFormView },
       { path: 'keuangan/kas/:id', component: DetailKasView },
-      { path: 'keuangan/filter-kas', component: PlaceholderView, meta: { title: 'Filter riwayat kas' } },
-      { path: 'keuangan/filter-iuran', component: PlaceholderView, meta: { title: 'Filter iuran' } },
+      { path: 'keuangan/filter-kas', component: FilterKasView },
+      { path: 'keuangan/filter-iuran', component: FilterIuranView },
       { path: 'keuangan/ekspor-iuran', component: PlaceholderView, meta: { title: 'Ekspor iuran' } },
       { path: 'keuangan/laporan', component: LaporanView },
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
@@ -84,18 +90,18 @@ const routes = [
       { path: 'konten/pengumuman/tambah', component: PengumumanFormView },
       { path: 'konten/pengumuman/:id', component: PengumumanFormView },
       { path: 'konten/program', component: ProgramListView },
-      { path: 'konten/program/tambah', component: PlaceholderView, meta: { title: 'Tambah program' } },
-      { path: 'konten/program/:id', component: PlaceholderView, meta: { title: 'Detail program' } },
+      { path: 'konten/program/tambah', component: ProgramFormView },
+      { path: 'konten/program/:id', component: ProgramFormView },
       { path: 'konten/galeri', component: GaleriListView },
-      { path: 'konten/galeri/tambah', component: PlaceholderView, meta: { title: 'Buat album' } },
+      { path: 'konten/galeri/tambah', component: GaleriAlbumFormView },
       { path: 'konten/galeri/:id', component: PlaceholderView, meta: { title: 'Isi album' } },
       { path: 'konten/struktur', component: StrukturView },
 
       { path: 'ronda', component: RondaView },
       { path: 'ronda/malam/:date', component: RondaMalamView },
       { path: 'ronda/malam/edit', component: PlaceholderView, meta: { title: 'Ganti keluarga' } },
-      { path: 'ronda/jadwal-tetap', component: PlaceholderView, meta: { title: 'Jadwal tetap' } },
-      { path: 'ronda/jadwal-khusus', component: PlaceholderView, meta: { title: 'Jadwal khusus' } },
+      { path: 'ronda/jadwal-tetap', component: RondaJadwalTetapView },
+      { path: 'ronda/jadwal-khusus', component: RondaJadwalKhususView },
       { path: 'ronda/isi-otomatis', component: PlaceholderView, meta: { title: 'Isi otomatis' } },
 
       { path: 'pengaturan-warga', component: PengaturanWargaView },
