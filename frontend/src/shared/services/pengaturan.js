@@ -11,17 +11,14 @@ export function getBlok() {
   return impl().getBlok()
 }
 export function updateAplikasi(payload) {
-  return (USE_MOCK.pengaturan ? mock : real).updateAplikasi
-    ? (USE_MOCK.pengaturan ? Promise.resolve({ ok: true, data: null }) : real.updateAplikasi(payload))
-    : Promise.resolve({ ok: true })
+  if (USE_MOCK.pengaturan) return Promise.resolve({ ok: true, data: null })
+  return real.updateAplikasi(payload)
 }
 export function updateWarga(payload) {
-  return USE_MOCK.pengaturan
-    ? Promise.resolve({ ok: true, data: null })
-    : real.updateWarga(payload)
+  if (USE_MOCK.pengaturan) return Promise.resolve({ ok: true, data: null })
+  return real.updateWarga(payload)
 }
 export function tambahBlok(nama) {
-  return USE_MOCK.pengaturan
-    ? Promise.resolve({ ok: true, data: { nama } })
-    : real.tambahBlok(nama)
+  if (USE_MOCK.pengaturan) return Promise.resolve({ ok: true, data: { nama } })
+  return real.tambahBlok(nama)
 }
