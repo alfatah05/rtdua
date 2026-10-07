@@ -1,7 +1,6 @@
 import { api } from '../api/http.js'
 import { USE_MOCK } from '../config/dataSource.js'
 
-// ---- Pengumuman ----
 export async function listPengumuman({ beranda = false } = {}) {
   if (USE_MOCK.konten) return { ok: true, data: [] }
   try {
@@ -45,11 +44,18 @@ export async function hapusPengumuman(id) {
   }
 }
 
-// ---- Program ----
 export async function listProgram() {
   if (USE_MOCK.konten) return { ok: true, data: [] }
   try {
     const res = await api('/program')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function detailProgram(id) {
+  try {
+    const res = await api('/program/' + id)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -63,8 +69,23 @@ export async function buatProgram(payload) {
     return { ok: false, error: e.message }
   }
 }
+export async function ubahProgram(id, payload) {
+  try {
+    const res = await api('/program/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function hapusProgram(id) {
+  try {
+    await api('/program/' + id, { method: 'DELETE' })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
 
-// ---- Galeri ----
 export async function listAlbum() {
   if (USE_MOCK.konten) return { ok: true, data: [] }
   try {
@@ -74,10 +95,26 @@ export async function listAlbum() {
     return { ok: false, error: e.message }
   }
 }
+export async function detailAlbum(id) {
+  try {
+    const res = await api('/galeri/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
 export async function buatAlbum(payload) {
   try {
     const res = await api('/galeri', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function hapusAlbum(id) {
+  try {
+    await api('/galeri/' + id, { method: 'DELETE' })
+    return { ok: true }
   } catch (e) {
     return { ok: false, error: e.message }
   }

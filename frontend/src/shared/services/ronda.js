@@ -49,6 +49,24 @@ export async function simpanJadwalTetap(payload) {
   }
 }
 
+export async function listJadwalKhusus() {
+  try {
+    const res = await api('/ronda/jadwal-khusus')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function simpanJadwalKhusus(payload) {
+  try {
+    const res = await api('/ronda/jadwal-khusus', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function generateRonda(periode) {
   try {
     const res = await api('/ronda/generate', { method: 'POST', body: { periode } })
