@@ -1,12 +1,15 @@
 <?php
 /**
  * Thin proxy — pengurus
+ * Struktur: .../pengurus-dev.../api  → naik 4 = FTP root → rt-app
  */
+header('Content-Type: application/json; charset=utf-8');
+
 $_SERVER['HTTP_X_APP_SIDE'] = 'pengurus';
 
 $candidates = [
-    dirname(__DIR__, 3) . '/rt-app/public/index.php',
     dirname(__DIR__, 4) . '/rt-app/public/index.php',
+    dirname(__DIR__, 3) . '/rt-app/public/index.php',
     dirname(__DIR__, 5) . '/rt-app/public/index.php',
     dirname(__DIR__, 2) . '/rt-app/public/index.php',
 ];
@@ -14,30 +17,59 @@ $candidates = [
 $backend = null;
 $tried = [];
 foreach ($candidates as $p) {
-    $tried[] = $p;
-    if (is_file($p)) {
+    $ok = is_file($p);
+    $tried[] = ['path' => $p, 'exists' => $ok];
+    if ($ok && $backend === null) {
         $backend = $p;
-        break;
     }
 }
 
-if (!$backend) {
+if ($backend === null) {
     http_response_code(503);
-    header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'ok' => false,
-        'message' => 'Backend belum terpasang / path rt-app salah',
-        'data' => ['tried' => $tried, '__DIR__' => __DIR__],
+        'message' => 'rt-app tidak ketemu',
+        'side' => 'pengurus',
+        '__DIR__' => __DIR__,
+        'tried' => $tried,
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
+}
+
+$root = dirname($backend, 2); // .../rt-app
+$boot = $root . '/vendor/codeigniter4/framework/system/Boot.php';
+$pathsFile = $root . '/app/Config/Paths.php';
+
+if (isset($_GET['debug'])) {
+    echo json_encode([
+        'ok' => true,
+        'message' => 'path ketemu',
+        'backend' => $backend,
+        'side' => 'pengurus',
+        'vendor_boot' => is_file($boot),
+        'paths_php' => is_file($pathsFile),
+        'paths_system_hint' => 'harus vendor/codeigniter4/framework/system',
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     exit;
 }
 
 $uri = $_SERVER['REQUEST_URI'] ?? '';
-if (preg_match('#/api(/.*)$#', $uri, $m)) {
+$pathOnly = parse_url($uri, PHP_URL_PATH) ?: $uri;
+if (preg_match('#/api(/.*)$#', $pathOnly, $m)) {
     $_SERVER['REQUEST_URI'] = $m[1] ?: '/';
     $_SERVER['PATH_INFO'] = $m[1] ?: '/';
     $_SERVER['SCRIPT_NAME'] = '/index.php';
 }
 
-chdir(dirname($backend));
-require $backend;
+try {
+    chdir(dirname($backend));
+    require $backend;
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode([
+        'ok' => false,
+        'message' => 'CI boot error: ' . $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+}
