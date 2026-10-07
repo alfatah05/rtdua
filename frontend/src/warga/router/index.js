@@ -15,7 +15,8 @@ import BantuanView from '../views/BantuanView.vue'
 import StrukturView from '../views/StrukturView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import GantiPinView from '../views/GantiPinView.vue'
-import PlaceholderView from '../views/PlaceholderView.vue'
+import ProgramListView from '../views/ProgramListView.vue'
+import GaleriListView from '../views/GaleriListView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -36,8 +37,8 @@ const routes = [
       { path: 'struktur', name: 'struktur', component: StrukturView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
       { path: 'ganti-pin', name: 'ganti-pin', component: GantiPinView },
-      { path: 'program', name: 'program', component: PlaceholderView, meta: { title: 'Program RT' } },
-      { path: 'galeri', name: 'galeri', component: PlaceholderView, meta: { title: 'Galeri RT' } },
+      { path: 'program', name: 'program', component: ProgramListView },
+      { path: 'galeri', name: 'galeri', component: GaleriListView },
     ],
   },
 ]
@@ -53,7 +54,6 @@ router.beforeEach((to) => {
   restore('warga')
   if (!to.meta.public && !isLoggedIn.value) return { name: 'login' }
   if (to.name === 'login' && isLoggedIn.value) return { name: 'home' }
-  // Paksa ganti PIN
   if (isLoggedIn.value && user.value?.harus_ganti_kredensial && to.name !== 'ganti-pin') {
     return { name: 'ganti-pin' }
   }
