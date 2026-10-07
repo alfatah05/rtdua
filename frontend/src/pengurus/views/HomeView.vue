@@ -65,8 +65,8 @@
         <span class="block text-[12px] font-semibold text-[var(--mut)] mt-1">Keluarga (KK)</span>
       </div>
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
-        <div class="flex items-center gap-2"><Users :size="20" /><b class="text-[22px] font-extrabold">{{ pctLunas }}%</b></div>
-        <span class="block text-[12px] font-semibold text-[var(--mut)] mt-1">Iuran lunas</span>
+        <div class="flex items-center gap-2"><Users :size="20" /><b class="text-[22px] font-extrabold">{{ jumlahWarga }}</b></div>
+        <span class="block text-[12px] font-semibold text-[var(--mut)] mt-1">Warga</span>
       </div>
     </div>
 
@@ -128,6 +128,7 @@ const loadingKas = ref(true)
 const loadErr = ref('')
 const jumlahPermintaan = ref(0)
 const jumlahKk = ref(0)
+const jumlahWarga = ref(0)
 const jumlahLunas = ref(0)
 const aktivitas = ref([])
 const loadingAct = ref(true)
@@ -172,7 +173,11 @@ async function load() {
     loadErr.value = kas.error || 'Gagal memuat saldo'
   }
   if (perm.ok) jumlahPermintaan.value = (perm.data || []).length
-  if (kel.ok) jumlahKk.value = (kel.data || []).length
+  if (kel.ok) {
+    const rows = kel.data || []
+    jumlahKk.value = rows.length
+    jumlahWarga.value = rows.reduce((s, k) => s + (Number(k.jumlah_anggota) || 0), 0)
+  }
   if (iuran.ok) {
     const rows = iuran.data || []
     jumlahLunas.value = rows.filter((r) => (r.total ?? 0) <= 0 || r.status === 'lunas').length
