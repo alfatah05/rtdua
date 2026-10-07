@@ -64,15 +64,37 @@ class TugasService
             }
         }
 
+        // Denda ronda bulan lalu → tagihan bulan ini (setelah jam 12 tgl 1)
         if ((int) date('j') === 1 && (int) date('G') >= 12) {
             $lalu = date('Y-m', strtotime('first day of last month'));
             $kunciDenda = 'denda_ronda_' . $lalu;
             if (!$this->sudah($kunciDenda, $lalu)) {
-                $out['langkah']['denda_ronda'] = 'ditunda Stage 13 (ronda backend)';
+                try {
+                    $r = (new RondaService())->terbitkanDenda($lalu, $periode);
+                    $out['langkah']['denda_ronda'] = $r;
+                    $this->tandai($kunciDenda, $lalu);
+                } catch (\Throwable $e) {
+                    $out['langkah']['denda_ronda'] = ['error' => $e->getMessage()];
+                    log_message('error', 'Tugas denda ronda: ' . $e->getMessage());
+                }
+            } else {
+                $out['langkah']['denda_ronda'] = 'skip (sudah)';
             }
         }
 
-        $out['langkah']['malam_ronda'] = 'ditunda Stage 13';
+        // Pastikan malam ronda bulan ini ter-generate (idempoten per tanggal)
+        $kunciMalam = 'generate_malam_' . $periode;
+        if (!$this->sudah($kunciMalam, $periode)) {
+            try {
+                $r = (new RondaService())->generateBulan($periode);
+                $out['langkah']['malam_ronda'] = $r;
+                $this->tandai($kunciMalam, $periode);
+            } catch (\Throwable $e) {
+                $out['langkah']['malam_ronda'] = ['error' => $e->getMessage()];
+            }
+        } else {
+            $out['langkah']['malam_ronda'] = 'skip (sudah)';
+        }
 
         $kunciBersih = 'bersih_notif_' . $hari;
         if (!$this->sudah($kunciBersih, $hari)) {
@@ -93,8 +115,33 @@ class TugasService
         if ($this->sudah($kunci, $hari)) {
             return ['status' => 'skip', 'note' => 'sudah dijalankan hari ini'];
         }
+
+        try {
+            $malam = (new RondaService())->malamIni();
+            if ($malam && !empty($malam['keluarga'])) {
+                $notif = new NotifikasiService();
+                foreach ($malam['keluarga'] as $k) {
+                    if (($k['status'] ?? '') === 'hadir') {
+                        continue;
+                    }
+                    $notif->keKeluarga(
+                        (int) $k['keluarga_id'],
+                        'ronda',
+                        'Pengingat ronda malam ini',
+                        'Keluarga Anda bertugas ronda malam ini. Jangan lupa absen.',
+                        '/ronda'
+                    );
+                }
+                $out = ['status' => 'ok', 'jumlah' => count($malam['keluarga'])];
+            } else {
+                $out = ['status' => 'ok', 'note' => 'tidak ada ronda malam ini'];
+            }
+        } catch (\Throwable $e) {
+            $out = ['status' => 'error', 'note' => $e->getMessage()];
+        }
+
         $this->tandai($kunci, $hari);
-        return ['status' => 'ok', 'note' => 'pengingat ronda penuh di Stage 13'];
+        return $out;
     }
 
     public function tiapLimaMenit(): array
