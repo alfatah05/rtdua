@@ -42,6 +42,10 @@ import ProgramFormView from '../views/ProgramFormView.vue'
 import GaleriAlbumFormView from '../views/GaleriAlbumFormView.vue'
 import FilterKasView from '../views/FilterKasView.vue'
 import FilterIuranView from '../views/FilterIuranView.vue'
+import AngkatPengurusView from '../views/AngkatPengurusView.vue'
+import KelolaPengurusDetailView from '../views/KelolaPengurusDetailView.vue'
+import EksporIuranView from '../views/EksporIuranView.vue'
+import BatalDendaView from '../views/BatalDendaView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -66,7 +70,7 @@ const routes = [
       { path: 'keuangan/iuran', component: IuranView },
       { path: 'keuangan/tagihan/:id', component: TagihanDetailView },
       { path: 'keuangan/tagihan/:id/bayar', component: CatatBayarView },
-      { path: 'keuangan/tagihan/:id/batal-denda', component: PlaceholderView, meta: { title: 'Batalkan denda' } },
+      { path: 'keuangan/tagihan/:id/batal-denda', component: BatalDendaView },
       { path: 'keuangan/permintaan/:id', component: PermintaanDetailView },
       { path: 'keuangan/permintaan/:id/konfirmasi', component: KonfirmasiTransferView },
       { path: 'keuangan/permintaan/:id/tolak', component: TolakPermintaanView },
@@ -75,7 +79,7 @@ const routes = [
       { path: 'keuangan/kas/:id', component: DetailKasView },
       { path: 'keuangan/filter-kas', component: FilterKasView },
       { path: 'keuangan/filter-iuran', component: FilterIuranView },
-      { path: 'keuangan/ekspor-iuran', component: PlaceholderView, meta: { title: 'Ekspor iuran' } },
+      { path: 'keuangan/ekspor-iuran', component: EksporIuranView },
       { path: 'keuangan/laporan', component: LaporanView },
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
       { path: 'keuangan/catat', component: CatatIuranPilihView },
@@ -107,8 +111,8 @@ const routes = [
       { path: 'pengaturan-warga', component: PengaturanWargaView },
       { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
       { path: 'kelola-pengurus', component: KelolaPengurusView },
-      { path: 'kelola-pengurus/angkat', component: PlaceholderView, meta: { title: 'Angkat pengurus' } },
-      { path: 'kelola-pengurus/:id', component: PlaceholderView, meta: { title: 'Kelola pengurus' } },
+      { path: 'kelola-pengurus/angkat', component: AngkatPengurusView },
+      { path: 'kelola-pengurus/:id', component: KelolaPengurusDetailView },
     ],
   },
 ]
