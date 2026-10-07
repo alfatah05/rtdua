@@ -1,46 +1,44 @@
 <template>
   <div>
-    <AppBackHeader title="Jadwal Ronda" />
-
-    <!-- Card giliran berikutnya -->
-    <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4">
-      <p class="text-[13px] font-semibold text-[var(--mut)]">Giliran keluargamu berikutnya</p>
-      <p class="text-[17px] font-bold mt-1">Sabtu, 11 Oktober 2026</p>
-      <p class="text-[13px] text-[var(--mut)]">21.00 – 24.00 · Belum absen</p>
-      <button
-        type="button"
-        class="mt-3 min-h-[44px] px-5 rounded-full bg-[var(--g)] text-white font-bold text-[15px]"
-        @click="absenMsg = 'Fitur absen kamera menyusul di Stage berikutnya'"
-      >
-        Absen ronda
-      </button>
-      <p v-if="absenMsg" class="text-[13px] text-[var(--mut)] mt-2">{{ absenMsg }}</p>
-    </div>
-
-    <h2 class="text-[15px] font-bold mb-2">Malam mendatang</h2>
-    <div class="space-y-2 mb-5">
-      <div v-for="m in malam" :key="m.tanggal" class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4"
-        :class="m.milik ? 'ring-2 ring-[var(--g)]' : ''">
-        <p class="font-bold text-[15px] m-0">{{ m.tanggal }}</p>
-        <p class="text-[13px] text-[var(--mut)] m-0">{{ m.keluarga }} · {{ m.jam }}</p>
+    <AppBackHeader title="Jadwal ronda" />
+    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
+    <template v-else>
+      <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 mb-4">
+        <p class="text-[13px] text-[var(--mut)] m-0">Malam ini</p>
+        <template v-if="malam">
+          <p class="font-bold text-[16px] m-0 mt-1">{{ malam.tanggal }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0">{{ jam(malam.jam_mulai) }}–{{ jam(malam.jam_selesai) }}</p>
+          <p class="text-[13px] m-0 mt-2">Bertugas: {{ (malam.keluarga || []).map(k => k.alamat).join(', ') || '—' }}</p>
+        </template>
+        <p v-else class="text-[14px] text-[var(--mut)] m-0 mt-1">Tidak ada ronda malam ini</p>
       </div>
-    </div>
-
-    <h2 class="text-[15px] font-bold mb-2">Ringkasan bulan ini</h2>
-    <div class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4">
-      <p class="text-[15px] m-0">Hadir <b>2</b> kali · Tidak hadir <b>0</b> kali</p>
-      <p class="text-[13px] text-[var(--mut)] m-0 mt-1">Perkiraan denda: Rp 0</p>
-    </div>
+      <h2 class="text-[15px] font-bold mb-2">Kalender bulan ini</h2>
+      <div class="space-y-1">
+        <div v-for="d in kalender" :key="d.tanggal" class="flex justify-between px-2 py-2 border-b border-[var(--line)]">
+          <span class="font-semibold">{{ d.tanggal }}</span>
+          <span class="text-[13px] text-[var(--mut)]">{{ jam(d.jam_mulai) }}–{{ jam(d.jam_selesai) }} · {{ d.sumber }}</span>
+        </div>
+        <p v-if="!kalender.length" class="text-[13px] text-[var(--mut)] text-center py-4">Belum ada jadwal</p>
+      </div>
+    </template>
   </div>
 </template>
-
 <script setup>
+import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { ref } from 'vue'
-const absenMsg = ref('')
-const malam = [
-  { tanggal: 'Sabtu, 11 Okt', keluarga: 'Keluarga Anda', jam: '21.00–24.00', milik: true },
-  { tanggal: 'Senin, 13 Okt', keluarga: 'AB1-05, AB2-10', jam: '21.00–24.00', milik: false },
-  { tanggal: 'Rabu, 15 Okt', keluarga: 'AB11-12, AB12-03', jam: '21.00–24.00', milik: false },
-]
+import { malamIni, kalenderRonda } from '@shared/services/ronda.js'
+const loading = ref(true)
+const err = ref('')
+const malam = ref(null)
+const kalender = ref([])
+function jam(j) { return j ? String(j).slice(0, 5) : '—' }
+onMounted(async () => {
+  const periode = new Date().toISOString().slice(0, 7)
+  const [m, k] = await Promise.all([malamIni(), kalenderRonda(periode)])
+  loading.value = false
+  if (!m.ok && !k.ok) err.value = m.error || k.error || 'Gagal'
+  if (m.ok) malam.value = m.data
+  if (k.ok) kalender.value = k.data || []
+})
 </script>

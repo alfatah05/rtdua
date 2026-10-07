@@ -1,16 +1,18 @@
 <template>
   <div>
     <AppBackHeader title="Bantuan" />
-    <p class="text-[13px] text-[var(--mut)] mb-4">Ketuk untuk membuka WhatsApp</p>
-    <div class="space-y-2">
-      <a v-for="p in pengurus" :key="p.id" :href="waLink(p)" target="_blank" rel="noopener"
-        class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 shadow-[var(--sh)] no-underline text-[var(--text)] active:scale-[0.98] transition">
-        <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm flex-none">{{ inisial(p.nama) }}</div>
+    <p class="text-[13px] text-[var(--mut)] mb-4">Hubungi pengurus yang tampil di bawah.</p>
+    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
+    <p v-else-if="!list.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada kontak bantuan</p>
+    <div v-else class="space-y-2">
+      <a v-for="p in list" :key="p.id"
+        :href="waLink(p.nomor_hp)"
+        class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 no-underline text-[var(--text)]">
         <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0">{{ p.nama }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0">{{ p.jabatan }}</p>
+          <p class="font-bold m-0">{{ p.nama }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0">{{ p.jabatan }} · {{ p.nomor_hp || '—' }}</p>
         </div>
-        <MessageCircle :size="20" class="text-[#22C55E]" />
       </a>
     </div>
   </div>
@@ -18,22 +20,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { MessageCircle } from 'lucide-vue-next'
-import { useAuth } from '@shared/composables/useAuth.js'
 import { getBantuan } from '@shared/services/struktur.js'
-const { user } = useAuth()
-const pengurus = ref([])
-function inisial(nama) {
-  return String(nama || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+const list = ref([])
+const loading = ref(true)
+const err = ref('')
+function waLink(hp) {
+  const n = String(hp || '').replace(/\D/g, '').replace(/^0/, '')
+  return n ? 'https://wa.me/62' + n : '#'
 }
 onMounted(async () => {
   const res = await getBantuan()
-  if (res.ok) pengurus.value = res.data || []
+  loading.value = false
+  if (!res.ok) err.value = res.error || 'Gagal'
+  else list.value = res.data || []
 })
-function waLink(p) {
-  const hp = String(p.nomor_hp || p.hp || '').replace(/\D/g, '')
-  const nama = user.value?.nama || 'Warga'
-  const text = encodeURIComponent(`Halo ${p.nama}, saya ${nama} dari RT.`)
-  return `https://wa.me/${hp}?text=${text}`
-}
 </script>
