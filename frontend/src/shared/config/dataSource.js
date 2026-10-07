@@ -6,12 +6,12 @@
  * set auth/pengaturan/warga/aktivitas ke false.
  */
 export const USE_MOCK = {
-  auth: true,
-  pengaturan: true,
-  warga: true,
+  auth: false,
+  pengaturan: false,
+  warga: false,
   keuangan: true,
   ronda: true,
   konten: true,
   notifikasi: true,
-  aktivitas: true,
+  aktivitas: false,
 }
