@@ -1,15 +1,12 @@
 <template>
   <div>
-    <!-- Header utama: rtdua + lonceng -->
-        <AppMainHeader />
-
-    <!-- Kop RT -->
+    <AppMainHeader />
     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
       <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center">
         <Landmark :size="26" class="text-[var(--mut)]" />
       </div>
       <div>
-        <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt }}</p>
+        <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
         <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
       </div>
       <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center">
@@ -18,7 +15,6 @@
     </div>
     <div class="h-px bg-[var(--line)] my-4"></div>
 
-    <!-- Pengumuman (max 3, pin dulu) -->
     <div class="space-y-3 mb-4">
       <div
         v-for="(p, i) in pengumuman"
@@ -30,8 +26,7 @@
         <div class="p-5 relative z-10">
           <div class="flex items-center justify-between gap-2">
             <span class="flex items-center gap-2 text-[13px] font-semibold" :class="i === 0 ? 'text-white/90' : 'text-[var(--mut)]'">
-              <Megaphone :size="16" />
-              Pengumuman
+              <Megaphone :size="16" /> Pengumuman
             </span>
             <span class="text-[12px] font-semibold px-3 py-1 rounded-full" :class="i === 0 ? 'bg-white/20' : 'bg-[var(--search)] text-[var(--mut)]'">
               {{ p.tanggal }}
@@ -43,21 +38,20 @@
             type="button"
             class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px]"
             :class="i === 0 ? 'bg-white text-[#0B6B34]' : 'bg-[var(--card2)] text-[var(--text)]'"
-            @click="$router.push('/pengumuman')"
+            @click="$router.push('/pengumuman/' + p.id)"
           >
-            Lihat detail
-            <ChevronRight :size="18" />
+            Lihat detail <ChevronRight :size="18" />
           </button>
         </div>
         <div v-if="i === 0" class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
       </div>
+      <p v-if="!pengumuman.length && !loading" class="text-[13px] text-[var(--mut)] text-center py-2">Belum ada pengumuman</p>
     </div>
 
     <router-link to="/pengumuman" class="block text-center text-[13px] font-semibold text-[var(--g)] mb-5 no-underline">
       Pengumuman lain →
     </router-link>
 
-    <!-- Card iuran -->
     <button
       type="button"
       class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition mb-4"
@@ -71,7 +65,6 @@
       <ChevronRight :size="20" class="text-[var(--mut)] flex-none" />
     </button>
 
-    <!-- Grid menu -->
     <div class="grid grid-cols-2 gap-2">
       <button
         v-for="m in menus"
@@ -80,29 +73,24 @@
         class="relative flex flex-col items-start gap-1 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition"
         @click="$router.push(m.to)"
       >
-        <span
-          class="w-11 h-11 rounded-full grid place-items-center mb-2"
-          :style="{ background: m.bg, color: m.color }"
-        >
+        <span class="w-11 h-11 rounded-full grid place-items-center mb-2" :style="{ background: m.bg, color: m.color }">
           <component :is="m.icon" :size="20" />
         </span>
         <b class="text-[15px] font-bold leading-tight">{{ m.label }}</b>
         <span class="text-[13px] text-[var(--mut)] leading-snug">{{ m.desc }}</span>
-        <span
-          class="absolute top-[26px] right-4 w-7 h-7 rounded-full grid place-items-center"
-          :style="{ background: m.bg, color: m.color }"
-        >
+        <span class="absolute top-[26px] right-4 w-7 h-7 rounded-full grid place-items-center" :style="{ background: m.bg, color: m.color }">
           <ChevronRight :size="16" />
         </span>
       </button>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { getPengaturan } from '@shared/services/pengaturan.js'
+import { listPengumuman } from '@shared/services/konten.js'
+import { portalRingkasan } from '@shared/services/keuangan.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight,
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
@@ -114,50 +102,23 @@ const heroStyle = {
 
 const namaRt = ref('')
 const namaPerumahan = ref('')
+const pengumuman = ref([])
+const iuranLabel = ref('Iuran')
+const iuranNominal = ref('Memuat…')
+const loading = ref(true)
 
-onMounted(async () => {
-  const res = await getPengaturan()
-  if (res.ok && res.data) {
-    namaRt.value = res.data.nama_rt || ''
-    namaPerumahan.value = res.data.nama_perumahan || ''
-  }
-})
-
-const iuranStatus = 'ada'
-const iuranLabel = iuranStatus === 'lunas'
-  ? 'Semua iuran sudah lunas'
-  : iuranStatus === 'lebih'
-    ? 'Kelebihan bayar'
-    : 'Iuran yang belum dibayar'
-const iuranNominal = iuranStatus === 'lunas'
-  ? ''
-  : iuranStatus === 'lebih'
-    ? 'Rp 25.000'
-    : 'Rp 10.000'
-
-const pengumuman = [
-  {
-    id: 1,
-    pin: true,
-    tanggal: '3 Oktober',
-    judul: 'Kerja bakti membersihkan selokan',
-    ringkas: 'Hari Minggu, 12 Oktober pukul 07.00. Semua warga diharapkan hadir dan membawa alat kebersihan.',
-  },
-  {
-    id: 2,
-    pin: true,
-    tanggal: '1 Oktober',
-    judul: 'Tagihan kas Oktober sudah terbit',
-    ringkas: 'Silakan cek rincian iuran di menu Keuangan.',
-  },
-  {
-    id: 3,
-    pin: false,
-    tanggal: '28 September',
-    judul: 'Jadwal ronda bulan Oktober',
-    ringkas: 'Jadwal sudah tersedia. Cek giliran keluarga Anda.',
-  },
-]
+function formatTgl(s) {
+  if (!s) return ''
+  const d = new Date(String(s).replace(' ', 'T'))
+  return isNaN(d.getTime()) ? String(s).slice(0, 10) : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+}
+function ringkas(isi) {
+  const t = String(isi || '').replace(/\s+/g, ' ').trim()
+  return t.length > 100 ? t.slice(0, 100) + '…' : t
+}
+function rp(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
+}
 
 const menus = [
   { to: '/pengumuman', label: 'Pengumuman', desc: 'Riwayat kabar pengurus', icon: Megaphone, bg: 'rgba(245,158,11,.18)', color: '#D97706' },
@@ -167,4 +128,37 @@ const menus = [
   { to: '/struktur', label: 'Struktur Pengurus', desc: 'Ketua dan pengurus', icon: Network, bg: 'rgba(99,102,241,.18)', color: '#4F46E5' },
   { to: '/bantuan', label: 'Bantuan', desc: 'Hubungi via WhatsApp', icon: MessageCircle, bg: 'rgba(34,197,94,.18)', color: '#16A34A' },
 ]
+
+onMounted(async () => {
+  const [pg, pn, iu] = await Promise.all([
+    getPengaturan(),
+    listPengumuman({ beranda: true }),
+    portalRingkasan(),
+  ])
+  loading.value = false
+  if (pg.ok && pg.data) {
+    namaRt.value = pg.data.nama_rt || 'RT'
+    namaPerumahan.value = pg.data.nama_perumahan || ''
+  }
+  if (pn.ok) {
+    pengumuman.value = (pn.data || []).slice(0, 3).map((p) => ({
+      id: p.id,
+      judul: p.judul,
+      ringkas: ringkas(p.isi),
+      tanggal: formatTgl(p.diterbitkan_pada),
+    }))
+  }
+  if (iu.ok && iu.data) {
+    const total = iu.data.total ?? iu.data.total_tagihan ?? 0
+    if (total > 0) {
+      iuranLabel.value = 'Iuran yang belum dibayar'
+      iuranNominal.value = rp(total)
+    } else {
+      iuranLabel.value = 'Semua iuran sudah lunas'
+      iuranNominal.value = 'Lunas'
+    }
+  } else {
+    iuranNominal.value = '—'
+  }
+})
 </script>
