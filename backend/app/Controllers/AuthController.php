@@ -9,11 +9,25 @@ use CodeIgniter\RESTful\ResourceController;
 
 class AuthController extends ResourceController
 {
+    /** Baca body JSON tanpa throw (CI getJSON() melempar HTTPException jika body kosong/rusak). */
+    private function jsonBody(): array
+    {
+        $raw = $this->request->getBody();
+        if ($raw === null || $raw === '') {
+            $raw = $this->request->getRawInput();
+        }
+        if (!$raw) {
+            return [];
+        }
+        $data = json_decode($raw, true);
+        return is_array($data) ? $data : [];
+    }
+
     public function login()
     {
         try {
             $side = SideContext::fromRequest();
-            $json = $this->request->getJSON(true) ?? [];
+            $json = $this->jsonBody();
             $username = trim((string) ($json['username'] ?? ''));
             $secret = (string) ($json['password'] ?? $json['pin'] ?? '');
 
@@ -73,7 +87,7 @@ class AuthController extends ResourceController
             if (!$user) {
                 return ApiResponse::fail('Belum login.', 401);
             }
-            $json = $this->request->getJSON(true) ?? [];
+            $json = $this->jsonBody();
             $new = (string) ($json['new_password'] ?? $json['new_pin'] ?? '');
             $result = $auth->changeCredential($side, (int) $user['id'], $new);
             if (!$result['ok']) {
