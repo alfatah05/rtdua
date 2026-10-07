@@ -7,7 +7,6 @@ namespace App\Services;
  */
 class TugasService
 {
-    /** Sudah pernah selesai untuk periode ini? */
     public function sudah(string $jenis, string $periode): bool
     {
         $db = \Config\Database::connect();
@@ -29,20 +28,12 @@ class TugasService
         }
     }
 
-    /**
-     * Job harian 00.05 WIB.
-     * - Tagihan kas bulan berjalan (setiap hari aman / idempoten di TagihanService)
-     * - Tanggal 1: notifikasi tagihan baru ke warga
-     * - Bersih notifikasi lama
-     * - Stub: malam ronda & denda (penuh di Stage 13)
-     */
     public function harian(): array
     {
         $hari = date('Y-m-d');
         $periode = date('Y-m');
         $out = ['periode' => $periode, 'langkah' => []];
 
-        // 1) Pastikan tagihan kas bulan ini
         $kunciTagihan = 'tagihan_kas_' . $periode;
         if (!$this->sudah($kunciTagihan, $periode)) {
             try {
@@ -58,7 +49,6 @@ class TugasService
             $out['langkah']['tagihan_kas'] = 'skip (sudah)';
         }
 
-        // 2) Tanggal 1: satu notifikasi tagihan baru per keluarga (idempoten)
         if ((int) date('j') === 1) {
             $kunciNotif = 'notif_tagihan_baru_' . $periode;
             if (!$this->sudah($kunciNotif, $periode)) {
@@ -74,20 +64,16 @@ class TugasService
             }
         }
 
-        // 3) Denda + kunci absensi bulan lalu — setelah tgl 1 pukul 12:00 (stub penuh Stage 13)
         if ((int) date('j') === 1 && (int) date('G') >= 12) {
             $lalu = date('Y-m', strtotime('first day of last month'));
             $kunciDenda = 'denda_ronda_' . $lalu;
             if (!$this->sudah($kunciDenda, $lalu)) {
                 $out['langkah']['denda_ronda'] = 'ditunda Stage 13 (ronda backend)';
-                // jangan tandai agar Stage 13 bisa mengisi
             }
         }
 
-        // 4) Buat malam ronda bulan ini — Stage 13
         $out['langkah']['malam_ronda'] = 'ditunda Stage 13';
 
-        // 5) Bersih notifikasi > 90 hari (boleh tiap hari)
         $kunciBersih = 'bersih_notif_' . $hari;
         if (!$this->sudah($kunciBersih, $hari)) {
             $n = (new NotifikasiService())->bersihkanLama(90);
@@ -95,13 +81,11 @@ class TugasService
             $out['langkah']['bersih_notif'] = $n;
         }
 
-        // 6) Hapus bukti transfer > 90 hari (file)
         $out['langkah']['bersih_bukti'] = $this->bersihFileLama('writable/uploads/bukti', 90);
 
         return $out;
     }
 
-    /** Job sore 17.00 — pengingat ronda malam ini (penuh Stage 13). */
     public function sore(): array
     {
         $hari = date('Y-m-d');
@@ -109,12 +93,10 @@ class TugasService
         if ($this->sudah($kunci, $hari)) {
             return ['status' => 'skip', 'note' => 'sudah dijalankan hari ini'];
         }
-        // Stage 13: cek ronda_malam tanggal hari ini, notif ke keluarga tugas
         $this->tandai($kunci, $hari);
         return ['status' => 'ok', 'note' => 'pengingat ronda penuh di Stage 13'];
     }
 
-    /** Job tiap 5 menit — ulang push gagal. */
     public function tiapLimaMenit(): array
     {
         return (new PushService())->ulangGagal(40);

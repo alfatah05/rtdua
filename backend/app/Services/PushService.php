@@ -100,7 +100,6 @@ class PushService
         $this->tandaiStatus($notifId, $okAny ? 'sent' : 'pending');
     }
 
-    /** Cron: ulang push pending (batch). */
     public function ulangGagal(int $limit = 40): array
     {
         $db = \Config\Database::connect();
@@ -126,7 +125,6 @@ class PushService
                 log_message('error', 'ulangGagal: ' . $e->getMessage());
             }
         }
-        // hapus langganan gagal berlebih
         $db->table('push_langganan')->where('jumlah_gagal >=', 8)->update(['aktif' => 0]);
         return ['sent' => $sent, 'fail' => $fail];
     }
@@ -143,9 +141,6 @@ class PushService
         ], false)->update();
     }
 
-    /**
-     * @return bool|null true=ok, false=gagal, null=library tidak siap
-     */
     private function kirimKeLangganan(array $row, string $payload): ?bool
     {
         if (!class_exists(\Minishlink\WebPush\WebPush::class)) {
