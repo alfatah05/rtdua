@@ -88,3 +88,34 @@ $routes->post('push/unsubscribe', 'PushController::unsubscribe', ['filter' => 'a
 $routes->get('tugas/harian', 'TugasController::harian', ['filter' => 'cron']);
 $routes->get('tugas/sore', 'TugasController::sore', ['filter' => 'cron']);
 $routes->get('tugas/5menit', 'TugasController::tiapLimaMenit', ['filter' => 'cron']);
+
+// ---- Stage 13: Konten ----
+$routes->get('pengumuman', 'KontenController::listPengumuman', ['filter' => 'auth']);
+$routes->get('pengumuman/(:num)', 'KontenController::detailPengumuman/$1', ['filter' => 'auth']);
+$routes->post('pengumuman', 'KontenController::buatPengumuman', ['filter' => 'auth']);
+$routes->put('pengumuman/(:num)', 'KontenController::ubahPengumuman/$1', ['filter' => 'auth']);
+$routes->delete('pengumuman/(:num)', 'KontenController::hapusPengumuman/$1', ['filter' => 'auth']);
+$routes->get('program', 'KontenController::listProgram', ['filter' => 'auth']);
+$routes->get('program/(:num)', 'KontenController::detailProgram/$1', ['filter' => 'auth']);
+$routes->post('program', 'KontenController::buatProgram', ['filter' => 'auth']);
+$routes->put('program/(:num)', 'KontenController::ubahProgram/$1', ['filter' => 'auth']);
+$routes->delete('program/(:num)', 'KontenController::hapusProgram/$1', ['filter' => 'auth']);
+$routes->get('galeri', 'KontenController::listAlbum', ['filter' => 'auth']);
+$routes->get('galeri/(:num)', 'KontenController::detailAlbum/$1', ['filter' => 'auth']);
+$routes->post('galeri', 'KontenController::buatAlbum', ['filter' => 'auth']);
+$routes->delete('galeri/(:num)', 'KontenController::hapusAlbum/$1', ['filter' => 'auth']);
+$routes->post('galeri/(:num)/foto', 'KontenController::tambahFoto/$1', ['filter' => 'auth']);
+$routes->post('galeri/foto/hapus', 'KontenController::hapusFoto', ['filter' => 'auth']);
+
+// ---- Stage 13: Ronda ----
+$routes->get('ronda/kalender', 'RondaController::kalender', ['filter' => 'auth']);
+$routes->get('ronda/malam-ini', 'RondaController::malamIni', ['filter' => 'auth']);
+$routes->get('ronda/malam/(:segment)', 'RondaController::detailMalam/$1', ['filter' => 'auth']);
+$routes->get('ronda/jadwal-tetap', 'RondaController::listJadwalTetap', ['filter' => 'auth']);
+$routes->post('ronda/jadwal-tetap', 'RondaController::simpanJadwalTetap', ['filter' => 'auth']);
+$routes->get('ronda/jadwal-khusus', 'RondaController::listJadwalKhusus', ['filter' => 'auth']);
+$routes->post('ronda/jadwal-khusus', 'RondaController::simpanJadwalKhusus', ['filter' => 'auth']);
+$routes->post('ronda/generate', 'RondaController::generateBulan', ['filter' => 'auth']);
+$routes->post('ronda/absen-manual', 'RondaController::absenManual', ['filter' => 'auth']);
+$routes->post('ronda/absen/(:num)/batal', 'RondaController::batalkanAbsen/$1', ['filter' => 'auth']);
+$routes->post('ronda/terbitkan-denda', 'RondaController::terbitkanDenda', ['filter' => 'auth']);
