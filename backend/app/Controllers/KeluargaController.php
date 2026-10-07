@@ -85,7 +85,19 @@ class KeluargaController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new KeluargaService())->updateAnggota((int) $anggotaId, $json, (int) $user['id']);
+        $svc = new KeluargaService();
+        $res = $svc->updateAnggota((int) $anggotaId, $json, (int) $user['id']);
+        // Izinkan path foto (pas foto kepala) meski service lama belum list field foto
+        if (array_key_exists('foto', $json)) {
+            $db = \Config\Database::connect();
+            $db->table('warga')->where('id', (int) $anggotaId)->update([
+                'foto' => $json['foto'] ? (string) $json['foto'] : null,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            if (!$res['ok'] && $res['message'] === 'Tidak ada perubahan.') {
+                $res = ['ok' => true];
+            }
+        }
         return $res['ok'] ? ApiResponse::ok(null, 'Disimpan') : ApiResponse::fail($res['message'], 422);
     }
 
@@ -99,7 +111,6 @@ class KeluargaController extends Controller
         $status = (string) ($json['status'] ?? '');
         $svc = new KeluargaService();
         if (!empty($json['kepala_baru_id'])) {
-            // set kepala baru dulu jika ada
             $db = \Config\Database::connect();
             $a = $db->table('warga')->where('id', (int) $anggotaId)->get()->getRowArray();
             if ($a) {
