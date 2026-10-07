@@ -1,40 +1,44 @@
 <template>
   <div>
     <AppBackHeader title="Notifikasi" />
-
-    <div v-for="(group, hari) in grouped" :key="hari" class="mb-5">
-      <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2">{{ hari }}</h2>
-      <div class="px-1 space-y-0.5">
-        <div
-          v-for="n in group"
-          :key="n.id"
-          class="w-full flex flex-row items-start gap-3 px-2 py-3 rounded-[12px]"
-          :class="!n.dibaca ? 'bg-[var(--ok)]/40' : ''"
-        >
-          <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 flex-none"></div>
-          <div class="min-w-0">
-            <p class="font-bold text-[15px] m-0">{{ n.judul }}</p>
-            <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ n.isi }}</p>
-            <p class="text-[12px] text-[var(--mut)] m-0 mt-1">{{ n.waktu }}</p>
-          </div>
-        </div>
-      </div>
+    <button v-if="daftar.length" type="button" class="text-[13px] font-semibold text-[var(--g)] mb-3" @click="bacaSemua">Tandai semua dibaca</button>
+    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
+    <p v-else-if="!daftar.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada notifikasi</p>
+    <div v-else class="space-y-1">
+      <button v-for="n in daftar" :key="n.id" type="button"
+        class="w-full text-left px-2 py-3 border-b border-[var(--line)]"
+        :class="n.dibaca ? 'opacity-60' : ''"
+        @click="baca(n)">
+        <p class="font-bold text-[14px] m-0">{{ n.judul }}</p>
+        <p class="text-[13px] text-[var(--mut)] m-0">{{ n.isi }}</p>
+        <p class="text-[11px] text-[var(--mut)] m-0 mt-1">{{ n.dibuat_pada || n.created_at }}</p>
+      </button>
     </div>
   </div>
 </template>
-
 <script setup>
+import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-const daftar = [
-  { id: 1, hari: 'Hari ini', judul: 'Tagihan bulan baru', isi: 'Tagihan kas Oktober sudah terbit.', waktu: '08.00', dibaca: false },
-  { id: 2, hari: 'Hari ini', judul: 'Pengumuman baru', isi: 'Kerja bakti membersihkan selokan.', waktu: '07.30', dibaca: false },
-  { id: 3, hari: 'Kemarin', judul: 'Pembayaran dikonfirmasi', isi: 'Transfer Rp 40.000 sudah dikonfirmasi.', waktu: '14.20', dibaca: true },
-  { id: 4, hari: 'Kemarin', judul: 'Pengingat ronda', isi: 'Malam ini giliran ronda keluargamu.', waktu: '17.00', dibaca: true },
-]
-
-const grouped = {}
-daftar.forEach(n => {
-  if (!grouped[n.hari]) grouped[n.hari] = []
-  grouped[n.hari].push(n)
-})
+import { listNotifikasi, bacaNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
+const daftar = ref([])
+const loading = ref(true)
+const err = ref('')
+async function load() {
+  loading.value = true
+  const res = await listNotifikasi()
+  loading.value = false
+  if (!res.ok) { err.value = res.error || 'Gagal'; return }
+  const d = res.data
+  daftar.value = Array.isArray(d) ? d : (d?.items || [])
+}
+async function baca(n) {
+  if (!n.dibaca) await bacaNotifikasi(n.id)
+  await load()
+}
+async function bacaSemua() {
+  await bacaSemuaNotifikasi()
+  await load()
+}
+onMounted(load)
 </script>
