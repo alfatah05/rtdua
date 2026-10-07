@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import { getVapidPublic, subscribePush, unsubscribePush } from '../services/notifikasi.js'
 
 const supported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window
-const status = ref('unknown') // unknown | denied | granted | unsupported
+const status = ref('unknown')
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
