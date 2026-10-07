@@ -11,29 +11,24 @@
     <form class="space-y-4" @submit.prevent="submit">
       <div class="flex gap-3 items-start">
         <div class="flex-1 min-w-0">
-          <label class="block text-[13px] font-semibold text-[var(--text)] mb-1.5">Blok</label>
+          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Blok</label>
           <select
             v-model="blokNama"
-            class="w-full min-h-[48px] px-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--g)]"
-            :class="errors.blok ? 'border-red-400' : ''"
+            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] text-[var(--text)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)] appearance-none"
           >
             <option value="" disabled>Pilih blok</option>
             <option v-for="b in blokList" :key="b.id" :value="b.nama">{{ b.nama }}</option>
           </select>
-          <p v-if="errors.blok" class="text-[12px] text-red-600 mt-1">{{ errors.blok }}</p>
+          <p v-if="errors.blok" class="mt-1.5 text-[13px] text-red-600">{{ errors.blok }}</p>
         </div>
         <div class="flex-1 min-w-0">
-          <label class="block text-[13px] font-semibold text-[var(--text)] mb-1.5">Nomor</label>
-          <input
+          <UiInput
             v-model="nomor"
-            type="text"
-            inputmode="text"
+            label="Nomor"
+            placeholder="19 atau 19a"
             autocomplete="off"
-            placeholder="Contoh: 19 atau 19a"
-            class="w-full min-h-[48px] px-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--g)] placeholder:text-[var(--mut)]"
-            :class="errors.nomor ? 'border-red-400' : ''"
+            :error="errors.nomor"
           />
-          <p v-if="errors.nomor" class="text-[12px] text-red-600 mt-1">{{ errors.nomor }}</p>
         </div>
       </div>
 
@@ -83,7 +78,7 @@ onMounted(async () => {
       blokList.value = json.data
     }
   } catch (e) {
-    // dropdown kosong — user masih bisa ketik nomor; blok wajib dari list
+    // biarkan dropdown kosong jika API belum siap
   }
 })
 
