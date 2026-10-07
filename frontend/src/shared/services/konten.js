@@ -119,3 +119,19 @@ export async function hapusAlbum(id) {
     return { ok: false, error: e.message }
   }
 }
+export async function tambahFoto(albumId, payload) {
+  try {
+    const res = await api('/galeri/' + albumId + '/foto', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function hapusFoto(ids) {
+  try {
+    const res = await api('/galeri/foto/hapus', { method: 'POST', body: { ids } })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
