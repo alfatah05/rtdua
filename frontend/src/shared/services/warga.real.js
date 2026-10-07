@@ -40,6 +40,15 @@ export async function updateKeluarga(id, payload) {
   }
 }
 
+export async function updateAnggota(id, payload) {
+  try {
+    const res = await api('/anggota/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function resetPin(id) {
   try {
     await api('/warga/' + id + '/reset-pin', { method: 'POST', body: {} })

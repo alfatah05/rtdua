@@ -18,6 +18,9 @@ export function createKeluarga(payload) {
 export function updateKeluarga(id, payload) {
   return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.updateKeluarga(id, payload)
 }
+export function updateAnggota(id, payload) {
+  return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.updateAnggota(id, payload)
+}
 export function resetPin(id) {
   return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.resetPin(id)
 }
