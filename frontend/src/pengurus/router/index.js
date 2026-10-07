@@ -8,6 +8,8 @@ import WargaFilterView from '../views/WargaFilterView.vue'
 import WargaDetailView from '../views/WargaDetailView.vue'
 import WargaTambahView from '../views/WargaTambahView.vue'
 import WargaEksporView from '../views/WargaEksporView.vue'
+import WargaEditView from '../views/WargaEditView.vue'
+import WargaPindahView from '../views/WargaPindahView.vue'
 import KeuanganView from '../views/KeuanganView.vue'
 import IuranView from '../views/IuranView.vue'
 import TagihanDetailView from '../views/TagihanDetailView.vue'
@@ -40,6 +42,7 @@ import RondaJadwalTetapView from '../views/RondaJadwalTetapView.vue'
 import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
 import ProgramFormView from '../views/ProgramFormView.vue'
 import GaleriAlbumFormView from '../views/GaleriAlbumFormView.vue'
+import GaleriDetailView from '../views/GaleriDetailView.vue'
 import FilterKasView from '../views/FilterKasView.vue'
 import FilterIuranView from '../views/FilterIuranView.vue'
 import AngkatPengurusView from '../views/AngkatPengurusView.vue'
@@ -60,10 +63,10 @@ const routes = [
       { path: 'warga/ekspor', component: WargaEksporView },
       { path: 'warga/scan-kk', component: PlaceholderView, meta: { title: 'Scan KK' } },
       { path: 'warga/:id', component: WargaDetailView },
-      { path: 'warga/:id/edit', component: PlaceholderView, meta: { title: 'Edit keluarga' } },
+      { path: 'warga/:id/edit', component: WargaEditView },
       { path: 'warga/:id/tambah-anggota', component: PlaceholderView, meta: { title: 'Tambah anggota' } },
       { path: 'warga/:id/meninggal', component: PlaceholderView, meta: { title: 'Tandai meninggal' } },
-      { path: 'warga/:id/pindah', component: PlaceholderView, meta: { title: 'Pindah keluarga' } },
+      { path: 'warga/:id/pindah', component: WargaPindahView },
       { path: 'warga/:id/reset-pin', component: PlaceholderView, meta: { title: 'Reset PIN' } },
 
       { path: 'keuangan', name: 'keuangan', component: KeuanganView },
@@ -98,7 +101,7 @@ const routes = [
       { path: 'konten/program/:id', component: ProgramFormView },
       { path: 'konten/galeri', component: GaleriListView },
       { path: 'konten/galeri/tambah', component: GaleriAlbumFormView },
-      { path: 'konten/galeri/:id', component: PlaceholderView, meta: { title: 'Isi album' } },
+      { path: 'konten/galeri/:id', component: GaleriDetailView },
       { path: 'konten/struktur', component: StrukturView },
 
       { path: 'ronda', component: RondaView },
