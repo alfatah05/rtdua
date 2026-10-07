@@ -20,4 +20,11 @@ class Session extends BaseConfig
     public bool $matchIP = false;
     public int $timeToUpdate = 300;
     public bool $regenerateDestroy = false;
+
+    // Properti wajib CI4.5+ (hindari Error di PHP 8 saat session start)
+    public ?string $cookieDomain = '';
+    public string $cookiePath = '/';
+    public bool $cookieSecure = false;
+    public bool $cookieHTTPOnly = true;
+    public string $cookieSameSite = 'Lax';
 }
