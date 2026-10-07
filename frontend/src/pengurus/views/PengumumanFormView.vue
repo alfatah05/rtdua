@@ -1,7 +1,8 @@
 <template>
   <div>
     <AppBackHeader :title="isEdit ? 'Edit pengumuman' : 'Tambah pengumuman'" />
-    <form class="space-y-4" @submit.prevent="onSave">
+    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <form v-else class="space-y-4" @submit.prevent="onSave">
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Judul</label>
         <input v-model="judul" type="text" placeholder="Judul pengumuman"
@@ -12,10 +13,6 @@
         <textarea v-model="isi" rows="5" placeholder="Isi pengumuman"
           class="w-full px-4 py-3 rounded-[12px] bg-[var(--search)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)] resize-none" />
       </div>
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Lampiran (PDF/gambar, opsional)</label>
-        <div class="w-full min-h-[80px] rounded-[12px] bg-[var(--search)] grid place-items-center text-[13px] text-[var(--mut)]">Ketuk untuk pilih file</div>
-      </div>
       <label class="flex items-center gap-3 min-h-[44px]">
         <input v-model="pin" type="checkbox" class="w-5 h-5 accent-[var(--g)]" />
         <span class="text-[15px] font-semibold">Pin di Beranda warga (maks 2)</span>
@@ -25,32 +22,86 @@
         <span class="text-[15px] font-semibold">Kirim notifikasi lagi</span>
       </label>
       <p v-if="pinError" class="text-[13px] text-red-600">{{ pinError }}</p>
-      <button type="submit" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold">Simpan</button>
-      <p v-if="msg" class="text-[13px] text-[var(--g)] text-center">{{ msg }}</p>
+      <button type="submit" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold" :disabled="saving">{{ saving ? 'Menyimpan…' : 'Simpan' }}</button>
+      <button v-if="isEdit" type="button" class="w-full min-h-[44px] rounded-full bg-red-50 text-red-600 font-semibold" :disabled="saving" @click="onHapus">Hapus pengumuman</button>
+      <p v-if="msg" class="text-[13px] text-center" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
     </form>
   </div>
 </template>
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
+import { detailPengumuman, buatPengumuman, ubahPengumuman, hapusPengumuman } from '@shared/services/konten.js'
+
 const route = useRoute()
 const router = useRouter()
 const isEdit = computed(() => !!route.params.id && route.params.id !== 'tambah')
-const judul = ref(isEdit.value ? 'Kerja bakti membersihkan selokan' : '')
-const isi = ref(isEdit.value ? 'Hari Minggu, 12 Oktober pukul 07.00.' : '')
+const judul = ref('')
+const isi = ref('')
 const pin = ref(false)
 const kirimNotif = ref(false)
 const pinError = ref('')
 const msg = ref('')
-const pinCount = 2 // dummy: sudah 2 pin aktif
-function onSave() {
+const msgOk = ref(true)
+const saving = ref(false)
+const loading = ref(false)
+
+onMounted(async () => {
+  if (!isEdit.value) return
+  loading.value = true
+  const res = await detailPengumuman(route.params.id)
+  loading.value = false
+  if (res.ok && res.data) {
+    judul.value = res.data.judul || ''
+    isi.value = res.data.isi || ''
+    pin.value = !!res.data.pin
+  } else {
+    msgOk.value = false
+    msg.value = res.error || 'Gagal memuat'
+  }
+})
+
+async function onSave() {
   pinError.value = ''
-  if (pin.value && pinCount >= 2 && !isEdit.value) {
-    pinError.value = 'Lepas salah satu pin dulu (maksimal 2)'
+  msg.value = ''
+  if (!judul.value.trim() || !isi.value.trim()) {
+    msgOk.value = false
+    msg.value = 'Judul dan isi wajib'
     return
   }
-  msg.value = 'Pengumuman disimpan (dummy)'
-  setTimeout(() => router.back(), 800)
+  saving.value = true
+  const payload = { judul: judul.value.trim(), isi: isi.value.trim(), pin: pin.value }
+  let res
+  if (isEdit.value) {
+    payload.kirim_notif_lagi = kirimNotif.value
+    res = await ubahPengumuman(route.params.id, payload)
+  } else {
+    res = await buatPengumuman(payload)
+  }
+  saving.value = false
+  if (!res.ok) {
+    msgOk.value = false
+    const e = res.error || 'Gagal menyimpan'
+    if (/pin/i.test(e)) pinError.value = e
+    else msg.value = e
+    return
+  }
+  msgOk.value = true
+  msg.value = 'Pengumuman disimpan'
+  setTimeout(() => router.replace('/konten/pengumuman'), 600)
+}
+
+async function onHapus() {
+  if (!confirm('Hapus pengumuman ini?')) return
+  saving.value = true
+  const res = await hapusPengumuman(route.params.id)
+  saving.value = false
+  if (!res.ok) {
+    msgOk.value = false
+    msg.value = res.error || 'Gagal menghapus'
+    return
+  }
+  router.replace('/konten/pengumuman')
 }
 </script>
