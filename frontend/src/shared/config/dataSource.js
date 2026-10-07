@@ -4,6 +4,7 @@
  *
  * Stage 10: auth/pengaturan/warga/aktivitas → real
  * Stage 11: keuangan → real
+ * Stage 12: notifikasi → real
  */
 export const USE_MOCK = {
   auth: false,
@@ -12,6 +13,6 @@ export const USE_MOCK = {
   keuangan: false,
   ronda: true,
   konten: true,
-  notifikasi: true,
+  notifikasi: false,
   aktivitas: false,
 }

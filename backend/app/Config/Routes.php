@@ -73,3 +73,18 @@ $routes->get('keuangan/laporan', 'KeuanganController::laporan', ['filter' => 'au
 $routes->get('portal/keuangan', 'PortalKeuanganController::ringkasanSaya', ['filter' => 'auth']);
 $routes->post('portal/keuangan/transfer', 'PortalKeuanganController::ajukanTransfer', ['filter' => 'auth']);
 $routes->get('portal/keuangan/permintaan', 'PortalKeuanganController::statusPermintaan', ['filter' => 'auth']);
+
+// ---- Stage 12: Notifikasi & push ----
+$routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
+$routes->get('notifikasi/badge', 'NotifikasiController::badge', ['filter' => 'auth']);
+$routes->post('notifikasi/(:num)/baca', 'NotifikasiController::baca/$1', ['filter' => 'auth']);
+$routes->post('notifikasi/baca-semua', 'NotifikasiController::bacaSemua', ['filter' => 'auth']);
+
+$routes->get('push/vapid-public', 'PushController::vapidPublic', ['filter' => 'auth']);
+$routes->post('push/subscribe', 'PushController::subscribe', ['filter' => 'auth']);
+$routes->post('push/unsubscribe', 'PushController::unsubscribe', ['filter' => 'auth']);
+
+// ---- Stage 12: Cron (header X-Cron-Token) ----
+$routes->get('tugas/harian', 'TugasController::harian', ['filter' => 'cron']);
+$routes->get('tugas/sore', 'TugasController::sore', ['filter' => 'cron']);
+$routes->get('tugas/5menit', 'TugasController::tiapLimaMenit', ['filter' => 'cron']);

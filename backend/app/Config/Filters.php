@@ -18,6 +18,7 @@ class Filters extends BaseFilters
         'performance'   => \CodeIgniter\Filters\PerformanceMetrics::class,
         'side'          => \App\Filters\SideFilter::class,
         'auth'          => \App\Filters\AuthFilter::class,
+        'cron'          => \App\Filters\CronTokenFilter::class,
     ];
 
     public array $required = [
