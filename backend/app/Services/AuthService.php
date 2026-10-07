@@ -2,13 +2,11 @@
 
 namespace App\Services;
 
-use App\Libraries\SideContext;
-use App\Services\AuditService;
-
 class AuthService
 {
     private const MAX_FAIL = 5;
-    private const LOCK_MINUTES = 15;
+    /** Kunci sementara setelah gagal berulang (menit). Dev: 1 menit. */
+    private const LOCK_MINUTES = 1;
 
     public function attempt(string $side, string $username, string $secret): array
     {
@@ -16,7 +14,7 @@ class AuthService
         $usernameNorm = $this->normalizeUsername($username, $side);
 
         if ($this->isLocked($usernameNorm, $side)) {
-            return ['ok' => false, 'message' => 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.'];
+            return ['ok' => false, 'message' => 'Terlalu banyak percobaan. Coba lagi dalam 1 menit.'];
         }
 
         $user = $db->table('users')
@@ -35,7 +33,6 @@ class AuthService
             return ['ok' => false, 'message' => 'Username atau kredensial salah.'];
         }
 
-        // Akses warga ditutup?
         if ($side === 'warga') {
             $peng = $db->table('pengaturan')->where('id', 1)->get()->getRowArray();
             if ($peng && !(int) $peng['akses_warga'] && !(int) $user['is_developer']) {
@@ -46,7 +43,11 @@ class AuthService
         $this->recordAttempt($usernameNorm, $side, true);
         $this->startSession($side, $user);
 
-        (new AuditService())->log('login', 'users', $user['id'], null, ['side' => $side], 'pengguna', true, (int) $user['id']);
+        try {
+            (new AuditService())->log('login', 'users', $user['id'], null, ['side' => $side], 'pengguna', true, (int) $user['id']);
+        } catch (\Throwable $e) {
+            // jangan gagalkan login
+        }
 
         return [
             'ok'   => true,
@@ -64,7 +65,10 @@ class AuthService
         $session->remove($key . '_role');
         $session->remove($key . '_user');
         if ($uid) {
-            (new AuditService())->log('logout', 'users', $uid, null, ['side' => $side], 'pengguna', true, (int) $uid);
+            try {
+                (new AuditService())->log('logout', 'users', $uid, null, ['side' => $side], 'pengguna', true, (int) $uid);
+            } catch (\Throwable $e) {
+            }
         }
     }
 
@@ -94,13 +98,29 @@ class AuthService
         }
 
         $db = \Config\Database::connect();
+        $existing = $db->table('users')->where('id', $userId)->where('aktif', 1)->get()->getRowArray();
+        if (!$existing) {
+            return ['ok' => false, 'message' => 'Akun tidak ditemukan.'];
+        }
+
         $hash = password_hash($newSecret, PASSWORD_DEFAULT);
         $db->table('users')->where('id', $userId)->update([
-            'password_hash' => $hash,
+            'password_hash'          => $hash,
             'harus_ganti_kredensial' => 0,
-            'updated_at' => date('Y-m-d H:i:s'),
+            'updated_at'             => date('Y-m-d H:i:s'),
         ]);
-        (new AuditService())->log('ganti_kredensial', 'users', $userId, null, null, 'pengguna', true, $userId);
+
+        // Pastikan hash tersimpan (cek verify)
+        $after = $db->table('users')->where('id', $userId)->get()->getRowArray();
+        if (!$after || !password_verify($newSecret, $after['password_hash'])) {
+            return ['ok' => false, 'message' => 'Gagal menyimpan kredensial baru.'];
+        }
+
+        try {
+            (new AuditService())->log('ganti_kredensial', 'users', $userId, null, null, 'pengguna', true, $userId);
+        } catch (\Throwable $e) {
+        }
+
         return ['ok' => true, 'message' => 'Kredensial diperbarui.'];
     }
 
@@ -134,7 +154,6 @@ class AuthService
     {
         $u = trim($u);
         if ($side === 'warga') {
-            // tidak bedakan huruf/spasi
             return strtolower(preg_replace('/\s+/', '', $u));
         }
         return strtolower($u);
