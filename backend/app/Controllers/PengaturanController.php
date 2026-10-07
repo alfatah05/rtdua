@@ -56,6 +56,23 @@ class PengaturanController extends Controller
         return ApiResponse::ok((new PengaturanService())->listBlok($semua));
     }
 
+    /**
+     * Daftar blok aktif untuk form login warga (tanpa auth).
+     * Hanya nama blok — tidak ada data sensitif.
+     */
+    public function listBlokLogin()
+    {
+        try {
+            $list = (new PengaturanService())->listBlok(false);
+            $data = array_map(static function ($b) {
+                return ['id' => $b['id'], 'nama' => $b['nama']];
+            }, $list);
+            return ApiResponse::ok($data);
+        } catch (\Throwable $e) {
+            return ApiResponse::fail('Gagal memuat blok: ' . $e->getMessage(), 500);
+        }
+    }
+
     public function tambahBlok()
     {
         $user = $this->requireKetua();

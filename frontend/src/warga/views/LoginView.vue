@@ -5,17 +5,38 @@
         <Home :size="28" />
       </div>
       <h1 class="text-2xl font-extrabold">Masuk Warga</h1>
-      <p class="text-[var(--mut)] mt-1 text-[13px]">Gunakan username rumah + PIN 6 angka</p>
+      <p class="text-[var(--mut)] mt-1 text-[13px]">Pilih blok, isi nomor rumah, lalu PIN</p>
     </div>
 
     <form class="space-y-4" @submit.prevent="submit">
-      <UiInput
-        v-model="username"
-        label="Username"
-        placeholder="Contoh: AB2-22a"
-        autocomplete="username"
-        :error="errors.username"
-      />
+      <div class="flex gap-3 items-start">
+        <div class="flex-1 min-w-0">
+          <label class="block text-[13px] font-semibold text-[var(--text)] mb-1.5">Blok</label>
+          <select
+            v-model="blokNama"
+            class="w-full min-h-[48px] px-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--g)]"
+            :class="errors.blok ? 'border-red-400' : ''"
+          >
+            <option value="" disabled>Pilih blok</option>
+            <option v-for="b in blokList" :key="b.id" :value="b.nama">{{ b.nama }}</option>
+          </select>
+          <p v-if="errors.blok" class="text-[12px] text-red-600 mt-1">{{ errors.blok }}</p>
+        </div>
+        <div class="flex-1 min-w-0">
+          <label class="block text-[13px] font-semibold text-[var(--text)] mb-1.5">Nomor</label>
+          <input
+            v-model="nomor"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            placeholder="Contoh: 19 atau 19a"
+            class="w-full min-h-[48px] px-3 rounded-2xl border border-[var(--line)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--g)] placeholder:text-[var(--mut)]"
+            :class="errors.nomor ? 'border-red-400' : ''"
+          />
+          <p v-if="errors.nomor" class="text-[12px] text-red-600 mt-1">{{ errors.nomor }}</p>
+        </div>
+      </div>
+
       <UiInput
         v-model="pin"
         label="PIN"
@@ -37,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Home } from 'lucide-vue-next'
 import UiInput from '@shared/components/UiInput.vue'
@@ -47,21 +68,44 @@ import { useAuth } from '@shared/composables/useAuth.js'
 const router = useRouter()
 const { loginWarga, loading } = useAuth()
 
-const username = ref('')
+const blokList = ref([])
+const blokNama = ref('')
+const nomor = ref('')
 const pin = ref('')
 const errors = ref({})
 const formError = ref('')
 
+onMounted(async () => {
+  try {
+    const res = await fetch('/api/auth/blok-login', { headers: { Accept: 'application/json' } })
+    const json = await res.json()
+    if (json?.ok && Array.isArray(json.data)) {
+      blokList.value = json.data
+    }
+  } catch (e) {
+    // dropdown kosong — user masih bisa ketik nomor; blok wajib dari list
+  }
+})
+
+function buildUsername() {
+  const b = String(blokNama.value || '').trim()
+  const n = String(nomor.value || '').replace(/\s+/g, '').trim()
+  return (b + '-' + n).toLowerCase()
+}
+
 async function submit() {
   errors.value = {}
   formError.value = ''
-  if (!username.value.trim()) errors.value.username = 'Wajib diisi'
+  if (!blokNama.value) errors.value.blok = 'Pilih blok'
+  if (!String(nomor.value || '').trim()) errors.value.nomor = 'Wajib diisi'
   if (!pin.value) errors.value.pin = 'Wajib diisi'
+  else if (!/^\d{6}$/.test(pin.value)) errors.value.pin = 'PIN 6 angka'
   if (Object.keys(errors.value).length) return
 
-  const res = await loginWarga(username.value, pin.value)
+  const username = buildUsername()
+  const res = await loginWarga(username, pin.value)
   if (!res.ok) {
-    formError.value = res.error
+    formError.value = res.error || 'Login gagal'
     return
   }
   if (res.mustChange) {
