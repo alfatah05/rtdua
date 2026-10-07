@@ -5,8 +5,11 @@ namespace App\Controllers;
 use App\Libraries\ApiResponse;
 use App\Libraries\SideContext;
 use App\Services\AuthService;
+use App\Services\AuditService;
 use App\Services\KeluargaService;
+use App\Services\NotifikasiService;
 use CodeIgniter\Controller;
+use Throwable;
 
 class KeluargaController extends Controller
 {
@@ -87,14 +90,13 @@ class KeluargaController extends Controller
         $json = $this->request->getJSON(true) ?? [];
         $svc = new KeluargaService();
         $res = $svc->updateAnggota((int) $anggotaId, $json, (int) $user['id']);
-        // Izinkan path foto (pas foto kepala) meski service lama belum list field foto
         if (array_key_exists('foto', $json)) {
             $db = \Config\Database::connect();
             $db->table('warga')->where('id', (int) $anggotaId)->update([
                 'foto' => $json['foto'] ? (string) $json['foto'] : null,
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
-            if (!$res['ok'] && $res['message'] === 'Tidak ada perubahan.') {
+            if (!$res['ok'] && ($res['message'] ?? '') === 'Tidak ada perubahan.') {
                 $res = ['ok' => true];
             }
         }
@@ -132,14 +134,95 @@ class KeluargaController extends Controller
         return $res['ok'] ? ApiResponse::ok(null, 'Keluarga ditandai pindah') : ApiResponse::fail($res['message'], 422);
     }
 
+    /**
+     * Reset PIN warga ke 123456 + wajib ganti.
+     * Jika akun role warga belum ada, dibuat otomatis dari alamat keluarga.
+     */
     public function resetPin($id)
     {
         $user = $this->requirePengurus();
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $res = (new KeluargaService())->resetPin((int) $id, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, $res['message']) : ApiResponse::fail($res['message'], 422);
+
+        try {
+            $keluargaId = (int) $id;
+            $db = \Config\Database::connect();
+
+            $kel = $db->table('keluarga k')
+                ->select('k.*, b.nama as blok_nama')
+                ->join('blok b', 'b.id = k.blok_id')
+                ->where('k.id', $keluargaId)
+                ->get()
+                ->getRowArray();
+
+            if (!$kel || ($kel['status'] ?? '') !== 'aktif') {
+                return ApiResponse::fail('Keluarga tidak ditemukan atau tidak aktif.', 422);
+            }
+
+            $u = $db->table('users')
+                ->where('keluarga_id', $keluargaId)
+                ->where('role', 'warga')
+                ->get()
+                ->getRowArray();
+
+            $hash = password_hash('123456', PASSWORD_DEFAULT);
+
+            if (!$u) {
+                $base = strtolower(trim($kel['blok_nama']) . '-' . trim($kel['nomor']) . trim((string) ($kel['akhiran'] ?? '')));
+                $uname = $base;
+                $i = 0;
+                while ($db->table('users')->where('username', $uname)->countAllResults() > 0) {
+                    $i++;
+                    $uname = $base . 'x' . $i;
+                }
+                $db->table('users')->insert([
+                    'role'                   => 'warga',
+                    'username'               => $uname,
+                    'password_hash'          => $hash,
+                    'keluarga_id'            => $keluargaId,
+                    'aktif'                  => 1,
+                    'harus_ganti_kredensial' => 1,
+                    'created_at'             => date('Y-m-d H:i:s'),
+                ]);
+                $uid = (int) $db->insertID();
+                $msg = 'Akun warga dibuat. PIN awal 123456 (wajib diganti). Username: ' . $uname;
+            } else {
+                $db->table('users')->where('id', (int) $u['id'])->update([
+                    'password_hash'          => $hash,
+                    'aktif'                  => 1,
+                    'harus_ganti_kredensial' => 1,
+                    'updated_at'             => date('Y-m-d H:i:s'),
+                ]);
+                $uid = (int) $u['id'];
+                $msg = 'PIN direset ke 123456.';
+            }
+
+            try {
+                (new AuditService())->log('reset_pin', 'users', $uid, null, ['keluarga_id' => $keluargaId], 'pengguna', true, (int) $user['id']);
+            } catch (Throwable $e) {
+                // jangan gagalkan reset
+            }
+
+            try {
+                (new NotifikasiService())->kirim(
+                    $uid,
+                    'reset_pin',
+                    'PIN direset',
+                    'PIN Anda direset pengurus. PIN sementara: 123456. Wajib diganti saat login.',
+                    '/ganti-pin'
+                );
+            } catch (Throwable $e) {
+                // jangan gagalkan reset
+            }
+
+            return ApiResponse::ok(['user_id' => $uid], $msg);
+        } catch (Throwable $e) {
+            return ApiResponse::fail('Reset PIN gagal: ' . $e->getMessage(), 500, [
+                'file' => basename($e->getFile()),
+                'line' => $e->getLine(),
+            ]);
+        }
     }
 
     private function requirePengurus(): ?array
