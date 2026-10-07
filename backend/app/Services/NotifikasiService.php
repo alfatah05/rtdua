@@ -81,7 +81,6 @@ class NotifikasiService
                 'tautan'      => $tautan,
                 'dibuat_pada' => date('Y-m-d H:i:s'),
             ];
-            // kolom push_status opsional (setelah migrasi 003)
             if ($db->fieldExists('push_status', 'notifikasi')) {
                 $data['push_status'] = $kirimPush ? 'pending' : 'skip';
                 $data['push_coba'] = 0;
@@ -103,7 +102,6 @@ class NotifikasiService
         }
     }
 
-    /** Semua ketua/pengurus aktif kecuali developer; opsional exclude pelaku. */
     public function kePengurus(string $jenis, string $judul, string $isi, ?string $tautan = null, ?int $kecualiUserId = null): void
     {
         $db = \Config\Database::connect();
@@ -120,7 +118,6 @@ class NotifikasiService
         }
     }
 
-    /** Notifikasi ke akun warga satu keluarga. */
     public function keKeluarga(int $keluargaId, string $jenis, string $judul, string $isi, ?string $tautan = null): void
     {
         $db = \Config\Database::connect();
@@ -135,7 +132,6 @@ class NotifikasiService
         }
     }
 
-    /** Hapus notifikasi lebih dari N hari. */
     public function bersihkanLama(int $hari = 90): int
     {
         $db = \Config\Database::connect();
