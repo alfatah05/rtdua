@@ -12,6 +12,7 @@ import KeuanganView from '../views/KeuanganView.vue'
 import IuranView from '../views/IuranView.vue'
 import TagihanDetailView from '../views/TagihanDetailView.vue'
 import CatatBayarView from '../views/CatatBayarView.vue'
+import CatatIuranPilihView from '../views/CatatIuranPilihView.vue'
 import PermintaanDetailView from '../views/PermintaanDetailView.vue'
 import KasFormView from '../views/KasFormView.vue'
 import LaporanView from '../views/LaporanView.vue'
@@ -71,7 +72,7 @@ const routes = [
       { path: 'keuangan/ekspor-iuran', component: PlaceholderView, meta: { title: 'Ekspor iuran' } },
       { path: 'keuangan/laporan', component: LaporanView },
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
-      { path: 'keuangan/catat', component: PlaceholderView, meta: { title: 'Catat iuran' } },
+      { path: 'keuangan/catat', component: CatatIuranPilihView },
 
       { path: 'aktivitas', name: 'aktivitas', component: AktivitasView },
       { path: 'aktivitas/:id', component: AktivitasDetailView },
@@ -79,7 +80,6 @@ const routes = [
       { path: 'lainnya', name: 'lainnya', component: LainnyaView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
 
-      // Konten
       { path: 'konten/pengumuman', component: PengumumanListView },
       { path: 'konten/pengumuman/tambah', component: PengumumanFormView },
       { path: 'konten/pengumuman/:id', component: PengumumanFormView },
@@ -91,7 +91,6 @@ const routes = [
       { path: 'konten/galeri/:id', component: PlaceholderView, meta: { title: 'Isi album' } },
       { path: 'konten/struktur', component: StrukturView },
 
-      // Ronda
       { path: 'ronda', component: RondaView },
       { path: 'ronda/malam/:date', component: RondaMalamView },
       { path: 'ronda/malam/edit', component: PlaceholderView, meta: { title: 'Ganti keluarga' } },
@@ -99,7 +98,6 @@ const routes = [
       { path: 'ronda/jadwal-khusus', component: PlaceholderView, meta: { title: 'Jadwal khusus' } },
       { path: 'ronda/isi-otomatis', component: PlaceholderView, meta: { title: 'Isi otomatis' } },
 
-      // Pengaturan
       { path: 'pengaturan-warga', component: PengaturanWargaView },
       { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
       { path: 'kelola-pengurus', component: KelolaPengurusView },
