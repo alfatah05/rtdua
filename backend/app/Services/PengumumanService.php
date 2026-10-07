@@ -131,7 +131,7 @@ class PengumumanService
         $db = \Config\Database::connect();
         $users = $db->table('users')->where('role', 'warga')->where('aktif', 1)->get()->getResultArray();
         foreach ($users as $u) {
-            $n->keUser((int) $u['id'], 'pengumuman', 'Pengumuman baru', $judul, '/pengumuman/' . $id);
+            $n->kirim((int) $u['id'], 'pengumuman', 'Pengumuman baru', $judul, '/pengumuman/' . $id);
         }
     }
 
