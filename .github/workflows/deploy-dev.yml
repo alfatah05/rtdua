@@ -47,7 +47,7 @@ jobs:
             for f in "$CFG_SRC"/*.php; do
               base=$(basename "$f")
               case "$base" in
-                App.php|Filters.php|Routes.php|Session.php) continue ;;
+                App.php|Filters.php|Routes.php|Session.php|Paths.php) continue ;;
               esac
               if [ ! -f "$CFG_DST/$base" ]; then cp "$f" "$CFG_DST/$base"; fi
             done
@@ -57,8 +57,17 @@ jobs:
             done
           fi
 
+          # Paths.php wajib ada & mengarah ke vendor
+          if [ ! -f app/Config/Paths.php ]; then
+            echo "Paths.php hilang" >&2
+            exit 1
+          fi
+          grep -q 'vendor/codeigniter4/framework/system' app/Config/Paths.php
+
           echo "=== public/index.php ==="
           head -8 public/index.php
+          echo "=== Paths systemDirectory ==="
+          grep systemDirectory app/Config/Paths.php
           echo "=== app/Config ==="
           ls app/Config/ | head -40
           ls app/Config/Boot/ 2>/dev/null || true
@@ -90,7 +99,9 @@ jobs:
           du -sh dist/warga dist/pengurus dist/rt-app
           test -f dist/rt-app/app/Config/Database.php
           test -f dist/rt-app/app/Config/Services.php
+          test -f dist/rt-app/app/Config/Paths.php
           test -f dist/rt-app/app/Config/Boot/development.php
+          test -f dist/rt-app/vendor/codeigniter4/framework/system/Boot.php
 
       - name: Deploy WARGA-DEV (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
