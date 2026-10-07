@@ -42,54 +42,43 @@ $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
 
-// ---- Stage 11: Keuangan (pengurus) ----
 $routes->get('keuangan/iuran', 'KeuanganController::daftarIuran', ['filter' => 'auth']);
 $routes->get('keuangan/keluarga/(:num)', 'KeuanganController::ringkasanKeluarga/$1', ['filter' => 'auth']);
 $routes->post('keuangan/keluarga/(:num)/pratinjau', 'KeuanganController::pratinjauAlokasi/$1', ['filter' => 'auth']);
 $routes->post('keuangan/nominal', 'KeuanganController::ubahNominal', ['filter' => 'auth']);
 $routes->post('keuangan/pastikan-tagihan-kas', 'KeuanganController::pastikanTagihanKas', ['filter' => 'auth']);
-
 $routes->post('keuangan/pembayaran', 'KeuanganController::catatPembayaran', ['filter' => 'auth']);
 $routes->post('keuangan/pembayaran/(:num)/batal', 'KeuanganController::batalkanPembayaran/$1', ['filter' => 'auth']);
 $routes->post('keuangan/denda/(:num)/batal', 'KeuanganController::batalkanDenda/$1', ['filter' => 'auth']);
-
 $routes->get('keuangan/permintaan', 'KeuanganController::listPermintaan', ['filter' => 'auth']);
 $routes->post('keuangan/permintaan/(:num)/konfirmasi', 'KeuanganController::konfirmasiPermintaan/$1', ['filter' => 'auth']);
 $routes->post('keuangan/permintaan/(:num)/tolak', 'KeuanganController::tolakPermintaan/$1', ['filter' => 'auth']);
-
 $routes->get('keuangan/kas/saldo', 'KeuanganController::saldoKas', ['filter' => 'auth']);
 $routes->get('keuangan/kas', 'KeuanganController::listKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas', 'KeuanganController::tambahKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas/(:num)/batal', 'KeuanganController::batalkanKas/$1', ['filter' => 'auth']);
-
 $routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-khusus', 'KeuanganController::buatIuranKhusus', ['filter' => 'auth']);
 $routes->put('keuangan/iuran-khusus/(:num)', 'KeuanganController::ubahIuranKhusus/$1', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-khusus/(:num)/batal', 'KeuanganController::batalkanIuranKhusus/$1', ['filter' => 'auth']);
-
 $routes->get('keuangan/laporan', 'KeuanganController::laporan', ['filter' => 'auth']);
 
-// ---- Stage 11: Keuangan portal warga ----
 $routes->get('portal/keuangan', 'PortalKeuanganController::ringkasanSaya', ['filter' => 'auth']);
 $routes->post('portal/keuangan/transfer', 'PortalKeuanganController::ajukanTransfer', ['filter' => 'auth']);
 $routes->get('portal/keuangan/permintaan', 'PortalKeuanganController::statusPermintaan', ['filter' => 'auth']);
 
-// ---- Stage 12: Notifikasi & push ----
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
 $routes->get('notifikasi/badge', 'NotifikasiController::badge', ['filter' => 'auth']);
 $routes->post('notifikasi/(:num)/baca', 'NotifikasiController::baca/$1', ['filter' => 'auth']);
 $routes->post('notifikasi/baca-semua', 'NotifikasiController::bacaSemua', ['filter' => 'auth']);
-
 $routes->get('push/vapid-public', 'PushController::vapidPublic', ['filter' => 'auth']);
 $routes->post('push/subscribe', 'PushController::subscribe', ['filter' => 'auth']);
 $routes->post('push/unsubscribe', 'PushController::unsubscribe', ['filter' => 'auth']);
 
-// ---- Stage 12: Cron (header X-Cron-Token) ----
 $routes->get('tugas/harian', 'TugasController::harian', ['filter' => 'cron']);
 $routes->get('tugas/sore', 'TugasController::sore', ['filter' => 'cron']);
 $routes->get('tugas/5menit', 'TugasController::tiapLimaMenit', ['filter' => 'cron']);
 
-// ---- Stage 13: Konten ----
 $routes->get('pengumuman', 'KontenController::listPengumuman', ['filter' => 'auth']);
 $routes->get('pengumuman/(:num)', 'KontenController::detailPengumuman/$1', ['filter' => 'auth']);
 $routes->post('pengumuman', 'KontenController::buatPengumuman', ['filter' => 'auth']);
@@ -107,7 +96,6 @@ $routes->delete('galeri/(:num)', 'KontenController::hapusAlbum/$1', ['filter' =>
 $routes->post('galeri/(:num)/foto', 'KontenController::tambahFoto/$1', ['filter' => 'auth']);
 $routes->post('galeri/foto/hapus', 'KontenController::hapusFoto', ['filter' => 'auth']);
 
-// ---- Stage 13: Ronda ----
 $routes->get('ronda/kalender', 'RondaController::kalender', ['filter' => 'auth']);
 $routes->get('ronda/malam-ini', 'RondaController::malamIni', ['filter' => 'auth']);
 $routes->get('ronda/malam/(:segment)', 'RondaController::detailMalam/$1', ['filter' => 'auth']);
@@ -119,3 +107,6 @@ $routes->post('ronda/generate', 'RondaController::generateBulan', ['filter' => '
 $routes->post('ronda/absen-manual', 'RondaController::absenManual', ['filter' => 'auth']);
 $routes->post('ronda/absen/(:num)/batal', 'RondaController::batalkanAbsen/$1', ['filter' => 'auth']);
 $routes->post('ronda/terbitkan-denda', 'RondaController::terbitkanDenda', ['filter' => 'auth']);
+
+$routes->post('upload', 'UploadController::store');
+$routes->get('media/(:segment)/(:segment)', 'UploadController::media/$1/$2');
