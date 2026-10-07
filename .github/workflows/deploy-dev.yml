@@ -12,6 +12,7 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,12 +35,10 @@ jobs:
           set -e
           composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-          # Index.php resmi CI4 (bukan placeholder)
           if [ -f vendor/codeigniter4/framework/public/index.php ]; then
             cp vendor/codeigniter4/framework/public/index.php public/index.php
           fi
 
-          # Salin SEMUA Config default yang belum ada (jangan timpa kustom)
           CFG_SRC="vendor/codeigniter4/framework/app/Config"
           CFG_DST="app/Config"
           mkdir -p "$CFG_DST/Boot"
@@ -57,7 +56,6 @@ jobs:
             done
           fi
 
-          # Paths.php wajib ada & mengarah ke vendor
           if [ ! -f app/Config/Paths.php ]; then
             echo "Paths.php hilang" >&2
             exit 1
@@ -91,9 +89,19 @@ jobs:
           cp deploy/pengurus/.htaccess dist/pengurus/
           mkdir -p dist/pengurus/api && cp deploy/pengurus/api/index.php dist/pengurus/api/
 
-          rsync -a --exclude='.env' --exclude='writable/logs/*' --exclude='writable/cache/*' backend/ dist/rt-app/
+          rsync -a \
+            --exclude='.env' \
+            --exclude='.git' \
+            --exclude='tests' \
+            --exclude='writable/logs/*' \
+            --exclude='writable/cache/*' \
+            --exclude='writable/session/*' \
+            --exclude='writable/uploads/*' \
+            backend/ dist/rt-app/
+
           mkdir -p dist/rt-app/writable/{cache,logs,session,uploads}
           touch dist/rt-app/writable/cache/.gitkeep dist/rt-app/writable/logs/.gitkeep
+          touch dist/rt-app/writable/session/.gitkeep dist/rt-app/writable/uploads/.gitkeep
 
           echo "=== paket deploy ==="
           du -sh dist/warga dist/pengurus dist/rt-app
@@ -103,6 +111,8 @@ jobs:
           test -f dist/rt-app/app/Config/Boot/development.php
           test -f dist/rt-app/vendor/codeigniter4/framework/system/Boot.php
 
+      # FTP: timeout panjang + security loose (shared hosting sering butuh ini)
+      # Jangan jalanin banyak deploy bersamaan — concurrency sudah cancel-in-progress
       - name: Deploy WARGA-DEV (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -112,6 +122,12 @@ jobs:
           local-dir: ./dist/warga/
           server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA }}
           dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
 
       - name: Deploy PENGURUS-DEV (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -122,6 +138,12 @@ jobs:
           local-dir: ./dist/pengurus/
           server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS }}
           dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
 
       - name: Deploy BACKEND rt-app (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -132,3 +154,14 @@ jobs:
           local-dir: ./dist/rt-app/
           server-dir: ${{ secrets.FTP_SERVER_DIR_BACKEND }}
           dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/tests/**
+            **/writable/logs/**
+            **/writable/cache/**
+            **/writable/session/**
+            **/writable/uploads/**
