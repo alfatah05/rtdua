@@ -118,6 +118,7 @@ const routes = [
       { path: 'kelola-pengurus/:id', component: KelolaPengurusDetailView },
     ],
   },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -126,11 +127,16 @@ const router = createRouter({
   scrollBehavior() { return { top: 0 } },
 })
 
-router.beforeEach((to) => {
-  const { isLoggedIn, restore, isKetua } = useAuth()
-  restore('pengurus')
-  if (!to.meta.public && !isLoggedIn.value) return { name: 'login' }
-  if (to.name === 'login' && isLoggedIn.value) return { name: 'home' }
+router.beforeEach(async (to) => {
+  const { isLoggedIn, ensureSession, isKetua } = useAuth()
+  await ensureSession('pengurus')
+
+  if (!to.meta.public && !isLoggedIn.value) {
+    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
+  }
+  if (to.name === 'login' && isLoggedIn.value) {
+    return { name: 'home' }
+  }
   if ((to.path.startsWith('/pengaturan-aplikasi') || to.path.startsWith('/kelola-pengurus')) && !isKetua.value) {
     return { name: 'home' }
   }
