@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PWA icons from scripts/logo-a.b64 + logo-b.b64. Hanya resize."""
+"""Generate PWA icons from scripts/logo-*.b64 (logo resmi). Hanya resize."""
 from pathlib import Path
 import sys, base64
 from io import BytesIO
@@ -14,9 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'frontend' / 'public' / 'icons'
 OUT.mkdir(parents=True, exist_ok=True)
 
-a = (ROOT / 'scripts' / 'logo-a.b64').read_text().strip()
-b = (ROOT / 'scripts' / 'logo-b.b64').read_text().strip()
-src_bytes = base64.b64decode(a + b)
+parts = []
+for i in range(5):
+    p = ROOT / 'scripts' / f'logo-{i}.b64'
+    if not p.is_file():
+        print('ERROR missing', p, file=sys.stderr)
+        sys.exit(1)
+    parts.append(p.read_text().strip())
+src_bytes = base64.b64decode(''.join(parts))
 im = Image.open(BytesIO(src_bytes)).convert('RGBA')
 bg = Image.new('RGBA', im.size, (255, 255, 255, 255))
 bg.paste(im, (0, 0), im if im.mode == 'RGBA' else None)
