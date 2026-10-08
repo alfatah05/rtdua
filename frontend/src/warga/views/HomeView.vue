@@ -2,15 +2,17 @@
   <div>
     <AppMainHeader />
     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center">
-        <Landmark :size="26" class="text-[var(--mut)]" />
+      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center overflow-hidden">
+        <img v-if="logoRtUrl" :src="logoRtUrl" alt="Logo RT" class="w-full h-full object-contain" @error="logoRtUrl = ''" />
+        <Landmark v-else :size="26" class="text-[var(--mut)]" />
       </div>
       <div>
         <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
         <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
       </div>
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center">
-        <Handshake :size="26" class="text-[var(--mut)]" />
+      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center overflow-hidden">
+        <img v-if="logoDesaUrl" :src="logoDesaUrl" alt="Logo desa" class="w-full h-full object-contain" @error="logoDesaUrl = ''" />
+        <Handshake v-else :size="26" class="text-[var(--mut)]" />
       </div>
     </div>
     <div class="h-px bg-[var(--line)] my-4"></div>
@@ -24,9 +26,10 @@
         :style="i === 0 ? heroStyle : null"
       >
         <div class="p-5 relative z-10">
-          <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
             <span class="flex items-center gap-2 text-[13px] font-semibold" :class="i === 0 ? 'text-white/90' : 'text-[var(--mut)]'">
               <Megaphone :size="16" /> Pengumuman
+              <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full" :class="i === 0 ? 'bg-white/20' : 'bg-[var(--search)] text-[var(--mut)]'">📎</span>
             </span>
             <span class="text-[12px] font-semibold px-3 py-1 rounded-full" :class="i === 0 ? 'bg-white/20' : 'bg-[var(--search)] text-[var(--mut)]'">
               {{ p.tanggal }}
@@ -91,6 +94,7 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
 import { portalRingkasan } from '@shared/services/keuangan.js'
+import { mediaUrl } from '@shared/services/upload.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight,
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
@@ -102,6 +106,8 @@ const heroStyle = {
 
 const namaRt = ref('')
 const namaPerumahan = ref('')
+const logoRtUrl = ref('')
+const logoDesaUrl = ref('')
 const pengumuman = ref([])
 const iuranLabel = ref('Iuran')
 const iuranNominal = ref('Memuat…')
@@ -139,6 +145,8 @@ onMounted(async () => {
   if (pg.ok && pg.data) {
     namaRt.value = pg.data.nama_rt || 'RT'
     namaPerumahan.value = pg.data.nama_perumahan || ''
+    logoRtUrl.value = pg.data.logo_rt ? mediaUrl(pg.data.logo_rt) : ''
+    logoDesaUrl.value = pg.data.logo_desa ? mediaUrl(pg.data.logo_desa) : ''
   }
   if (pn.ok) {
     pengumuman.value = (pn.data || []).slice(0, 3).map((p) => ({
@@ -146,6 +154,7 @@ onMounted(async () => {
       judul: p.judul,
       ringkas: ringkas(p.isi),
       tanggal: formatTgl(p.diterbitkan_pada),
+      hasLampiran: !!p.lampiran_file,
     }))
   }
   if (iu.ok && iu.data) {
