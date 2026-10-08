@@ -1,6 +1,16 @@
 <template>
+  <!-- Lapisan penuh lebar di belakang nav + system gesture bar -->
+  <div
+    class="fixed bottom-0 left-0 right-0 z-30 pointer-events-none"
+    :style="{
+      height: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+      background: 'var(--bg)',
+    }"
+    aria-hidden="true"
+  />
   <nav
-    class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[560px] bg-[var(--bg)] flex pt-2.5 pb-[calc(14px+env(safe-area-inset-bottom,0px))] z-40"
+    class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[560px] flex pt-2.5 pb-[calc(14px+env(safe-area-inset-bottom,0px))] z-40 border-t border-[var(--line)]"
+    :style="{ background: 'var(--bg)' }"
     aria-label="Navigasi utama"
   >
     <router-link
@@ -65,8 +75,9 @@ function isActive(path) {
   transform: scale(1);
 }
 .nav-pill-active {
-  background: var(--gd);
-  color: var(--gm);
+  /* highlight item aktif: abu lembut, BUKAN hijau brand */
+  background: var(--card2);
+  color: var(--text);
   animation: navScale 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards,
              navExpand 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
