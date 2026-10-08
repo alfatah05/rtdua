@@ -56,6 +56,20 @@ class PengaturanService
         if (array_key_exists('akses_warga', $data)) {
             $update['akses_warga'] = $data['akses_warga'] ? 1 : 0;
         }
+        // path relatif hasil upload, contoh: logo/2026....png — atau null untuk hapus
+        foreach (['logo_rt', 'logo_desa'] as $k) {
+            if (array_key_exists($k, $data)) {
+                $v = $data[$k];
+                if ($v === null || $v === '') {
+                    $update[$k] = null;
+                } else {
+                    $v = preg_replace('#[^a-zA-Z0-9._/-]#', '', (string) $v);
+                    if (preg_match('#^logo/[a-zA-Z0-9._-]+$#', $v)) {
+                        $update[$k] = $v;
+                    }
+                }
+            }
+        }
         if ($update === []) {
             return ['ok' => false, 'message' => 'Tidak ada data diubah.'];
         }
