@@ -4,12 +4,14 @@ namespace App\Services;
 
 class UploadService
 {
-    /** @var array<string, array{dir:string,max:int,public:bool}> */
+    /** @var array<string, array{dir:string,max:int,public:bool,mimes:list<string>}> */
     private array $jenis = [
-        'bukti'       => ['dir' => 'bukti', 'max' => 3_000_000, 'public' => false],
-        'galeri'      => ['dir' => 'galeri', 'max' => 4_000_000, 'public' => true],
-        'banner'      => ['dir' => 'banner', 'max' => 2_000_000, 'public' => true],
-        'foto_profil' => ['dir' => 'profil', 'max' => 1_500_000, 'public' => true],
+        'bukti'       => ['dir' => 'bukti', 'max' => 3_000_000, 'public' => false, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
+        'galeri'      => ['dir' => 'galeri', 'max' => 4_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
+        'banner'      => ['dir' => 'banner', 'max' => 2_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
+        'foto_profil' => ['dir' => 'profil', 'max' => 1_500_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
+        'logo'        => ['dir' => 'logo', 'max' => 1_500_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
+        'lampiran'    => ['dir' => 'lampiran', 'max' => 5_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']],
     ];
 
     /**
@@ -29,13 +31,13 @@ class UploadService
             return ['ok' => false, 'message' => 'File terlalu besar.'];
         }
         $mime = (string) $file->getMimeType();
-        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!in_array($mime, $allowed, true)) {
-            return ['ok' => false, 'message' => 'Hanya JPG/PNG/WebP.'];
+        if (!in_array($mime, $cfg['mimes'], true)) {
+            return ['ok' => false, 'message' => $jenis === 'lampiran' ? 'Hanya PDF/JPG/PNG/WebP.' : 'Hanya JPG/PNG/WebP.'];
         }
         $ext = match ($mime) {
             'image/png' => 'png',
             'image/webp' => 'webp',
+            'application/pdf' => 'pdf',
             default => 'jpg',
         };
         $dir = WRITEPATH . 'uploads/' . $cfg['dir'];
@@ -59,6 +61,7 @@ class UploadService
                 'path'   => $rel,
                 'thumb'  => $thumbRel,
                 'url'    => '/api/media/' . $rel,
+                'mime'   => $mime,
                 'public' => $cfg['public'],
             ],
         ];
@@ -99,7 +102,14 @@ class UploadService
     public function isPublicJenis(string $rel): bool
     {
         $jenis = explode('/', $rel)[0] ?? '';
-        $map = ['bukti' => false, 'galeri' => true, 'banner' => true, 'profil' => true];
+        $map = [
+            'bukti' => false,
+            'galeri' => true,
+            'banner' => true,
+            'profil' => true,
+            'logo' => true,
+            'lampiran' => true,
+        ];
         return !empty($map[$jenis]);
     }
 }
