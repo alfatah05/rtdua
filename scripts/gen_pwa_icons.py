@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PWA icons from scripts/logo-master.b64 (logo resmi rumah rtdua).
+"""Generate PWA icons from scripts/logo-master*.b64 (logo resmi rumah rtdua).
 Hanya resize — tidak digambar ulang.
 """
 from pathlib import Path
@@ -15,15 +15,28 @@ except ImportError:
     from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-MASTER_B64 = ROOT / 'scripts' / 'logo-master.b64'
 OUT = ROOT / 'frontend' / 'public' / 'icons'
 OUT.mkdir(parents=True, exist_ok=True)
 
-if not MASTER_B64.is_file() or MASTER_B64.stat().st_size < 1000:
-    print('ERROR: scripts/logo-master.b64 tidak ada / kosong', file=sys.stderr)
+parts = []
+for name in ('logo-master.b64', 'logo-master-a.b64', 'logo-master-b.b64'):
+    p = ROOT / 'scripts' / name
+    if p.is_file() and p.stat().st_size > 100:
+        parts.append(p.read_text().strip())
+
+if not parts:
+    print('ERROR: logo-master*.b64 tidak ada', file=sys.stderr)
     sys.exit(1)
 
-src_bytes = base64.b64decode(MASTER_B64.read_text().strip())
+# Jika ada a+b, utamakan a+b (full); jika ada single file full, pakai itu
+a = ROOT / 'scripts' / 'logo-master-a.b64'
+b = ROOT / 'scripts' / 'logo-master-b.b64'
+if a.is_file() and b.is_file() and a.stat().st_size > 1000 and b.stat().st_size > 1000:
+    raw = a.read_text().strip() + b.read_text().strip()
+else:
+    raw = max(parts, key=len)
+
+src_bytes = base64.b64decode(raw)
 im = Image.open(BytesIO(src_bytes)).convert('RGBA')
 bg = Image.new('RGBA', im.size, (255, 255, 255, 255))
 bg.paste(im, (0, 0), im)
@@ -39,4 +52,4 @@ for size in (192, 512, 180):
             sys.exit(1)
         print('wrote', path, path.stat().st_size)
 
-print('icons ok (dari logo-master.b64)')
+print('icons ok (dari logo-master)')
