@@ -8,8 +8,9 @@
       <button v-for="p in daftar" :key="p.id" type="button"
         class="w-full text-left bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 active:scale-[0.99] transition"
         @click="$router.push('/pengumuman/' + p.id)">
-        <div class="flex items-center gap-2 mb-1">
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
           <span v-if="p.pin" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--ok)] text-[var(--g)]">Pin</span>
+          <span v-if="p.lampiran_file" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--search)] text-[var(--mut)]">📎 Lampiran</span>
           <span class="text-[12px] text-[var(--mut)] ml-auto">{{ formatTgl(p.diterbitkan_pada) }}</span>
         </div>
         <p class="font-bold text-[15px] m-0">{{ p.judul }}</p>
