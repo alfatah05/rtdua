@@ -9,10 +9,21 @@ trait KeluargaHelpers
         $db = \Config\Database::connect();
         $anggota = $db->table('warga')->where('keluarga_id', $r['id'])->get()->getResultArray();
         $kepala = '—';
+        $foto = null;
         foreach ($anggota as $a) {
             if ($a['status'] === 'aktif' && strcasecmp($a['hubungan'], 'Kepala keluarga') === 0) {
                 $kepala = $a['nama'];
+                $foto = !empty($a['foto']) ? $a['foto'] : null;
                 break;
+            }
+        }
+        // fallback: anggota aktif pertama yang punya foto
+        if ($foto === null) {
+            foreach ($anggota as $a) {
+                if ($a['status'] === 'aktif' && !empty($a['foto'])) {
+                    $foto = $a['foto'];
+                    break;
+                }
             }
         }
         $user = $db->table('users')->where('keluarga_id', $r['id'])->where('role', 'warga')->get()->getRowArray();
@@ -21,6 +32,7 @@ trait KeluargaHelpers
             'nama'               => $kepala,
             'alamat'             => $this->labelAlamat($r),
             'blok'               => $r['blok_nama'],
+            'foto'               => $foto,
             'jumlah_anggota'     => count(array_filter($anggota, static fn ($a) => $a['status'] === 'aktif')),
             'data_belum_lengkap' => $this->cekBelumLengkap($r, $anggota),
             'belum_ganti_pin'    => $user ? (bool) $user['harus_ganti_kredensial'] : false,
