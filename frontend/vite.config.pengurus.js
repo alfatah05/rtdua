@@ -11,9 +11,9 @@ export default defineConfig({
       includeAssets: ['icons/pengurus-192.png', 'icons/pengurus-512.png', 'icons/pengurus-180.png'],
       manifest: {
         id: '/?app=pengurus',
-        name: 'Pengurus RT',
-        short_name: 'Pengurus RT',
-        description: 'Aplikasi pengurus RT',
+        name: 'Pengurus rtdua',
+        short_name: 'Pengurus rtdua',
+        description: 'Aplikasi pengurus rtdua',
         theme_color: '#0A8F44',
         background_color: '#FFFFFF',
         display: 'standalone',

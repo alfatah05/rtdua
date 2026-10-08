@@ -11,9 +11,9 @@ export default defineConfig({
       includeAssets: ['icons/warga-192.png', 'icons/warga-512.png', 'icons/warga-180.png'],
       manifest: {
         id: '/?app=warga',
-        name: 'Warga RT',
-        short_name: 'Warga RT',
-        description: 'Aplikasi warga RT',
+        name: 'Warga rtdua',
+        short_name: 'Warga rtdua',
+        description: 'Aplikasi warga rtdua',
         theme_color: '#0A8F44',
         background_color: '#FFFFFF',
         display: 'standalone',
@@ -28,7 +28,6 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Dev: update cepat setelah deploy
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
@@ -41,7 +40,6 @@ export default defineConfig({
             handler: 'NetworkOnly',
           },
           {
-            // JS/CSS: network dulu supaya deploy baru langsung kebaca
             urlPattern: ({ request }) =>
               request.destination === 'script' || request.destination === 'style',
             handler: 'NetworkFirst',
@@ -50,7 +48,7 @@ export default defineConfig({
               networkTimeoutSeconds: 4,
               expiration: {
                 maxEntries: 48,
-                maxAgeSeconds: 60 * 30, // 30 menit
+                maxAgeSeconds: 60 * 30,
               },
             },
           },

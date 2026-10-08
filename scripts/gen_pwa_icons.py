@@ -1,48 +1,41 @@
 #!/usr/bin/env python3
-"""Buat ikon PWA placeholder (huruf W / P). Butuh Pillow di CI."""
+"""Tulis ikon PWA dari logo resmi di scripts/logo-master.b64 (bukan generate huruf)."""
+import base64
+from io import BytesIO
 from pathlib import Path
+
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image
 except ImportError:
     import subprocess, sys
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pillow', '-q'])
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'frontend' / 'public' / 'icons'
 OUT.mkdir(parents=True, exist_ok=True)
+B64_FILE = Path(__file__).resolve().parent / 'logo-master.b64'
 
-def make(path, size, bg, circle, letter, letter_color):
-    img = Image.new('RGBA', (size, size), bg)
-    d = ImageDraw.Draw(img)
-    pad = int(size * 0.08)
-    d.ellipse([pad, pad, size - pad - 1, size - pad - 1], fill=circle)
-    font = None
-    for fp in (
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
-        '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf',
-    ):
-        if Path(fp).exists():
-            font = ImageFont.truetype(fp, int(size * 0.42))
-            break
-    if font is None:
-        font = ImageFont.load_default()
-    bbox = d.textbbox((0, 0), letter, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    x = (size - tw) // 2 - bbox[0]
-    y = (size - th) // 2 - bbox[1]
-    d.text((x, y), letter, fill=letter_color, font=font)
-    img.save(path, 'PNG')
-    print('wrote', path, path.stat().st_size)
+def make_square(im: Image.Image, size: int, pad_ratio: float = 0.08) -> Image.Image:
+    canvas = Image.new('RGBA', (size, size), (255, 255, 255, 255))
+    margin = int(size * pad_ratio)
+    box = size - 2 * margin
+    fitted = im.copy()
+    fitted.thumbnail((box, box), Image.Resampling.LANCZOS)
+    x = (size - fitted.width) // 2
+    y = (size - fitted.height) // 2
+    canvas.paste(fitted, (x, y), fitted)
+    return canvas
 
-G = (10, 143, 68, 255)
-Gd = (8, 110, 52, 255)
-W = (255, 255, 255, 255)
-Bg = (255, 255, 255, 255)
-Bg2 = (245, 250, 247, 255)
+if not B64_FILE.is_file():
+    raise SystemExit(f'Logo master tidak ada: {B64_FILE}')
 
+src = Image.open(BytesIO(base64.b64decode(B64_FILE.read_text().strip()))).convert('RGBA')
 for s in (192, 512, 180):
-    make(OUT / f'warga-{s}.png', s, Bg, G, 'W', W)
-    make(OUT / f'pengurus-{s}.png', s, Bg2, Gd, 'P', W)
-print('icons ok')
+    img = make_square(src, s)
+    for side in ('warga', 'pengurus'):
+        path = OUT / f'{side}-{s}.png'
+        img.save(path, 'PNG', optimize=True)
+        assert path.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n', path
+        print('wrote', path, path.stat().st_size)
+print('icons ok (logo resmi)')
