@@ -70,11 +70,26 @@ jobs:
           ls app/Config/ | head -40
           ls app/Config/Boot/ 2>/dev/null || true
 
-      - name: NPM install & build (frontend)
-        working-directory: frontend
+      - name: Generate PWA icons + NPM build
         run: |
+          set -e
+          python3 scripts/gen_pwa_icons.py
+          # Pastikan PNG valid (bukan HTML SPA)
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path('frontend/public/icons').glob('*.png'):
+              head = p.read_bytes()[:8]
+              assert head == b'\x89PNG\r\n\x1a\n', f'bukan PNG: {p}'
+              print('ok', p, p.stat().st_size)
+          PY
+          cd frontend
           npm install
           npm run build
+          # Cek ikon ikut ke dist
+          test -f dist/warga/icons/warga-192.png
+          test -f dist/pengurus/icons/pengurus-192.png
+          file dist/warga/icons/warga-192.png || true
+          xxd -l 8 dist/warga/icons/warga-192.png
 
       - name: Siapkan paket deploy
         run: |
@@ -110,9 +125,9 @@ jobs:
           test -f dist/rt-app/app/Config/Paths.php
           test -f dist/rt-app/app/Config/Boot/development.php
           test -f dist/rt-app/vendor/codeigniter4/framework/system/Boot.php
+          test -f dist/warga/icons/warga-192.png
+          test -f dist/pengurus/icons/pengurus-192.png
 
-      # FTP: timeout panjang + security loose (shared hosting sering butuh ini)
-      # Jangan jalanin banyak deploy bersamaan — concurrency sudah cancel-in-progress
       - name: Deploy WARGA-DEV (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
