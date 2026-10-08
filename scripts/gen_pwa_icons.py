@@ -15,9 +15,9 @@ OUT = ROOT / 'frontend' / 'public' / 'icons'
 OUT.mkdir(parents=True, exist_ok=True)
 
 parts = []
-for i in range(5):
+for i in range(10):
     p = ROOT / 'scripts' / f'logo-{i}.b64'
-    if not p.is_file():
+    if not p.is_file() or p.stat().st_size < 10:
         print('ERROR missing', p, file=sys.stderr)
         sys.exit(1)
     parts.append(p.read_text().strip())
