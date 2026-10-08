@@ -25,6 +25,7 @@ class PortalController extends Controller
                 'id'     => $k['id'],
                 'nama'   => $k['nama'],
                 'alamat' => $k['alamat'],
+                'foto'   => $k['foto'] ?? null,
             ];
         }, $list);
         return ApiResponse::ok($data);
