@@ -20,9 +20,12 @@ class UploadController extends Controller
         $jenis = (string) ($this->request->getPost('jenis') ?? '');
         if ($jenis === 'bukti') {
             // warga atau pengurus
-        } elseif (in_array($jenis, ['galeri', 'banner', 'foto_profil'], true)) {
+        } elseif (in_array($jenis, ['galeri', 'banner', 'foto_profil', 'logo', 'lampiran'], true)) {
             if ($side !== 'pengurus' || !in_array($user['role'], ['ketua', 'pengurus'], true)) {
                 return ApiResponse::fail('Hanya pengurus.', 403);
+            }
+            if ($jenis === 'logo' && $user['role'] !== 'ketua') {
+                return ApiResponse::fail('Hanya ketua yang boleh unggah logo.', 403);
             }
         } else {
             return ApiResponse::fail('Jenis tidak valid.', 422);
