@@ -41,6 +41,8 @@ const routes = [
       { path: 'galeri', name: 'galeri', component: GaleriListView },
     ],
   },
+  // catch-all → login kalau belum auth, home kalau sudah
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -49,11 +51,17 @@ const router = createRouter({
   scrollBehavior() { return { top: 0 } },
 })
 
-router.beforeEach((to) => {
-  const { isLoggedIn, restore, user } = useAuth()
-  restore('warga')
-  if (!to.meta.public && !isLoggedIn.value) return { name: 'login' }
-  if (to.name === 'login' && isLoggedIn.value) return { name: 'home' }
+router.beforeEach(async (to) => {
+  const { isLoggedIn, ensureSession, user } = useAuth()
+  await ensureSession('warga')
+
+  // Hanya /login yang public — sisanya wajib login
+  if (!to.meta.public && !isLoggedIn.value) {
+    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
+  }
+  if (to.name === 'login' && isLoggedIn.value) {
+    return { name: 'home' }
+  }
   if (isLoggedIn.value && user.value?.harus_ganti_kredensial && to.name !== 'ganti-pin') {
     return { name: 'ganti-pin' }
   }
