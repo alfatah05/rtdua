@@ -42,11 +42,15 @@
 html {
   scroll-padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
+  background-color: var(--bg);
+  min-height: 100%;
+  min-height: 100dvh;
 }
 
 body {
   margin: 0;
   background: var(--bg);
+  background-color: var(--bg);
   color: var(--text);
   font-family: "Plus Jakarta Sans", system-ui, sans-serif;
   font-weight: 500;
@@ -54,7 +58,15 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   padding-top: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+#app {
+  min-height: 100%;
+  min-height: 100dvh;
+  background: var(--bg);
 }
 
 :focus-visible {
