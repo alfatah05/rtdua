@@ -14,7 +14,7 @@ export default defineConfig({
         name: 'Pengurus rtdua',
         short_name: 'Pengurus rtdua',
         description: 'Aplikasi pengurus rtdua',
-        theme_color: '#FFFFFF',
+        theme_color: '#000000',
         background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'portrait',
