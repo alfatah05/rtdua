@@ -22,8 +22,9 @@
       <button v-for="k in filtered" :key="k.id" type="button"
         class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
         @click="$router.push('/warga/' + k.id)">
-        <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0 relative">
-          {{ k.inisial }}
+        <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0 relative overflow-hidden">
+          <img v-if="k.fotoUrl" :src="k.fotoUrl" alt="" class="w-full h-full object-cover" @error="k.fotoUrl = ''" />
+          <template v-else>{{ k.inisial }}</template>
           <span v-if="k.belumLengkap" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500"></span>
         </div>
         <div class="min-w-0 flex-1">
@@ -41,6 +42,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { listKeluarga } from '@shared/services/warga.js'
+import { mediaUrl } from '@shared/services/upload.js'
 import { Search, UserPlus, ScanLine, Download, SlidersHorizontal, ChevronRight } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -70,6 +72,7 @@ async function load() {
     nama: k.nama,
     alamat: k.alamat,
     inisial: inisial(k.nama),
+    fotoUrl: k.foto ? mediaUrl(k.foto) : '',
     belumLengkap: !!k.data_belum_lengkap,
     belumPin: !!k.belum_ganti_pin,
     penanda: k.mulai_bulan_depan ? 'Mulai bulan depan' : (k.belum_ganti_pin ? 'Belum ganti PIN' : ''),
