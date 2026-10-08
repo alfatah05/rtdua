@@ -16,8 +16,9 @@
         @click="$router.push('/konten/pengumuman/' + p.id)"
       >
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2 mb-0.5">
+          <div class="flex items-center gap-2 mb-0.5 flex-wrap">
             <span v-if="p.pin" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--ok)] text-[var(--g)]">Pin</span>
+            <span v-if="p.lampiran_file" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--search)] text-[var(--mut)]">📎 Lampiran</span>
             <span class="text-[12px] text-[var(--mut)] ml-auto">{{ formatTgl(p.diterbitkan_pada) }}</span>
           </div>
           <p class="font-bold text-[15px] m-0 leading-tight">{{ p.judul }}</p>
