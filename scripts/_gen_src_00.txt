@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Ikon PWA dari logo resmi rumah (bukan generate huruf)."""
+import base64
+from io import BytesIO
+from pathlib import Path
+
+try:
+    from PIL import Image
+except ImportError:
+    import subprocess, sys
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pillow', '-q'])
+    from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / 'frontend' / 'public' / 'icons'
+OUT.mkdir(parents=True, exist_ok=True)
+
+MASTER_B64 = """iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAABTpklEQVR42u29d5wkV3U2/Jxzq7onbFZcCYEIQsZkRBQYjBBgTE4G29gCY8Hr8GLZ5GAbG5vsbDCfjZExIDDBgSALJIPACCNQAAmEUUAB5V1pdmdnZme6697z/nFD3aqu6q5OsyO+aX6NZme6K9y6Jz3nnOeQiAg2X5uv/5++eHMJNl+bArD52nxtCsDma/O1KQCbr83XpgBsvjZfmwKw+dp8bQrA5mvztSkAm6/N16YAbL42X5sCsPnafP2EvZJhPnxXrpoQERDRVI4LYCrHXu97+Ul5DbM2fFfawH6zjSOIkxRivxH7Lfg0lEaTB7yeyqrpuTaiAuVDvUhNfx9vtKYSHgvNsN+dlNYnosK9THMTxApiPS1E03P5z20kQaBhqkF/0gpHR9koh8r9qBO6ftdzKNyzUdeuybpW3U/V9za0CxRr5XG/U/7dsFZmlI0Ra7GyZh90X+MokNgCxseZtFYd5flMwmI2tabjbPZ1F4CqhRzkM4/iZ9dpAv8wYzdkUg+3fE11G3SSD6vfccqu1ihrXfedjejjT+pcPOmTV2nGaWrFjRaUTeKYG23D1SmWJtZ5o7vNPMmN1/Rzw2imYT7XJHCetj88itZd72D0J+H8kzrXyC5QPzNfdg2qvmuMGfpG6qzLKEjPoKCrToMNo9HqNOOgY9StWfm7VUI/LVSp6hn3c0/jZ9EkTmkSv1Wt3bj3z+NK4DhB07DfqxOuaVxL1bGrEIhxBWwcoRhXE1ZtpqoAu+m5hwUhBsVv5XOUn/8kELmhYdBBFzsKXNfvc+sNO9YJwjAB+7Svu+7YTWDG8n+nifYM88xH+d4k3KOJ5wGmtbDrvZnGPfckr3kYPL8shOO6hKMopHHvvalFmIQA8CQeTBP/dVg/uN9NTxJpGbRYo+Lso/jndTFD7HP3Q1fKG2cSYMMwwlTlCQwb19WdYxx4dmoCMIpp6/dgmkJnw/jho2Dyk0gGjaIF+wWTdajWqEI3zD3208hl17jOTe6nMEdRMuXzrVsMMI55HuXz6+X3VwnVqH72OAJxV6r03KjXuu4xwDQ39UZY5KaIzrSCy/WIHYbV/huhHqruOg5pENx08Q+lJRhmQ2+0TbAeQf3g+5f4w8V/228CRPa/UwAaBn1+QwjAsFH9sBBiPzhvlA07qe/c1V2TwYpJQCaDsIKQAvX8NYgAIJn7BTuBWB8FOMwxk/VY/FEgraYPsak2G+VhT6p3oCyowwj7KJj/dDaQAGIATmBUCyJdmJXrQQevBXVuhclWADYg3gFqHwOZOx6YOQ5MVhjEZACpDef+JuutmZosehM0Y9hgsyncOa51GFf7TiIZNA5OX/l70QArCCUwqzcCN50Ns/eL4JUfAHoJRB0oBgQCIQbQgqTb
