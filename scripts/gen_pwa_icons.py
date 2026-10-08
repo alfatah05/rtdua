@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tulis ikon PWA dari logo resmi di scripts/logo-master.b64 (bukan generate huruf)."""
+"""Ikon PWA dari logo resmi (parts digabung)."""
 import base64
 from io import BytesIO
 from pathlib import Path
@@ -14,9 +14,9 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'frontend' / 'public' / 'icons'
 OUT.mkdir(parents=True, exist_ok=True)
-B64_FILE = Path(__file__).resolve().parent / 'logo-master.b64'
+SCR = Path(__file__).resolve().parent
 
-def make_square(im: Image.Image, size: int, pad_ratio: float = 0.08) -> Image.Image:
+def make_square(im, size, pad_ratio=0.06):
     canvas = Image.new('RGBA', (size, size), (255, 255, 255, 255))
     margin = int(size * pad_ratio)
     box = size - 2 * margin
@@ -27,15 +27,18 @@ def make_square(im: Image.Image, size: int, pad_ratio: float = 0.08) -> Image.Im
     canvas.paste(fitted, (x, y), fitted)
     return canvas
 
-if not B64_FILE.is_file():
-    raise SystemExit(f'Logo master tidak ada: {B64_FILE}')
-
-src = Image.open(BytesIO(base64.b64decode(B64_FILE.read_text().strip()))).convert('RGBA')
+parts = sorted(SCR.glob('logo.part*.b64'))
+if not parts:
+    raise SystemExit('logo.part*.b64 tidak ada')
+b64 = ''.join(p.read_text().strip() for p in parts)
+if len(b64) < 1000:
+    raise SystemExit('logo b64 terlalu pendek')
+src = Image.open(BytesIO(base64.b64decode(b64))).convert('RGBA')
 for s in (192, 512, 180):
     img = make_square(src, s)
     for side in ('warga', 'pengurus'):
         path = OUT / f'{side}-{s}.png'
         img.save(path, 'PNG', optimize=True)
-        assert path.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n', path
+        assert path.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n'
         print('wrote', path, path.stat().st_size)
 print('icons ok (logo resmi)')
