@@ -1,8 +1,8 @@
 name: Deploy Dev
 
+# Hanya dijalankan manual (Actions → Deploy Dev → Run workflow)
+# Tidak auto-run saat push, supaya bisa commit berkali-kali dulu baru deploy sekali.
 on:
-  push:
-    branches: [dev]
   workflow_dispatch:
 
 concurrency:
