@@ -7,6 +7,7 @@ class UploadService
     /** @var array<string, array{dir:string,max:int,public:bool,mimes:list<string>}> */
     private array $jenis = [
         'bukti'       => ['dir' => 'bukti', 'max' => 3_000_000, 'public' => false, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
+        'ronda'       => ['dir' => 'ronda', 'max' => 3_000_000, 'public' => false, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
         'galeri'      => ['dir' => 'galeri', 'max' => 4_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
         'banner'      => ['dir' => 'banner', 'max' => 2_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
         'foto_profil' => ['dir' => 'profil', 'max' => 1_500_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
@@ -14,10 +15,6 @@ class UploadService
         'lampiran'    => ['dir' => 'lampiran', 'max' => 5_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']],
     ];
 
-    /**
-     * @param \CodeIgniter\HTTP\Files\UploadedFile|null $file
-     * @return array{ok:bool,message?:string,data?:array}
-     */
     public function simpan(?object $file, string $jenis, ?string $thumbDataUrl = null): array
     {
         if (!$file || !$file->isValid() || $file->hasMoved()) {
@@ -104,6 +101,7 @@ class UploadService
         $jenis = explode('/', $rel)[0] ?? '';
         $map = [
             'bukti' => false,
+            'ronda' => false,
             'galeri' => true,
             'banner' => true,
             'profil' => true,

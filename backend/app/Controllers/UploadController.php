@@ -18,7 +18,7 @@ class UploadController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $jenis = (string) ($this->request->getPost('jenis') ?? '');
-        if ($jenis === 'bukti') {
+        if ($jenis === 'bukti' || $jenis === 'ronda') {
             // warga atau pengurus
         } elseif (in_array($jenis, ['galeri', 'banner', 'foto_profil', 'logo', 'lampiran'], true)) {
             if ($side !== 'pengurus' || !in_array($user['role'], ['ketua', 'pengurus'], true)) {
