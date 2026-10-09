@@ -105,6 +105,7 @@ $routes->post('ronda/jadwal-tetap', 'RondaController::simpanJadwalTetap', ['filt
 $routes->get('ronda/jadwal-khusus', 'RondaController::listJadwalKhusus', ['filter' => 'auth']);
 $routes->post('ronda/jadwal-khusus', 'RondaController::simpanJadwalKhusus', ['filter' => 'auth']);
 $routes->post('ronda/generate', 'RondaController::generateBulan', ['filter' => 'auth']);
+$routes->post('ronda/isi-otomatis', 'RondaController::isiOtomatis', ['filter' => 'auth']);
 $routes->post('ronda/absen-manual', 'RondaController::absenManual', ['filter' => 'auth']);
 $routes->post('ronda/absen', 'RondaController::absenWarga', ['filter' => 'auth']);
 $routes->post('ronda/malam/(:num)/ganti-keluarga', 'RondaController::gantiKeluarga/$1', ['filter' => 'auth']);
