@@ -23,19 +23,15 @@ Kalau fitur sudah ditambahkan / diuji OK → **hapus baris itu dari README** (ja
 
 ### Halaman masih Placeholder (dummy)
 
-- [ ] `/warga/:id/tambah-anggota` — UI tambah anggota (backend `tambahAnggota` sudah ada)
-- [ ] `/warga/:id/meninggal` — UI tandai meninggal / keluarkan anggota (backend status anggota sudah ada)
-- [ ] `/warga/:id/reset-pin` — route masih Placeholder (aksi reset PIN sudah ada di **detail warga**; rapihkan route/menu)
+> **Selesai 2026-10-09:** UI tambah anggota, status meninggal/keluarkan (+ganti kepala), buka NIK + audit, route reset-pin/meninggal dirapikan.
+
 - [ ] `/ronda/malam/edit` — ganti keluarga di malam ronda (edit malam)
 - [ ] `/ronda/isi-otomatis` — isi otomatis jadwal ronda
 - [ ] `/warga/scan-kk` — Scan KK (**Stage 14**, sengaja belakangan)
 
 ### Stage 10 — Data warga & pengaturan
 
-- [ ] UI **tambah anggota** lengkap (form, validasi, refresh detail)
-- [ ] UI **tandai meninggal / keluarkan** anggota
 - [ ] Alur keluarga **"mulai bulan depan"** + data belum lengkap — uji end-to-end di dev
-- [ ] Pembukaan **NIK** di pengurus + tercatat di Aktivitas — pastikan UI lengkap
 - [ ] (opsional) rapikan dokumentasi API di README ini agar selaras endpoint terbaru
 
 ### Stage 11 — Keuangan
