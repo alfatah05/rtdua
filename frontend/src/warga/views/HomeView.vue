@@ -158,10 +158,13 @@ onMounted(async () => {
     }))
   }
   if (iu.ok && iu.data) {
-    const total = iu.data.total ?? iu.data.total_tagihan ?? 0
+    const total = Number(iu.data.total ?? iu.data.total_tagihan ?? 0)
     if (total > 0) {
       iuranLabel.value = 'Iuran yang belum dibayar'
       iuranNominal.value = rp(total)
+    } else if (total < 0) {
+      iuranLabel.value = 'Kelebihan bayar'
+      iuranNominal.value = rp(-total)
     } else {
       iuranLabel.value = 'Semua iuran sudah lunas'
       iuranNominal.value = 'Lunas'
