@@ -23,10 +23,10 @@ Kalau fitur sudah ditambahkan / diuji OK → **hapus baris itu dari README** (ja
 
 ### Halaman masih Placeholder (dummy)
 
-> **Selesai 2026-10-09:** UI tambah anggota, status meninggal/keluarkan (+ganti kepala), buka NIK + audit, route reset-pin/meninggal dirapikan.
+> **Selesai 2026-10-09:** UI tambah anggota, status meninggal/keluarkan (+ganti kepala), buka NIK + audit.  
+> **Selesai 2026-10-09 (batch):** absen warga + foto (backend), ganti keluarga malam ronda (backend), detail program & album galeri di app warga (UI).
 
-- [ ] `/ronda/malam/edit` — ganti keluarga di malam ronda (edit malam)
-- [ ] `/ronda/isi-otomatis` — isi otomatis jadwal ronda
+- [ ] `/ronda/isi-otomatis` — isi otomatis jadwal ronda (regu tetap vs bergiliran masih terbuka di dokumen)
 - [ ] `/warga/scan-kk` — Scan KK (**Stage 14**, sengaja belakangan)
 
 ### Stage 10 — Data warga & pengaturan
@@ -52,13 +52,10 @@ Kalau fitur sudah ditambahkan / diuji OK → **hapus baris itu dari README** (ja
 
 ### Stage 13 — Konten & ronda
 
-- [ ] **Absen warga + foto** — endpoint backend + UI di app warga (saat ini warga hanya lihat jadwal)
-- [ ] **Edit malam ronda** (ganti keluarga)
 - [ ] **Isi otomatis** ronda
-- [ ] Detail **program** di app warga (drill-down, bukan hanya list)
-- [ ] Detail **album galeri** di app warga (lihat foto / unduh)
 - [ ] Penguncian absensi + terbit denda lewat **job cron** — uji siklus penuh di dev
 - [ ] Keputusan produk: hapus pengumuman / hapus album (dokumen masih terbuka)
+- [ ] UI absen warga + ganti keluarga malam + detail program/galeri: kode sudah di patch lokal; pastikan file frontend & routes ikut ter-push & diuji di dev
 
 ### Stage 14 — Scan KK
 

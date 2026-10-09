@@ -88,6 +88,30 @@ export async function absenManual(malamId, keluargaId) {
   }
 }
 
+export async function absenWarga(malamId, fotoPath) {
+  try {
+    const res = await api('/ronda/absen', {
+      method: 'POST',
+      body: { malam_id: malamId, foto: fotoPath },
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function gantiKeluargaMalam(malamId, keluargaIds) {
+  try {
+    const res = await api('/ronda/malam/' + malamId + '/ganti-keluarga', {
+      method: 'POST',
+      body: { keluarga_ids: keluargaIds },
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function batalkanAbsen(absenId) {
   try {
     await api('/ronda/absen/' + absenId + '/batal', { method: 'POST', body: {} })
