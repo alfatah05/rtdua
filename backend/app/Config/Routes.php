@@ -114,4 +114,4 @@ $routes->post('ronda/absen/(:num)/batal', 'RondaController::batalkanAbsen/$1', [
 $routes->post('ronda/terbitkan-denda', 'RondaController::terbitkanDenda', ['filter' => 'auth']);
 
 $routes->post('upload', 'UploadController::store');
-$routes->get('media/(:segment)/(:segment)', 'UploadController::media/$1/$2);
+$routes->get('media/(:segment)/(:segment)', 'UploadController::media/$1/$2');
