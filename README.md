@@ -24,7 +24,7 @@ Kalau fitur sudah ditambahkan / diuji OK → **hapus baris itu dari README** (ja
 ### Halaman masih Placeholder (dummy)
 
 > **Selesai 2026-10-09:** UI tambah anggota, status meninggal/keluarkan (+ganti kepala), buka NIK + audit.  
-> **Selesai 2026-10-09 (batch):** absen warga + foto (backend), ganti keluarga malam ronda (backend), detail program & album galeri di app warga (UI).
+> **Kode siap 2026-10-09 (perlu uji di dev setelah deploy):** absen warga + foto, ganti keluarga malam, detail program & album galeri warga, card iuran 3 kondisi, batalkan pembayaran/denda di UI pengurus.
 
 - [ ] `/ronda/isi-otomatis` — isi otomatis jadwal ronda (regu tetap vs bergiliran masih terbuka di dokumen)
 - [ ] `/warga/scan-kk` — Scan KK (**Stage 14**, sengaja belakangan)
@@ -36,9 +36,9 @@ Kalau fitur sudah ditambahkan / diuji OK → **hapus baris itu dari README** (ja
 
 ### Stage 11 — Keuangan
 
-- [ ] Card iuran warga: tiga kondisi **ada tagihan / lunas / kelebihan bayar** — uji di data nyata
-- [ ] **Batalkan pembayaran** end-to-end
-- [ ] **Batalkan denda** end-to-end
+- [ ] Card iuran warga 3 kondisi — **kode sudah**; uji data nyata (tagihan / lunas / kelebihan)
+- [ ] **Batalkan pembayaran** — **UI + API sudah**; uji end-to-end di dev
+- [ ] **Batalkan denda** — **UI + API sudah**; uji end-to-end di dev
 - [ ] Ubah nominal kas/denda + toggle **"terapkan ke bulan ini"** + **pratinjau dampak**
 - [ ] Kategori kas sesuai dokumen (saldo awal, pengembalian kelebihan, dll.)
 - [ ] Pastikan unit test alokasi jalan di CI (file `backend/tests/unit/AlokasiPembayaranTest.php` ada)
@@ -52,10 +52,12 @@ Kalau fitur sudah ditambahkan / diuji OK → **hapus baris itu dari README** (ja
 
 ### Stage 13 — Konten & ronda
 
+- [ ] **Absen warga + foto** — **kode backend+UI sudah**; uji di jam ronda di warga-dev
+- [ ] **Ganti keluarga malam** — **kode backend+UI sudah**; uji di pengurus-dev
 - [ ] **Isi otomatis** ronda
+- [ ] Detail program & album galeri warga — **kode sudah**; uji di warga-dev
 - [ ] Penguncian absensi + terbit denda lewat **job cron** — uji siklus penuh di dev
 - [ ] Keputusan produk: hapus pengumuman / hapus album (dokumen masih terbuka)
-- [ ] UI absen warga + ganti keluarga malam + detail program/galeri: kode sudah di patch lokal; pastikan file frontend & routes ikut ter-push & diuji di dev
 
 ### Stage 14 — Scan KK
 
