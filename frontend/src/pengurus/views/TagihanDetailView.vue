@@ -21,13 +21,21 @@
         <div
           v-for="t in tagihan"
           :key="t.id"
-          class="flex justify-between bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4"
+          class="flex justify-between items-start gap-2 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4"
         >
-          <div>
+          <div class="min-w-0">
             <p class="font-bold text-[15px] m-0">{{ labelJenis[t.jenis] || t.jenis }}</p>
             <p class="text-[13px] text-[var(--mut)] m-0">{{ t.periode }}</p>
           </div>
-          <span class="font-bold">{{ formatRp(t.sisa) }}</span>
+          <div class="text-right flex-none">
+            <span class="font-bold block">{{ formatRp(t.sisa) }}</span>
+            <button
+              v-if="t.jenis === 'denda_ronda' && Number(t.sisa) > 0"
+              type="button"
+              class="text-[12px] font-semibold text-red-600 mt-1"
+              @click="$router.push('/keuangan/tagihan/' + t.id + '/batal-denda')"
+            >Batalkan denda</button>
+          </div>
         </div>
       </div>
 
@@ -37,13 +45,23 @@
         <div
           v-for="p in bayar"
           :key="p.id"
-          class="flex justify-between bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4"
+          class="flex justify-between items-start gap-2 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4"
         >
-          <div>
+          <div class="min-w-0">
             <p class="font-bold text-[15px] m-0 capitalize">{{ p.metode }}</p>
             <p class="text-[13px] text-[var(--mut)] m-0">{{ p.tanggal_bayar }}</p>
+            <p v-if="p.dibatalkan" class="text-[12px] text-red-600 m-0">Dibatalkan</p>
           </div>
-          <span class="font-bold text-[var(--g)]">{{ formatRp(p.nominal) }}</span>
+          <div class="text-right flex-none">
+            <span class="font-bold text-[var(--g)] block">{{ formatRp(p.nominal) }}</span>
+            <button
+              v-if="!p.dibatalkan"
+              type="button"
+              class="text-[12px] font-semibold text-red-600 mt-1"
+              :disabled="busyId === p.id"
+              @click="onBatalBayar(p)"
+            >{{ busyId === p.id ? '…' : 'Batalkan' }}</button>
+          </div>
         </div>
       </div>
 
@@ -55,6 +73,7 @@
         >
           Catat pembayaran
         </button>
+        <p v-if="msg" class="text-[13px] text-center" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
       </div>
     </template>
   </div>
@@ -66,7 +85,7 @@ import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { formatRp } from '@shared/utils/format.js'
-import { ringkasanKeluarga } from '@shared/services/keuangan.js'
+import { ringkasanKeluarga, batalkanPembayaran } from '@shared/services/keuangan.js'
 import { listKeluarga } from '@shared/services/warga.js'
 
 const route = useRoute()
@@ -78,17 +97,21 @@ const total = ref(0)
 const status = ref('lunas')
 const tagihan = ref([])
 const bayar = ref([])
+const busyId = ref(null)
+const msg = ref('')
+const msgOk = ref(true)
 
 const labelJenis = { kas: 'Kas', denda_ronda: 'Denda ronda', khusus: 'Iuran khusus' }
 
 const labelStatus = computed(() => {
-  if (status.value === 'lunas') return 'Lunas'
+  if (total.value < 0) return 'Kelebihan bayar'
+  if (status.value === 'lunas' || total.value <= 0) return 'Lunas'
   if (status.value === 'menunggak') return 'Menunggak'
   return 'Belum lunas'
 })
 
 const statusClass = computed(() => {
-  if (status.value === 'lunas') return 'bg-[var(--ok)] text-[var(--g)]'
+  if (total.value < 0 || status.value === 'lunas' || total.value <= 0) return 'bg-[var(--ok)] text-[var(--g)]'
   if (status.value === 'menunggak') return 'bg-red-500/15 text-red-600'
   return 'bg-amber-500/15 text-amber-700'
 })
@@ -114,6 +137,23 @@ async function load() {
   labelKeluarga.value = k
     ? `${k.alamat || ''} · ${k.nama || ''}`.replace(/^ · | · $/g, '')
     : `Keluarga #${id}`
+}
+
+async function onBatalBayar(p) {
+  const alasan = prompt('Alasan batalkan pembayaran?')
+  if (alasan === null) return
+  if (!String(alasan).trim()) {
+    msgOk.value = false
+    msg.value = 'Alasan wajib'
+    return
+  }
+  busyId.value = p.id
+  msg.value = ''
+  const res = await batalkanPembayaran(p.id, String(alasan).trim())
+  busyId.value = null
+  msgOk.value = !!res.ok
+  msg.value = res.ok ? 'Pembayaran dibatalkan' : (res.error || 'Gagal')
+  if (res.ok) await load()
 }
 
 onMounted(load)
