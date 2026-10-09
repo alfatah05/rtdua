@@ -19,7 +19,7 @@
           <option v-for="k in kategoriList" :key="k" :value="k">{{ k }}</option>
         </select>
         <p class="text-[12px] text-[var(--mut)] mt-1 m-0">
-          Kategori iuran otomatis dari pembayaran. Lainnya isi keterangan.
+          Kategori iuran otomatis dari pembayaran. Pilih kategori manual di sini.
         </p>
       </div>
       <div>
@@ -77,7 +77,7 @@ const { success } = useToast()
 
 const isMasuk = computed(() => route.path.includes('kas-masuk'))
 const nominal = ref('')
-const kategori = ref(isMasuk.value ? 'Saldo awal' : 'Pengembalian kelebihan')
+const kategori = ref(isMasuk.value ? 'Saldo awal' : 'Operasional')
 const metode = ref('tunai')
 const ket = ref('')
 const tanggal = ref(new Date().toISOString().slice(0, 10))
@@ -86,8 +86,8 @@ const saving = ref(false)
 
 const kategoriList = computed(() =>
   isMasuk.value
-    ? ['Saldo awal', 'Lainnya']
-    : ['Pengembalian kelebihan', 'Lainnya']
+    ? ['Saldo awal', 'Sumbangan', 'Lainnya']
+    : ['Operasional', 'Pengembalian kelebihan', 'Lainnya']
 )
 
 async function onSave() {
