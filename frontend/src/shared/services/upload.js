@@ -1,7 +1,7 @@
 import { compressImage, makeThumb } from '../utils/imageCompress.js'
 
 /**
- * Upload file gambar. jenis: bukti | galeri | banner | foto_profil | logo
+ * Upload file gambar. jenis: bukti | ronda | galeri | banner | foto_profil | logo
  */
 export async function uploadGambar(file, jenis, { maxSide = 1600, withThumb = false } = {}) {
   try {
