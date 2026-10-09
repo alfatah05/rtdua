@@ -35,3 +35,12 @@ export function listPortalWarga() {
       }))
     : real.listPortalWarga()
 }
+
+export function tambahAnggota(keluargaId, payload) {
+  if (USE_MOCK.warga) return Promise.resolve({ ok: true, data: { id: 0 } })
+  return real.tambahAnggota(keluargaId, payload)
+}
+export function setStatusAnggota(anggotaId, payload) {
+  if (USE_MOCK.warga) return Promise.resolve({ ok: true })
+  return real.setStatusAnggota(anggotaId, payload)
+}

@@ -49,6 +49,24 @@ export async function updateAnggota(id, payload) {
   }
 }
 
+export async function tambahAnggota(keluargaId, payload) {
+  try {
+    const res = await api('/warga/' + keluargaId + '/anggota', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function setStatusAnggota(anggotaId, payload) {
+  try {
+    const res = await api('/anggota/' + anggotaId + '/status', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function resetPin(id) {
   try {
     await api('/warga/' + id + '/reset-pin', { method: 'POST', body: {} })
