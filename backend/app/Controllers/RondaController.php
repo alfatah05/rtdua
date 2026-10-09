@@ -123,6 +123,40 @@ class RondaController extends Controller
         return $res['ok'] ? ApiResponse::ok(null, 'Absen dicatat') : ApiResponse::fail($res['message'], 422);
     }
 
+    public function absenWarga()
+    {
+        $side = SideContext::fromRequest();
+        if ($side !== 'warga') {
+            return ApiResponse::fail('Hanya warga.', 403);
+        }
+        $user = (new AuthService())->current($side);
+        if (!$user || empty($user['keluarga_id'])) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new RondaService())->absenWarga(
+            (int) ($json['malam_id'] ?? 0),
+            (int) $user['keluarga_id'],
+            (string) ($json['foto'] ?? '')
+        );
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Absen dicatat') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function gantiKeluarga($malamId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new RondaService())->gantiKeluargaMalam(
+            (int) $malamId,
+            $json['keluarga_ids'] ?? [],
+            (int) $user['id']
+        );
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Daftar keluarga diperbarui') : ApiResponse::fail($res['message'], 422);
+    }
+
     public function batalkanAbsen($id)
     {
         $user = $this->requirePengurus();
