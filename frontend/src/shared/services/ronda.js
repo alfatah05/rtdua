@@ -76,6 +76,16 @@ export async function generateRonda(periode) {
   }
 }
 
+/** Bagi KK aktif ke hari tetap (urut blok+nomor), lalu generate malam bulan ini. */
+export async function isiOtomatisRonda(payload = {}) {
+  try {
+    const res = await api('/ronda/isi-otomatis', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function absenManual(malamId, keluargaId) {
   try {
     await api('/ronda/absen-manual', {
