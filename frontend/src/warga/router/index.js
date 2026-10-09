@@ -16,7 +16,9 @@ import StrukturView from '../views/StrukturView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import GantiPinView from '../views/GantiPinView.vue'
 import ProgramListView from '../views/ProgramListView.vue'
+import ProgramDetailView from '../views/ProgramDetailView.vue'
 import GaleriListView from '../views/GaleriListView.vue'
+import GaleriDetailView from '../views/GaleriDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -38,10 +40,11 @@ const routes = [
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
       { path: 'ganti-pin', name: 'ganti-pin', component: GantiPinView },
       { path: 'program', name: 'program', component: ProgramListView },
+      { path: 'program/:id', name: 'program-detail', component: ProgramDetailView },
       { path: 'galeri', name: 'galeri', component: GaleriListView },
+      { path: 'galeri/:id', name: 'galeri-detail', component: GaleriDetailView },
     ],
   },
-  // catch-all → login kalau belum auth, home kalau sudah
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -55,7 +58,6 @@ router.beforeEach(async (to) => {
   const { isLoggedIn, ensureSession, user } = useAuth()
   await ensureSession('warga')
 
-  // Hanya /login yang public — sisanya wajib login
   if (!to.meta.public && !isLoggedIn.value) {
     return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
   }
