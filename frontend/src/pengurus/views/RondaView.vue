@@ -135,11 +135,11 @@
           Belum ada keluarga bertugas
         </p>
       </template>
-      <div v-else class="py-2">
+      <div v-else class="py-3 flex flex-col items-center text-center">
         <p class="text-[13px] text-[var(--mut)] m-0 mb-3">Belum ada jadwal ronda di tanggal ini</p>
         <button
           type="button"
-          class="min-h-[40px] px-5 rounded-full bg-[var(--g)] text-white text-[13px] font-bold active:scale-95"
+          class="min-h-[40px] px-5 rounded-full bg-[var(--g)] text-white text-[13px] font-bold active:scale-95 dark:bg-white dark:text-black"
           @click="goTambahKhusus"
         >
           Tambah jadwal
@@ -180,6 +180,7 @@ import {
   isiOtomatisRonda,
   detailMalam,
   listJadwalTetap,
+  listJadwalKhusus,
 } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
 
@@ -198,6 +199,7 @@ const isiPerMalam = ref(2)
 const isiDurasi = ref('1')
 const isiBusy = ref(false)
 const hariTetap = ref([false, false, false, false, false, false, false])
+const khususSet = ref({})
 
 const bulanLabel = computed(() => {
   const [y, m] = calYm.value.split('-').map(Number)
@@ -281,6 +283,11 @@ function dayClass(day) {
     if (day.ronda) return 'bg-[var(--g)] text-white ring-2 ring-[var(--gd)]'
     return 'bg-[var(--g)] text-white'
   }
+  // riwayat (sudah lewat): tetap terlihat, lebih pudar
+  if (day.past && day.ronda) {
+    if (day.khusus) return 'bg-blue-500/15 text-blue-600/80 opacity-70'
+    return 'bg-[var(--gd)] text-[var(--gm)] opacity-55'
+  }
   if (day.khusus) return 'bg-blue-500/20 text-blue-700'
   if (day.ronda) return 'bg-[var(--gd)] text-[var(--gm)]'
   return 'text-[var(--text)]'
@@ -316,16 +323,18 @@ function buildDays(kal) {
     const date = `${calYm.value}-${String(n).padStart(2, '0')}`
     const r = byDate[date]
     const dow = new Date(y, m - 1, n).getDay()
-    const khusus = r?.sumber === 'khusus'
+    const dariKhusus = !!khususSet.value[date]
+    const khusus = r?.sumber === 'khusus' || dariKhusus
     const tetapPola = !khusus && !r && !!hariTetap.value[dow] && date >= today
     const tetapDb = r?.sumber === 'tetap'
-    const ronda = !!r || tetapPola
+    const ronda = !!r || khusus || tetapPola
     out.push({
       n,
       date,
+      past: date < today,
       ronda,
       khusus,
-      tetap: tetapDb || tetapPola,
+      tetap: (tetapDb || tetapPola) && !khusus,
       projected: tetapPola,
     })
   }
@@ -395,9 +404,20 @@ async function loadHariTetap() {
   }
 }
 
+async function loadKhususSet() {
+  const res = await listJadwalKhusus()
+  const s = {}
+  if (res.ok && Array.isArray(res.data)) {
+    for (const j of res.data) {
+      if (j?.tanggal) s[j.tanggal] = true
+    }
+  }
+  khususSet.value = s
+}
+
 onMounted(async () => {
   malamLoading.value = true
-  await loadHariTetap()
+  await Promise.all([loadHariTetap(), loadKhususSet()])
   const [mRes] = await Promise.all([malamTerdekat(), loadKalender()])
   malamLoading.value = false
   if (mRes.ok) malam.value = mRes.data
