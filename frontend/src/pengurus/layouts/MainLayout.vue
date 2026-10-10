@@ -21,10 +21,13 @@
     </aside>
 
     <div class="flex-1 min-w-0">
-      <main class="max-w-[1000px] mx-auto px-4 pt-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-8">
+      <main
+        class="max-w-[1000px] mx-auto px-4 pt-0 lg:pb-8"
+        :class="showBottomNav ? 'pb-[calc(96px+env(safe-area-inset-bottom,0px))]' : 'pb-[calc(24px+env(safe-area-inset-bottom,0px))]'"
+      >
         <router-view />
       </main>
-      <div class="lg:hidden">
+      <div v-if="showBottomNav" class="lg:hidden">
         <AppBottomNav side="pengurus" />
       </div>
     </div>
@@ -32,6 +35,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Home, Users, Wallet, Activity, UserRound } from 'lucide-vue-next'
 import AppBottomNav from '@shared/components/AppBottomNav.vue'
@@ -43,6 +47,20 @@ const sideItems = [
   { to: '/keuangan', label: 'Keuangan', icon: Wallet },
   { to: '/aktivitas', label: 'Aktivitas', icon: Activity },
 ]
+
+/** Bottom nav hanya di tab utama — form/aksi disembunyikan (design system). */
+const MAIN_TABS = new Set([
+  '/',
+  '/warga',
+  '/keuangan',
+  '/aktivitas',
+  '/profil',
+  '/lainnya',
+  '/notifikasi',
+  '/ronda',
+])
+const showBottomNav = computed(() => MAIN_TABS.has(route.path))
+
 function isActive(path) {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
