@@ -1,0 +1,79 @@
+name: Deploy Frontend Dev
+
+# Hanya manual. Deploy warga-dev + pengurus-dev saja.
+# Checkout selalu dari branch yang dipilih saat Run workflow (biasanya dev).
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend-dev
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: NPM build
+        run: |
+          set -e
+          mkdir -p frontend/public/icons
+          cd frontend
+          npm install
+          npm run build
+          echo "=== dist icons ==="
+          ls -la dist/warga/icons 2>/dev/null || true
+          ls -la dist/pengurus/icons 2>/dev/null || true
+
+      - name: Siapkan paket frontend
+        run: |
+          set -e
+          mkdir -p dist/warga dist/pengurus
+          cp -a frontend/dist/warga/. dist/warga/
+          cp -a frontend/dist/pengurus/. dist/pengurus/
+          cp deploy/warga/.htaccess dist/warga/
+          mkdir -p dist/warga/api && cp deploy/warga/api/index.php dist/warga/api/
+          cp deploy/pengurus/.htaccess dist/pengurus/
+          mkdir -p dist/pengurus/api && cp deploy/pengurus/api/index.php dist/pengurus/api/
+          echo "=== paket frontend ==="
+          du -sh dist/warga dist/pengurus
+
+      - name: Deploy WARGA-DEV (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/warga/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+
+      - name: Deploy PENGURUS-DEV (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/pengurus/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
