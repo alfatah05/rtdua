@@ -147,8 +147,35 @@ class RondaService
     public function malamTerdekat(): ?array
     {
         $db = \Config\Database::connect();
-        $row = $db->table('ronda_malam')->where('tanggal >=', date('Y-m-d'))->orderBy('tanggal', 'ASC')->get()->getRowArray();
-        return $row ? $this->detailMalam($row['tanggal']) : null;
+        $today = date('Y-m-d');
+
+        $tetap = $db->table('ronda_jadwal_tetap')->get()->getResultArray();
+        $activeDays = array_values(array_unique(array_map(static fn ($r) => (int) $r['hari'], $tetap)));
+        $activeSet = array_fill_keys($activeDays, true);
+
+        $rows = $db->table('ronda_malam')
+            ->where('tanggal >=', $today)
+            ->orderBy('tanggal', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()->getResultArray();
+
+        $fallback = null;
+        foreach ($rows as $row) {
+            $sumber = $row['sumber'] ?? 'tetap';
+            if ($sumber === 'khusus') {
+                return $this->detailMalam($row['tanggal']);
+            }
+            $w = (int) date('w', strtotime($row['tanggal']));
+            if ($activeSet && !isset($activeSet[$w])) {
+                if ($fallback === null) {
+                    $fallback = $row['tanggal'];
+                }
+                continue;
+            }
+            return $this->detailMalam($row['tanggal']);
+        }
+
+        return $fallback ? $this->detailMalam($fallback) : null;
     }
 
     public function detailMalam(string $tanggal): ?array
@@ -375,7 +402,6 @@ class RondaService
             $mode = 'slot';
         }
 
-        // Seluruh malam (tetap + khusus): lampau + ke depan, termasuk yang sudah absen
         $rows = $db->table('ronda_malam')
             ->orderBy('tanggal', 'ASC')
             ->get()->getResultArray();
