@@ -1,11 +1,6 @@
 <template>
   <div>
     <AppBackHeader title="Jadwal tetap" />
-
-    <p class="text-[13px] text-[var(--mut)] mb-4">
-      Pilih hari ronda, atur periode, isi otomatis. Daftar malam di bawah bisa difilter per minggu / bulan.
-    </p>
-
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
@@ -34,7 +29,7 @@
         <input v-model="jamSelesai" type="time" class="flex-1 min-h-[44px] px-3 rounded-[12px] bg-[var(--search)]" />
       </div>
 
-      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode isi otomatis</p>
+      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode</p>
       <select v-model="durasi" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-3">
         <option value="minggu">1 minggu (sisa minggu ini)</option>
         <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
@@ -44,9 +39,9 @@
         type="button"
         class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-2 disabled:opacity-50"
         :disabled="isiBusy || !adaHari"
-        @click="jalankanIsi"
+        @click="jalankanBuatSlot"
       >
-        {{ isiBusy ? 'Mengisi…' : 'Isi otomatis' }}
+        {{ isiBusy ? 'Membuat…' : 'Buat card kosong' }}
       </button>
       <p v-if="msg" class="text-[13px] text-center mb-4" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
 
@@ -62,7 +57,7 @@
 
       <p v-if="listLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat jadwal…</p>
       <p v-else-if="!filteredMalam.length" class="text-[13px] text-[var(--mut)] text-center py-4">
-        Belum ada jadwal di filter ini. Jalankan isi otomatis dulu.
+        Belum ada card. Pilih hari + periode, lalu ketuk Buat card kosong.
       </p>
 
       <div v-else class="space-y-3 mb-6">
@@ -115,7 +110,7 @@ import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import {
   listJadwalTetap,
   simpanJadwalTetap,
-  isiOtomatisRonda,
+  buatSlotKosong,
   kalenderRonda,
   detailMalam,
 } from '@shared/services/ronda.js'
@@ -313,7 +308,7 @@ async function toggleHari(h) {
   selected.value = copy
 }
 
-async function jalankanIsi() {
+async function jalankanBuatSlot() {
   if (!adaHari.value) {
     msgOk.value = false
     msg.value = 'Pilih minimal satu hari ronda'
@@ -330,19 +325,21 @@ async function jalankanIsi() {
       keluarga_ids: [],
     })
   }
-  const res = await isiOtomatisRonda({
+  const hariList = []
+  selected.value.forEach((on, h) => { if (on) hariList.push(h) })
+  const res = await buatSlotKosong({
     durasi: durasi.value,
-    keluarga_per_malam: 0,
+    hari: hariList,
   })
   isiBusy.value = false
   msgOk.value = !!res.ok
   if (res.ok) {
     const d = res.data || {}
-    msg.value = `Selesai: ${d.dibuat ?? 0} malam · ${d.total_kk ?? 0} KK · ~${d.keluarga_per_malam ?? '—'} KK/malam`
+    msg.value = `Selesai: ${d.dibuat ?? 0} card kosong dibuat` + (d.dilewati ? ` · ${d.dilewati} dilewati` : '')
     detailMap.value = {}
     await loadKalenderList()
   } else {
-    msg.value = res.error || 'Gagal isi otomatis'
+    msg.value = res.error || 'Gagal buat card'
   }
 }
 
