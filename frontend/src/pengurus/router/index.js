@@ -43,6 +43,7 @@ import PlaceholderView from '../views/PlaceholderView.vue'
 import RondaJadwalTetapView from '../views/RondaJadwalTetapView.vue'
 import RondaIsiOtomatisView from '../views/RondaIsiOtomatisView.vue'
 import RondaDendaView from '../views/RondaDendaView.vue'
+import RondaHapusView from '../views/RondaHapusView.vue'
 import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
 import ProgramFormView from '../views/ProgramFormView.vue'
 import GaleriAlbumFormView from '../views/GaleriAlbumFormView.vue'
@@ -116,6 +117,7 @@ const routes = [
       { path: 'ronda/jadwal-khusus', component: RondaJadwalKhususView },
       { path: 'ronda/isi-otomatis', component: RondaIsiOtomatisView },
       { path: 'ronda/denda', component: RondaDendaView },
+      { path: 'ronda/hapus', component: RondaHapusView },
 
       { path: 'pengaturan-warga', component: PengaturanWargaView },
       { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
