@@ -6,41 +6,48 @@
 
     <template v-else>
       <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Hari ronda</p>
-      <div class="flex justify-between gap-1.5 mb-2">
+      <div class="flex justify-between gap-1.5 mb-5">
         <button
           v-for="(label, h) in hariPendek"
           :key="h"
           type="button"
-          class="w-11 h-11 rounded-full text-[12px] font-bold grid place-items-center shrink-0 transition-transform active:scale-95 border"
+          class="w-11 h-11 rounded-full text-[12px] font-bold grid place-items-center shrink-0 transition-transform active:scale-95 border-0"
           :class="selected[h]
-            ? 'bg-[var(--g)] text-white border-[var(--g)]'
-            : 'bg-[var(--card)] text-[var(--mut)] border-[var(--line)]'"
+            ? 'bg-[var(--gd)] text-[var(--gm)]'
+            : 'bg-[var(--card2)] text-[var(--mut)]'"
           :disabled="toggling"
           @click="toggleHari(h)"
         >
           {{ label }}
         </button>
       </div>
-      <p class="text-[12px] text-[var(--mut)] mb-4">{{ hariAktifLabel || 'Belum ada hari dipilih' }}</p>
 
       <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Jam default</p>
       <div class="flex gap-2 mb-4">
-        <input v-model="jamMulai" type="time" class="flex-1 min-h-[44px] px-3 rounded-[12px] bg-[var(--search)]" />
-        <input v-model="jamSelesai" type="time" class="flex-1 min-h-[44px] px-3 rounded-[12px] bg-[var(--search)]" />
+        <input
+          v-model="jamMulai"
+          type="time"
+          class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none"
+        />
+        <input
+          v-model="jamSelesai"
+          type="time"
+          class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none"
+        />
       </div>
 
       <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode</p>
-      <select v-model="durasi" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-1">
+      <select
+        v-model="durasi"
+        class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] mb-3 outline-none appearance-none"
+      >
         <option value="minggu">1 minggu (sisa minggu ini)</option>
         <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
       </select>
-      <p class="text-[12px] text-[var(--mut)] mb-3">
-        1 hari + 1 bulan ≈ 4–5 card (tiap minggu). Bukan duplikat — tanggalnya beda.
-      </p>
 
       <button
         type="button"
-        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-2 disabled:opacity-50"
+        class="w-full min-h-[44px] rounded-full bg-[var(--g)] text-white font-bold mb-2 disabled:opacity-50"
         :disabled="isiBusy || !adaHari"
         @click="jalankanBuatSlot"
       >
@@ -50,20 +57,22 @@
 
       <div class="flex items-center justify-between gap-2 mb-3 mt-2">
         <p class="text-[15px] font-bold m-0">Jadwal ke depan</p>
-        <select v-model="filterMode" class="min-h-[36px] px-2 rounded-[10px] bg-[var(--search)] text-[13px] font-semibold">
-          <option value="minggu_ini">Minggu ini</option>
-          <option value="minggu_depan">Minggu depan</option>
-          <option value="bulan_ini">Bulan ini</option>
-          <option value="3_bulan">3 bulan</option>
+        <select
+          v-model="filterUnit"
+          class="min-h-[36px] px-4 rounded-full bg-[var(--search)] text-[13px] font-semibold outline-none appearance-none"
+          @change="pageOffset = 0"
+        >
+          <option value="minggu">Per minggu</option>
+          <option value="bulan">Per bulan</option>
         </select>
       </div>
 
       <p v-if="listLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat jadwal…</p>
       <p v-else-if="!filteredMalam.length" class="text-[13px] text-[var(--mut)] text-center py-4">
-        Belum ada jadwal. Pilih hari + periode, lalu ketuk Buat jadwal.
+        {{ emptyLabel }}
       </p>
 
-      <div v-else class="space-y-3 mb-6">
+      <div v-else class="space-y-3 mb-3">
         <div
           v-for="item in filteredMalam"
           :key="item.tanggal"
@@ -102,6 +111,26 @@
           </div>
         </div>
       </div>
+
+      <div v-if="!listLoading && allMalam.length" class="flex items-center justify-between gap-2 mb-6">
+        <button
+          type="button"
+          class="min-h-[40px] px-4 rounded-full bg-[var(--card2)] text-[13px] font-semibold disabled:opacity-40"
+          :disabled="pageOffset <= 0"
+          @click="pageOffset--"
+        >
+          Sebelumnya
+        </button>
+        <p class="text-[13px] font-semibold text-center m-0 min-w-0 truncate">{{ pageLabel }}</p>
+        <button
+          type="button"
+          class="min-h-[40px] px-4 rounded-full bg-[var(--card2)] text-[13px] font-semibold disabled:opacity-40"
+          :disabled="!canNext"
+          @click="pageOffset++"
+        >
+          Berikutnya
+        </button>
+      </div>
     </template>
   </div>
 </template>
@@ -132,29 +161,88 @@ const toggling = ref(false)
 const isiBusy = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
-const filterMode = ref('bulan_ini')
+const filterUnit = ref('minggu')
+const pageOffset = ref(0)
 const allMalam = ref([])
 const detailMap = ref({})
 
 const adaHari = computed(() => selected.value.some(Boolean))
-const hariAktifLabel = computed(() => {
-  const names = []
-  selected.value.forEach((on, h) => { if (on) names.push(hariLabel[h]) })
-  return names.join(', ')
-})
 
 function startOfWeek(d) {
-  // Senin–Minggu (bukan Minggu–Sabtu)
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  const day = (x.getDay() + 6) % 7 // Senin=0 … Minggu=6
+  const day = (x.getDay() + 6) % 7
   x.setDate(x.getDate() - day)
   x.setHours(0, 0, 0, 0)
   return x
 }
 
+function endOfWeek(d) {
+  const s = startOfWeek(d)
+  const e = new Date(s)
+  e.setDate(e.getDate() + 6)
+  return e
+}
+
 function weekIndex(d) {
   return startOfWeek(d).getTime()
 }
+
+const pageWindow = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  if (filterUnit.value === 'bulan') {
+    const base = new Date(today.getFullYear(), today.getMonth() + pageOffset.value, 1)
+    const start = new Date(base.getFullYear(), base.getMonth(), 1)
+    const end = new Date(base.getFullYear(), base.getMonth() + 1, 0)
+    start.setHours(0, 0, 0, 0)
+    end.setHours(0, 0, 0, 0)
+    return { start, end }
+  }
+  const base = startOfWeek(today)
+  base.setDate(base.getDate() + pageOffset.value * 7)
+  const start = new Date(base)
+  const end = endOfWeek(base)
+  return { start, end }
+})
+
+const pageLabel = computed(() => {
+  const { start, end } = pageWindow.value
+  if (filterUnit.value === 'bulan') {
+    if (pageOffset.value === 0) return 'Bulan ini'
+    if (pageOffset.value === 1) return 'Bulan depan'
+    return start.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+  }
+  if (pageOffset.value === 0) return 'Minggu ini'
+  if (pageOffset.value === 1) return 'Minggu depan'
+  const a = start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+  const b = end.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+  return `${a} – ${b}`
+})
+
+const filteredMalam = computed(() => {
+  const { start, end } = pageWindow.value
+  const s = start.getTime()
+  const e = end.getTime()
+  return allMalam.value.filter((item) => {
+    const t = new Date(item.tanggal + 'T00:00:00').getTime()
+    return t >= s && t <= e
+  })
+})
+
+const canNext = computed(() => {
+  if (!allMalam.value.length) return false
+  const last = allMalam.value[allMalam.value.length - 1]
+  if (!last?.tanggal) return false
+  const lastT = new Date(last.tanggal + 'T00:00:00').getTime()
+  return lastT > pageWindow.value.end.getTime()
+})
+
+const emptyLabel = computed(() => {
+  if (!allMalam.value.length) {
+    return 'Belum ada jadwal. Pilih hari + periode, lalu ketuk Buat jadwal.'
+  }
+  return `Tidak ada jadwal di ${pageLabel.value.toLowerCase()}.`
+})
 
 function labelKapan(tanggal) {
   if (!tanggal) return 'Ronda'
@@ -203,27 +291,6 @@ function formatHari(tgl) {
   })
 }
 
-const filteredMalam = computed(() => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const wToday = weekIndex(today)
-  const y = today.getFullYear()
-  const m = today.getMonth()
-
-  return allMalam.value.filter((item) => {
-    const tgl = new Date(item.tanggal + 'T00:00:00')
-    if (tgl < today) return false
-    const w = weekIndex(tgl)
-    if (filterMode.value === 'minggu_ini') return w === wToday
-    if (filterMode.value === 'minggu_depan') return w === wToday + 7 * 86400000
-    if (filterMode.value === 'bulan_ini') {
-      return tgl.getFullYear() === y && tgl.getMonth() === m
-    }
-    const limit = new Date(y, m + 3, 0)
-    return tgl <= limit
-  })
-})
-
 async function loadDetailsFor(list) {
   const map = { ...detailMap.value }
   const need = list.filter((x) => !map[x.tanggal]).slice(0, 24)
@@ -245,7 +312,7 @@ async function loadKalenderList() {
   listLoading.value = true
   const today = new Date()
   const months = []
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1)
     months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
   }
@@ -342,7 +409,9 @@ async function jalankanBuatSlot() {
     })
   }
   const hariList = []
-  selected.value.forEach((on, h) => { if (on) hariList.push(h) })
+  selected.value.forEach((on, h) => {
+    if (on) hariList.push(h)
+  })
   const res = await buatSlotKosong({
     durasi: durasi.value,
     hari: hariList,
@@ -358,6 +427,7 @@ async function jalankanBuatSlot() {
     const range = d.dari && d.sampai ? ` (${d.dari} s/d ${d.sampai})` : ''
     msg.value = parts.length ? `Selesai: ${parts.join(' · ')}${range}` : 'Jadwal sudah sesuai'
     detailMap.value = {}
+    pageOffset.value = 0
     await loadKalenderList()
   } else {
     msg.value = res.error || 'Gagal buat jadwal'
