@@ -375,9 +375,8 @@ class RondaService
             $mode = 'slot';
         }
 
-        // Seluruh jadwal tetap: lampau + ke depan, termasuk yang sudah absen
+        // Seluruh malam (tetap + khusus): lampau + ke depan, termasuk yang sudah absen
         $rows = $db->table('ronda_malam')
-            ->where('sumber', 'tetap')
             ->orderBy('tanggal', 'ASC')
             ->get()->getResultArray();
 
@@ -402,13 +401,25 @@ class RondaService
             }
         }
 
+        $khususDihapus = 0;
+        if ($mode === 'slot') {
+            $khususRows = $db->table('ronda_jadwal_khusus')->get()->getResultArray();
+            foreach ($khususRows as $k) {
+                $kid = (int) $k['id'];
+                $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', $kid)->delete();
+                $db->table('ronda_jadwal_khusus')->where('id', $kid)->delete();
+                $khususDihapus++;
+            }
+        }
+
         try {
             (new AuditService())->log('hapus_jadwal_ronda', 'ronda_malam', null, null, [
                 'mode' => $mode,
                 'penugasan_dihapus' => $cleared,
                 'slot_dihapus' => $deleted,
                 'absen_dihapus' => $absenDihapus,
-                'scope' => 'semua',
+                'khusus_dihapus' => $khususDihapus,
+                'scope' => 'semua_termasuk_khusus',
             ], 'pengguna', true, $userId);
         } catch (\Throwable $e) {
         }
@@ -420,6 +431,7 @@ class RondaService
                 'penugasan_dihapus' => $cleared,
                 'slot_dihapus' => $deleted,
                 'absen_dihapus' => $absenDihapus,
+                'khusus_dihapus' => $khususDihapus,
             ],
         ];
     }
