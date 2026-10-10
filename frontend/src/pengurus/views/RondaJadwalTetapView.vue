@@ -24,11 +24,14 @@
         <input v-model="jamSelesai" type="time" class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none" />
       </div>
 
-      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode</p>
-      <select v-model="durasi" class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] mb-3 outline-none appearance-none">
-        <option value="minggu">1 minggu</option>
-        <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
+      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Pola card</p>
+      <select v-model="durasi" class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] mb-2 outline-none appearance-none">
+        <option value="minggu">1 minggu (satu set card)</option>
+        <option value="4">4 minggu putar (Minggu 1–4)</option>
       </select>
+      <p class="text-[12px] text-[var(--mut)] m-0 mb-4 px-1">
+        Template memakai rotasi minggu 1–4 di dalam bulan. Pilih 4 minggu putar bila penugasan KK berbeda tiap minggu; pilih 1 minggu bila semua minggu sama.
+      </p>
 
       <button
         type="button"
@@ -95,7 +98,8 @@ const err = ref('')
 const selected = ref([false, false, false, false, false, false, false])
 const jamMulai = ref('21:00')
 const jamSelesai = ref('00:00')
-const durasi = ref('1')
+/** 'minggu' = 1 set card; selain itu backend memakai 4 minggu putar */
+const durasi = ref('4')
 const busy = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
@@ -136,7 +140,13 @@ async function load() {
     }
   }
   selected.value = next
-  if (c.ok) cards.value = c.data || []
+  if (c.ok) {
+    cards.value = c.data || []
+    // Infer pola dari jumlah minggu di card yang ada
+    const mingguSet = new Set((cards.value || []).map((x) => Number(x.minggu)).filter(Boolean))
+    if (mingguSet.size <= 1) durasi.value = 'minggu'
+    else durasi.value = '4'
+  }
 }
 
 function toggleHari(h) {
@@ -166,7 +176,8 @@ async function jalankanBuat() {
   if (res.ok) {
     const d = res.data || {}
     cards.value = d.cards || []
-    msg.value = `${d.dibuat || cards.value.length} card siap`
+    const nMinggu = d.minggu || (durasi.value === 'minggu' ? 1 : 4)
+    msg.value = `${d.dibuat || cards.value.length} card siap · pola ${nMinggu} minggu`
     if (!cards.value.length) {
       const c = await listTemplateCards()
       if (c.ok) cards.value = c.data || []
