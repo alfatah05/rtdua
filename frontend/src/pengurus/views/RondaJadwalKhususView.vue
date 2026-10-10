@@ -80,14 +80,14 @@
       <p class="text-[15px] font-bold mb-3 mt-2">Semua jadwal khusus</p>
       <p v-if="listLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat…</p>
       <p v-else-if="!listMalam.length" class="text-[13px] text-[var(--mut)] text-center py-4">
-        Belum ada jadwal khusus. Pilih tanggal di kalender, lalu ketuk Buat jadwal.
+        Belum ada jadwal khusus
       </p>
 
       <div v-else class="space-y-3 mb-6">
         <div
           v-for="item in listMalam"
           :key="item.tanggal"
-          class="rounded-[20px] border border-[var(--line)] overflow-hidden shadow-[var(--sh)] bg-[var(--card)]"
+          class="rounded-[20px] border border-[var(--line)] overflow-hidden bg-[var(--card)]"
         >
           <div
             class="px-4 py-3 flex items-center justify-between"
@@ -110,15 +110,21 @@
               <ChevronRight :size="20" />
             </button>
           </div>
-          <div class="px-4 py-3">
+          <div class="px-4 py-3 space-y-1">
             <template v-if="detailMap[item.tanggal]?.keluarga?.length">
               <div
                 v-for="k in detailMap[item.tanggal].keluarga"
                 :key="k.keluarga_id"
-                class="flex items-center justify-between gap-3 py-1.5"
+                class="flex items-center justify-between gap-3 py-1"
               >
-                <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
-                <span class="text-[13px] text-[var(--mut)] shrink-0">{{ k.alamat }}</span>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
+                    <img v-if="k.foto" :src="mediaUrl(k.foto)" alt="" class="w-full h-full object-cover" />
+                    <span v-else>{{ inisial(k.nama) }}</span>
+                  </div>
+                  <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
+                </div>
+                <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
               </div>
             </template>
             <p v-else class="text-[13px] text-[var(--mut)] m-0">
@@ -143,6 +149,7 @@ import {
   kalenderRonda,
   detailMalam,
 } from '@shared/services/ronda.js'
+import { mediaUrl } from '@shared/services/upload.js'
 
 const route = useRoute()
 const loading = ref(true)
@@ -274,6 +281,12 @@ function formatHari(tgl) {
     month: 'long',
     year: 'numeric',
   })
+}
+
+function inisial(nama) {
+  if (!nama) return '?'
+  const p = String(nama).trim().split(/\s+/)
+  return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || '?'
 }
 
 async function loadKalenderMonth() {
