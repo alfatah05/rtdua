@@ -28,27 +28,19 @@
       <div class="grid grid-cols-7 gap-1 text-center text-[12px] mb-1">
         <span v-for="d in ['M', 'S', 'S', 'R', 'K', 'J', 'S']" :key="d" class="text-[var(--mut)] font-semibold py-1">{{ d }}</span>
       </div>
-      <div class="grid grid-cols-7 gap-1 mb-2">
+      <div class="grid grid-cols-7 gap-1 place-items-center mb-2">
         <button
           v-for="(day, i) in days"
           :key="i"
           type="button"
-          class="aspect-square rounded-full text-[13px] font-semibold grid place-items-center relative transition-transform active:scale-95"
+          class="w-9 h-9 rounded-full text-[13px] font-semibold grid place-items-center transition-transform active:scale-95"
           :class="dayClass(day)"
           :disabled="!day.n || day.past"
           @click="day.n && !day.past && selectDate(day.date)"
         >
           {{ day.n || '' }}
-          <span
-            v-if="day.n && (day.tetap || day.khusus)"
-            class="absolute bottom-0.5 w-1.5 h-1.5 rounded-full"
-            :class="day.khusus ? 'bg-blue-500' : 'bg-[var(--g)]'"
-          />
         </button>
       </div>
-      <p class="text-[12px] text-[var(--mut)] mb-4">
-        Hijau = jadwal tetap · Biru = jadwal khusus · Ketuk tanggal untuk memilih
-      </p>
       <p v-if="selectedTanggal" class="text-[13px] font-semibold text-[var(--g)] mb-3">
         Terpilih: {{ formatHari(selectedTanggal) }}
       </p>
@@ -66,6 +58,14 @@
           class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none"
         />
       </div>
+
+      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Keterangan</p>
+      <input
+        v-model="keterangan"
+        type="text"
+        placeholder="Contoh: Ronda malam tahun baru"
+        class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none mb-4"
+      />
 
       <button
         type="button"
@@ -94,7 +94,9 @@
             style="background: linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)"
           >
             <div class="min-w-0">
-              <p class="text-[13px] font-semibold m-0 text-white">{{ labelKapan(item.tanggal) }}</p>
+              <p class="text-[13px] font-semibold m-0 text-white">
+                {{ labelKapan(item.tanggal) }}<template v-if="item.keterangan"> — {{ item.keterangan }}</template>
+              </p>
               <p class="text-[12px] m-0 mt-0.5 text-white/90">
                 {{ formatHari(item.tanggal) }} · {{ jamLabel(item.jam_mulai) }}–{{ jamLabel(item.jam_selesai) }}
               </p>
@@ -146,6 +148,7 @@ const listLoading = ref(false)
 const err = ref('')
 const jamMulai = ref('21:00')
 const jamSelesai = ref('00:00')
+const keterangan = ref('')
 const selectedTanggal = ref('')
 const isiBusy = ref(false)
 const msg = ref('')
@@ -333,7 +336,10 @@ async function loadList() {
           jam_mulai: j.jam_mulai,
           jam_selesai: j.jam_selesai,
           sumber: 'khusus',
+          keterangan: j.keterangan || '',
         }
+      } else {
+        byTgl[j.tanggal].keterangan = j.keterangan || byTgl[j.tanggal].keterangan || ''
       }
     }
   }
@@ -373,12 +379,14 @@ async function jalankanBuat() {
     tanggal: selectedTanggal.value,
     jam_mulai: jamMulai.value + ':00',
     jam_selesai: jamSelesai.value + ':00',
+    keterangan: (keterangan.value || '').trim() || null,
     keluarga_ids: [],
   })
   isiBusy.value = false
   msgOk.value = !!res.ok
   if (res.ok) {
     msg.value = `Jadwal khusus ${formatHari(selectedTanggal.value)} dibuat`
+    keterangan.value = ''
     detailMap.value = {}
     await Promise.all([loadKalenderMonth(), loadList()])
   } else {
