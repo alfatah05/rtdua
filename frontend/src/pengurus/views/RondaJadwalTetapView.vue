@@ -106,13 +106,13 @@
               </div>
             </template>
             <p v-else class="text-[13px] text-[var(--mut)] m-0">
-              {{ detailMap[item.tanggal] ? 'Belum ada keluarga bertugas' : '…' }}
+              {{ detailMap[item.tanggal] ? 'Belum ada keluarga bertugas' : (item.virtual ? 'Belum ada keluarga bertugas' : '…') }}
             </p>
           </div>
         </div>
       </div>
 
-      <div v-if="!listLoading && allMalam.length" class="flex items-center justify-between gap-2 mb-6">
+      <div v-if="!listLoading && adaHari" class="flex items-center justify-between gap-2 mb-6">
         <button
           type="button"
           class="min-h-[40px] px-4 rounded-full bg-[var(--card2)] text-[13px] font-semibold disabled:opacity-40"
@@ -124,8 +124,7 @@
         <p class="text-[13px] font-semibold text-center m-0 min-w-0 truncate">{{ pageLabel }}</p>
         <button
           type="button"
-          class="min-h-[40px] px-4 rounded-full bg-[var(--card2)] text-[13px] font-semibold disabled:opacity-40"
-          :disabled="!canNext"
+          class="min-h-[40px] px-4 rounded-full bg-[var(--card2)] text-[13px] font-semibold"
           @click="pageOffset++"
         >
           Berikutnya
@@ -187,6 +186,14 @@ function weekIndex(d) {
   return startOfWeek(d).getTime()
 }
 
+function toDateStr(d) {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 const pageWindow = computed(() => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -219,27 +226,48 @@ const pageLabel = computed(() => {
   return `${a} – ${b}`
 })
 
+/** Jadwal tetap berlanjut tanpa ujung: pola hari diulang ke depan. */
 const filteredMalam = computed(() => {
   const { start, end } = pageWindow.value
-  const s = start.getTime()
-  const e = end.getTime()
-  return allMalam.value.filter((item) => {
-    const t = new Date(item.tanggal + 'T00:00:00').getTime()
-    return t >= s && t <= e
-  })
-})
+  if (!adaHari.value) return []
 
-const canNext = computed(() => {
-  if (!allMalam.value.length) return false
-  const last = allMalam.value[allMalam.value.length - 1]
-  if (!last?.tanggal) return false
-  const lastT = new Date(last.tanggal + 'T00:00:00').getTime()
-  return lastT > pageWindow.value.end.getTime()
+  const byTgl = {}
+  for (const item of allMalam.value) {
+    if (item?.tanggal) byTgl[item.tanggal] = item
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const jamM = String(jamMulai.value || '21:00').slice(0, 5) + ':00'
+  const jamS = String(jamSelesai.value || '00:00').slice(0, 5) + ':00'
+  const out = []
+  const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+  const endT = end.getTime()
+
+  while (cur.getTime() <= endT) {
+    const h = cur.getDay()
+    if (selected.value[h] && cur.getTime() >= today.getTime()) {
+      const tgl = toDateStr(cur)
+      if (byTgl[tgl]) {
+        out.push(byTgl[tgl])
+      } else {
+        out.push({
+          tanggal: tgl,
+          jam_mulai: jamM,
+          jam_selesai: jamS,
+          sumber: 'tetap',
+          virtual: true,
+        })
+      }
+    }
+    cur.setDate(cur.getDate() + 1)
+  }
+  return out
 })
 
 const emptyLabel = computed(() => {
-  if (!allMalam.value.length) {
-    return 'Belum ada jadwal. Pilih hari + periode, lalu ketuk Buat jadwal.'
+  if (!adaHari.value) {
+    return 'Pilih minimal satu hari ronda.'
   }
   return `Tidak ada jadwal di ${pageLabel.value.toLowerCase()}.`
 })
@@ -260,7 +288,7 @@ function labelKapan(tanggal) {
 }
 
 function cardHeaderStyle(item) {
-  const nearest = allMalam.value[0]?.tanggal
+  const nearest = allMalam.value[0]?.tanggal || filteredMalam.value[0]?.tanggal
   const isNearest = item.tanggal === nearest
   if (isNearest) {
     if (item.sumber === 'khusus') {
@@ -293,7 +321,7 @@ function formatHari(tgl) {
 
 async function loadDetailsFor(list) {
   const map = { ...detailMap.value }
-  const need = list.filter((x) => !map[x.tanggal]).slice(0, 24)
+  const need = list.filter((x) => !x.virtual && !map[x.tanggal]).slice(0, 24)
   await Promise.all(
     need.map(async (item) => {
       const res = await detailMalam(item.tanggal)
@@ -301,6 +329,10 @@ async function loadDetailsFor(list) {
       else map[item.tanggal] = { keluarga: [] }
     }),
   )
+  // virtual: kosong tanpa fetch
+  for (const item of list) {
+    if (item.virtual && !map[item.tanggal]) map[item.tanggal] = { keluarga: [] }
+  }
   detailMap.value = map
 }
 
