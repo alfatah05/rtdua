@@ -86,7 +86,6 @@ export async function generateRonda(periode) {
   }
 }
 
-/** Buat malam kosong dari hari + periode (tanpa assign KK). */
 export async function buatSlotKosong(payload = {}) {
   try {
     const res = await api('/ronda/buat-slot', { method: 'POST', body: payload })
@@ -96,7 +95,6 @@ export async function buatSlotKosong(payload = {}) {
   }
 }
 
-/** Bagi KK aktif ke hari tetap (rotasi), generate malam sesuai durasi. */
 export async function isiOtomatisRonda(payload = {}) {
   try {
     const res = await api('/ronda/isi-otomatis', { method: 'POST', body: payload })
@@ -160,10 +158,42 @@ export async function terbitkanDendaRonda(payload = {}) {
   }
 }
 
-/** Hapus massal jadwal tetap ke depan. mode: penugasan | slot */
 export async function hapusJadwalRonda(payload = {}) {
   try {
     const res = await api('/ronda/hapus-jadwal', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+/** List card template (minggu × hari). */
+export async function listTemplateCards() {
+  try {
+    const res = await api('/ronda/template')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+/** Buat/update card template dari hari + periode. */
+export async function buatTemplateCards(payload = {}) {
+  try {
+    const res = await api('/ronda/template', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+/** Simpan keluarga di satu card template. */
+export async function simpanTemplateKeluarga(cardId, keluargaIds) {
+  try {
+    const res = await api('/ronda/template/' + cardId + '/keluarga', {
+      method: 'POST',
+      body: { keluarga_ids: keluargaIds },
+    })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
