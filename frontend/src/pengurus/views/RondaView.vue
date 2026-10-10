@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-5 gap-1.5 text-center mb-5">
+    <div class="grid grid-cols-3 gap-1.5 text-center mb-5">
       <button
         v-for="a in aksi"
         :key="a.label"
@@ -47,24 +47,13 @@
         <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>
       </button>
     </div>
-    <p v-if="aksiMsg" class="text-[13px] text-center mb-3" :class="aksiOk ? 'text-[var(--g)]' : 'text-red-600'">{{ aksiMsg }}</p>
 
     <div class="flex items-center justify-between mb-2">
-      <button
-        type="button"
-        class="w-10 h-10 rounded-full grid place-items-center bg-[var(--card2)] active:scale-95"
-        aria-label="Bulan sebelumnya"
-        @click="shiftMonth(-1)"
-      >
+      <button type="button" class="w-10 h-10 rounded-full grid place-items-center bg-[var(--card2)] active:scale-95" aria-label="Bulan sebelumnya" @click="shiftMonth(-1)">
         <ChevronLeft :size="20" />
       </button>
       <p class="text-[15px] font-bold m-0">{{ bulanLabel }}</p>
-      <button
-        type="button"
-        class="w-10 h-10 rounded-full grid place-items-center bg-[var(--card2)] active:scale-95"
-        aria-label="Bulan berikutnya"
-        @click="shiftMonth(1)"
-      >
+      <button type="button" class="w-10 h-10 rounded-full grid place-items-center bg-[var(--card2)] active:scale-95" aria-label="Bulan berikutnya" @click="shiftMonth(1)">
         <ChevronRight :size="20" />
       </button>
     </div>
@@ -81,9 +70,7 @@
         :class="dayClass(day)"
         :disabled="!day.n"
         @click="day.n && onPickDay(day)"
-      >
-        {{ day.n || '' }}
-      </button>
+      >{{ day.n || '' }}</button>
     </div>
 
     <div v-if="selectedTanggal" class="mt-8 mb-6">
@@ -92,9 +79,7 @@
           <p class="text-[13px] font-semibold m-0">{{ labelKapanTgl(selectedTanggal) }}</p>
           <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
             {{ formatHari(selectedTanggal) }}
-            <template v-if="selectedDetail">
-              · {{ jamLabel(selectedDetail.jam_mulai) }}–{{ jamLabel(selectedDetail.jam_selesai) }}
-            </template>
+            <template v-if="selectedDetail"> · {{ jamLabel(selectedDetail.jam_mulai) }}–{{ jamLabel(selectedDetail.jam_selesai) }}</template>
           </p>
         </div>
         <button
@@ -107,14 +92,9 @@
           <ChevronRight :size="20" />
         </button>
       </div>
-
       <p v-if="selectedLoading" class="text-[13px] text-[var(--mut)] py-2">Memuat…</p>
       <template v-else-if="selectedDetail">
-        <div
-          v-for="k in (selectedDetail.keluarga || [])"
-          :key="k.keluarga_id"
-          class="flex items-center justify-between gap-3 py-2"
-        >
+        <div v-for="k in (selectedDetail.keluarga || [])" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-2">
           <div class="flex items-center gap-2.5 min-w-0">
             <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
               <img v-if="k.foto" :src="mediaUrl(k.foto)" alt="" class="w-full h-full object-cover" />
@@ -137,15 +117,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Calendar, List, Wand2, Banknote, Trash2, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { Calendar, List, Banknote, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import {
-  kalenderRonda,
-  malamTerdekat,
-  detailMalam,
-  listJadwalTetap,
-  listJadwalKhusus,
-} from '@shared/services/ronda.js'
+import { kalenderRonda, malamTerdekat, detailMalam, listJadwalTetap, listJadwalKhusus } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
 
 const router = useRouter()
@@ -153,8 +127,6 @@ const route = useRoute()
 const malam = ref(null)
 const malamLoading = ref(true)
 const days = ref([])
-const aksiMsg = ref('')
-const aksiOk = ref(true)
 const calYm = ref((() => {
   const t = new Date()
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`
@@ -173,9 +145,7 @@ const bulanLabel = computed(() => {
 const aksi = [
   { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap', bg: 'rgba(10,143,68,.18)', color: '#0A8F44' },
   { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Isi otomatis', icon: Wand2, to: '/ronda/isi-otomatis', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
   { label: 'Denda', icon: Banknote, to: '/ronda/denda', bg: 'rgba(239,68,68,.18)', color: '#DC2626' },
-  { label: 'Hapus', icon: Trash2, to: '/ronda/hapus', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
 ]
 
 function weekIndex(d) {
@@ -228,11 +198,7 @@ function jamLabel(j) {
 
 function formatHari(tgl) {
   if (!tgl) return ''
-  return new Date(tgl + 'T00:00:00').toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  return new Date(tgl + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
 function inisial(nama) {
@@ -267,11 +233,7 @@ function shiftMonth(delta) {
 
 function todayStr() {
   const t0 = new Date()
-  return [
-    t0.getFullYear(),
-    String(t0.getMonth() + 1).padStart(2, '0'),
-    String(t0.getDate()).padStart(2, '0'),
-  ].join('-')
+  return [t0.getFullYear(), String(t0.getMonth() + 1).padStart(2, '0'), String(t0.getDate()).padStart(2, '0')].join('-')
 }
 
 function buildDays(kal) {
@@ -287,22 +249,10 @@ function buildDays(kal) {
   for (let n = 1; n <= lastDate; n++) {
     const date = `${calYm.value}-${String(n).padStart(2, '0')}`
     const r = byDate[date]
-    const dow = new Date(y, m - 1, n).getDay()
     const dariKhusus = !!khususSet.value[date]
-    // Hanya slot nyata di DB — jangan warnai dari pola hari saja
-    const khusus = (r?.sumber === 'khusus') || (!r && dariKhusus)
-    const tetapDb = r?.sumber === 'tetap' && (date < today || !!hariTetap.value[dow])
-    // Orphan (tetap di hari non-aktif, ke depan) tidak di-highlight
-    const ronda = khusus || tetapDb
-    out.push({
-      n,
-      date,
-      past: date < today,
-      ronda,
-      khusus,
-      tetap: tetapDb && !khusus,
-      projected: false,
-    })
+    const khusus = r?.sumber === 'khusus' || (!r && dariKhusus)
+    const ronda = !!r || khusus
+    out.push({ n, date, past: date < today, ronda, khusus, tetap: !!r && r.sumber === 'tetap' && !khusus, projected: false })
   }
   days.value = out
 }
@@ -314,8 +264,7 @@ async function onPickDay(day) {
   selectedLoading.value = true
   const res = await detailMalam(day.date)
   selectedLoading.value = false
-  if (res.ok && res.data) selectedDetail.value = res.data
-  else selectedDetail.value = null
+  selectedDetail.value = res.ok && res.data ? res.data : null
 }
 
 function goTambahKhusus() {
@@ -329,8 +278,7 @@ function onAksi(a) {
 
 async function loadKalender() {
   const res = await kalenderRonda(calYm.value)
-  if (res.ok) buildDays(res.data)
-  else buildDays([])
+  buildDays(res.ok ? res.data : [])
 }
 
 async function loadHariTetap() {
@@ -361,8 +309,7 @@ async function reloadAll() {
   await Promise.all([loadHariTetap(), loadKhususSet()])
   const [mRes] = await Promise.all([malamTerdekat(), loadKalender()])
   malamLoading.value = false
-  if (mRes.ok && mRes.data) malam.value = mRes.data
-  else malam.value = null
+  malam.value = mRes.ok && mRes.data ? mRes.data : null
   if (selectedTanggal.value) {
     const res = await detailMalam(selectedTanggal.value)
     selectedDetail.value = res.ok ? res.data : null
@@ -370,11 +317,7 @@ async function reloadAll() {
 }
 
 onMounted(reloadAll)
-
-watch(
-  () => route.fullPath,
-  (p) => {
-    if (p === '/ronda' || p === '/ronda/') reloadAll()
-  }
-)
+watch(() => route.fullPath, (p) => {
+  if (p === '/ronda' || p === '/ronda/') reloadAll()
+})
 </script>
