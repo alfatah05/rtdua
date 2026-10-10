@@ -45,7 +45,7 @@
         <div
           v-for="card in cards"
           :key="card.id"
-          class="rounded-[20px] border border-[var(--line)] overflow-hidden shadow-[var(--sh)] bg-[var(--card)]"
+          class="rounded-[20px] border border-[var(--line)] overflow-hidden bg-[var(--card)]"
         >
           <div class="px-4 py-3 flex items-center justify-between" style="background: linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)">
             <div class="min-w-0">
@@ -58,18 +58,24 @@
               @click="$router.push('/ronda/jadwal-tetap/card/' + card.id)"
             >Ubah warga</button>
           </div>
-          <div class="px-4 py-3">
+          <div class="px-4 py-3 space-y-1">
             <template v-if="card.keluarga?.length">
               <div
                 v-for="k in card.keluarga"
                 :key="k.keluarga_id"
-                class="flex items-center justify-between gap-3 py-1.5"
+                class="flex items-center justify-between gap-3 py-1"
               >
-                <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
-                <span class="text-[13px] text-[var(--mut)] shrink-0">{{ k.alamat }}</span>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
+                    <img v-if="k.foto" :src="mediaUrl(k.foto)" alt="" class="w-full h-full object-cover" />
+                    <span v-else>{{ inisial(k.nama) }}</span>
+                  </div>
+                  <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
+                </div>
+                <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
               </div>
             </template>
-            <p v-else class="text-[13px] text-[var(--mut)] m-0">Belum ada warga — klik Ubah warga</p>
+            <p v-else class="text-[13px] text-[var(--mut)] m-0">Belum ada warga</p>
           </div>
         </div>
       </div>
@@ -79,11 +85,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listJadwalTetap, listTemplateCards, buatTemplateCards } from '@shared/services/ronda.js'
+import { mediaUrl } from '@shared/services/upload.js'
 
-const router = useRouter()
 const hariPendek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 const loading = ref(true)
 const err = ref('')
@@ -100,6 +105,12 @@ const adaHari = computed(() => selected.value.some(Boolean))
 function jamLabel(j) {
   if (!j) return '—'
   return String(j).slice(0, 5).replace(':', '.')
+}
+
+function inisial(nama) {
+  if (!nama) return '?'
+  const p = String(nama).trim().split(/\s+/)
+  return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || '?'
 }
 
 async function load() {
@@ -155,7 +166,7 @@ async function jalankanBuat() {
   if (res.ok) {
     const d = res.data || {}
     cards.value = d.cards || []
-    msg.value = `${d.dibuat || cards.value.length} card siap. Isi warga lewat Ubah warga.`
+    msg.value = `${d.dibuat || cards.value.length} card siap`
     if (!cards.value.length) {
       const c = await listTemplateCards()
       if (c.ok) cards.value = c.data || []
