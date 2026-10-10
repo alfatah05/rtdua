@@ -159,3 +159,13 @@ export async function terbitkanDendaRonda(payload = {}) {
     return { ok: false, error: e.message }
   }
 }
+
+/** Hapus massal jadwal tetap ke depan. mode: penugasan | slot */
+export async function hapusJadwalRonda(payload = {}) {
+  try {
+    const res = await api('/ronda/hapus-jadwal', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
