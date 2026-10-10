@@ -1,13 +1,17 @@
 name: Deploy Dev
 
+# Manual only. Coba FTP dulu; kalau gagal, zip per folder jadi artifact untuk upload manual.
 on:
-  push:
-    branches: [dev]
   workflow_dispatch:
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,30 +27,205 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Composer install (backend)
         working-directory: backend
-        run: composer install --no-dev --optimize-autoloader --no-interaction
-
-      - name: NPM install & build (frontend)
-        working-directory: frontend
         run: |
-          npm ci || npm install
+          set -e
+          composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+
+          if [ -f vendor/codeigniter4/framework/public/index.php ]; then
+            cp vendor/codeigniter4/framework/public/index.php public/index.php
+          fi
+
+          CFG_SRC="vendor/codeigniter4/framework/app/Config"
+          CFG_DST="app/Config"
+          mkdir -p "$CFG_DST/Boot"
+          if [ -d "$CFG_SRC" ]; then
+            for f in "$CFG_SRC"/*.php; do
+              base=$(basename "$f")
+              case "$base" in
+                App.php|Filters.php|Routes.php|Session.php|Paths.php) continue ;;
+              esac
+              if [ ! -f "$CFG_DST/$base" ]; then cp "$f" "$CFG_DST/$base"; fi
+            done
+            for f in "$CFG_SRC/Boot"/*.php; do
+              base=$(basename "$f")
+              if [ ! -f "$CFG_DST/Boot/$base" ]; then cp "$f" "$CFG_DST/Boot/$base"; fi
+            done
+          fi
+
+          if [ ! -f app/Config/Paths.php ]; then
+            echo "Paths.php hilang" >&2
+            exit 1
+          fi
+          grep -q 'vendor/codeigniter4/framework/system' app/Config/Paths.php
+
+          echo "=== public/index.php ==="
+          head -8 public/index.php
+          echo "=== Paths systemDirectory ==="
+          grep systemDirectory app/Config/Paths.php
+
+      - name: NPM build
+        run: |
+          set -e
+          mkdir -p frontend/public/icons
+          cd frontend
+          npm install
           npm run build
 
-      - name: Syntax check PHP
-        run: find backend/app -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Siapkan paket deploy
+        run: |
+          set -e
+          mkdir -p dist/warga dist/pengurus dist/rt-app
 
-      - name: Deploy via FTP (placeholder)
-        # Ganti dengan FTP-Deploy-Action setelah Secrets diisi
-        # uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        # with:
-        #   server: ${{ secrets.FTP_SERVER }}
-        #   username: ${{ secrets.FTP_USERNAME }}
-        #   password: ${{ secrets.FTP_PASSWORD }}
-        #   local-dir: ./
-        #   server-dir: /  # sesuaikan
-        run: echo "Deploy step siap. Isi GitHub Secrets FTP_* lalu aktifkan action di atas."
-EOF
+          cp -a frontend/dist/warga/. dist/warga/
+          cp -a frontend/dist/pengurus/. dist/pengurus/
+
+          cp deploy/warga/.htaccess dist/warga/
+          mkdir -p dist/warga/api && cp deploy/warga/api/index.php dist/warga/api/
+          cp deploy/pengurus/.htaccess dist/pengurus/
+          mkdir -p dist/pengurus/api && cp deploy/pengurus/api/index.php dist/pengurus/api/
+
+          rsync -a \
+            --exclude='.env' \
+            --exclude='.git' \
+            --exclude='tests' \
+            --exclude='writable/logs/*' \
+            --exclude='writable/cache/*' \
+            --exclude='writable/session/*' \
+            --exclude='writable/uploads/*' \
+            backend/ dist/rt-app/
+
+          mkdir -p dist/rt-app/writable/{cache,logs,session,uploads}
+          touch dist/rt-app/writable/cache/.gitkeep dist/rt-app/writable/logs/.gitkeep
+          touch dist/rt-app/writable/session/.gitkeep dist/rt-app/writable/uploads/.gitkeep
+
+          echo "=== paket deploy ==="
+          du -sh dist/warga dist/pengurus dist/rt-app
+          test -f dist/rt-app/app/Config/Database.php
+          test -f dist/rt-app/app/Config/Paths.php
+          test -f dist/rt-app/vendor/codeigniter4/framework/system/Boot.php
+
+      - name: Deploy WARGA-DEV (FTP)
+        id: ftp_warga
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/warga/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+
+      - name: Deploy PENGURUS-DEV (FTP)
+        id: ftp_pengurus
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/pengurus/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+
+      - name: Deploy BACKEND rt-app (FTP)
+        id: ftp_backend
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/rt-app/
+          server-dir: ${{ secrets.FTP_SERVER_DIR_BACKEND }}
+          dangerous-clean-slate: false
+          timeout: 600000
+          security: loose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/tests/**
+            **/writable/logs/**
+            **/writable/cache/**
+            **/writable/session/**
+            **/writable/uploads/**
+
+      - name: Zip yang gagal FTP (untuk upload manual)
+        if: steps.ftp_warga.outcome == 'failure' || steps.ftp_pengurus.outcome == 'failure' || steps.ftp_backend.outcome == 'failure'
+        run: |
+          set -e
+          mkdir -p artifacts
+          if [ "${{ steps.ftp_warga.outcome }}" = "failure" ]; then
+            echo "ZIP warga..."
+            (cd dist && zip -r -q "../artifacts/warga-dev.zip" warga)
+            ls -lh artifacts/warga-dev.zip
+          fi
+          if [ "${{ steps.ftp_pengurus.outcome }}" = "failure" ]; then
+            echo "ZIP pengurus..."
+            (cd dist && zip -r -q "../artifacts/pengurus-dev.zip" pengurus)
+            ls -lh artifacts/pengurus-dev.zip
+          fi
+          if [ "${{ steps.ftp_backend.outcome }}" = "failure" ]; then
+            echo "ZIP rt-app (backend)..."
+            (cd dist && zip -r -q "../artifacts/rt-app-dev.zip" rt-app)
+            ls -lh artifacts/rt-app-dev.zip
+          fi
+          echo "=== isi artifacts ==="
+          ls -lh artifacts/ || true
+
+      - name: Upload artifact warga-dev
+        if: steps.ftp_warga.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: warga-dev
+          path: artifacts/warga-dev.zip
+          retention-days: 3
+
+      - name: Upload artifact pengurus-dev
+        if: steps.ftp_pengurus.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pengurus-dev
+          path: artifacts/pengurus-dev.zip
+          retention-days: 3
+
+      - name: Upload artifact rt-app-dev
+        if: steps.ftp_backend.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rt-app-dev
+          path: artifacts/rt-app-dev.zip
+          retention-days: 3
+
+      - name: Ringkasan deploy
+        if: always()
+        run: |
+          echo "=== RINGKASAN ==="
+          echo "Warga FTP:    ${{ steps.ftp_warga.outcome }}"
+          echo "Pengurus FTP: ${{ steps.ftp_pengurus.outcome }}"
+          echo "Backend FTP:  ${{ steps.ftp_backend.outcome }}"
+          if [ "${{ steps.ftp_warga.outcome }}" = "failure" ] || [ "${{ steps.ftp_pengurus.outcome }}" = "failure" ] || [ "${{ steps.ftp_backend.outcome }}" = "failure" ]; then
+            echo ""
+            echo "Ada yang gagal FTP → download artifact zip, extract, upload manual via WinSCP."
+            echo "  warga-dev.zip    → folder warga-dev di hosting"
+            echo "  pengurus-dev.zip → folder pengurus-dev di hosting"
+            echo "  rt-app-dev.zip   → folder backend (rt-app) di hosting"
+          else
+            echo "Semua FTP sukses. Tidak ada zip artifact."
+          fi
