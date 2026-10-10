@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="pb-24">
     <AppBackHeader :title="title" />
 
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
@@ -19,7 +19,7 @@
       <p v-if="wargaLoading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
       <p v-else-if="!filtered.length" class="text-[13px] text-[var(--mut)] text-center py-6">Tidak ada data</p>
 
-      <div v-else class="space-y-0.5 mb-28">
+      <div v-else class="space-y-0.5">
         <button
           v-for="w in filtered"
           :key="w.id"
@@ -53,7 +53,11 @@
         </button>
       </div>
 
-      <div class="fixed bottom-0 left-0 right-0 p-4 bg-[var(--bg)] pb-[calc(16px+env(safe-area-inset-bottom,0px))] z-30">
+      <!-- Sticky simpan: selalu terlihat di halaman form (bottom nav disembunyikan) -->
+      <div
+        class="fixed left-0 right-0 z-50 px-4 pt-3 bg-[var(--bg)]"
+        style="bottom: 0; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px))"
+      >
         <button
           type="button"
           class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50 active:scale-[0.99]"
