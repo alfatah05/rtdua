@@ -128,7 +128,6 @@ class RondaController extends Controller
         return $res['ok'] ? ApiResponse::ok($res['data'], 'Isi otomatis selesai') : ApiResponse::fail($res['message'], 422);
     }
 
-    /** Buat malam kosong (tanpa KK) dari hari tetap + periode. */
     public function buatSlotKosong()
     {
         $user = $this->requirePengurus();
@@ -209,6 +208,9 @@ class RondaController extends Controller
         $lalu = $json['periode_lalu'] ?? date('Y-m', strtotime('first day of last month'));
         $tagihan = $json['periode_tagihan'] ?? date('Y-m');
         $res = (new RondaService())->terbitkanDenda($lalu, $tagihan);
-        return ApiResponse::ok($res);
+        if (empty($res['ok'])) {
+            return ApiResponse::fail($res['message'] ?? 'Gagal terbitkan denda', 422);
+        }
+        return ApiResponse::ok($res, 'Denda diterbitkan');
     }
 }
