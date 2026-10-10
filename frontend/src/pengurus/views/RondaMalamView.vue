@@ -35,7 +35,7 @@
         <button
           type="button"
           class="w-full min-h-[44px] rounded-full bg-[var(--g)] text-white font-bold"
-          :disabled="busy || selectedIds.length < 1"
+          :disabled="busy"
           @click="onSimpanGanti"
         >{{ busy ? 'Menyimpan…' : 'Simpan daftar' }}</button>
       </div>
@@ -136,7 +136,7 @@ function toggleEdit() {
 }
 
 async function onSimpanGanti() {
-  if (!malam.value?.id || selectedIds.value.length < 1) return
+  if (!malam.value?.id) return
   busy.value = true
   msg.value = ''
   const res = await gantiKeluargaMalam(malam.value.id, selectedIds.value)
