@@ -289,24 +289,19 @@ function buildDays(kal) {
     const r = byDate[date]
     const dow = new Date(y, m - 1, n).getDay()
     const dariKhusus = !!khususSet.value[date]
-    const khusus = r?.sumber === 'khusus' || dariKhusus
-    // Slot tetap lama di hari yang sudah tidak aktif → abaikan (ke depan)
-    const tetapDb = r?.sumber === 'tetap' && !!hariTetap.value[dow]
-    const tetapOrphan = r?.sumber === 'tetap' && !hariTetap.value[dow]
-    // Pola proyeksi hari aktif yang belum punya slot
-    const tetapPola = !khusus && !tetapDb && !tetapOrphan && !!hariTetap.value[dow] && date >= today
-    let ronda = false
-    if (khusus) ronda = true
-    else if (date < today) ronda = !!(r && r.sumber === 'tetap') // lampau: tampilkan apa adanya di DB
-    else ronda = tetapDb || tetapPola
+    // Hanya slot nyata di DB — jangan warnai dari pola hari saja
+    const khusus = (r?.sumber === 'khusus') || (!r && dariKhusus)
+    const tetapDb = r?.sumber === 'tetap' && (date < today || !!hariTetap.value[dow])
+    // Orphan (tetap di hari non-aktif, ke depan) tidak di-highlight
+    const ronda = khusus || tetapDb
     out.push({
       n,
       date,
       past: date < today,
       ronda,
       khusus,
-      tetap: (tetapDb || tetapPola) && !khusus,
-      projected: tetapPola,
+      tetap: tetapDb && !khusus,
+      projected: false,
     })
   }
   days.value = out
@@ -368,7 +363,6 @@ async function reloadAll() {
   malamLoading.value = false
   if (mRes.ok && mRes.data) malam.value = mRes.data
   else malam.value = null
-  // Refresh detail tanggal terpilih
   if (selectedTanggal.value) {
     const res = await detailMalam(selectedTanggal.value)
     selectedDetail.value = res.ok ? res.data : null
@@ -377,7 +371,6 @@ async function reloadAll() {
 
 onMounted(reloadAll)
 
-// Setiap kembali ke /ronda (dari submenu), muat ulang data
 watch(
   () => route.fullPath,
   (p) => {
