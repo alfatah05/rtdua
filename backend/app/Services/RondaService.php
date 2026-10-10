@@ -45,7 +45,6 @@ class RondaService
         $keluargaIds = array_values(array_filter($keluargaIds, static fn ($x) => $x > 0));
         $hapus = !empty($data['hapus']) || (isset($data['aktif']) && !$data['aktif']);
         $existing = $db->table('ronda_jadwal_tetap')->where('hari', $hari)->get()->getRowArray();
-
         if ($hapus) {
             if ($existing) {
                 $id = (int) $existing['id'];
@@ -54,7 +53,6 @@ class RondaService
             }
             return ['ok' => true, 'data' => ['id' => null, 'deleted' => true, 'hari' => $hari]];
         }
-
         if ($existing) {
             $id = (int) $existing['id'];
             $db->table('ronda_jadwal_tetap')->where('id', $id)->update(['jam_mulai' => $jamM, 'jam_selesai' => $jamS]);
@@ -108,7 +106,6 @@ class RondaService
         $keluargaIds = array_values(array_filter($keluargaIds, static fn ($x) => $x > 0));
         $hapus = !empty($data['hapus']);
         $existing = $db->table('ronda_jadwal_khusus')->where('tanggal', $tanggal)->get()->getRowArray();
-
         if ($hapus) {
             if ($existing) {
                 $id = (int) $existing['id'];
@@ -117,7 +114,6 @@ class RondaService
             }
             return ['ok' => true, 'data' => ['deleted' => true, 'tanggal' => $tanggal]];
         }
-
         if ($existing) {
             $id = (int) $existing['id'];
             $db->table('ronda_jadwal_khusus')->where('id', $id)->update(['jam_mulai' => $jamM, 'jam_selesai' => $jamS, 'keterangan' => $ket]);
@@ -301,6 +297,7 @@ class RondaService
     {
         $db = \Config\Database::connect();
         $today = date('Y-m-d');
+
         $tetap = $db->table('ronda_jadwal_tetap')->orderBy('hari', 'ASC')->get()->getResultArray();
         if (!$tetap) {
             return ['ok' => false, 'message' => 'Atur jadwal tetap dulu (pilih hari ronda).'];
@@ -312,12 +309,22 @@ class RondaService
             return ['ok' => false, 'message' => 'Tidak ada hari ronda aktif.'];
         }
         $N = $D * 4;
-        $kk = $db->table('keluarga k')->select('k.id')->join('blok b', 'b.id = k.blok_id', 'left')->where('k.status', 'aktif')->orderBy('b.nama', 'ASC')->orderBy('k.nomor', 'ASC')->orderBy('k.akhiran', 'ASC')->orderBy('k.id', 'ASC')->get()->getResultArray();
+
+        $kk = $db->table('keluarga k')
+            ->select('k.id')
+            ->join('blok b', 'b.id = k.blok_id', 'left')
+            ->where('k.status', 'aktif')
+            ->orderBy('b.nama', 'ASC')
+            ->orderBy('k.nomor', 'ASC')
+            ->orderBy('k.akhiran', 'ASC')
+            ->orderBy('k.id', 'ASC')
+            ->get()->getResultArray();
         $kkIds = array_map(static fn ($r) => (int) $r['id'], $kk);
         $totalKk = count($kkIds);
         if ($totalKk < 1) {
             return ['ok' => false, 'message' => 'Tidak ada keluarga aktif untuk diisi.'];
         }
+
         $base = intdiv($totalKk, $N);
         $sisa = $totalKk % $N;
         $groups = [];
@@ -327,16 +334,31 @@ class RondaService
             $groups[$g] = $size > 0 ? array_slice($kkIds, $offset, $size) : [];
             $offset += $size;
         }
-        $malamRows = $db->table('ronda_malam')->where('tanggal >=', $today)->where('sumber', 'tetap')->orderBy('tanggal', 'ASC')->orderBy('id', 'ASC')->get()->getResultArray();
+
+        $malamRows = $db->table('ronda_malam')
+            ->where('tanggal >=', $today)
+            ->where('sumber', 'tetap')
+            ->orderBy('tanggal', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->get()->getResultArray();
+
         if (!$malamRows) {
             return ['ok' => false, 'message' => 'Belum ada slot jadwal tetap. Buat jadwal dulu di menu Jadwal tetap.'];
         }
+
         $dayIndex = array_flip($activeDays);
         $diisi = 0;
         $dilewati = 0;
+
         foreach ($malamRows as $m) {
             $mid = (int) $m['id'];
             $tgl = $m['tanggal'];
+
+            // Jadwal khusus di tanggal ini → kelompok posisi itu tidak ronda (tidak digeser)
+            if ($db->table('ronda_jadwal_khusus')->where('tanggal', $tgl)->countAllResults() > 0) {
+                $dilewati++;
+                continue;
+            }
             if ($db->table('ronda_absen')->where('malam_id', $mid)->where('dibatalkan', 0)->countAllResults() > 0) {
                 $dilewati++;
                 continue;
@@ -345,29 +367,66 @@ class RondaService
                 $dilewati++;
                 continue;
             }
+
             $w = (int) date('w', strtotime($tgl));
             if (!isset($dayIndex[$w])) {
                 $dilewati++;
                 continue;
             }
             $dayIdx = (int) $dayIndex[$w];
-            $dayOfMonth = (int) date('j', strtotime($tgl));
-            $weekOfMonth = (int) ceil($dayOfMonth / 7);
-            if ($weekOfMonth > 4) {
-                $weekOfMonth = 4;
+
+            // Posisi mutlak dari AWAL BULAN (bukan dari tanggal submit)
+            $ts = strtotime($tgl);
+            $y = (int) date('Y', $ts);
+            $mo = (int) date('n', $ts);
+            $day = (int) date('j', $ts);
+            $occ = 0;
+            for ($d = 1; $d <= $day; $d++) {
+                if ((int) date('w', strtotime(sprintf('%04d-%02d-%02d', $y, $mo, $d))) === $w) {
+                    $occ++;
+                }
             }
-            $pos = ($weekOfMonth - 1) * $D + $dayIdx;
+            if ($occ < 1) {
+                $dilewati++;
+                continue;
+            }
+            if ($occ > 4) {
+                $occ = 4;
+            }
+
+            $pos = ($occ - 1) * $D + $dayIdx;
             $g = $pos % $N;
+
             foreach ($groups[$g] as $kid) {
-                $db->table('ronda_malam_keluarga')->insert(['malam_id' => $mid, 'keluarga_id' => $kid]);
+                $db->table('ronda_malam_keluarga')->insert([
+                    'malam_id' => $mid,
+                    'keluarga_id' => $kid,
+                ]);
             }
             $diisi++;
         }
+
         try {
-            (new AuditService())->log('isi_otomatis_ronda', 'ronda_malam', null, null, ['diisi' => $diisi, 'dilewati' => $dilewati, 'total_kk' => $totalKk, 'jumlah_kelompok' => $N], 'pengguna', true, $userId);
+            (new AuditService())->log('isi_otomatis_ronda', 'ronda_malam', null, null, [
+                'diisi' => $diisi,
+                'dilewati' => $dilewati,
+                'total_kk' => $totalKk,
+                'jumlah_kelompok' => $N,
+                'hari_aktif' => $activeDays,
+            ], 'pengguna', true, $userId);
         } catch (\Throwable $e) {
         }
-        return ['ok' => true, 'data' => ['diisi' => $diisi, 'dilewati' => $dilewati, 'total_kk' => $totalKk, 'jumlah_kelompok' => $N, 'hari_aktif' => $activeDays]];
+
+        return [
+            'ok' => true,
+            'data' => [
+                'diisi' => $diisi,
+                'dilewati' => $dilewati,
+                'total_kk' => $totalKk,
+                'jumlah_kelompok' => $N,
+                'hari_aktif' => $activeDays,
+            ],
+        ];
     }
 
     private function bulanTerkunci(string $periode): bool
