@@ -6,34 +6,55 @@
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
     <template v-else>
-      <input
-        v-model="q"
-        type="search"
-        placeholder="Cari nama / alamat…"
-        class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none mb-3"
-      />
-
-      <p v-if="wargaLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat daftar warga…</p>
-      <p v-else-if="!filtered.length" class="text-[13px] text-[var(--mut)] text-center py-4">Tidak ada data</p>
-
-      <div v-else class="space-y-1 mb-24">
-        <label
-          v-for="w in filtered"
-          :key="w.id"
-          class="flex items-center gap-3 py-2.5 px-1"
-        >
-          <input type="checkbox" class="w-5 h-5 shrink-0" :value="w.id" v-model="selected" />
-          <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
-            <img v-if="w.fotoUrl" :src="w.fotoUrl" alt="" class="w-full h-full object-cover" @error="w.fotoUrl = ''" />
-            <span v-else>{{ inisial(w.nama) }}</span>
-          </div>
-          <span class="text-[14px] font-semibold min-w-0 flex-1 truncate">{{ w.nama || '—' }}</span>
-          <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ w.alamat }}</span>
-        </label>
+      <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12 mb-3">
+        <Search :size="18" class="text-[var(--mut)] shrink-0" />
+        <input
+          v-model="q"
+          type="search"
+          placeholder="Cari nama / alamat…"
+          class="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-[var(--text)] placeholder:text-[var(--mut)]"
+        />
       </div>
 
-      <div class="fixed bottom-0 left-0 right-0 p-4 bg-[var(--bg)] pb-[calc(16px+env(safe-area-inset-bottom,0px))]">
-        <p v-if="msg" class="text-[13px] text-center mb-2" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
+      <p v-if="wargaLoading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+      <p v-else-if="!filtered.length" class="text-[13px] text-[var(--mut)] text-center py-6">Tidak ada data</p>
+
+      <div v-else class="space-y-0.5 mb-28">
+        <button
+          v-for="w in filtered"
+          :key="w.id"
+          type="button"
+          class="w-full flex items-center gap-3 px-1 py-3 text-left active:scale-[0.99] transition-transform"
+          @click="toggle(w.id)"
+        >
+          <!-- checkbox custom -->
+          <span
+            class="w-6 h-6 rounded-[8px] shrink-0 grid place-items-center border-2 transition-colors"
+            :class="isOn(w.id)
+              ? 'bg-[var(--g)] border-[var(--g)] text-white'
+              : 'bg-transparent border-[var(--card2)]'"
+            aria-hidden="true"
+          >
+            <Check v-if="isOn(w.id)" :size="14" :stroke-width="3" />
+          </span>
+
+          <div class="w-11 h-11 rounded-full overflow-hidden shrink-0 bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm">
+            <img
+              v-if="w.fotoUrl"
+              :src="w.fotoUrl"
+              alt=""
+              class="w-full h-full object-cover"
+              @error="w.fotoUrl = ''"
+            />
+            <span v-else>{{ inisial(w.nama) }}</span>
+          </div>
+
+          <span class="text-[15px] font-bold min-w-0 flex-1 truncate leading-tight">{{ w.nama || '—' }}</span>
+          <span class="text-[13px] text-[var(--mut)] shrink-0 text-right max-w-[38%] truncate">{{ w.alamat }}</span>
+        </button>
+      </div>
+
+      <div class="fixed bottom-0 left-0 right-0 p-4 bg-[var(--bg)] pb-[calc(16px+env(safe-area-inset-bottom,0px))] z-30">
         <button
           type="button"
           class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50 active:scale-[0.99]"
@@ -48,13 +69,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Search, Check } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listTemplateCards, simpanTemplateKeluarga } from '@shared/services/ronda.js'
 import { api } from '@shared/api/http.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { useToast } from '@shared/composables/useToast.js'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 const cardId = computed(() => Number(route.params.id || 0))
 
 const loading = ref(true)
@@ -65,13 +89,25 @@ const q = ref('')
 const selected = ref([])
 const wargaList = ref([])
 const saveBusy = ref(false)
-const msg = ref('')
-const msgOk = ref(true)
 
 function inisial(nama) {
   if (!nama) return '?'
   const p = String(nama).trim().split(/\s+/)
   return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || '?'
+}
+
+function isOn(id) {
+  return selected.value.includes(Number(id))
+}
+
+function toggle(id) {
+  const n = Number(id)
+  const i = selected.value.indexOf(n)
+  if (i >= 0) {
+    selected.value = selected.value.filter((x) => x !== n)
+  } else {
+    selected.value = [...selected.value, n]
+  }
 }
 
 const filtered = computed(() => {
@@ -83,6 +119,15 @@ const filtered = computed(() => {
       String(w.alamat || '').toLowerCase().includes(s),
   )
 })
+
+function formatAlamat(r) {
+  if (r.alamat) return String(r.alamat)
+  const blok = r.blok || r.nama_blok || ''
+  const nomor = r.nomor || ''
+  const akhiran = r.akhiran || ''
+  if (blok || nomor) return `${blok}${blok && nomor ? '-' : ''}${nomor}${akhiran}`
+  return '—'
+}
 
 async function load() {
   loading.value = true
@@ -110,7 +155,7 @@ async function load() {
       .map((r) => ({
         id: Number(r.id || r.keluarga_id),
         nama: r.nama_kepala || r.kepala || r.nama || '—',
-        alamat: r.alamat || `${r.blok || ''}-${r.nomor || ''}${r.akhiran || ''}`,
+        alamat: formatAlamat(r),
         fotoUrl: r.foto ? mediaUrl(r.foto) : '',
       }))
       .filter((x) => x.id > 0)
@@ -123,16 +168,13 @@ async function load() {
 
 async function simpan() {
   saveBusy.value = true
-  msg.value = ''
   const res = await simpanTemplateKeluarga(cardId.value, selected.value)
   saveBusy.value = false
   if (!res.ok) {
-    msgOk.value = false
-    msg.value = res.error || 'Gagal simpan'
+    toast.error(res.error || 'Gagal simpan')
     return
   }
-  msgOk.value = true
-  msg.value = 'Tersimpan'
+  toast.success('Tersimpan')
   router.replace('/ronda/jadwal-tetap')
 }
 
