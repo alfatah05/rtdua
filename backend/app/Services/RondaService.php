@@ -97,18 +97,63 @@ class RondaService
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
             return ['ok' => false, 'message' => 'Tanggal wajib (YYYY-MM-DD).'];
         }
+        if ($tanggal < date('Y-m-d')) {
+            return ['ok' => false, 'message' => 'Tanggal tidak boleh di masa lalu.'];
+        }
         $db = \Config\Database::connect();
+        $jamM = $data['jam_mulai'] ?? '21:00:00';
+        $jamS = $data['jam_selesai'] ?? '00:00:00';
+        $ket = $data['keterangan'] ?? null;
+        $keluargaIds = array_values(array_unique(array_filter(array_map('intval', $data['keluarga_ids'] ?? []), static fn ($x) => $x > 0)));
+
         $db->table('ronda_jadwal_khusus')->insert([
             'tanggal' => $tanggal,
-            'jam_mulai' => $data['jam_mulai'] ?? '21:00:00',
-            'jam_selesai' => $data['jam_selesai'] ?? '00:00:00',
-            'keterangan' => $data['keterangan'] ?? null,
+            'jam_mulai' => $jamM,
+            'jam_selesai' => $jamS,
+            'keterangan' => $ket,
         ]);
         $id = (int) $db->insertID();
-        foreach (array_map('intval', $data['keluarga_ids'] ?? []) as $kid) {
-            if ($kid > 0) $db->table('ronda_jadwal_khusus_keluarga')->insert(['jadwal_id' => $id, 'keluarga_id' => $kid]);
+        foreach ($keluargaIds as $kid) {
+            $db->table('ronda_jadwal_khusus_keluarga')->insert(['jadwal_id' => $id, 'keluarga_id' => $kid]);
         }
-        return ['ok' => true, 'data' => ['id' => $id]];
+
+        $malam = $db->table('ronda_malam')->where('tanggal', $tanggal)->orderBy('id', 'ASC')->get()->getRowArray();
+        if ($malam) {
+            $malamId = (int) $malam['id'];
+            $db->table('ronda_malam')->where('id', $malamId)->update([
+                'jam_mulai' => $jamM,
+                'jam_selesai' => $jamS,
+                'sumber' => 'khusus',
+            ]);
+            $db->table('ronda_malam_keluarga')->where('malam_id', $malamId)->delete();
+        } else {
+            $db->table('ronda_malam')->insert([
+                'tanggal' => $tanggal,
+                'jam_mulai' => $jamM,
+                'jam_selesai' => $jamS,
+                'sumber' => 'khusus',
+            ]);
+            $malamId = (int) $db->insertID();
+        }
+        foreach ($keluargaIds as $kid) {
+            $db->table('ronda_malam_keluarga')->insert(['malam_id' => $malamId, 'keluarga_id' => $kid]);
+        }
+
+        try {
+            (new AuditService())->log('simpan_jadwal_khusus', 'ronda_jadwal_khusus', $id, null, [
+                'tanggal' => $tanggal, 'malam_id' => $malamId,
+            ], 'pengguna', true, $userId);
+        } catch (\Throwable $e) {}
+
+        return [
+            'ok' => true,
+            'data' => [
+                'id' => $id,
+                'malam_id' => $malamId,
+                'tanggal' => $tanggal,
+                'sumber' => 'khusus',
+            ],
+        ];
     }
 
     public function kalender(string $periode): array
@@ -290,9 +335,7 @@ class RondaService
         }
         $dihapus = 0;
         foreach ($byTgl as $tgl => $list) {
-            if (count($list) < 2) {
-                continue;
-            }
+            if (count($list) < 2) continue;
             $keepId = (int) $list[0]['id'];
             foreach ($list as $r) {
                 $mid = (int) $r['id'];
@@ -303,9 +346,7 @@ class RondaService
             }
             foreach ($list as $r) {
                 $mid = (int) $r['id'];
-                if ($mid === $keepId) {
-                    continue;
-                }
+                if ($mid === $keepId) continue;
                 $keepHasKel = $db->table('ronda_malam_keluarga')->where('malam_id', $keepId)->countAllResults();
                 if ($keepHasKel === 0) {
                     $kels = $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->get()->getResultArray();
@@ -313,21 +354,14 @@ class RondaService
                         $kid = (int) $k['keluarga_id'];
                         $ada = $db->table('ronda_malam_keluarga')->where('malam_id', $keepId)->where('keluarga_id', $kid)->countAllResults();
                         if (!$ada) {
-                            $db->table('ronda_malam_keluarga')->insert([
-                                'malam_id' => $keepId,
-                                'keluarga_id' => $kid,
-                            ]);
+                            $db->table('ronda_malam_keluarga')->insert(['malam_id' => $keepId, 'keluarga_id' => $kid]);
                         }
                     }
                 }
                 $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->delete();
                 $absens = $db->table('ronda_absen')->where('malam_id', $mid)->get()->getResultArray();
                 foreach ($absens as $a) {
-                    $exists = $db->table('ronda_absen')
-                        ->where('malam_id', $keepId)
-                        ->where('keluarga_id', (int) $a['keluarga_id'])
-                        ->where('dibatalkan', 0)
-                        ->countAllResults();
+                    $exists = $db->table('ronda_absen')->where('malam_id', $keepId)->where('keluarga_id', (int) $a['keluarga_id'])->where('dibatalkan', 0)->countAllResults();
                     if ($exists) {
                         $db->table('ronda_absen')->where('id', (int) $a['id'])->delete();
                     } else {
@@ -362,7 +396,6 @@ class RondaService
         $durasi = $data['durasi'] ?? '1';
         $today = date('Y-m-d');
         if ($durasi === 'minggu' || $durasi === 'week' || $durasi === '0') {
-            // Senin–Minggu: N=1 (Sen) … 7 (Min); akhir minggu = Minggu
             $n = (int) date('N');
             $end = date('Y-m-d', strtotime($today . ' +' . (7 - $n) . ' days'));
             if ($end < $today) $end = $today;
