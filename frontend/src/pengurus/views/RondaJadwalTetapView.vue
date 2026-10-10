@@ -3,7 +3,7 @@
     <AppBackHeader title="Jadwal tetap" />
 
     <p class="text-[13px] text-[var(--mut)] mb-4">
-      Pilih hari ronda (tombol bulat), atur periode, lalu isi otomatis supaya semua KK aktif dibagi merata ke malam-malam itu.
+      Pilih hari ronda, atur periode, isi otomatis. Daftar malam di bawah bisa difilter per minggu / bulan.
     </p>
 
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
@@ -26,24 +26,19 @@
           {{ label }}
         </button>
       </div>
-      <p class="text-[12px] text-[var(--mut)] mb-5">
-        {{ hariAktifLabel || 'Belum ada hari dipilih' }}
-      </p>
+      <p class="text-[12px] text-[var(--mut)] mb-4">{{ hariAktifLabel || 'Belum ada hari dipilih' }}</p>
 
       <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Jam default</p>
-      <div class="flex gap-2 mb-5">
+      <div class="flex gap-2 mb-4">
         <input v-model="jamMulai" type="time" class="flex-1 min-h-[44px] px-3 rounded-[12px] bg-[var(--search)]" />
         <input v-model="jamSelesai" type="time" class="flex-1 min-h-[44px] px-3 rounded-[12px] bg-[var(--search)]" />
       </div>
 
       <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode isi otomatis</p>
-      <select v-model="durasi" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-2">
+      <select v-model="durasi" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-3">
         <option value="minggu">1 minggu (sisa minggu ini)</option>
         <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
       </select>
-      <p class="text-[12px] text-[var(--mut)] mb-5">
-        Contoh: 1 bulan + Sabtu saja ≈ 4 malam; semua KK dibagi ke 4 malam itu.
-      </p>
 
       <button
         type="button"
@@ -53,20 +48,83 @@
       >
         {{ isiBusy ? 'Mengisi…' : 'Isi otomatis' }}
       </button>
-      <p v-if="msg" class="text-[13px] text-center mt-2" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
+      <p v-if="msg" class="text-[13px] text-center mb-4" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
+
+      <div class="flex items-center justify-between gap-2 mb-3 mt-2">
+        <p class="text-[15px] font-bold m-0">Jadwal ke depan</p>
+        <select v-model="filterMode" class="min-h-[36px] px-2 rounded-[10px] bg-[var(--search)] text-[13px] font-semibold">
+          <option value="minggu_ini">Minggu ini</option>
+          <option value="minggu_depan">Minggu depan</option>
+          <option value="bulan_ini">Bulan ini</option>
+          <option value="3_bulan">3 bulan</option>
+        </select>
+      </div>
+
+      <p v-if="listLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat jadwal…</p>
+      <p v-else-if="!filteredMalam.length" class="text-[13px] text-[var(--mut)] text-center py-4">
+        Belum ada jadwal di filter ini. Jalankan isi otomatis dulu.
+      </p>
+
+      <div v-else class="space-y-3 mb-6">
+        <div
+          v-for="item in filteredMalam"
+          :key="item.tanggal"
+          class="rounded-[20px] border border-[var(--line)] overflow-hidden shadow-[var(--sh)] bg-[var(--card)]"
+        >
+          <div class="px-4 py-3 flex items-center justify-between" :style="cardHeaderStyle(item)">
+            <div class="min-w-0">
+              <p class="text-[13px] font-semibold m-0 text-white">{{ labelKapan(item.tanggal) }}</p>
+              <p class="text-[12px] m-0 mt-0.5 text-white/90">
+                {{ formatHari(item.tanggal) }} · {{ jamLabel(item.jam_mulai) }}–{{ jamLabel(item.jam_selesai) }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="w-9 h-9 rounded-full grid place-items-center shrink-0 active:scale-95 bg-white/20 text-white"
+              aria-label="Kelola malam"
+              @click="$router.push('/ronda/malam/' + item.tanggal)"
+            >
+              <ChevronRight :size="20" />
+            </button>
+          </div>
+          <div class="px-4 py-3">
+            <template v-if="detailMap[item.tanggal]?.keluarga?.length">
+              <div
+                v-for="k in detailMap[item.tanggal].keluarga"
+                :key="k.keluarga_id"
+                class="flex items-center justify-between gap-3 py-1.5"
+              >
+                <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
+                <span class="text-[13px] text-[var(--mut)] shrink-0">{{ k.alamat }}</span>
+              </div>
+            </template>
+            <p v-else class="text-[13px] text-[var(--mut)] m-0">
+              {{ detailMap[item.tanggal] ? 'Belum ada keluarga bertugas' : '…' }}
+            </p>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { listJadwalTetap, simpanJadwalTetap, isiOtomatisRonda } from '@shared/services/ronda.js'
+import {
+  listJadwalTetap,
+  simpanJadwalTetap,
+  isiOtomatisRonda,
+  kalenderRonda,
+  detailMalam,
+} from '@shared/services/ronda.js'
 
 const hariPendek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 const hariLabel = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
 const loading = ref(true)
+const listLoading = ref(false)
 const err = ref('')
 const selected = ref([false, false, false, false, false, false, false])
 const jamMulai = ref('21:00')
@@ -76,6 +134,9 @@ const toggling = ref(false)
 const isiBusy = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
+const filterMode = ref('bulan_ini')
+const allMalam = ref([])
+const detailMap = ref({})
 
 const adaHari = computed(() => selected.value.some(Boolean))
 const hariAktifLabel = computed(() => {
@@ -83,6 +144,122 @@ const hariAktifLabel = computed(() => {
   selected.value.forEach((on, h) => { if (on) names.push(hariLabel[h]) })
   return names.join(', ')
 })
+
+function startOfWeek(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  x.setDate(x.getDate() - x.getDay())
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
+function weekIndex(d) {
+  return startOfWeek(d).getTime()
+}
+
+function labelKapan(tanggal) {
+  if (!tanggal) return 'Ronda'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tgl = new Date(tanggal + 'T00:00:00')
+  if (tgl.getTime() === today.getTime()) return 'Malam ini'
+  const wToday = weekIndex(today)
+  const wTgl = weekIndex(tgl)
+  const diff = Math.round((wTgl - wToday) / (7 * 86400000))
+  if (diff === 0) return 'Minggu ini'
+  if (diff === 1) return 'Minggu depan'
+  if (diff > 1) return diff + ' minggu lagi'
+  return 'Ronda'
+}
+
+function cardHeaderStyle(item) {
+  const nearest = allMalam.value[0]?.tanggal
+  const isNearest = item.tanggal === nearest
+  if (isNearest) {
+    if (item.sumber === 'khusus') {
+      return { background: 'linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)' }
+    }
+    return {
+      background:
+        'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
+    }
+  }
+  return {
+    background:
+      'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(145deg, #9CA3AF, #6B7280 55%, #4B5563)',
+  }
+}
+
+function jamLabel(j) {
+  if (!j) return '—'
+  return String(j).slice(0, 5).replace(':', '.')
+}
+
+function formatHari(tgl) {
+  if (!tgl) return ''
+  return new Date(tgl + 'T00:00:00').toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
+const filteredMalam = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const wToday = weekIndex(today)
+  const y = today.getFullYear()
+  const m = today.getMonth()
+
+  return allMalam.value.filter((item) => {
+    const tgl = new Date(item.tanggal + 'T00:00:00')
+    if (tgl < today) return false
+    const w = weekIndex(tgl)
+    if (filterMode.value === 'minggu_ini') return w === wToday
+    if (filterMode.value === 'minggu_depan') return w === wToday + 7 * 86400000
+    if (filterMode.value === 'bulan_ini') {
+      return tgl.getFullYear() === y && tgl.getMonth() === m
+    }
+    const limit = new Date(y, m + 3, 0)
+    return tgl <= limit
+  })
+})
+
+async function loadDetailsFor(list) {
+  const map = { ...detailMap.value }
+  const need = list.filter((x) => !map[x.tanggal]).slice(0, 24)
+  await Promise.all(
+    need.map(async (item) => {
+      const res = await detailMalam(item.tanggal)
+      if (res.ok && res.data) map[item.tanggal] = res.data
+      else map[item.tanggal] = { keluarga: [] }
+    }),
+  )
+  detailMap.value = map
+}
+
+watch(filteredMalam, (list) => {
+  if (list.length) loadDetailsFor(list)
+})
+
+async function loadKalenderList() {
+  listLoading.value = true
+  const today = new Date()
+  const months = []
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1)
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+  }
+  const results = await Promise.all(months.map((b) => kalenderRonda(b)))
+  const rows = []
+  for (const r of results) {
+    if (r.ok && Array.isArray(r.data)) rows.push(...r.data)
+  }
+  const todayStr = today.toISOString().slice(0, 10)
+  allMalam.value = rows
+    .filter((x) => x.tanggal >= todayStr)
+    .sort((a, b) => a.tanggal.localeCompare(b.tanggal))
+  listLoading.value = false
+}
 
 async function load() {
   loading.value = true
@@ -107,6 +284,7 @@ async function load() {
     }
   }
   selected.value = next
+  await loadKalenderList()
 }
 
 async function toggleHari(h) {
@@ -161,6 +339,8 @@ async function jalankanIsi() {
   if (res.ok) {
     const d = res.data || {}
     msg.value = `Selesai: ${d.dibuat ?? 0} malam · ${d.total_kk ?? 0} KK · ~${d.keluarga_per_malam ?? '—'} KK/malam`
+    detailMap.value = {}
+    await loadKalenderList()
   } else {
     msg.value = res.error || 'Gagal isi otomatis'
   }
