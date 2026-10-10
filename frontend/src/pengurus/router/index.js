@@ -41,6 +41,7 @@ import IuranKhususView from '../views/IuranKhususView.vue'
 import DetailKasView from '../views/DetailKasView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 import RondaJadwalTetapView from '../views/RondaJadwalTetapView.vue'
+import RondaTemplateCardView from '../views/RondaTemplateCardView.vue'
 import RondaDendaView from '../views/RondaDendaView.vue'
 import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
 import ProgramFormView from '../views/ProgramFormView.vue'
@@ -112,6 +113,7 @@ const routes = [
       { path: 'ronda/malam/:date', component: RondaMalamView },
       { path: 'ronda/malam/edit', component: PlaceholderView, meta: { title: 'Ganti keluarga' } },
       { path: 'ronda/jadwal-tetap', component: RondaJadwalTetapView },
+      { path: 'ronda/jadwal-tetap/card/:id', component: RondaTemplateCardView },
       { path: 'ronda/jadwal-khusus', component: RondaJadwalKhususView },
       { path: 'ronda/denda', component: RondaDendaView },
 
