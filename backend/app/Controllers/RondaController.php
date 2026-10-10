@@ -156,11 +156,7 @@ class RondaController extends Controller
 
     public function absenWarga()
     {
-        $side = SideContext::fromRequest();
-        if ($side !== 'warga') {
-            return ApiResponse::fail('Hanya warga.', 403);
-        }
-        $user = (new AuthService())->current($side);
+        $user = $this->requireLogin();
         if (!$user || empty($user['keluarga_id'])) {
             return ApiResponse::fail('Unauthorized', 401);
         }
@@ -223,5 +219,40 @@ class RondaController extends Controller
         $json = $this->request->getJSON(true) ?? [];
         $res = (new RondaService())->hapusJadwalKeDepan($json, (int) $user['id']);
         return $res['ok'] ? ApiResponse::ok($res['data'], 'Jadwal dihapus') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
+    }
+
+    public function listTemplate()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        return ApiResponse::ok((new RondaService())->listTemplateCards());
+    }
+
+    public function buatTemplate()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new RondaService())->buatTemplateCards($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Jadwal disimpan') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
+    }
+
+    public function simpanTemplateKeluarga($cardId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new RondaService())->simpanTemplateKeluarga(
+            (int) $cardId,
+            $json['keluarga_ids'] ?? [],
+            (int) $user['id']
+        );
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Warga disimpan') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
     }
 }
