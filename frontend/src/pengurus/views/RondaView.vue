@@ -72,7 +72,7 @@
     <div class="grid grid-cols-7 gap-1 text-center text-[12px] mb-1">
       <span v-for="d in ['M', 'S', 'S', 'R', 'K', 'J', 'S']" :key="d" class="text-[var(--mut)] font-semibold py-1">{{ d }}</span>
     </div>
-    <div class="grid grid-cols-7 gap-1 place-items-center mb-4">
+    <div class="grid grid-cols-7 gap-1 place-items-center">
       <button
         v-for="(day, i) in days"
         :key="i"
@@ -86,7 +86,7 @@
       </button>
     </div>
 
-    <div v-if="selectedTanggal" class="mb-6">
+    <div v-if="selectedTanggal" class="mt-8 mb-6">
       <div class="flex items-start justify-between gap-2 mb-2">
         <div class="min-w-0">
           <p class="text-[13px] font-semibold m-0">{{ labelKapanTgl(selectedTanggal) }}</p>
@@ -98,6 +98,7 @@
           </p>
         </div>
         <button
+          v-if="selectedDetail"
           type="button"
           class="w-9 h-9 rounded-full grid place-items-center shrink-0 active:scale-95 bg-[var(--card2)] text-[var(--text)]"
           aria-label="Kelola malam"
@@ -134,7 +135,16 @@
           Belum ada keluarga bertugas
         </p>
       </template>
-      <p v-else class="text-[13px] text-[var(--mut)] py-2">Tidak ada jadwal ronda di tanggal ini</p>
+      <div v-else class="py-2">
+        <p class="text-[13px] text-[var(--mut)] m-0 mb-3">Belum ada jadwal ronda di tanggal ini</p>
+        <button
+          type="button"
+          class="min-h-[40px] px-5 rounded-full bg-[var(--g)] text-white text-[13px] font-bold active:scale-95"
+          @click="goTambahKhusus"
+        >
+          Tambah jadwal
+        </button>
+      </div>
     </div>
 
     <div v-if="showIsi" class="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" @click.self="showIsi = false">
@@ -164,7 +174,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Calendar, List, Wand2, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { kalenderRonda, malamTerdekat, isiOtomatisRonda, detailMalam } from '@shared/services/ronda.js'
+import {
+  kalenderRonda,
+  malamTerdekat,
+  isiOtomatisRonda,
+  detailMalam,
+  listJadwalTetap,
+} from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
 
 const router = useRouter()
@@ -181,6 +197,7 @@ const showIsi = ref(false)
 const isiPerMalam = ref(2)
 const isiDurasi = ref('1')
 const isiBusy = ref(false)
+const hariTetap = ref([false, false, false, false, false, false, false])
 
 const bulanLabel = computed(() => {
   const [y, m] = calYm.value.split('-').map(Number)
@@ -276,6 +293,15 @@ function shiftMonth(delta) {
   loadKalender()
 }
 
+function todayStr() {
+  const t0 = new Date()
+  return [
+    t0.getFullYear(),
+    String(t0.getMonth() + 1).padStart(2, '0'),
+    String(t0.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
 function buildDays(kal) {
   const [y, m] = calYm.value.split('-').map(Number)
   const first = new Date(y, m - 1, 1)
@@ -283,12 +309,25 @@ function buildDays(kal) {
   const lastDate = new Date(y, m, 0).getDate()
   const byDate = {}
   for (const r of kal || []) byDate[r.tanggal] = r
+  const today = todayStr()
   const out = []
   for (let i = 0; i < startPad; i++) out.push({ n: null })
   for (let n = 1; n <= lastDate; n++) {
     const date = `${calYm.value}-${String(n).padStart(2, '0')}`
     const r = byDate[date]
-    out.push({ n, date, ronda: !!r, khusus: r?.sumber === 'khusus' })
+    const dow = new Date(y, m - 1, n).getDay()
+    const khusus = r?.sumber === 'khusus'
+    const tetapPola = !khusus && !r && !!hariTetap.value[dow] && date >= today
+    const tetapDb = r?.sumber === 'tetap'
+    const ronda = !!r || tetapPola
+    out.push({
+      n,
+      date,
+      ronda,
+      khusus,
+      tetap: tetapDb || tetapPola,
+      projected: tetapPola,
+    })
   }
   days.value = out
 }
@@ -297,15 +336,16 @@ async function onPickDay(day) {
   if (!day?.date) return
   selectedTanggal.value = day.date
   selectedDetail.value = null
-  if (!day.ronda) {
-    selectedLoading.value = false
-    return
-  }
   selectedLoading.value = true
   const res = await detailMalam(day.date)
   selectedLoading.value = false
   if (res.ok && res.data) selectedDetail.value = res.data
   else selectedDetail.value = null
+}
+
+function goTambahKhusus() {
+  if (!selectedTanggal.value) return
+  router.push({ path: '/ronda/jadwal-khusus', query: { tanggal: selectedTanggal.value } })
 }
 
 function onAksi(a) {
@@ -343,8 +383,21 @@ async function loadKalender() {
   else buildDays([])
 }
 
+async function loadHariTetap() {
+  const j = await listJadwalTetap()
+  if (j.ok) {
+    const next = [false, false, false, false, false, false, false]
+    for (const row of j.data || []) {
+      const h = Number(row.hari)
+      if (h >= 0 && h <= 6) next[h] = true
+    }
+    hariTetap.value = next
+  }
+}
+
 onMounted(async () => {
   malamLoading.value = true
+  await loadHariTetap()
   const [mRes] = await Promise.all([malamTerdekat(), loadKalender()])
   malamLoading.value = false
   if (mRes.ok) malam.value = mRes.data
