@@ -51,6 +51,7 @@ class RondaService
                 $db->table('ronda_jadwal_tetap_keluarga')->where('jadwal_id', $id)->delete();
                 $db->table('ronda_jadwal_tetap')->where('id', $id)->delete();
             }
+            $this->hapusSlotTetapUntukHari($hari, date('Y-m-d'));
             return ['ok' => true, 'data' => ['id' => null, 'deleted' => true, 'hari' => $hari]];
         }
         if ($existing) {
@@ -159,7 +160,6 @@ class RondaService
             ->orderBy('id', 'ASC')
             ->get()->getResultArray();
 
-        $fallback = null;
         foreach ($rows as $row) {
             $sumber = $row['sumber'] ?? 'tetap';
             if ($sumber === 'khusus') {
@@ -167,15 +167,12 @@ class RondaService
             }
             $w = (int) date('w', strtotime($row['tanggal']));
             if ($activeSet && !isset($activeSet[$w])) {
-                if ($fallback === null) {
-                    $fallback = $row['tanggal'];
-                }
                 continue;
             }
             return $this->detailMalam($row['tanggal']);
         }
 
-        return $fallback ? $this->detailMalam($fallback) : null;
+        return null;
     }
 
     public function detailMalam(string $tanggal): ?array
@@ -328,6 +325,21 @@ class RondaService
         }
         $hariSet = array_fill_keys($hari, true);
 
+        $allFuture = $db->table('ronda_malam')
+            ->where('sumber', 'tetap')
+            ->where('tanggal >=', date('Y-m-d'))
+            ->get()->getResultArray();
+        foreach ($allFuture as $fm) {
+            $fw = (int) date('w', strtotime($fm['tanggal']));
+            if (isset($hariSet[$fw])) {
+                continue;
+            }
+            $fmid = (int) $fm['id'];
+            $db->table('ronda_absen')->where('malam_id', $fmid)->delete();
+            $db->table('ronda_malam_keluarga')->where('malam_id', $fmid)->delete();
+            $db->table('ronda_malam')->where('id', $fmid)->delete();
+        }
+
         $durasi = $data['durasi'] ?? '1';
         $today = date('Y-m-d');
         if ($durasi === 'minggu' || $durasi === 'week' || $durasi === '0') {
@@ -402,17 +414,13 @@ class RondaService
             $mode = 'slot';
         }
 
-        $rows = $db->table('ronda_malam')
-            ->orderBy('tanggal', 'ASC')
-            ->get()->getResultArray();
-
+        $rows = $db->table('ronda_malam')->orderBy('tanggal', 'ASC')->get()->getResultArray();
         $cleared = 0;
         $deleted = 0;
         $absenDihapus = 0;
 
         foreach ($rows as $m) {
             $mid = (int) $m['id'];
-
             if ($mode === 'slot') {
                 $nAbsen = $db->table('ronda_absen')->where('malam_id', $mid)->countAllResults();
                 $db->table('ronda_absen')->where('malam_id', $mid)->delete();
@@ -436,18 +444,6 @@ class RondaService
                 $db->table('ronda_jadwal_khusus')->where('id', $kid)->delete();
                 $khususDihapus++;
             }
-        }
-
-        try {
-            (new AuditService())->log('hapus_jadwal_ronda', 'ronda_malam', null, null, [
-                'mode' => $mode,
-                'penugasan_dihapus' => $cleared,
-                'slot_dihapus' => $deleted,
-                'absen_dihapus' => $absenDihapus,
-                'khusus_dihapus' => $khususDihapus,
-                'scope' => 'semua_termasuk_khusus',
-            ], 'pengguna', true, $userId);
-        } catch (\Throwable $e) {
         }
 
         return [
@@ -558,6 +554,28 @@ class RondaService
                 'hari_aktif' => $activeDays,
             ],
         ];
+    }
+
+    private function hapusSlotTetapUntukHari(int $hari, string $fromDate): int
+    {
+        $db = \Config\Database::connect();
+        $rows = $db->table('ronda_malam')
+            ->where('sumber', 'tetap')
+            ->where('tanggal >=', $fromDate)
+            ->get()->getResultArray();
+        $n = 0;
+        foreach ($rows as $m) {
+            $w = (int) date('w', strtotime($m['tanggal']));
+            if ($w !== $hari) {
+                continue;
+            }
+            $mid = (int) $m['id'];
+            $db->table('ronda_absen')->where('malam_id', $mid)->delete();
+            $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->delete();
+            $db->table('ronda_malam')->where('id', $mid)->delete();
+            $n++;
+        }
+        return $n;
     }
 
     private function bulanTerkunci(string $periode): bool
