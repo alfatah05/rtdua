@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-2 text-center mb-5">
+    <div class="grid grid-cols-4 gap-2 text-center mb-5">
       <button
         v-for="a in aksi"
         :key="a.label"
@@ -116,54 +116,19 @@
           class="flex items-center justify-between gap-3 py-2"
         >
           <div class="flex items-center gap-2.5 min-w-0">
-            <div
-              class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]"
-            >
-              <img
-                v-if="k.foto"
-                :src="mediaUrl(k.foto)"
-                alt=""
-                class="w-full h-full object-cover"
-              />
+            <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
+              <img v-if="k.foto" :src="mediaUrl(k.foto)" alt="" class="w-full h-full object-cover" />
               <span v-else>{{ inisial(k.nama) }}</span>
             </div>
             <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
           </div>
           <span class="text-[13px] text-[var(--mut)] shrink-0">{{ k.alamat }}</span>
         </div>
-        <p v-if="!(selectedDetail.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0 py-1">
-          Belum ada keluarga bertugas
-        </p>
+        <p v-if="!(selectedDetail.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0 py-1">Belum ada keluarga bertugas</p>
       </template>
       <div v-else class="py-3 flex flex-col items-center text-center">
         <p class="text-[13px] text-[var(--mut)] m-0 mb-3">Belum ada jadwal ronda di tanggal ini</p>
-        <button
-          type="button"
-          class="min-h-[40px] px-5 rounded-full bg-[var(--g)] text-white text-[13px] font-bold active:scale-95 dark:bg-white dark:text-black"
-          @click="goTambahKhusus"
-        >
-          Tambah jadwal
-        </button>
-      </div>
-    </div>
-
-    <div v-if="showIsi" class="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" @click.self="showIsi = false">
-      <div class="bg-[var(--bg)] rounded-[20px] p-5 w-full max-w-md">
-        <p class="font-bold text-[16px] m-0 mb-1">Isi otomatis</p>
-        <p class="text-[13px] text-[var(--mut)] m-0 mb-4">
-          Hanya hari di <b>jadwal tetap</b>. KK aktif dibagi bergiliran (urut blok/nomor) supaya semua kebagian.
-        </p>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Keluarga per malam</label>
-        <input v-model.number="isiPerMalam" type="number" min="1" max="20" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-3" />
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Durasi</label>
-        <select v-model="isiDurasi" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-4">
-          <option value="minggu">1 minggu (sisa minggu ini)</option>
-          <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
-        </select>
-        <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold mb-2" :disabled="isiBusy" @click="jalankanIsi">
-          {{ isiBusy ? 'Mengisi…' : 'Jalankan' }}
-        </button>
-        <button type="button" class="w-full min-h-[44px] rounded-full bg-[var(--card2)] font-semibold" @click="showIsi = false">Batal</button>
+        <button type="button" class="min-h-[40px] px-5 rounded-full bg-[var(--g)] text-white text-[13px] font-bold active:scale-95 dark:bg-white dark:text-black" @click="goTambahKhusus">Tambah jadwal</button>
       </div>
     </div>
   </div>
@@ -172,12 +137,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Calendar, List, Wand2, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { Calendar, List, Wand2, Banknote, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import {
   kalenderRonda,
   malamTerdekat,
-  isiOtomatisRonda,
   detailMalam,
   listJadwalTetap,
   listJadwalKhusus,
@@ -194,10 +158,6 @@ const calYm = ref(new Date().toISOString().slice(0, 7))
 const selectedTanggal = ref('')
 const selectedDetail = ref(null)
 const selectedLoading = ref(false)
-const showIsi = ref(false)
-const isiPerMalam = ref(2)
-const isiDurasi = ref('1')
-const isiBusy = ref(false)
 const hariTetap = ref([false, false, false, false, false, false, false])
 const khususSet = ref({})
 
@@ -209,7 +169,8 @@ const bulanLabel = computed(() => {
 const aksi = [
   { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap', bg: 'rgba(10,143,68,.18)', color: '#0A8F44' },
   { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Isi otomatis', icon: Wand2, action: 'isi', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
+  { label: 'Isi otomatis', icon: Wand2, to: '/ronda/isi-otomatis', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
+  { label: 'Denda', icon: Banknote, to: '/ronda/denda', bg: 'rgba(239,68,68,.18)', color: '#DC2626' },
 ]
 
 function weekIndex(d) {
@@ -283,7 +244,6 @@ function dayClass(day) {
     if (day.ronda) return 'bg-[var(--g)] text-white ring-2 ring-[var(--gd)]'
     return 'bg-[var(--g)] text-white'
   }
-  // riwayat (sudah lewat): tetap terlihat, lebih pudar
   if (day.past && day.ronda) {
     if (day.khusus) return 'bg-blue-500/15 text-blue-600/80 opacity-70'
     return 'bg-[var(--gd)] text-[var(--gm)] opacity-55'
@@ -358,32 +318,7 @@ function goTambahKhusus() {
 }
 
 function onAksi(a) {
-  if (a.to) {
-    router.push(a.to)
-    return
-  }
-  if (a.action === 'isi') showIsi.value = true
-}
-
-async function jalankanIsi() {
-  isiBusy.value = true
-  aksiMsg.value = ''
-  const res = await isiOtomatisRonda({
-    keluarga_per_malam: isiPerMalam.value || 2,
-    durasi: isiDurasi.value,
-  })
-  isiBusy.value = false
-  showIsi.value = false
-  aksiOk.value = !!res.ok
-  if (res.ok) {
-    const d = res.data || {}
-    aksiMsg.value = `Selesai: ${d.dibuat ?? 0} malam · ${d.dilewati ?? 0} dilewati · ${d.total_kk ?? 0} KK`
-    await loadKalender()
-    const mRes = await malamTerdekat()
-    if (mRes.ok) malam.value = mRes.data
-  } else {
-    aksiMsg.value = res.error || 'Gagal isi otomatis'
-  }
+  if (a.to) router.push(a.to)
 }
 
 async function loadKalender() {
