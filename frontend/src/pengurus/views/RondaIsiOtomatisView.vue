@@ -7,12 +7,12 @@
       <div class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] px-4 py-4 mb-4 shadow-[var(--sh)]">
         <p class="text-[14px] font-bold m-0 mb-2">Cara kerja</p>
         <ul class="text-[13px] text-[var(--mut)] m-0 pl-4 space-y-1.5 list-disc">
-          <li>Mengisi <b class="text-[var(--tx)]">jadwal tetap</b> yang masih kosong (belum ada keluarga).</li>
-          <li>KK aktif diurutkan blok & nomor rumah, lalu dibagi merata ke slot dalam satu siklus.</li>
-          <li>Siklus = hari ronda aktif × 4 minggu (pola bulanan yang berulang).</li>
-          <li>Contoh: 1 hari/minggu → 4 kelompok; 40 KK → ±10 KK per malam.</li>
-          <li>Bulan depan, minggu ke-1 memakai kelompok yang sama (pola loop).</li>
-          <li>Jadwal khusus & malam yang sudah diisi manual tidak diubah.</li>
+          <li>Mengisi <b class="text-[var(--tx)]">jadwal tetap</b> yang masih kosong saja.</li>
+          <li>KK aktif diurutkan blok & nomor, dibagi merata ke kelompok (hari aktif × 4 minggu).</li>
+          <li>Kelompok A selalu di <b class="text-[var(--tx)]">awal bulan</b> — tidak tergantung kapan tombol ini ditekan.</li>
+          <li>Contoh: 2 hari/minggu → 8 kelompok; kelompok 1 = hari ronda pertama bulan, dst.</li>
+          <li>Jika ada <b class="text-[var(--tx)]">jadwal khusus</b> di hari itu, kelompok tetap tidak ronda (diganti khusus, tidak digeser).</li>
+          <li>Bulan berikutnya pola mengulang dari kelompok A lagi.</li>
         </ul>
       </div>
 
@@ -23,8 +23,7 @@
           <b>{{ hariAktifLabel }}</b>
         </p>
         <p class="text-[14px] m-0 mt-1">
-          Estimasi siklus: <b>{{ estimasiSlot }} slot</b>
-          <span v-if="estimasiPerMalam"> · ±{{ estimasiPerMalam }} KK / malam</span>
+          Estimasi siklus: <b>{{ estimasiSlot }} slot / bulan</b>
         </p>
         <p v-if="!adaHari" class="text-[13px] text-red-600 m-0 mt-2">
           Atur hari ronda di Jadwal tetap dulu.
@@ -56,7 +55,6 @@ const busy = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
 const hariAktif = ref([])
-const totalKk = ref(0)
 
 const adaHari = computed(() => hariAktif.value.length > 0)
 const hariAktifLabel = computed(() => {
@@ -64,10 +62,6 @@ const hariAktifLabel = computed(() => {
   return hariAktif.value.map((h) => hariLabel[h]).join(', ')
 })
 const estimasiSlot = computed(() => (adaHari.value ? hariAktif.value.length * 4 : 0))
-const estimasiPerMalam = computed(() => {
-  if (!estimasiSlot.value || !totalKk.value) return null
-  return Math.max(1, Math.round(totalKk.value / estimasiSlot.value))
-})
 
 async function load() {
   loading.value = true
@@ -81,7 +75,6 @@ async function load() {
     days.sort((a, b) => a - b)
   }
   hariAktif.value = days
-  totalKk.value = 0
   loading.value = false
 }
 
