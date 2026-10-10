@@ -108,6 +108,9 @@ $routes->post('ronda/jadwal-khusus', 'RondaController::simpanJadwalKhusus', ['fi
 $routes->post('ronda/generate', 'RondaController::generateBulan', ['filter' => 'auth']);
 $routes->post('ronda/isi-otomatis', 'RondaController::isiOtomatis', ['filter' => 'auth']);
 $routes->post('ronda/buat-slot', 'RondaController::buatSlotKosong', ['filter' => 'auth']);
+$routes->get('ronda/template', 'RondaController::listTemplate', ['filter' => 'auth']);
+$routes->post('ronda/template', 'RondaController::buatTemplate', ['filter' => 'auth']);
+$routes->post('ronda/template/(:num)/keluarga', 'RondaController::simpanTemplateKeluarga/$1', ['filter' => 'auth']);
 $routes->post('ronda/absen-manual', 'RondaController::absenManual', ['filter' => 'auth']);
 $routes->post('ronda/absen', 'RondaController::absenWarga', ['filter' => 'auth']);
 $routes->post('ronda/malam/(:num)/ganti-keluarga', 'RondaController::gantiKeluarga/$1', ['filter' => 'auth']);
