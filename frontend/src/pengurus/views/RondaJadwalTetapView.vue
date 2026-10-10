@@ -12,372 +12,118 @@
           :key="h"
           type="button"
           class="w-11 h-11 rounded-full text-[12px] font-bold grid place-items-center shrink-0 transition-transform active:scale-95 border-0"
-          :class="selected[h]
-            ? 'bg-[var(--gd)] text-[var(--gm)]'
-            : 'bg-[var(--card2)] text-[var(--mut)]'"
-          :disabled="toggling"
+          :class="selected[h] ? 'bg-[var(--gd)] text-[var(--gm)]' : 'bg-[var(--card2)] text-[var(--mut)]'"
+          :disabled="busy"
           @click="toggleHari(h)"
-        >
-          {{ label }}
-        </button>
+        >{{ label }}</button>
       </div>
 
-      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Jam default</p>
+      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Jam ronda</p>
       <div class="flex gap-2 mb-4">
-        <input
-          v-model="jamMulai"
-          type="time"
-          class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none"
-        />
-        <input
-          v-model="jamSelesai"
-          type="time"
-          class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none"
-        />
+        <input v-model="jamMulai" type="time" class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none" />
+        <input v-model="jamSelesai" type="time" class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none" />
       </div>
 
-      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode</p>
-      <select
-        v-model="durasi"
-        class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] mb-3 outline-none appearance-none"
-      >
-        <option value="minggu">1 minggu (sisa minggu ini)</option>
-        <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
+      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode siklus</p>
+      <select v-model="durasi" class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] mb-3 outline-none appearance-none">
+        <option value="minggu">1 minggu</option>
+        <option value="1">1 bulan (4 minggu)</option>
       </select>
 
       <button
         type="button"
         class="w-full min-h-[44px] rounded-full bg-[var(--g)] text-white font-bold mb-2 disabled:opacity-50"
-        :disabled="isiBusy || !adaHari"
-        @click="jalankanBuatSlot"
-      >
-        {{ isiBusy ? 'Membuat…' : 'Buat jadwal' }}
-      </button>
+        :disabled="busy || !adaHari"
+        @click="jalankanBuat"
+      >{{ busy ? 'Menyimpan…' : (cards.length ? 'Update jadwal' : 'Buat jadwal') }}</button>
       <p v-if="msg" class="text-[13px] text-center mb-4" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
 
-      <div class="flex items-center justify-between gap-2 mb-3 mt-2">
-        <p class="text-[15px] font-bold m-0">Jadwal ke depan</p>
-        <select
-          v-model="filterUnit"
-          class="min-h-[36px] px-4 rounded-full bg-[var(--search)] text-[13px] font-semibold outline-none appearance-none"
-          @change="pageOffset = 0"
-        >
-          <option value="minggu">Per minggu</option>
-          <option value="bulan">Per bulan</option>
-        </select>
-      </div>
+      <p class="text-[15px] font-bold m-0 mb-3">Card jadwal</p>
+      <p v-if="!cards.length" class="text-[13px] text-[var(--mut)] text-center py-4">Belum ada card. Pilih hari lalu klik Buat jadwal.</p>
 
-      <p v-if="listLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat jadwal…</p>
-      <p v-else-if="!filteredMalam.length" class="text-[13px] text-[var(--mut)] text-center py-4">
-        {{ emptyLabel }}
-      </p>
-
-      <div v-else class="space-y-3 mb-3">
-        <div
-          v-for="item in filteredMalam"
-          :key="item.tanggal"
-          class="rounded-[20px] border border-[var(--line)] overflow-hidden shadow-[var(--sh)] bg-[var(--card)]"
-        >
-          <div class="px-4 py-3 flex items-center justify-between" :style="cardHeaderStyle(item)">
+      <div class="space-y-3 mb-8">
+        <div v-for="card in cards" :key="card.id" class="rounded-[20px] border border-[var(--line)] overflow-hidden shadow-[var(--sh)] bg-[var(--card)]">
+          <div class="px-4 py-3 flex items-center justify-between" style="background: linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)">
             <div class="min-w-0">
-              <p class="text-[13px] font-semibold m-0 text-white">{{ labelKapan(item.tanggal) }}</p>
-              <p class="text-[12px] m-0 mt-0.5 text-white/90">
-                {{ formatHari(item.tanggal) }} · {{ jamLabel(item.jam_mulai) }}–{{ jamLabel(item.jam_selesai) }}
-              </p>
+              <p class="text-[14px] font-bold m-0 text-white">{{ card.label }}</p>
+              <p class="text-[12px] m-0 mt-0.5 text-white/90">{{ jamLabel(card.jam_mulai) }}–{{ jamLabel(card.jam_selesai) }}</p>
             </div>
-            <button
-              type="button"
-              class="w-9 h-9 rounded-full grid place-items-center shrink-0 active:scale-95 bg-white/20 text-white"
-              aria-label="Kelola malam"
-              @click="$router.push('/ronda/malam/' + item.tanggal)"
-            >
-              <ChevronRight :size="20" />
-            </button>
+            <button type="button" class="min-h-[32px] px-3 rounded-full text-[12px] font-bold bg-white/20 text-white active:scale-95" @click="openEdit(card)">Ubah warga</button>
           </div>
           <div class="px-4 py-3">
-            <template v-if="detailMap[item.tanggal]?.keluarga?.length">
-              <div
-                v-for="k in detailMap[item.tanggal].keluarga"
-                :key="k.keluarga_id"
-                class="flex items-center justify-between gap-3 py-1.5"
-              >
+            <template v-if="card.keluarga?.length">
+              <div v-for="k in card.keluarga" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-1.5">
                 <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
                 <span class="text-[13px] text-[var(--mut)] shrink-0">{{ k.alamat }}</span>
               </div>
             </template>
-            <p v-else class="text-[13px] text-[var(--mut)] m-0">
-              {{ detailMap[item.tanggal] ? 'Belum ada keluarga bertugas' : (item.virtual ? 'Belum ada keluarga bertugas' : '…') }}
-            </p>
+            <p v-else class="text-[13px] text-[var(--mut)] m-0">Belum ada warga — klik Ubah warga</p>
           </div>
         </div>
       </div>
 
-      <div v-if="!listLoading && adaHari" class="flex items-center justify-between gap-2 mb-6">
-        <button
-          type="button"
-          class="min-h-[40px] px-4 rounded-full bg-[var(--card2)] text-[13px] font-semibold disabled:opacity-40"
-          :disabled="pageOffset <= 0"
-          @click="pageOffset--"
-        >
-          Sebelumnya
-        </button>
-        <p class="text-[13px] font-semibold text-center m-0 min-w-0 truncate">{{ pageLabel }}</p>
-        <button
-          type="button"
-          class="min-h-[40px] px-4 rounded-full bg-[var(--card2)] text-[13px] font-semibold"
-          @click="pageOffset++"
-        >
-          Berikutnya
-        </button>
+      <div v-if="editCard" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4" @click.self="editCard = null">
+        <div class="w-full max-w-md max-h-[80vh] overflow-hidden rounded-[20px] bg-[var(--card)] shadow-xl flex flex-col">
+          <div class="px-4 py-3 border-b border-[var(--line)]">
+            <p class="text-[15px] font-bold m-0">{{ editCard.label }}</p>
+            <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">Pilih keluarga yang ronda</p>
+          </div>
+          <div class="px-4 py-2 overflow-y-auto flex-1">
+            <p v-if="wargaLoading" class="text-[13px] text-[var(--mut)] py-4 text-center">Memuat warga…</p>
+            <label v-for="w in wargaList" :key="w.id" class="flex items-center gap-3 py-2.5 border-b border-[var(--line)] last:border-0">
+              <input type="checkbox" class="w-5 h-5" :value="w.id" v-model="editSelected" />
+              <span class="min-w-0 flex-1">
+                <span class="block text-[14px] font-semibold truncate">{{ w.nama || '—' }}</span>
+                <span class="block text-[12px] text-[var(--mut)]">{{ w.alamat }}</span>
+              </span>
+            </label>
+          </div>
+          <div class="px-4 py-3 flex gap-2 border-t border-[var(--line)]">
+            <button type="button" class="flex-1 min-h-[44px] rounded-full bg-[var(--card2)] font-semibold" @click="editCard = null">Batal</button>
+            <button type="button" class="flex-1 min-h-[44px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50" :disabled="saveBusy" @click="saveCard">{{ saveBusy ? 'Menyimpan…' : 'Simpan' }}</button>
+          </div>
+        </div>
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { ChevronRight } from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import {
-  listJadwalTetap,
-  simpanJadwalTetap,
-  buatSlotKosong,
-  kalenderRonda,
-  detailMalam,
-} from '@shared/services/ronda.js'
+import { listJadwalTetap, listTemplateCards, buatTemplateCards, simpanTemplateKeluarga } from '@shared/services/ronda.js'
+import { api } from '@shared/api/http.js'
 
 const hariPendek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
-const hariLabel = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-
 const loading = ref(true)
-const listLoading = ref(false)
 const err = ref('')
 const selected = ref([false, false, false, false, false, false, false])
 const jamMulai = ref('21:00')
 const jamSelesai = ref('00:00')
-const durasi = ref('minggu')
-const toggling = ref(false)
-const isiBusy = ref(false)
+const durasi = ref('1')
+const busy = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
-const filterUnit = ref('minggu')
-const pageOffset = ref(0)
-const allMalam = ref([])
-const detailMap = ref({})
-
+const cards = ref([])
+const editCard = ref(null)
+const editSelected = ref([])
+const wargaList = ref([])
+const wargaLoading = ref(false)
+const saveBusy = ref(false)
 const adaHari = computed(() => selected.value.some(Boolean))
-
-function startOfWeek(d) {
-  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  const day = (x.getDay() + 6) % 7
-  x.setDate(x.getDate() - day)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-
-function endOfWeek(d) {
-  const s = startOfWeek(d)
-  const e = new Date(s)
-  e.setDate(e.getDate() + 6)
-  return e
-}
-
-function weekIndex(d) {
-  return startOfWeek(d).getTime()
-}
-
-function toDateStr(d) {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-')
-}
-
-const pageWindow = computed(() => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  if (filterUnit.value === 'bulan') {
-    const base = new Date(today.getFullYear(), today.getMonth() + pageOffset.value, 1)
-    const start = new Date(base.getFullYear(), base.getMonth(), 1)
-    const end = new Date(base.getFullYear(), base.getMonth() + 1, 0)
-    start.setHours(0, 0, 0, 0)
-    end.setHours(0, 0, 0, 0)
-    return { start, end }
-  }
-  const base = startOfWeek(today)
-  base.setDate(base.getDate() + pageOffset.value * 7)
-  const start = new Date(base)
-  const end = endOfWeek(base)
-  return { start, end }
-})
-
-const pageLabel = computed(() => {
-  const { start, end } = pageWindow.value
-  if (filterUnit.value === 'bulan') {
-    if (pageOffset.value === 0) return 'Bulan ini'
-    if (pageOffset.value === 1) return 'Bulan depan'
-    return start.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
-  }
-  if (pageOffset.value === 0) return 'Minggu ini'
-  if (pageOffset.value === 1) return 'Minggu depan'
-  const a = start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-  const b = end.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-  return `${a} – ${b}`
-})
-
-/** Jadwal tetap berlanjut tanpa ujung: pola hari diulang ke depan. */
-const filteredMalam = computed(() => {
-  const { start, end } = pageWindow.value
-  if (!adaHari.value) return []
-
-  const byTgl = {}
-  for (const item of allMalam.value) {
-    if (item?.tanggal) byTgl[item.tanggal] = item
-  }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const jamM = String(jamMulai.value || '21:00').slice(0, 5) + ':00'
-  const jamS = String(jamSelesai.value || '00:00').slice(0, 5) + ':00'
-  const out = []
-  const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate())
-  const endT = end.getTime()
-
-  while (cur.getTime() <= endT) {
-    const h = cur.getDay()
-    if (selected.value[h] && cur.getTime() >= today.getTime()) {
-      const tgl = toDateStr(cur)
-      if (byTgl[tgl]) {
-        out.push(byTgl[tgl])
-      } else {
-        out.push({
-          tanggal: tgl,
-          jam_mulai: jamM,
-          jam_selesai: jamS,
-          sumber: 'tetap',
-          virtual: true,
-        })
-      }
-    }
-    cur.setDate(cur.getDate() + 1)
-  }
-  return out
-})
-
-const emptyLabel = computed(() => {
-  if (!adaHari.value) {
-    return 'Pilih minimal satu hari ronda.'
-  }
-  return `Tidak ada jadwal di ${pageLabel.value.toLowerCase()}.`
-})
-
-function labelKapan(tanggal) {
-  if (!tanggal) return 'Ronda'
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tgl = new Date(tanggal + 'T00:00:00')
-  if (tgl.getTime() === today.getTime()) return 'Malam ini'
-  const wToday = weekIndex(today)
-  const wTgl = weekIndex(tgl)
-  const diff = Math.round((wTgl - wToday) / (7 * 86400000))
-  if (diff === 0) return 'Minggu ini'
-  if (diff === 1) return 'Minggu depan'
-  if (diff > 1) return diff + ' minggu lagi'
-  return 'Ronda'
-}
-
-function cardHeaderStyle(item) {
-  const nearest = allMalam.value[0]?.tanggal || filteredMalam.value[0]?.tanggal
-  const isNearest = item.tanggal === nearest
-  if (isNearest) {
-    if (item.sumber === 'khusus') {
-      return { background: 'linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)' }
-    }
-    return {
-      background:
-        'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
-    }
-  }
-  return {
-    background:
-      'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(145deg, #9CA3AF, #6B7280 55%, #4B5563)',
-  }
-}
 
 function jamLabel(j) {
   if (!j) return '—'
   return String(j).slice(0, 5).replace(':', '.')
 }
 
-function formatHari(tgl) {
-  if (!tgl) return ''
-  return new Date(tgl + 'T00:00:00').toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
-}
-
-async function loadDetailsFor(list) {
-  const map = { ...detailMap.value }
-  const need = list.filter((x) => !x.virtual && !map[x.tanggal]).slice(0, 24)
-  await Promise.all(
-    need.map(async (item) => {
-      const res = await detailMalam(item.tanggal)
-      if (res.ok && res.data) map[item.tanggal] = res.data
-      else map[item.tanggal] = { keluarga: [] }
-    }),
-  )
-  // virtual: kosong tanpa fetch
-  for (const item of list) {
-    if (item.virtual && !map[item.tanggal]) map[item.tanggal] = { keluarga: [] }
-  }
-  detailMap.value = map
-}
-
-watch(filteredMalam, (list) => {
-  if (list.length) loadDetailsFor(list)
-})
-
-async function loadKalenderList() {
-  listLoading.value = true
-  const today = new Date()
-  const months = []
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() + i, 1)
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-  }
-  const results = await Promise.all(months.map((b) => kalenderRonda(b)))
-  const rows = []
-  for (const r of results) {
-    if (r.ok && Array.isArray(r.data)) rows.push(...r.data)
-  }
-  const todayStr = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, '0'),
-    String(today.getDate()).padStart(2, '0'),
-  ].join('-')
-  const seen = new Set()
-  const uniq = []
-  for (const x of rows) {
-    if (!x?.tanggal || x.tanggal < todayStr) continue
-    if (seen.has(x.tanggal)) continue
-    seen.add(x.tanggal)
-    uniq.push(x)
-  }
-  uniq.sort((a, b) => a.tanggal.localeCompare(b.tanggal))
-  allMalam.value = uniq
-  listLoading.value = false
-}
-
 async function load() {
   loading.value = true
   err.value = ''
-  const j = await listJadwalTetap()
+  const [j, c] = await Promise.all([listJadwalTetap(), listTemplateCards()])
   loading.value = false
   if (!j.ok) {
-    err.value = j.error || 'Gagal memuat jadwal tetap'
+    err.value = j.error || 'Gagal memuat'
     return
   }
   const next = [false, false, false, false, false, false, false]
@@ -394,76 +140,82 @@ async function load() {
     }
   }
   selected.value = next
-  await loadKalenderList()
+  if (c.ok) cards.value = c.data || []
 }
 
-async function toggleHari(h) {
-  if (toggling.value) return
-  toggling.value = true
-  msg.value = ''
-  const on = !selected.value[h]
-  const payload = on
-    ? {
-        hari: h,
-        jam_mulai: jamMulai.value + ':00',
-        jam_selesai: jamSelesai.value + ':00',
-        keluarga_ids: [],
-      }
-    : { hari: h, hapus: true }
-
-  const res = await simpanJadwalTetap(payload)
-  toggling.value = false
-  if (!res.ok) {
-    msgOk.value = false
-    msg.value = res.error || 'Gagal menyimpan hari'
-    return
-  }
+function toggleHari(h) {
   const copy = selected.value.slice()
-  copy[h] = on
+  copy[h] = !copy[h]
   selected.value = copy
 }
 
-async function jalankanBuatSlot() {
+async function jalankanBuat() {
   if (!adaHari.value) {
     msgOk.value = false
     msg.value = 'Pilih minimal satu hari ronda'
     return
   }
-  isiBusy.value = true
+  busy.value = true
   msg.value = ''
-  for (let h = 0; h < 7; h++) {
-    if (!selected.value[h]) continue
-    await simpanJadwalTetap({
-      hari: h,
-      jam_mulai: jamMulai.value + ':00',
-      jam_selesai: jamSelesai.value + ':00',
-      keluarga_ids: [],
-    })
-  }
   const hariList = []
-  selected.value.forEach((on, h) => {
-    if (on) hariList.push(h)
-  })
-  const res = await buatSlotKosong({
-    durasi: durasi.value,
+  selected.value.forEach((on, h) => { if (on) hariList.push(h) })
+  const res = await buatTemplateCards({
     hari: hariList,
+    jam_mulai: jamMulai.value + ':00',
+    jam_selesai: jamSelesai.value + ':00',
+    durasi: durasi.value,
   })
-  isiBusy.value = false
+  busy.value = false
   msgOk.value = !!res.ok
   if (res.ok) {
     const d = res.data || {}
-    const parts = []
-    if (d.dibuat) parts.push(`${d.dibuat} dibuat`)
-    if (d.dihapus) parts.push(`${d.dihapus} dihapus`)
-    if (d.dilewati) parts.push(`${d.dilewati} tetap`)
-    const range = d.dari && d.sampai ? ` (${d.dari} s/d ${d.sampai})` : ''
-    msg.value = parts.length ? `Selesai: ${parts.join(' · ')}${range}` : 'Jadwal sudah sesuai'
-    detailMap.value = {}
-    pageOffset.value = 0
-    await loadKalenderList()
+    cards.value = d.cards || []
+    msg.value = `${d.dibuat || cards.value.length} card siap. Isi warga lewat tombol Ubah warga.`
+    if (!cards.value.length) {
+      const c = await listTemplateCards()
+      if (c.ok) cards.value = c.data || []
+    }
   } else {
     msg.value = res.error || 'Gagal buat jadwal'
   }
+}
+
+async function openEdit(card) {
+  editCard.value = card
+  editSelected.value = (card.keluarga || []).map((k) => k.keluarga_id)
+  if (!wargaList.value.length) {
+    wargaLoading.value = true
+    try {
+      const res = await api('/warga')
+      const rows = res.data || res || []
+      const list = Array.isArray(rows) ? rows : []
+      wargaList.value = list.map((r) => ({
+        id: Number(r.id || r.keluarga_id),
+        nama: r.nama_kepala || r.kepala || r.nama || '—',
+        alamat: r.alamat || `${r.blok || ''}-${r.nomor || ''}${r.akhiran || ''}`,
+      })).filter((x) => x.id > 0)
+    } catch (e) {
+      wargaList.value = []
+    }
+    wargaLoading.value = false
+  }
+}
+
+async function saveCard() {
+  if (!editCard.value) return
+  saveBusy.value = true
+  const res = await simpanTemplateKeluarga(editCard.value.id, editSelected.value)
+  saveBusy.value = false
+  if (!res.ok) {
+    msgOk.value = false
+    msg.value = res.error || 'Gagal simpan warga'
+    return
+  }
+  const kel = res.data?.keluarga || []
+  cards.value = cards.value.map((c) => (c.id === editCard.value.id ? { ...c, keluarga: kel } : c))
+  editCard.value = null
+  msgOk.value = true
+  msg.value = 'Warga disimpan'
 }
 
 onMounted(load)
