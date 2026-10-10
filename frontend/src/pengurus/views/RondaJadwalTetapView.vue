@@ -30,10 +30,13 @@
       </div>
 
       <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode</p>
-      <select v-model="durasi" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-3">
+      <select v-model="durasi" class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] mb-1">
         <option value="minggu">1 minggu (sisa minggu ini)</option>
         <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
       </select>
+      <p class="text-[12px] text-[var(--mut)] mb-3">
+        1 hari + 1 bulan ≈ 4–5 card (tiap minggu). Bukan duplikat — tanggalnya beda.
+      </p>
 
       <button
         type="button"
@@ -124,7 +127,7 @@ const err = ref('')
 const selected = ref([false, false, false, false, false, false, false])
 const jamMulai = ref('21:00')
 const jamSelesai = ref('00:00')
-const durasi = ref('1')
+const durasi = ref('minggu')
 const toggling = ref(false)
 const isiBusy = ref(false)
 const msg = ref('')
@@ -249,10 +252,21 @@ async function loadKalenderList() {
   for (const r of results) {
     if (r.ok && Array.isArray(r.data)) rows.push(...r.data)
   }
-  const todayStr = today.toISOString().slice(0, 10)
-  allMalam.value = rows
-    .filter((x) => x.tanggal >= todayStr)
-    .sort((a, b) => a.tanggal.localeCompare(b.tanggal))
+  const todayStr = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-')
+  const seen = new Set()
+  const uniq = []
+  for (const x of rows) {
+    if (!x?.tanggal || x.tanggal < todayStr) continue
+    if (seen.has(x.tanggal)) continue
+    seen.add(x.tanggal)
+    uniq.push(x)
+  }
+  uniq.sort((a, b) => a.tanggal.localeCompare(b.tanggal))
+  allMalam.value = uniq
   listLoading.value = false
 }
 
@@ -339,7 +353,8 @@ async function jalankanBuatSlot() {
     if (d.dibuat) parts.push(`${d.dibuat} dibuat`)
     if (d.dihapus) parts.push(`${d.dihapus} dihapus`)
     if (d.dilewati) parts.push(`${d.dilewati} tetap`)
-    msg.value = parts.length ? `Selesai: ${parts.join(' · ')}` : 'Jadwal sudah sesuai'
+    const range = d.dari && d.sampai ? ` (${d.dari} s/d ${d.sampai})` : ''
+    msg.value = parts.length ? `Selesai: ${parts.join(' · ')}${range}` : 'Jadwal sudah sesuai'
     detailMap.value = {}
     await loadKalenderList()
   } else {
