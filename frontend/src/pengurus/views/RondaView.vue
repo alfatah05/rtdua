@@ -47,21 +47,23 @@
     <div class="grid grid-cols-7 gap-1 text-center text-[12px] mb-2">
       <span v-for="d in ['M','S','S','R','K','J','S']" :key="d" class="text-[var(--mut)] font-semibold py-1">{{ d }}</span>
     </div>
-    <div class="grid grid-cols-7 gap-1">
+    <div class="grid grid-cols-7 gap-1 place-items-center">
       <button
         v-for="(day, i) in days"
         :key="i"
         type="button"
-        class="aspect-square rounded-full text-[13px] font-semibold grid place-items-center relative"
-        :class="day.ronda ? (day.khusus ? 'bg-blue-500/20 text-blue-700' : 'bg-[var(--gd)] text-[var(--gm)]') : 'text-[var(--text)]'"
+        class="w-9 h-9 rounded-full text-[13px] font-semibold grid place-items-center"
+        :class="day.n
+          ? (day.ronda
+            ? (day.khusus ? 'bg-blue-500/20 text-blue-700' : 'bg-[var(--gd)] text-[var(--gm)]')
+            : 'text-[var(--text)]')
+          : 'text-transparent'"
         :disabled="!day.n"
         @click="day.ronda && $router.push('/ronda/malam/' + day.date)"
       >
         {{ day.n || '' }}
-        <span v-if="day.ronda" class="absolute bottom-0.5 w-1 h-1 rounded-full bg-[var(--g)]"></span>
       </button>
     </div>
-    <p class="text-[12px] text-[var(--mut)] mt-3">Titik = ada ronda · Biru = jadwal khusus</p>
 
     <div v-if="showIsi" class="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" @click.self="showIsi = false">
       <div class="bg-[var(--bg)] rounded-[20px] p-5 w-full max-w-md">
@@ -115,9 +117,8 @@ const aksi = [
 ]
 
 function weekIndex(d) {
-  // Senin–Minggu (bukan Minggu–Sabtu)
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  const day = (x.getDay() + 6) % 7 // Senin=0 … Minggu=6
+  const day = (x.getDay() + 6) % 7
   x.setDate(x.getDate() - day)
   x.setHours(0, 0, 0, 0)
   return x.getTime()
