@@ -150,3 +150,12 @@ export async function batalkanAbsen(absenId) {
     return { ok: false, error: e.message }
   }
 }
+
+export async function terbitkanDendaRonda(payload = {}) {
+  try {
+    const res = await api('/ronda/terbitkan-denda', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
