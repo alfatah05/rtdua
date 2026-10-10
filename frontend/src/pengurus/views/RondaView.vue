@@ -135,8 +135,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { Calendar, List, Wand2, Banknote, Trash2, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import {
@@ -149,12 +149,16 @@ import {
 import { mediaUrl } from '@shared/services/upload.js'
 
 const router = useRouter()
+const route = useRoute()
 const malam = ref(null)
 const malamLoading = ref(true)
 const days = ref([])
 const aksiMsg = ref('')
 const aksiOk = ref(true)
-const calYm = ref(new Date().toISOString().slice(0, 7))
+const calYm = ref((() => {
+  const t = new Date()
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`
+})())
 const selectedTanggal = ref('')
 const selectedDetail = ref(null)
 const selectedLoading = ref(false)
@@ -286,9 +290,15 @@ function buildDays(kal) {
     const dow = new Date(y, m - 1, n).getDay()
     const dariKhusus = !!khususSet.value[date]
     const khusus = r?.sumber === 'khusus' || dariKhusus
-    const tetapPola = !khusus && !r && !!hariTetap.value[dow] && date >= today
-    const tetapDb = r?.sumber === 'tetap'
-    const ronda = !!r || khusus || tetapPola
+    // Slot tetap lama di hari yang sudah tidak aktif → abaikan (ke depan)
+    const tetapDb = r?.sumber === 'tetap' && !!hariTetap.value[dow]
+    const tetapOrphan = r?.sumber === 'tetap' && !hariTetap.value[dow]
+    // Pola proyeksi hari aktif yang belum punya slot
+    const tetapPola = !khusus && !tetapDb && !tetapOrphan && !!hariTetap.value[dow] && date >= today
+    let ronda = false
+    if (khusus) ronda = true
+    else if (date < today) ronda = !!(r && r.sumber === 'tetap') // lampau: tampilkan apa adanya di DB
+    else ronda = tetapDb || tetapPola
     out.push({
       n,
       date,
@@ -351,11 +361,27 @@ async function loadKhususSet() {
   khususSet.value = s
 }
 
-onMounted(async () => {
+async function reloadAll() {
   malamLoading.value = true
   await Promise.all([loadHariTetap(), loadKhususSet()])
   const [mRes] = await Promise.all([malamTerdekat(), loadKalender()])
   malamLoading.value = false
-  if (mRes.ok) malam.value = mRes.data
-})
+  if (mRes.ok && mRes.data) malam.value = mRes.data
+  else malam.value = null
+  // Refresh detail tanggal terpilih
+  if (selectedTanggal.value) {
+    const res = await detailMalam(selectedTanggal.value)
+    selectedDetail.value = res.ok ? res.data : null
+  }
+}
+
+onMounted(reloadAll)
+
+// Setiap kembali ke /ronda (dari submenu), muat ulang data
+watch(
+  () => route.fullPath,
+  (p) => {
+    if (p === '/ronda' || p === '/ronda/') reloadAll()
+  }
+)
 </script>
