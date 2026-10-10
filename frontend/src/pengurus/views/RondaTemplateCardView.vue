@@ -27,7 +27,6 @@
           class="w-full flex items-center gap-3 px-1 py-3 text-left active:scale-[0.99] transition-transform"
           @click="toggle(w.id)"
         >
-          <!-- checkbox custom -->
           <span
             class="w-6 h-6 rounded-[8px] shrink-0 grid place-items-center border-2 transition-colors"
             :class="isOn(w.id)
@@ -72,7 +71,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Search, Check } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listTemplateCards, simpanTemplateKeluarga } from '@shared/services/ronda.js'
-import { api } from '@shared/api/http.js'
+import { listKeluarga } from '@shared/services/warga.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { useToast } from '@shared/composables/useToast.js'
 
@@ -120,15 +119,6 @@ const filtered = computed(() => {
   )
 })
 
-function formatAlamat(r) {
-  if (r.alamat) return String(r.alamat)
-  const blok = r.blok || r.nama_blok || ''
-  const nomor = r.nomor || ''
-  const akhiran = r.akhiran || ''
-  if (blok || nomor) return `${blok}${blok && nomor ? '-' : ''}${nomor}${akhiran}`
-  return '—'
-}
-
 async function load() {
   loading.value = true
   err.value = ''
@@ -144,37 +134,37 @@ async function load() {
     return
   }
   title.value = card.label || 'Ubah warga'
-  selected.value = (card.keluarga || []).map((k) => Number(k.keluarga_id))
+  selected.value = (card.keluarga || []).map((k) => Number(k.keluarga_id)).filter((x) => x > 0)
 
   wargaLoading.value = true
-  try {
-    const wres = await api('/warga')
-    const rows = wres.data || wres || []
-    const list = Array.isArray(rows) ? rows : []
-    wargaList.value = list
-      .map((r) => ({
-        id: Number(r.id || r.keluarga_id),
-        nama: r.nama_kepala || r.kepala || r.nama || '—',
-        alamat: formatAlamat(r),
-        fotoUrl: r.foto ? mediaUrl(r.foto) : '',
-      }))
-      .filter((x) => x.id > 0)
-  } catch (e) {
-    wargaList.value = []
-    err.value = e?.message || 'Gagal memuat daftar warga'
-  }
+  const wres = await listKeluarga({ status: 'aktif' })
   wargaLoading.value = false
+  if (!wres.ok) {
+    wargaList.value = []
+    err.value = wres.error || 'Gagal memuat daftar warga'
+    return
+  }
+  wargaList.value = (wres.data || [])
+    .map((r) => ({
+      id: Number(r.id),
+      nama: r.nama || '—',
+      alamat: r.alamat || '',
+      fotoUrl: r.foto ? mediaUrl(r.foto) : '',
+    }))
+    .filter((x) => x.id > 0)
 }
 
 async function simpan() {
   saveBusy.value = true
-  const res = await simpanTemplateKeluarga(cardId.value, selected.value)
+  const ids = selected.value.map((x) => Number(x)).filter((x) => x > 0)
+  const res = await simpanTemplateKeluarga(cardId.value, ids)
   saveBusy.value = false
   if (!res.ok) {
     toast.error(res.error || 'Gagal simpan')
     return
   }
-  toast.success('Tersimpan')
+  const n = res.data?.jumlah ?? ids.length
+  toast.success(n ? `${n} warga disimpan` : 'Daftar dikosongkan')
   router.replace('/ronda/jadwal-tetap')
 }
 
