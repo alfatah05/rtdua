@@ -24,22 +24,18 @@
         <input v-model="jamSelesai" type="time" class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] outline-none" />
       </div>
 
-      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Pola card</p>
-      <select v-model="durasi" class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] mb-2 outline-none appearance-none">
-        <option value="minggu">1 minggu (satu set card)</option>
-        <option value="4">4 minggu putar (Minggu 1–4)</option>
+      <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Periode</p>
+      <select v-model="durasi" class="w-full min-h-[44px] px-4 rounded-full bg-[var(--search)] mb-4 outline-none appearance-none">
+        <option value="minggu">1 minggu</option>
+        <option v-for="n in 12" :key="n" :value="String(n)">{{ n }} bulan</option>
       </select>
-      <p class="text-[12px] text-[var(--mut)] m-0 mb-4 px-1">
-        Template memakai rotasi minggu 1–4 di dalam bulan. Pilih 4 minggu putar bila penugasan KK berbeda tiap minggu; pilih 1 minggu bila semua minggu sama.
-      </p>
 
       <button
         type="button"
-        class="w-full min-h-[44px] rounded-full bg-[var(--g)] text-white font-bold mb-2 disabled:opacity-50"
+        class="w-full min-h-[44px] rounded-full bg-[var(--g)] text-white font-bold mb-5 disabled:opacity-50"
         :disabled="busy || !adaHari"
         @click="jalankanBuat"
       >{{ busy ? 'Menyimpan…' : (cards.length ? 'Update jadwal' : 'Buat jadwal') }}</button>
-      <p v-if="msg" class="text-[13px] text-center mb-4" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
 
       <p class="text-[15px] font-bold m-0 mb-3">Card jadwal</p>
       <p v-if="!cards.length" class="text-[13px] text-[var(--mut)] text-center py-4">Belum ada card. Pilih hari lalu klik Buat jadwal.</p>
@@ -91,18 +87,17 @@ import { ref, computed, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listJadwalTetap, listTemplateCards, buatTemplateCards } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { useToast } from '@shared/composables/useToast.js'
 
+const toast = useToast()
 const hariPendek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 const loading = ref(true)
 const err = ref('')
 const selected = ref([false, false, false, false, false, false, false])
 const jamMulai = ref('21:00')
 const jamSelesai = ref('00:00')
-/** 'minggu' = 1 set card; selain itu backend memakai 4 minggu putar */
-const durasi = ref('4')
+const durasi = ref('1')
 const busy = ref(false)
-const msg = ref('')
-const msgOk = ref(true)
 const cards = ref([])
 const adaHari = computed(() => selected.value.some(Boolean))
 
@@ -140,13 +135,7 @@ async function load() {
     }
   }
   selected.value = next
-  if (c.ok) {
-    cards.value = c.data || []
-    // Infer pola dari jumlah minggu di card yang ada
-    const mingguSet = new Set((cards.value || []).map((x) => Number(x.minggu)).filter(Boolean))
-    if (mingguSet.size <= 1) durasi.value = 'minggu'
-    else durasi.value = '4'
-  }
+  if (c.ok) cards.value = c.data || []
 }
 
 function toggleHari(h) {
@@ -157,12 +146,10 @@ function toggleHari(h) {
 
 async function jalankanBuat() {
   if (!adaHari.value) {
-    msgOk.value = false
-    msg.value = 'Pilih minimal satu hari ronda'
+    toast.error('Pilih minimal satu hari ronda')
     return
   }
   busy.value = true
-  msg.value = ''
   const hariList = []
   selected.value.forEach((on, h) => { if (on) hariList.push(h) })
   const res = await buatTemplateCards({
@@ -172,18 +159,16 @@ async function jalankanBuat() {
     durasi: durasi.value,
   })
   busy.value = false
-  msgOk.value = !!res.ok
   if (res.ok) {
     const d = res.data || {}
     cards.value = d.cards || []
-    const nMinggu = d.minggu || (durasi.value === 'minggu' ? 1 : 4)
-    msg.value = `${d.dibuat || cards.value.length} card siap · pola ${nMinggu} minggu`
+    toast.success(d.dibuat ? `${d.dibuat} card siap` : 'Jadwal disimpan')
     if (!cards.value.length) {
       const c = await listTemplateCards()
       if (c.ok) cards.value = c.data || []
     }
   } else {
-    msg.value = res.error || 'Gagal buat jadwal'
+    toast.error(res.error || 'Gagal buat jadwal')
   }
 }
 
