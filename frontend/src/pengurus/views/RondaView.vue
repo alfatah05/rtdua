@@ -2,7 +2,7 @@
   <div>
     <AppBackHeader title="Jadwal ronda" />
 
-    <div class="rounded-[20px] border border-[var(--line)] overflow-hidden shadow-[var(--sh)] mb-4 bg-[var(--card)]">
+    <div class="rounded-[20px] border border-[var(--line)] overflow-hidden mb-4 bg-[var(--card)]">
       <div class="px-4 py-3 flex items-center justify-between" :style="headerStyle">
         <div class="min-w-0">
           <p class="text-[13px] font-semibold m-0" :class="headerTextClass">{{ labelKapan }}</p>
@@ -20,12 +20,18 @@
           <ChevronRight :size="20" />
         </button>
       </div>
-      <div class="px-4 py-3">
+      <div class="px-4 py-3 space-y-1">
         <p v-if="malamLoading" class="text-[13px] text-[var(--mut)] m-0">Memuat…</p>
         <template v-else-if="malam">
-          <div v-for="k in (malam.keluarga || [])" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-1.5">
-            <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
-            <span class="text-[13px] text-[var(--mut)] shrink-0">{{ k.alamat }}</span>
+          <div v-for="k in (malam.keluarga || [])" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-1">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
+                <img v-if="k.foto" :src="mediaUrl(k.foto)" alt="" class="w-full h-full object-cover" />
+                <span v-else>{{ inisial(k.nama) }}</span>
+              </div>
+              <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
+            </div>
+            <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
           </div>
           <p v-if="!(malam.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0">Belum ada keluarga bertugas</p>
         </template>
@@ -102,7 +108,7 @@
             </div>
             <span class="text-[14px] font-semibold min-w-0 truncate">{{ k.nama || '—' }}</span>
           </div>
-          <span class="text-[13px] text-[var(--mut)] shrink-0">{{ k.alamat }}</span>
+          <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
         </div>
         <p v-if="!(selectedDetail.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0 py-1">Belum ada keluarga bertugas</p>
       </template>
