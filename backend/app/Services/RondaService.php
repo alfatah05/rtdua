@@ -114,16 +114,25 @@ class RondaService
     public function kalender(string $periode): array
     {
         $db = \Config\Database::connect();
-        $rows = $db->table('ronda_malam')->like('tanggal', $periode, 'after')->orderBy('tanggal', 'ASC')->get()->getResultArray();
-        return array_map(static function ($r) {
-            return [
+        try { $this->bersihkanDuplikatMalam(); } catch (\Throwable $e) {}
+        $rows = $db->table('ronda_malam')->like('tanggal', $periode, 'after')->orderBy('tanggal', 'ASC')->orderBy('id', 'ASC')->get()->getResultArray();
+        $seen = [];
+        $out = [];
+        foreach ($rows as $r) {
+            $tgl = $r['tanggal'];
+            if (isset($seen[$tgl])) {
+                continue;
+            }
+            $seen[$tgl] = true;
+            $out[] = [
                 'id' => (int) $r['id'],
-                'tanggal' => $r['tanggal'],
+                'tanggal' => $tgl,
                 'jam_mulai' => $r['jam_mulai'],
                 'jam_selesai' => $r['jam_selesai'],
                 'sumber' => $r['sumber'],
             ];
-        }, $rows);
+        }
+        return $out;
     }
 
     private function kepalaInfo(int $keluargaId): array
@@ -139,7 +148,7 @@ class RondaService
     public function detailMalam(string $tanggal): ?array
     {
         $db = \Config\Database::connect();
-        $m = $db->table('ronda_malam')->where('tanggal', $tanggal)->get()->getRowArray();
+        $m = $db->table('ronda_malam')->where('tanggal', $tanggal)->orderBy('id', 'ASC')->get()->getRowArray();
         if (!$m) return null;
         $kel = $db->table('ronda_malam_keluarga mk')
             ->select('mk.keluarga_id, k.nomor, k.akhiran, b.nama as blok')
@@ -192,7 +201,7 @@ class RondaService
     public function malamTerdekat(): ?array
     {
         $db = \Config\Database::connect();
-        $row = $db->table('ronda_malam')->where('tanggal >=', date('Y-m-d'))->orderBy('tanggal', 'ASC')->get()->getRowArray();
+        $row = $db->table('ronda_malam')->where('tanggal >=', date('Y-m-d'))->orderBy('tanggal', 'ASC')->orderBy('id', 'ASC')->get()->getRowArray();
         if (!$row) return null;
         return $this->detailMalam($row['tanggal']);
     }
@@ -271,9 +280,71 @@ class RondaService
         return ['ok' => true, 'denda' => 0];
     }
 
+    private function bersihkanDuplikatMalam(): int
+    {
+        $db = \Config\Database::connect();
+        $rows = $db->table('ronda_malam')->orderBy('tanggal', 'ASC')->orderBy('id', 'ASC')->get()->getResultArray();
+        $byTgl = [];
+        foreach ($rows as $r) {
+            $byTgl[$r['tanggal']][] = $r;
+        }
+        $dihapus = 0;
+        foreach ($byTgl as $tgl => $list) {
+            if (count($list) < 2) {
+                continue;
+            }
+            $keepId = (int) $list[0]['id'];
+            foreach ($list as $r) {
+                $mid = (int) $r['id'];
+                if ($db->table('ronda_absen')->where('malam_id', $mid)->where('dibatalkan', 0)->countAllResults() > 0) {
+                    $keepId = $mid;
+                    break;
+                }
+            }
+            foreach ($list as $r) {
+                $mid = (int) $r['id'];
+                if ($mid === $keepId) {
+                    continue;
+                }
+                $keepHasKel = $db->table('ronda_malam_keluarga')->where('malam_id', $keepId)->countAllResults();
+                if ($keepHasKel === 0) {
+                    $kels = $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->get()->getResultArray();
+                    foreach ($kels as $k) {
+                        $kid = (int) $k['keluarga_id'];
+                        $ada = $db->table('ronda_malam_keluarga')->where('malam_id', $keepId)->where('keluarga_id', $kid)->countAllResults();
+                        if (!$ada) {
+                            $db->table('ronda_malam_keluarga')->insert([
+                                'malam_id' => $keepId,
+                                'keluarga_id' => $kid,
+                            ]);
+                        }
+                    }
+                }
+                $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->delete();
+                $absens = $db->table('ronda_absen')->where('malam_id', $mid)->get()->getResultArray();
+                foreach ($absens as $a) {
+                    $exists = $db->table('ronda_absen')
+                        ->where('malam_id', $keepId)
+                        ->where('keluarga_id', (int) $a['keluarga_id'])
+                        ->where('dibatalkan', 0)
+                        ->countAllResults();
+                    if ($exists) {
+                        $db->table('ronda_absen')->where('id', (int) $a['id'])->delete();
+                    } else {
+                        $db->table('ronda_absen')->where('id', (int) $a['id'])->update(['malam_id' => $keepId]);
+                    }
+                }
+                $db->table('ronda_malam')->where('id', $mid)->delete();
+                $dihapus++;
+            }
+        }
+        return $dihapus;
+    }
+
     public function buatSlotKosong(array $data, int $userId): array
     {
         $db = \Config\Database::connect();
+        $dupHapus = $this->bersihkanDuplikatMalam();
         $tetap = $db->table('ronda_jadwal_tetap')->orderBy('hari', 'ASC')->get()->getResultArray();
         if (!$tetap) {
             return ['ok' => false, 'message' => 'Atur jadwal tetap dulu (pilih hari ronda).'];
@@ -319,7 +390,7 @@ class RondaService
             return ['ok' => false, 'message' => 'Tidak ada tanggal cocok di periode ini.'];
         }
 
-        $dihapus = 0;
+        $dihapus = (int) $dupHapus;
         $existingFuture = $db->table('ronda_malam')
             ->where('tanggal >=', $today)
             ->where('sumber', 'tetap')
