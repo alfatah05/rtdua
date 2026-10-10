@@ -370,41 +370,56 @@ class RondaService
     public function hapusJadwalKeDepan(array $data, int $userId): array
     {
         $db = \Config\Database::connect();
-        $today = date('Y-m-d');
         $mode = $data['mode'] ?? 'slot';
         if (!in_array($mode, ['penugasan', 'slot'], true)) {
             $mode = 'slot';
         }
+
+        // Seluruh jadwal tetap: lampau + ke depan, termasuk yang sudah absen
         $rows = $db->table('ronda_malam')
-            ->where('tanggal >=', $today)
             ->where('sumber', 'tetap')
             ->orderBy('tanggal', 'ASC')
             ->get()->getResultArray();
+
         $cleared = 0;
         $deleted = 0;
-        $skipped = 0;
+        $absenDihapus = 0;
+
         foreach ($rows as $m) {
             $mid = (int) $m['id'];
-            $hasAbsen = $db->table('ronda_absen')->where('malam_id', $mid)->where('dibatalkan', 0)->countAllResults() > 0;
-            if ($hasAbsen) {
-                $skipped++;
-                continue;
-            }
-            $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->delete();
-            $cleared++;
+
             if ($mode === 'slot') {
+                $nAbsen = $db->table('ronda_absen')->where('malam_id', $mid)->countAllResults();
                 $db->table('ronda_absen')->where('malam_id', $mid)->delete();
+                $absenDihapus += $nAbsen;
+                $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->delete();
                 $db->table('ronda_malam')->where('id', $mid)->delete();
                 $deleted++;
+                $cleared++;
+            } else {
+                $db->table('ronda_malam_keluarga')->where('malam_id', $mid)->delete();
+                $cleared++;
             }
         }
+
+        try {
+            (new AuditService())->log('hapus_jadwal_ronda', 'ronda_malam', null, null, [
+                'mode' => $mode,
+                'penugasan_dihapus' => $cleared,
+                'slot_dihapus' => $deleted,
+                'absen_dihapus' => $absenDihapus,
+                'scope' => 'semua',
+            ], 'pengguna', true, $userId);
+        } catch (\Throwable $e) {
+        }
+
         return [
             'ok' => true,
             'data' => [
                 'mode' => $mode,
                 'penugasan_dihapus' => $cleared,
                 'slot_dihapus' => $deleted,
-                'dilewati_ada_absen' => $skipped,
+                'absen_dihapus' => $absenDihapus,
             ],
         ];
     }
