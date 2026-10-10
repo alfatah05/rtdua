@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-4 gap-2 text-center mb-5">
+    <div class="grid grid-cols-5 gap-1.5 text-center mb-5">
       <button
         v-for="a in aksi"
         :key="a.label"
@@ -137,7 +137,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Calendar, List, Wand2, Banknote, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { Calendar, List, Wand2, Banknote, Trash2, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import {
   kalenderRonda,
@@ -171,6 +171,7 @@ const aksi = [
   { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
   { label: 'Isi otomatis', icon: Wand2, to: '/ronda/isi-otomatis', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
   { label: 'Denda', icon: Banknote, to: '/ronda/denda', bg: 'rgba(239,68,68,.18)', color: '#DC2626' },
+  { label: 'Hapus', icon: Trash2, to: '/ronda/hapus', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
 ]
 
 function weekIndex(d) {
