@@ -41,7 +41,7 @@
         :disabled="isiBusy || !adaHari"
         @click="jalankanBuatSlot"
       >
-        {{ isiBusy ? 'Membuat…' : 'Buat card kosong' }}
+        {{ isiBusy ? 'Membuat…' : 'Buat jadwal' }}
       </button>
       <p v-if="msg" class="text-[13px] text-center mb-4" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
 
@@ -57,7 +57,7 @@
 
       <p v-if="listLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat jadwal…</p>
       <p v-else-if="!filteredMalam.length" class="text-[13px] text-[var(--mut)] text-center py-4">
-        Belum ada card. Pilih hari + periode, lalu ketuk Buat card kosong.
+        Belum ada jadwal. Pilih hari + periode, lalu ketuk Buat jadwal.
       </p>
 
       <div v-else class="space-y-3 mb-6">
@@ -335,11 +335,15 @@ async function jalankanBuatSlot() {
   msgOk.value = !!res.ok
   if (res.ok) {
     const d = res.data || {}
-    msg.value = `Selesai: ${d.dibuat ?? 0} card kosong dibuat` + (d.dilewati ? ` · ${d.dilewati} dilewati` : '')
+    const parts = []
+    if (d.dibuat) parts.push(`${d.dibuat} dibuat`)
+    if (d.dihapus) parts.push(`${d.dihapus} dihapus`)
+    if (d.dilewati) parts.push(`${d.dilewati} tetap`)
+    msg.value = parts.length ? `Selesai: ${parts.join(' · ')}` : 'Jadwal sudah sesuai'
     detailMap.value = {}
     await loadKalenderList()
   } else {
-    msg.value = res.error || 'Gagal buat card'
+    msg.value = res.error || 'Gagal buat jadwal'
   }
 }
 
