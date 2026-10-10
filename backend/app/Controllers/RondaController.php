@@ -213,4 +213,15 @@ class RondaController extends Controller
         }
         return ApiResponse::ok($res, 'Denda diterbitkan');
     }
+
+    public function hapusJadwal()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new RondaService())->hapusJadwalKeDepan($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Jadwal dihapus') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
+    }
 }
