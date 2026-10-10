@@ -133,6 +133,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import {
@@ -143,6 +144,7 @@ import {
   detailMalam,
 } from '@shared/services/ronda.js'
 
+const route = useRoute()
 const loading = ref(true)
 const listLoading = ref(false)
 const err = ref('')
@@ -362,6 +364,11 @@ async function load() {
       if (h >= 0 && h <= 6) next[h] = true
     }
     hariTetap.value = next
+  }
+  const q = String(route.query.tanggal || '')
+  if (/^\d{4}-\d{2}-\d{2}$/.test(q)) {
+    selectedTanggal.value = q
+    calYm.value = q.slice(0, 7)
   }
   await Promise.all([loadKalenderMonth(), loadList()])
   loading.value = false
