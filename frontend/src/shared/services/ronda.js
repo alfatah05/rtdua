@@ -41,9 +41,9 @@ export async function detailMalam(tanggal) {
   }
 }
 
-export async function listJadwalTetap() {
+export async function listJadwalTetap(opts = {}) {
   try {
-    const res = await api('/ronda/jadwal-tetap')
+    const res = await api('/ronda/jadwal-tetap', opts)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -59,9 +59,9 @@ export async function simpanJadwalTetap(payload) {
   }
 }
 
-export async function listJadwalKhusus() {
+export async function listJadwalKhusus(opts = {}) {
   try {
-    const res = await api('/ronda/jadwal-khusus')
+    const res = await api('/ronda/jadwal-khusus', opts)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -106,11 +106,11 @@ export async function isiOtomatisRonda(payload = {}) {
 
 export async function absenManual(malamId, keluargaId) {
   try {
-    await api('/ronda/absen-manual', {
+    const res = await api('/ronda/absen-manual', {
       method: 'POST',
       body: { malam_id: malamId, keluarga_id: keluargaId },
     })
-    return { ok: true }
+    return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
@@ -142,8 +142,8 @@ export async function gantiKeluargaMalam(malamId, keluargaIds) {
 
 export async function batalkanAbsen(absenId) {
   try {
-    await api('/ronda/absen/' + absenId + '/batal', { method: 'POST', body: {} })
-    return { ok: true }
+    const res = await api('/ronda/absen/' + absenId + '/batal', { method: 'POST', body: {} })
+    return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
@@ -168,9 +168,9 @@ export async function hapusJadwalRonda(payload = {}) {
 }
 
 /** List card template (minggu × hari). */
-export async function listTemplateCards() {
+export async function listTemplateCards(opts = {}) {
   try {
-    const res = await api('/ronda/template')
+    const res = await api('/ronda/template', opts)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
