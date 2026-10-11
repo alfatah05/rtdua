@@ -31,7 +31,7 @@
       <div class="space-y-2">
         <div v-for="p in permintaan" :key="p.id" class="flex justify-between bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5">
           <div>
-            <p class="font-bold m-0 text-[14px]">{{ rp(p.nominal) }}</p>
+            <p class="font-bold m-0 text-[14px]">{{ rp(p.nominal_diajukan ?? p.nominal) }}</p>
             <p class="text-[12px] text-[var(--mut)] m-0">{{ p.created_at || p.diajukan_pada }}</p>
           </div>
           <span class="text-[13px] font-semibold">{{ p.status }}</span>

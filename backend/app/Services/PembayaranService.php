@@ -70,7 +70,6 @@ class PembayaranService
             'metode'      => $metode,
         ], 'pengguna', true, $userId);
 
-        // Notifikasi ke akun warga keluarga
         $uWarga = $db->table('users')->where('keluarga_id', $keluargaId)->where('role', 'warga')->get()->getRowArray();
         if ($uWarga) {
             (new NotifikasiService())->kirim(
@@ -93,10 +92,6 @@ class PembayaranService
         ];
     }
 
-    /**
-     * Jalur 2: warga ajukan permintaan transfer.
-     * Maks 1 permintaan menunggu per keluarga.
-     */
     public function ajukanPermintaan(array $data, int $userId, int $keluargaId): array
     {
         $nominal = (int) ($data['nominal'] ?? $data['nominal_diajukan'] ?? 0);
@@ -112,7 +107,7 @@ class PembayaranService
             return ['ok' => false, 'message' => 'Masih ada permintaan menunggu. Tunggu konfirmasi atau hubungi pengurus.'];
         }
 
-        $buktiPath = $data['bukti_file'] ?? null; // path relatif setelah upload terpisah
+        $buktiPath = $data['bukti_file'] ?? null;
 
         $db->table('pembayaran_permintaan')->insert([
             'keluarga_id'       => $keluargaId,
@@ -146,11 +141,13 @@ class PembayaranService
         }
         $rows = $q->orderBy('p.diajukan_pada', 'DESC')->get()->getResultArray();
         return array_map(static function ($r) {
+            $nom = (int) $r['nominal_diajukan'];
             return [
                 'id'               => (int) $r['id'],
                 'keluarga_id'      => (int) $r['keluarga_id'],
                 'alamat'           => $r['blok_nama'] . '-' . $r['nomor'] . ($r['akhiran'] ?? ''),
-                'nominal_diajukan' => (int) $r['nominal_diajukan'],
+                'nominal_diajukan' => $nom,
+                'nominal'          => $nom,
                 'nama_pengirim'    => $r['nama_pengirim'],
                 'bank_pengirim'    => $r['bank_pengirim'],
                 'bukti_file'       => $r['bukti_file'],
@@ -162,15 +159,11 @@ class PembayaranService
         }, $rows);
     }
 
-    /**
-     * Konfirmasi permintaan — penguncian: update status hanya jika masih menunggu.
-     */
     public function konfirmasiPermintaan(int $id, array $data, int $userId): array
     {
         $db = \Config\Database::connect();
         $db->transStart();
 
-        // Kunci baris
         $row = $db->query('SELECT * FROM pembayaran_permintaan WHERE id = ? FOR UPDATE', [$id])->getRowArray();
         if (!$row) {
             $db->transRollback();
