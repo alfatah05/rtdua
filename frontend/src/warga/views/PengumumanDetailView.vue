@@ -6,9 +6,8 @@
     <template v-else-if="item">
       <p class="text-[12px] text-[var(--mut)] m-0 mb-1">{{ formatTgl(item.diterbitkan_pada) }}</p>
       <h1 class="text-[20px] font-extrabold m-0 mb-3">{{ item.judul }}</h1>
-      <p class="text-[15px] leading-relaxed whitespace-pre-wrap m-0 mb-4">{{ item.isi }}</p>
+      <div class="prose-rt text-[15px] leading-relaxed mb-4" v-html="isiHtml"></div>
 
-      <!-- Lampiran gambar -->
       <div v-if="isImage" class="mb-4">
         <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Lampiran</p>
         <a :href="lampiranUrl" target="_blank" rel="noopener" class="block rounded-[16px] overflow-hidden border border-[var(--line)] bg-[var(--search)]">
@@ -18,7 +17,6 @@
         <a :href="lampiranUrl" target="_blank" rel="noopener" class="inline-block mt-2 text-[13px] font-semibold text-[var(--g)]">Buka gambar penuh →</a>
       </div>
 
-      <!-- Lampiran PDF / file lain -->
       <div v-else-if="hasLampiran" class="mb-4">
         <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Lampiran</p>
         <a
@@ -39,6 +37,7 @@
 </template>
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { renderMarkdown } from '@shared/utils/markdown.js'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { detailPengumuman } from '@shared/services/konten.js'
@@ -46,6 +45,7 @@ import { mediaUrl } from '@shared/services/upload.js'
 
 const route = useRoute()
 const item = ref(null)
+const isiHtml = computed(() => renderMarkdown(item.value?.isi || ''))
 const loading = ref(true)
 const err = ref('')
 const imgError = ref(false)
