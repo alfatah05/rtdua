@@ -4,10 +4,39 @@
       class="rounded-[20px] p-5 text-white mb-5 relative overflow-hidden"
       style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)"
     >
-      <p class="text-[13px] font-semibold text-white/90">Saldo kas</p>
-      <p class="text-[32px] font-extrabold mt-1 tracking-tight">
-        {{ loading ? '…' : formatRp(saldoKas) }}
-      </p>
+      <div class="relative z-10">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-full bg-white/20 text-white grid place-items-center shrink-0">
+              <Wallet :size="20" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-[13px] font-semibold text-white/90 m-0">Saldo kas</p>
+              <p class="text-[28px] font-extrabold m-0 mt-0.5 tracking-tight leading-none">
+                {{ loading ? '…' : formatRp(saldoKas) }}
+              </p>
+            </div>
+          </div>
+          <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20 shrink-0">
+            {{ labelBulan }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-4">
+          <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white/20">
+            <ArrowDownLeft :size="16" class="text-emerald-200 shrink-0" />
+            <span class="text-[13px] font-bold text-emerald-100 truncate">
+              {{ loading ? '…' : formatRp(totalMasuk) }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white/20">
+            <ArrowUpRight :size="16" class="text-red-200 shrink-0" />
+            <span class="text-[13px] font-bold text-red-100 truncate">
+              {{ loading ? '…' : formatRp(totalKeluar) }}
+            </span>
+          </div>
+        </div>
+      </div>
       <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
     </div>
 
@@ -40,7 +69,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { Wallet, ArrowDownLeft, ArrowUpRight } from 'lucide-vue-next'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { formatRp } from '@shared/utils/format.js'
 import { portalKas } from '@shared/services/keuangan.js'
@@ -49,6 +79,28 @@ const loading = ref(true)
 const err = ref('')
 const saldoKas = ref(0)
 const kasItems = ref([])
+
+const labelBulan = computed(() => {
+  const d = new Date()
+  return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+})
+
+const ymSekarang = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+})
+
+const totalMasuk = computed(() =>
+  kasItems.value
+    .filter((t) => t.tipe === 'masuk' && String(t.tanggal || '').startsWith(ymSekarang.value))
+    .reduce((s, t) => s + Number(t.nominal || 0), 0)
+)
+
+const totalKeluar = computed(() =>
+  kasItems.value
+    .filter((t) => t.tipe === 'keluar' && String(t.tanggal || '').startsWith(ymSekarang.value))
+    .reduce((s, t) => s + Number(t.nominal || 0), 0)
+)
 
 function formatTanggal(t) {
   if (!t) return ''
