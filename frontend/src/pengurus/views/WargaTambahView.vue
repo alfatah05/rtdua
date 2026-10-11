@@ -71,7 +71,7 @@
     <div v-else class="text-center py-6">
       <div class="w-16 h-16 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center mx-auto mb-4 text-2xl font-bold">✓</div>
       <h2 class="text-lg font-bold mb-2">Keluarga ditambahkan</h2>
-      <p class="text-[13px] text-[var(--mut)] mb-1">Username: <b>{{ hasil.username }}</b></p>
+      <p class="text-[13px] text-[var(--mut)] mb-1">Alamat login: <b>{{ hasil.username }}</b></p>
       <p class="text-[13px] text-[var(--mut)] mb-1">PIN awal: <b>{{ hasil.pin_awal || '123456' }}</b></p>
       <p class="text-[12px] text-[var(--mut)] mb-6">{{ hasil.catatan || 'Tagihan mulai bulan depan.' }}</p>
       <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold" @click="$router.replace('/warga/' + hasil.id)">
@@ -165,7 +165,6 @@ onMounted(async () => {
     loadErr.value = res.error || 'Gagal memuat daftar blok.'
     return
   }
-  // API bisa array langsung atau { items }
   const raw = res.data
   blokList.value = Array.isArray(raw) ? raw : (raw?.items || raw?.blok || [])
   if (!blokList.value.length) {
