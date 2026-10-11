@@ -1,11 +1,15 @@
 <template>
   <div>
-    <div class="mb-3">
+    <div class="mb-3 relative">
+      <Search
+        :size="18"
+        class="absolute left-[18px] top-1/2 -translate-y-1/2 text-[var(--mut)] pointer-events-none"
+      />
       <input
         v-model="q"
         type="search"
         placeholder="Cari nama / alamat"
-        class="w-full min-h-[48px] px-4 rounded-full bg-[var(--search)] outline-none"
+        class="w-full min-h-12 h-12 pl-12 pr-4 rounded-full bg-[var(--search)] outline-none border-0 focus:outline-none focus:ring-0 focus:border-0 text-[15px]"
       />
     </div>
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
@@ -35,7 +39,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ChevronRight } from 'lucide-vue-next'
+import { ChevronRight, Search } from 'lucide-vue-next'
 import { listPortalWarga } from '@shared/services/warga.js'
 import { mediaUrl } from '@shared/services/upload.js'
 
