@@ -110,7 +110,6 @@ class AuthService
             'updated_at'             => date('Y-m-d H:i:s'),
         ]);
 
-        // Pastikan hash tersimpan (cek verify)
         $after = $db->table('users')->where('id', $userId)->get()->getRowArray();
         if (!$after || !password_verify($newSecret, $after['password_hash'])) {
             return ['ok' => false, 'message' => 'Gagal menyimpan kredensial baru.'];
@@ -137,17 +136,112 @@ class AuthService
 
     private function publicUser(array $user): array
     {
+        $nama = $user['jabatan']
+            ? ($user['username'] . ' · ' . $user['jabatan'])
+            : $user['username'];
+        $alamat = null;
+        $foto = null;
+        $wargaId = $user['warga_id'] ? (int) $user['warga_id'] : null;
+        $keluargaId = $user['keluarga_id'] ? (int) $user['keluarga_id'] : null;
+
+        $db = \Config\Database::connect();
+
+        if ($wargaId) {
+            $w = $db->table('warga')->where('id', $wargaId)->get()->getRowArray();
+            if ($w) {
+                if (!empty($w['nama'])) {
+                    $nama = $w['nama'];
+                }
+                if (!empty($w['foto'])) {
+                    $foto = $w['foto'];
+                }
+                if (!$keluargaId && !empty($w['keluarga_id'])) {
+                    $keluargaId = (int) $w['keluarga_id'];
+                }
+            }
+        } elseif ($keluargaId && ($user['role'] ?? '') === 'warga') {
+            $kep = $db->table('warga')
+                ->where('keluarga_id', $keluargaId)
+                ->where('status', 'aktif')
+                ->where('hubungan', 'Kepala keluarga')
+                ->get()->getRowArray();
+            if ($kep) {
+                $nama = $kep['nama'] ?: $nama;
+                $foto = $kep['foto'] ?? null;
+                $wargaId = (int) $kep['id'];
+            }
+        }
+
+        if ($keluargaId) {
+            $k = $db->table('keluarga k')
+                ->select('k.nomor, k.akhiran, b.nama as blok')
+                ->join('blok b', 'b.id = k.blok_id', 'left')
+                ->where('k.id', $keluargaId)
+                ->get()->getRowArray();
+            if ($k) {
+                $alamat = ($k['blok'] ?? '') . '-' . ($k['nomor'] ?? '') . ($k['akhiran'] ?? '');
+            }
+        }
+
+        if (in_array($user['role'] ?? '', ['ketua', 'pengurus'], true) && $user['jabatan']) {
+            $base = $nama;
+            if ($wargaId) {
+                $w = $db->table('warga')->select('nama')->where('id', $wargaId)->get()->getRowArray();
+                if ($w && !empty($w['nama'])) {
+                    $base = $w['nama'];
+                }
+            }
+            $nama = $base;
+        }
+
         return [
             'id'         => (int) $user['id'],
             'username'   => $user['username'],
-            'nama'       => $user['jabatan'] ? ($user['username'] . ' · ' . $user['jabatan']) : $user['username'],
+            'nama'       => $nama,
+            'alamat'     => $alamat,
+            'foto'       => $foto,
             'role'       => $user['role'],
             'jabatan'    => $user['jabatan'],
-            'keluarga_id'=> $user['keluarga_id'] ? (int) $user['keluarga_id'] : null,
-            'warga_id'   => $user['warga_id'] ? (int) $user['warga_id'] : null,
+            'keluarga_id'=> $keluargaId,
+            'warga_id'   => $wargaId,
             'is_developer' => (bool) $user['is_developer'],
             'harus_ganti_kredensial' => (bool) $user['harus_ganti_kredensial'],
         ];
+    }
+
+    public function updateFotoProfil(string $side, int $userId, string $path): array
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return ['ok' => false, 'message' => 'Path foto wajib.'];
+        }
+        $db = \Config\Database::connect();
+        $user = $db->table('users')->where('id', $userId)->where('aktif', 1)->get()->getRowArray();
+        if (!$user) {
+            return ['ok' => false, 'message' => 'Akun tidak ditemukan.'];
+        }
+
+        $wargaId = $user['warga_id'] ? (int) $user['warga_id'] : null;
+        if (!$wargaId && !empty($user['keluarga_id'])) {
+            $kep = $db->table('warga')
+                ->where('keluarga_id', (int) $user['keluarga_id'])
+                ->where('status', 'aktif')
+                ->where('hubungan', 'Kepala keluarga')
+                ->get()->getRowArray();
+            if ($kep) {
+                $wargaId = (int) $kep['id'];
+            }
+        }
+        if (!$wargaId) {
+            return ['ok' => false, 'message' => 'Data warga tidak tertaut ke akun.'];
+        }
+
+        $db->table('warga')->where('id', $wargaId)->update([
+            'foto' => $path,
+        ]);
+
+        $fresh = $db->table('users')->where('id', $userId)->get()->getRowArray();
+        return ['ok' => true, 'data' => $this->publicUser($fresh ?: $user)];
     }
 
     private function normalizeUsername(string $u, string $side): string
