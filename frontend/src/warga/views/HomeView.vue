@@ -117,6 +117,7 @@ import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
 import { portalRingkasan } from '@shared/services/keuangan.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight, Wallet,
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
@@ -151,7 +152,7 @@ const logoDesaUrl = ref('')
 const pengumuman = ref([])
 const loading = ref(true)
 
-const iuranStatus = ref('loading') // loading | pending | lunas | lebih
+const iuranStatus = ref('loading')
 const iuranTitle = ref('Jumlah tagihan anda')
 const iuranNominal = ref('…')
 const iuranHint = ref('Ketuk untuk melihat rincian')
@@ -185,8 +186,7 @@ function formatTgl(s) {
   return Number.isNaN(d.getTime()) ? String(s).slice(0, 10) : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 function ringkas(isi) {
-  const t = String(isi || '').replace(/\s+/g, ' ').trim()
-  return t.length > 100 ? t.slice(0, 100) + '…' : t
+  return plainFromMarkdown(isi, 100)
 }
 function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
