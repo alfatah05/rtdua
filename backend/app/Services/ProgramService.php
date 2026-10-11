@@ -28,7 +28,7 @@ class ProgramService
         if (!in_array($status, ['direncanakan', 'berjalan', 'selesai'], true)) {
             $status = 'direncanakan';
         }
-        $isi = $this->bersihkanHtml((string) ($data['isi_html'] ?? ''));
+        $isi = $this->bersihkanKonten((string) ($data['isi_html'] ?? ''));
         $db = \Config\Database::connect();
         $db->table('program_rt')->insert([
             'judul'      => mb_substr($judul, 0, 255),
@@ -57,7 +57,7 @@ class ProgramService
             $update['banner'] = $data['banner'];
         }
         if (array_key_exists('isi_html', $data)) {
-            $update['isi_html'] = $this->bersihkanHtml((string) $data['isi_html']);
+            $update['isi_html'] = $this->bersihkanKonten((string) $data['isi_html']);
         }
         if (isset($data['status']) && in_array($data['status'], ['direncanakan', 'berjalan', 'selesai'], true)) {
             $update['status'] = $data['status'];
@@ -83,21 +83,24 @@ class ProgramService
         return ['ok' => true];
     }
 
-    /** HTML aman sederhana: izinkan tag dasar. */
-    private function bersihkanHtml(string $html): string
+    private function bersihkanKonten(string $s): string
     {
-        $allowed = '<p><br><b><strong><i><em><ul><ol><li><h2><h3><h4><table><thead><tbody><tr><th><td><a><img>';
-        return strip_tags($html, $allowed);
+        $s = str_replace("\0", '', $s);
+        $s = trim($s);
+        if (function_exists('mb_substr')) {
+            return mb_substr($s, 0, 50000);
+        }
+        return substr($s, 0, 50000);
     }
 
     private function map(array $r): array
     {
         return [
-            'id'       => (int) $r['id'],
-            'judul'    => $r['judul'],
-            'banner'   => $r['banner'],
-            'isi_html' => $r['isi_html'],
-            'status'   => $r['status'],
+            'id'         => (int) $r['id'],
+            'judul'      => $r['judul'],
+            'banner'     => $r['banner'],
+            'isi_html'   => $r['isi_html'],
+            'status'     => $r['status'],
             'created_at' => $r['created_at'],
             'updated_at' => $r['updated_at'],
         ];
