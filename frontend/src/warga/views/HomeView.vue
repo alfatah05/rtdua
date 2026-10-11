@@ -1,6 +1,5 @@
 <template>
   <div>
-    <AppMainHeader />
     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
       <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center overflow-hidden">
         <img v-if="logoRtUrl" :src="logoRtUrl" alt="Logo RT" class="w-full h-full object-contain" @error="logoRtUrl = ''" />
@@ -112,7 +111,6 @@
 </template>
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
 import { portalRingkasan } from '@shared/services/keuangan.js'
