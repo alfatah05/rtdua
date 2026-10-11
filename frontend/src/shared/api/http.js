@@ -46,7 +46,8 @@ export async function api(path, options = {}) {
   }
 
   // Sesi habis / belum login
-  if (res.status === 401) {
+  // options.skipUnauthorized = true → jangan kick (endpoint opsional / baca jadwal)
+  if (res.status === 401 && !options.skipUnauthorized) {
     // jangan kick saat endpoint login/me sendiri (biar form login tetap jalan)
     const p = String(path || '')
     if (!p.startsWith('/auth/login') && !p.startsWith('/auth/me')) {

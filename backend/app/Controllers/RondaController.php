@@ -76,8 +76,8 @@ class RondaController extends Controller
 
     public function listJadwalTetap()
     {
-        $user = $this->requirePengurus();
-        if (!$user) {
+        // Baca: warga & pengurus (untuk highlight kalender warga)
+        if (!$this->requireLogin()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
         return ApiResponse::ok((new RondaService())->listJadwalTetap());
@@ -96,8 +96,8 @@ class RondaController extends Controller
 
     public function listJadwalKhusus()
     {
-        $user = $this->requirePengurus();
-        if (!$user) {
+        // Baca: warga & pengurus (overlay khusus di kalender warga)
+        if (!$this->requireLogin()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
         return ApiResponse::ok((new RondaService())->listJadwalKhusus());
@@ -145,7 +145,7 @@ class RondaController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new RondaService())->buatSlotKosong($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Slot kosong dibuat') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Slot kosong dibuat') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
     }
 
     public function absenManual()
@@ -160,7 +160,7 @@ class RondaController extends Controller
             (int) ($json['keluarga_id'] ?? 0),
             (int) $user['id']
         );
-        return $res['ok'] ? ApiResponse::ok(null, 'Absen dicatat') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Absen dicatat') : ApiResponse::fail($res['message'], 422);
     }
 
     public function absenWarga()
@@ -173,9 +173,9 @@ class RondaController extends Controller
         $res = (new RondaService())->absenWarga(
             (int) ($json['malam_id'] ?? 0),
             (int) $user['keluarga_id'],
-            (string) ($json['foto'] ?? '')
+            $json['foto'] ?? null
         );
-        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Absen dicatat') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Absen berhasil') : ApiResponse::fail($res['message'], 422);
     }
 
     public function gantiKeluarga($malamId)
@@ -232,8 +232,8 @@ class RondaController extends Controller
 
     public function listTemplate()
     {
-        $user = $this->requirePengurus();
-        if (!$user) {
+        // Baca: warga & pengurus (proyeksi giliran di kalender warga)
+        if (!$this->requireLogin()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
         return ApiResponse::ok((new RondaService())->listTemplateCards());
@@ -262,6 +262,6 @@ class RondaController extends Controller
             $json['keluarga_ids'] ?? [],
             (int) $user['id']
         );
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Warga disimpan') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Daftar keluarga diperbarui') : ApiResponse::fail($res['message'], 422);
     }
 }
