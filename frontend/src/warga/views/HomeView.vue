@@ -50,15 +50,44 @@
 
     <button
       type="button"
-      class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition mb-4"
+      class="w-full rounded-[20px] p-5 text-left active:scale-[0.98] transition mb-4 relative overflow-hidden shadow-[var(--sh)]"
+      :class="iuranStatus === 'loading' ? 'border border-[var(--line)]' : ''"
+      :style="iuranCardStyle"
       @click="$router.push('/rincian-iuran')"
     >
-      <div class="flex-1 min-w-0">
-        <span class="block text-[13px] font-semibold text-[var(--mut)]">{{ iuranLabel }}</span>
-        <b class="block text-[17px] font-extrabold mt-0.5">{{ iuranNominal }}</b>
-        <span class="text-[13px] text-[var(--mut)]">Ketuk untuk melihat rincian</span>
+      <div class="relative z-10 flex items-start gap-3">
+        <div
+          class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+          :class="iuranStatus === 'loading' ? 'bg-[var(--card)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+        >
+          <Wallet :size="20" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p
+            class="text-[13px] font-semibold m-0"
+            :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/90'"
+          >
+            {{ iuranTitle }}
+          </p>
+          <p
+            class="text-[28px] font-extrabold tracking-tight m-0 mt-1 leading-none"
+            :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
+          >
+            {{ iuranNominal }}
+          </p>
+          <p
+            class="text-[13px] m-0 mt-2 flex items-center gap-1"
+            :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
+          >
+            <span>{{ iuranHint }}</span>
+            <ChevronRight :size="16" class="opacity-80" />
+          </p>
+        </div>
       </div>
-      <ChevronRight :size="20" class="text-[var(--mut)] flex-none" />
+      <div
+        v-if="iuranStatus !== 'loading'"
+        class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
+      ></div>
     </button>
 
     <div class="grid grid-cols-2 gap-2">
@@ -82,14 +111,14 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
 import { portalRingkasan } from '@shared/services/keuangan.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import {
-  Landmark, Handshake, Megaphone, ChevronRight,
+  Landmark, Handshake, Megaphone, ChevronRight, Wallet,
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
 } from 'lucide-vue-next'
 
@@ -120,14 +149,40 @@ const namaPerumahan = ref('')
 const logoRtUrl = ref('')
 const logoDesaUrl = ref('')
 const pengumuman = ref([])
-const iuranLabel = ref('Iuran')
-const iuranNominal = ref('Memuat…')
 const loading = ref(true)
+
+const iuranStatus = ref('loading') // loading | pending | lunas | lebih
+const iuranTitle = ref('Jumlah tagihan anda')
+const iuranNominal = ref('…')
+const iuranHint = ref('Ketuk untuk melihat rincian')
+
+const styleTagihan = {
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F59E0B, #D97706 55%, #B45309)',
+}
+const styleLunas = {
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
+}
+const styleLebih = {
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)',
+}
+const styleLoading = {
+  background: 'var(--card2)',
+}
+
+const iuranCardStyle = computed(() => {
+  if (iuranStatus.value === 'pending') return styleTagihan
+  if (iuranStatus.value === 'lunas') return styleLunas
+  if (iuranStatus.value === 'lebih') return styleLebih
+  return styleLoading
+})
 
 function formatTgl(s) {
   if (!s) return ''
-  const d = new Date(String(s).replace(' ', 'T'))
-  return isNaN(d.getTime()) ? String(s).slice(0, 10) : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+  const d = new Date(String(s).length === 10 ? s + 'T00:00:00' : String(s).replace(' ', 'T'))
+  return Number.isNaN(d.getTime()) ? String(s).slice(0, 10) : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 function ringkas(isi) {
   const t = String(isi || '').replace(/\s+/g, ' ').trim()
@@ -176,17 +231,26 @@ onMounted(async () => {
   if (iu.ok && iu.data) {
     const total = Number(iu.data.total ?? iu.data.total_tagihan ?? 0)
     if (total > 0) {
-      iuranLabel.value = 'Iuran yang belum dibayar'
+      iuranStatus.value = 'pending'
+      iuranTitle.value = 'Jumlah tagihan anda'
       iuranNominal.value = rp(total)
+      iuranHint.value = 'Belum lunas · Ketuk untuk rincian'
     } else if (total < 0) {
-      iuranLabel.value = 'Kelebihan bayar'
+      iuranStatus.value = 'lebih'
+      iuranTitle.value = 'Kelebihan bayar'
       iuranNominal.value = rp(-total)
+      iuranHint.value = 'Saldo menguntungkan · Ketuk untuk rincian'
     } else {
-      iuranLabel.value = 'Semua iuran sudah lunas'
+      iuranStatus.value = 'lunas'
+      iuranTitle.value = 'Jumlah tagihan anda'
       iuranNominal.value = 'Lunas'
+      iuranHint.value = 'Semua tagihan sudah dibayar'
     }
   } else {
+    iuranStatus.value = 'loading'
+    iuranTitle.value = 'Jumlah tagihan anda'
     iuranNominal.value = '—'
+    iuranHint.value = 'Ketuk untuk melihat rincian'
   }
 })
 </script>
