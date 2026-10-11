@@ -11,9 +11,7 @@ marked.setOptions({
 export function isProbablyHtml(s) {
   if (!s || typeof s !== 'string') return false
   const t = s.trim()
-  // Hanya anggap HTML jika dibuka & ditutup tag, dan sedikit sekali baris markdown
   if (!/^</.test(t) || !/<\/[a-z][\w-]*>/i.test(t)) return false
-  // Kalau ada heading markdown di luar tag, tetap parse sebagai markdown
   if (/^#{1,6}\s/m.test(t) || /\|\s*---/.test(t) || /^```/m.test(t)) return false
   return true
 }
@@ -37,7 +35,6 @@ const PURIFY = {
 }
 
 function enhanceLinks(html) {
-  // Target blank untuk link eksternal
   return String(html).replace(
     /<a\s+([^>]*href=["']https?:\/\/[^"']+["'][^>]*)>/gi,
     (full, attrs) => {
@@ -71,4 +68,40 @@ export function renderMarkdown(src) {
   }
   html = enhanceLinks(html)
   return DOMPurify.sanitize(html, PURIFY)
+}
+
+/**
+ * Ringkasan teks polos dari markdown/HTML untuk preview card.
+ * Menghilangkan syntax (** # | ``` dll) dengan cara render dulu lalu ambil textContent.
+ */
+export function plainFromMarkdown(src, maxLen = 120) {
+  const raw = String(src || '')
+  if (!raw.trim()) return ''
+  let text = ''
+  try {
+    const html = renderMarkdown(raw)
+    if (typeof document !== 'undefined') {
+      const el = document.createElement('div')
+      el.innerHTML = html
+      text = el.textContent || el.innerText || ''
+    } else {
+      text = html.replace(/<[^>]+>/g, ' ')
+    }
+  } catch (e) {
+    text = raw
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/`[^`]*`/g, ' ')
+      .replace(/![[^\]]*\]\([^)]*\)/g, ' ')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^>\s?/gm, '')
+      .replace(/[*_]{1,3}/g, '')
+      .replace(/\|/g, ' ')
+      .replace(/<[^>]+>/g, ' ')
+  }
+  text = text.replace(/\s+/g, ' ').trim()
+  if (maxLen > 0 && text.length > maxLen) {
+    return text.slice(0, Math.max(0, maxLen - 1)) + '…'
+  }
+  return text
 }
