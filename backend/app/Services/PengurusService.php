@@ -8,7 +8,7 @@ class PengurusService
     {
         $db = \Config\Database::connect();
         $rows = $db->table('users u')
-            ->select('u.id, u.role, u.username, u.jabatan, u.nomor_hp, u.tampil_di_bantuan, u.urutan_struktur, u.aktif, u.warga_id, w.nama as nama_warga')
+            ->select('u.id, u.role, u.username, u.jabatan, u.nomor_hp, u.tampil_di_bantuan, u.urutan_struktur, u.aktif, u.warga_id, w.nama as nama_warga, w.foto as foto_warga')
             ->join('warga w', 'w.id = u.warga_id', 'left')
             ->whereIn('u.role', ['ketua', 'pengurus'])
             ->where('u.is_developer', 0)
@@ -17,17 +17,22 @@ class PengurusService
             ->get()
             ->getResultArray();
         return array_map(static function ($r) {
+            $foto = $r['foto_warga'] ?? null;
+            if ($foto !== null && $foto === '') {
+                $foto = null;
+            }
             return [
-                'id'               => (int) $r['id'],
-                'role'             => $r['role'],
-                'username'         => $r['username'],
-                'nama'             => $r['nama_warga'] ?: $r['username'],
-                'jabatan'          => $r['jabatan'],
-                'nomor_hp'         => $r['nomor_hp'],
-                'tampil_di_bantuan'=> (bool) $r['tampil_di_bantuan'],
-                'urutan_struktur'  => (int) $r['urutan_struktur'],
-                'aktif'            => (bool) $r['aktif'],
-                'warga_id'         => $r['warga_id'] ? (int) $r['warga_id'] : null,
+                'id'                => (int) $r['id'],
+                'role'              => $r['role'],
+                'username'          => $r['username'],
+                'nama'              => $r['nama_warga'] ?: $r['username'],
+                'jabatan'           => $r['jabatan'],
+                'nomor_hp'          => $r['nomor_hp'],
+                'tampil_di_bantuan' => (bool) $r['tampil_di_bantuan'],
+                'urutan_struktur'   => (int) $r['urutan_struktur'],
+                'aktif'             => (bool) $r['aktif'],
+                'warga_id'          => $r['warga_id'] ? (int) $r['warga_id'] : null,
+                'foto'              => $foto,
             ];
         }, $rows);
     }
