@@ -133,9 +133,10 @@ class PembayaranService
     {
         $db = \Config\Database::connect();
         $q = $db->table('pembayaran_permintaan p')
-            ->select('p.*, k.nomor, k.akhiran, b.nama as blok_nama')
+            ->select('p.*, k.nomor, k.akhiran, b.nama as blok_nama, w.nama as nama_kepala')
             ->join('keluarga k', 'k.id = p.keluarga_id')
-            ->join('blok b', 'b.id = k.blok_id');
+            ->join('blok b', 'b.id = k.blok_id')
+            ->join('warga w', "w.keluarga_id = k.id AND w.status = 'aktif' AND w.hubungan = 'Kepala keluarga'", 'left');
         if ($status !== 'semua') {
             $q->where('p.status', $status);
         }
@@ -146,6 +147,8 @@ class PembayaranService
                 'id'               => (int) $r['id'],
                 'keluarga_id'      => (int) $r['keluarga_id'],
                 'alamat'           => $r['blok_nama'] . '-' . $r['nomor'] . ($r['akhiran'] ?? ''),
+                'nama'             => $r['nama_kepala'] ?? null,
+                'nama_kepala'      => $r['nama_kepala'] ?? null,
                 'nominal_diajukan' => $nom,
                 'nominal'          => $nom,
                 'nama_pengirim'    => $r['nama_pengirim'],
