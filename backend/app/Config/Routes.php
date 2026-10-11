@@ -43,6 +43,7 @@ $routes->get('bantuan', 'PengurusController::bantuan', ['filter' => 'auth']);
 $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
+$routes->get('portal/keluarga', 'PortalController::keluargaSaya', ['filter' => 'auth']);
 
 $routes->get('keuangan/iuran', 'KeuanganController::daftarIuran', ['filter' => 'auth']);
 $routes->get('keuangan/keluarga/(:num)', 'KeuanganController::ringkasanKeluarga/$1', ['filter' => 'auth']);
@@ -68,6 +69,7 @@ $routes->get('keuangan/laporan', 'KeuanganController::laporan', ['filter' => 'au
 $routes->get('portal/keuangan', 'PortalKeuanganController::ringkasanSaya', ['filter' => 'auth']);
 $routes->post('portal/keuangan/transfer', 'PortalKeuanganController::ajukanTransfer', ['filter' => 'auth']);
 $routes->get('portal/keuangan/permintaan', 'PortalKeuanganController::statusPermintaan', ['filter' => 'auth']);
+$routes->get('portal/keuangan/kas', 'PortalKeuanganController::kas', ['filter' => 'auth']);
 
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
 $routes->get('notifikasi/badge', 'NotifikasiController::badge', ['filter' => 'auth']);
