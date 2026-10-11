@@ -10,17 +10,53 @@
         <input type="file" accept="image/*" multiple class="hidden" :disabled="uploading" @change="onFiles" />
       </label>
       <p v-if="progress" class="text-[13px] text-[var(--mut)] mb-2">{{ progress }}</p>
-      <div class="grid grid-cols-3 gap-2">
-        <div v-for="f in album?.foto || []" :key="f.id" class="relative aspect-square rounded-[12px] overflow-hidden bg-[var(--search)]">
-          <img :src="mediaUrl(f.thumb || f.file)" class="w-full h-full object-cover" alt="" />
-          <button type="button" class="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/50 text-white text-xs" @click="hapus(f.id)">×</button>
+
+      <!-- Masonry 2 kolom: rasio asli landscape / portrait -->
+      <div v-if="(album?.foto || []).length" class="galeri-masonry">
+        <div
+          v-for="f in album.foto"
+          :key="f.id"
+          class="galeri-masonry-item relative rounded-[12px] overflow-hidden bg-[var(--search)]"
+        >
+          <img
+            :src="mediaUrl(f.thumb || f.file)"
+            class="block w-full h-auto"
+            alt=""
+            loading="lazy"
+          />
+          <button
+            type="button"
+            class="absolute top-1.5 right-1.5 w-8 h-8 rounded-full bg-black/55 text-white text-sm font-bold grid place-items-center"
+            aria-label="Hapus foto"
+            @click="hapus(f.id)"
+          >×</button>
         </div>
       </div>
+      <p v-else class="text-[13px] text-[var(--mut)] text-center py-8">Belum ada foto</p>
+
       <button type="button" class="w-full min-h-[44px] mt-6 rounded-full bg-red-50 text-red-600 font-semibold" @click="hapusAlbum">Hapus album</button>
       <p v-if="msg" class="text-[13px] text-center mt-2" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
     </template>
   </div>
 </template>
+
+<style scoped>
+/* Pinterest / bento: 2 kolom, tinggi mengikuti rasio gambar */
+.galeri-masonry {
+  column-count: 2;
+  column-gap: 8px;
+}
+.galeri-masonry-item {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 8px;
+}
+.galeri-masonry-item img {
+  vertical-align: top;
+}
+</style>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

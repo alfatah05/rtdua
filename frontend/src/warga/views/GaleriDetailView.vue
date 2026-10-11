@@ -6,18 +6,30 @@
     <template v-else-if="album">
       <p class="text-[13px] text-[var(--mut)] mb-3">{{ album.tanggal_kegiatan || '—' }} · {{ (album.foto || []).length }} foto</p>
       <div v-if="!(album.foto || []).length" class="text-[13px] text-[var(--mut)] text-center py-8">Belum ada foto</div>
-      <div v-else class="grid grid-cols-3 gap-2">
+
+      <!-- Masonry 2 kolom: rasio asli landscape / portrait (Pinterest / bento) -->
+      <div v-else class="galeri-masonry">
         <button
           v-for="f in album.foto"
           :key="f.id"
           type="button"
-          class="aspect-square rounded-[12px] overflow-hidden bg-[var(--search)] p-0 border-0"
+          class="galeri-masonry-item block w-full p-0 border-0 rounded-[12px] overflow-hidden bg-[var(--search)]"
           @click="preview = f"
         >
-          <img :src="mediaUrl(f.thumb || f.file)" class="w-full h-full object-cover" alt="" />
+          <img
+            :src="mediaUrl(f.thumb || f.file)"
+            class="block w-full h-auto"
+            alt=""
+            loading="lazy"
+          />
         </button>
       </div>
-      <div v-if="preview" class="fixed inset-0 z-50 bg-black/90 flex flex-col" @click.self="preview = null">
+
+      <div
+        v-if="preview"
+        class="fixed inset-0 z-50 bg-black/90 flex flex-col"
+        @click.self="preview = null"
+      >
         <button type="button" class="self-end m-3 text-white font-bold px-3 py-2" @click="preview = null">Tutup</button>
         <img :src="mediaUrl(preview.file)" class="max-w-full max-h-[80vh] object-contain mx-auto" alt="" />
         <a
@@ -30,6 +42,23 @@
     </template>
   </div>
 </template>
+
+<style scoped>
+.galeri-masonry {
+  column-count: 2;
+  column-gap: 8px;
+}
+.galeri-masonry-item {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 8px;
+}
+.galeri-masonry-item img {
+  vertical-align: top;
+}
+</style>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
