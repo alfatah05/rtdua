@@ -11,7 +11,6 @@
         class="rounded-[20px] overflow-hidden relative text-white min-h-[168px]"
         :style="cardStyle(p)"
       >
-        <!-- Banner + overlay gelap biar teks terbaca -->
         <div
           v-if="p.banner"
           class="absolute inset-0 bg-cover bg-center"
@@ -19,7 +18,7 @@
         />
         <div
           class="absolute inset-0 pointer-events-none"
-          :class="p.banner ? 'bg-gradient-to-br from-black/75 via-black/55 to-black/40' : ''"
+          :class="p.banner ? 'bg-gradient-to-br from-black/70 via-black/50 to-black/35' : ''"
         />
 
         <div class="p-5 relative z-10">
@@ -36,7 +35,7 @@
           <p class="text-[13px] m-0 text-white/90 line-clamp-3">{{ ringkas(p.isi_html || p.isi) }}</p>
           <button
             type="button"
-            class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34]"
+            class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white/25 text-white border border-white/35 backdrop-blur-sm"
             @click="$router.push('/program/' + p.id)"
           >
             Lihat detail <ChevronRight :size="18" />
@@ -60,7 +59,6 @@ const daftar = ref([])
 const loading = ref(true)
 const err = ref('')
 
-/** Fallback gradient kalau belum ada banner (mirip pengumuman) */
 const fallbackByStatus = {
   berjalan:
     'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
@@ -71,10 +69,7 @@ const fallbackByStatus = {
 }
 
 function cardStyle(p) {
-  if (p.banner) {
-    // Background di-handle layer img; warna dasar gelap biar tidak flash putih
-    return { background: '#1a1d1f' }
-  }
+  if (p.banner) return { background: '#1a1d1f' }
   return { background: fallbackByStatus[p.status] || fallbackByStatus.direncanakan }
 }
 
