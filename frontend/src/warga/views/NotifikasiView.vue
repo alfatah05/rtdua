@@ -20,9 +20,8 @@
         type="button"
         class="w-full text-left flex items-start gap-3 px-1 py-3 rounded-[16px] active:bg-[var(--search)] transition"
         :class="n.dibaca ? 'opacity-55' : ''"
-        @click="onTap(n)"
+        @click="bukaDetail(n)"
       >
-        <!-- Icon kiri -->
         <span
           class="w-11 h-11 rounded-full grid place-items-center shrink-0 mt-0.5"
           :style="{ background: meta(n.jenis).bg, color: meta(n.jenis).color }"
@@ -30,7 +29,6 @@
           <component :is="meta(n.jenis).icon" :size="20" />
         </span>
 
-        <!-- Tengah: judul + preview -->
         <div class="flex-1 min-w-0">
           <div class="flex items-start gap-2">
             <p class="font-bold text-[14px] m-0 leading-snug flex-1 min-w-0 truncate">{{ n.judul }}</p>
@@ -54,7 +52,7 @@ import {
   Megaphone, Wallet, ShieldAlert, ClipboardList,
   Bell, ChevronRight, Images, CalendarDays,
 } from 'lucide-vue-next'
-import { listNotifikasi, bacaNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
+import { listNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
 
 const router = useRouter()
 const daftar = ref([])
@@ -81,12 +79,10 @@ function preview(isi) {
   return t.length > 80 ? t.slice(0, 79) + '…' : t
 }
 
-/** Hanya jam: 12.00 */
 function jam(s) {
   if (!s) return ''
   const d = new Date(String(s).replace(' ', 'T'))
   if (Number.isNaN(d.getTime())) {
-    // fallback parse HH:MM dari string
     const m = String(s).match(/(\d{1,2}):(\d{2})/)
     return m ? `${m[1].padStart(2, '0')}.${m[2]}` : ''
   }
@@ -107,26 +103,8 @@ async function load() {
   daftar.value = Array.isArray(d) ? d : (d?.items || [])
 }
 
-async function onTap(n) {
-  try {
-    if (!n.dibaca) await bacaNotifikasi(n.id)
-  } catch (_) { /* ignore */ }
-
-  const path = String(n.tautan || '').trim()
-  if (path) {
-    // tautan internal: /pengumuman/12, /keuangan, ...
-    if (path.startsWith('/')) {
-      router.push(path)
-      return
-    }
-    if (/^https?:\/\//i.test(path)) {
-      window.open(path, '_blank', 'noopener')
-      return
-    }
-  }
-  // tanpa tautan: cukup tandai dibaca + refresh list
-  n.dibaca = true
-  await load()
+function bukaDetail(n) {
+  router.push('/notifikasi/' + n.id)
 }
 
 async function bacaSemua() {
