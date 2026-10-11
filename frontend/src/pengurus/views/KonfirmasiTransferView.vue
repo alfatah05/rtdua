@@ -2,14 +2,14 @@
   <div>
     <AppBackHeader title="Konfirmasi transfer" />
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
-    <template v-else>
-      <div class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 mb-4">
-        <p class="text-[13px] text-[var(--mut)] m-0">{{ item?.alamat || '—' }} · {{ item?.nama || item?.nama_kepala || '—' }}</p>
-        <p class="font-bold text-lg m-0">Diajukan: {{ rp(item?.nominal) }}</p>
+    <template v-else-if="item">
+      <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 mb-4">
+        <p class="text-[13px] text-[var(--mut)] m-0">{{ item.alamat }}</p>
+        <p class="font-bold text-lg m-0">Diajukan: {{ rp(item?.nominal_diajukan ?? item?.nominal) }}</p>
       </div>
       <form class="space-y-4" @submit.prevent="onSave">
         <div>
-          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Nominal diterima</label>
+          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Nominal dikonfirmasi</label>
           <input v-model="nominal" type="text" inputmode="numeric" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
         </div>
         <div>
@@ -48,7 +48,7 @@ onMounted(async () => {
   loading.value = false
   if (res.ok) {
     item.value = (res.data || []).find((p) => String(p.id) === id) || null
-    if (item.value) nominal.value = String(item.value.nominal || '')
+    if (item.value) nominal.value = String(item.value.nominal_diajukan ?? item.value.nominal ?? '')
   }
 })
 

@@ -6,10 +6,11 @@
     <template v-else-if="item">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4 space-y-3">
         <div><p class="text-[13px] text-[var(--mut)] m-0">Keluarga</p><p class="font-bold m-0">{{ item.alamat || '—' }} · {{ item.nama || item.nama_kepala || '—' }}</p></div>
-        <div><p class="text-[13px] text-[var(--mut)] m-0">Nominal diajukan</p><p class="font-bold text-lg m-0">{{ rp(item.nominal) }}</p></div>
-        <div v-if="item.keterangan"><p class="text-[13px] text-[var(--mut)] m-0">Keterangan</p><p class="font-bold m-0">{{ item.keterangan }}</p></div>
-        <div><p class="text-[13px] text-[var(--mut)] m-0">Status</p><p class="font-bold m-0">{{ item.status }}</p></div>
-        <div><p class="text-[13px] text-[var(--mut)] m-0">Waktu</p><p class="font-bold m-0">{{ item.created_at || item.diajukan_pada || '—' }}</p></div>
+        <div><p class="text-[13px] text-[var(--mut)] m-0">Nominal diajukan</p><p class="font-bold text-lg m-0">{{ rp(item.nominal_diajukan ?? item.nominal) }}</p></div>
+        <div><p class="text-[13px] text-[var(--mut)] m-0">Pengirim</p><p class="m-0">{{ item.nama_pengirim || '—' }} · {{ item.bank_pengirim || '—' }}</p></div>
+        <div v-if="item.bukti_file"><p class="text-[13px] text-[var(--mut)] m-0 mb-1">Bukti</p>
+          <img :src="buktiUrl" alt="Bukti" class="max-h-48 rounded-[12px] object-contain bg-[var(--search)]" />
+        </div>
       </div>
       <div v-if="item.status === 'menunggu'" class="space-y-2">
         <button type="button" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold"
@@ -21,15 +22,18 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listPermintaan } from '@shared/services/keuangan.js'
+import { mediaUrl } from '@shared/services/upload.js'
 
 const route = useRoute()
 const loading = ref(true)
 const err = ref('')
 const item = ref(null)
+
+const buktiUrl = computed(() => item.value?.bukti_file ? mediaUrl(item.value.bukti_file) : '')
 
 function rp(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID') }
 
