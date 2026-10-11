@@ -1,45 +1,93 @@
 <template>
   <div>
     <AppBackHeader title="Struktur pengurus" />
+
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-8">Memuat…</p>
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
+
     <template v-else>
-      <div v-if="ketua" class="flex flex-col items-center mb-6">
-        <div class="w-16 h-16 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-lg mb-2">{{ inisial(ketua.nama) }}</div>
-        <p class="font-bold text-[15px] m-0">{{ ketua.nama }}</p>
-        <p class="text-[13px] text-[var(--mut)] m-0">{{ ketua.jabatan || 'Ketua RT' }}</p>
+      <!-- Ketua: ukuran & posisi seperti Profil -->
+      <div v-if="ketua" class="flex flex-col items-center text-center mb-2 pt-2">
+        <div
+          class="w-24 h-24 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden mb-3 shadow-[var(--sh)] ring-4 ring-[var(--gd)]/40"
+        >
+          <img
+            v-if="ketua.foto"
+            :src="mediaUrl(ketua.foto)"
+            alt=""
+            class="w-full h-full object-cover"
+          />
+          <span v-else>{{ inisial(ketua.nama) }}</span>
+        </div>
+        <p class="text-xl font-extrabold m-0 leading-tight">{{ ketua.nama }}</p>
+        <span
+          class="mt-1.5 inline-flex items-center min-h-[24px] px-3 rounded-full text-[12px] font-bold bg-[var(--gd)] text-[var(--gm)]"
+        >{{ ketua.jabatan || 'Ketua RT' }}</span>
       </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div v-for="p in pengurus" :key="p.id" class="flex flex-col items-center bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
-          <div class="w-12 h-12 rounded-full bg-[var(--card2)] grid place-items-center font-bold text-sm mb-2">{{ inisial(p.nama) }}</div>
-          <p class="font-bold text-[14px] m-0 text-center">{{ p.nama }}</p>
-          <p class="text-[12px] text-[var(--mut)] m-0 text-center">{{ p.jabatan || 'Pengurus' }}</p>
+
+      <!-- Garis penghubung pohon -->
+      <div v-if="ketua && pengurus.length" class="flex flex-col items-center my-4" aria-hidden="true">
+        <div class="w-px h-5 bg-[var(--line)]"></div>
+        <div class="w-10 h-px bg-[var(--line)]"></div>
+      </div>
+
+      <!-- Pengurus sejajar -->
+      <div v-if="pengurus.length" class="grid grid-cols-2 gap-3">
+        <div
+          v-for="p in pengurus"
+          :key="p.id"
+          class="flex flex-col items-center text-center bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 shadow-[var(--sh)]"
+        >
+          <div
+            class="w-14 h-14 rounded-full bg-[var(--card2)] text-[var(--text)] grid place-items-center text-[15px] font-bold overflow-hidden mb-2.5"
+          >
+            <img
+              v-if="p.foto"
+              :src="mediaUrl(p.foto)"
+              alt=""
+              class="w-full h-full object-cover"
+            />
+            <span v-else>{{ inisial(p.nama) }}</span>
+          </div>
+          <p class="font-bold text-[15px] m-0 leading-snug line-clamp-2">{{ p.nama }}</p>
+          <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5 line-clamp-2">{{ p.jabatan || 'Pengurus' }}</p>
         </div>
       </div>
-      <p v-if="!ketua && !pengurus.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada data</p>
+
+      <p
+        v-if="!ketua && !pengurus.length"
+        class="text-[13px] text-[var(--mut)] text-center py-8"
+      >Belum ada data struktur</p>
     </template>
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { getStruktur } from '@shared/services/struktur.js'
+import { mediaUrl } from '@shared/services/upload.js'
+
 const loading = ref(true)
 const err = ref('')
 const ketua = ref(null)
 const pengurus = ref([])
+
 function inisial(nama) {
-  const p = String(nama || '').trim().split(/\s+/)
-  if (!p[0]) return '?'
-  return p.length === 1 ? p[0].slice(0, 2).toUpperCase() : (p[0][0] + p[p.length - 1][0]).toUpperCase()
+  const p = String(nama || '').trim().split(/\s+/).filter(Boolean)
+  if (!p.length) return '?'
+  if (p.length === 1) return p[0].slice(0, 2).toUpperCase()
+  return (p[0][0] + p[p.length - 1][0]).toUpperCase()
 }
+
 onMounted(async () => {
   const res = await getStruktur()
   loading.value = false
-  if (!res.ok) err.value = res.error || 'Gagal'
-  else {
-    ketua.value = res.data?.ketua || null
-    pengurus.value = res.data?.pengurus || []
+  if (!res.ok) {
+    err.value = res.error || 'Gagal'
+    return
   }
+  ketua.value = res.data?.ketua || null
+  pengurus.value = Array.isArray(res.data?.pengurus) ? res.data.pengurus : []
 })
 </script>
