@@ -12,7 +12,19 @@
         class="w-full min-h-12 h-12 pl-12 pr-4 rounded-full bg-[var(--search)] outline-none border-0 focus:outline-none focus:ring-0 focus:border-0 text-[15px]"
       />
     </div>
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+
+    <!-- Skeleton list warga -->
+    <div v-if="loading" class="px-1 animate-pulse" aria-hidden="true">
+      <div v-for="n in 8" :key="n" class="flex items-center gap-3 py-3">
+        <div class="w-11 h-11 rounded-full bg-[var(--card2)] shrink-0" />
+        <div class="flex-1 min-w-0 space-y-2">
+          <div class="h-3.5 rounded-full bg-[var(--card2)] w-[55%]" />
+          <div class="h-3 rounded-full bg-[var(--card2)] w-[30%]" />
+        </div>
+        <div class="w-4 h-4 rounded bg-[var(--card2)] shrink-0" />
+      </div>
+    </div>
+
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <div v-else class="px-1">
       <button
@@ -42,6 +54,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ChevronRight, Search } from 'lucide-vue-next'
 import { listPortalWarga } from '@shared/services/warga.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { waitImages } from '@shared/utils/waitImages.js'
 
 const list = ref([])
 const q = ref('')
@@ -61,15 +74,20 @@ const filtered = computed(() => {
 })
 
 onMounted(async () => {
+  loading.value = true
   const res = await listPortalWarga()
-  loading.value = false
-  if (!res.ok) err.value = res.error || 'Gagal'
-  else {
-    list.value = (res.data || []).map((k) => ({
-      ...k,
-      inisial: inisial(k.nama),
-      fotoUrl: k.foto ? mediaUrl(k.foto) : '',
-    }))
+  if (!res.ok) {
+    err.value = res.error || 'Gagal'
+    loading.value = false
+    return
   }
+  const rows = (res.data || []).map((k) => ({
+    ...k,
+    inisial: inisial(k.nama),
+    fotoUrl: k.foto ? mediaUrl(k.foto) : '',
+  }))
+  list.value = rows
+  await waitImages(rows.map((r) => r.fotoUrl).filter(Boolean))
+  loading.value = false
 })
 </script>

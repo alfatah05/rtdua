@@ -1,66 +1,87 @@
 <template>
   <div>
-    <div class="flex flex-col items-center text-center mb-6 pt-2">
-      <!-- overflow tidak di outer: biar badge kamera tidak terpotong -->
-      <button
-        type="button"
-        class="relative w-24 h-24 mb-3 active:scale-95 transition-transform disabled:opacity-70"
-        aria-label="Ubah foto profil"
-        :disabled="uploadingFoto"
-        @click="pickFoto"
-      >
-        <span
-          class="absolute inset-0 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden"
-        >
-          <img v-if="fotoUrl" :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" />
-          <span v-else>{{ inisial }}</span>
-        </span>
-        <span
-          class="absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full bg-[var(--g)] text-white grid place-items-center border-2 border-[var(--bg)] z-10 shadow-sm"
-        >
-          <Camera :size="14" />
-        </span>
-      </button>
-      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFoto" />
-      <p class="text-xl font-extrabold m-0">{{ user?.nama || 'Warga' }}</p>
-      <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ alamatLabel }}</p>
-      <p v-if="uploadingFoto" class="text-[12px] text-[var(--mut)] m-0 mt-1">Mengunggah foto…</p>
-    </div>
-
-    <div class="px-1 space-y-0.5">
-      <button
-        v-for="m in menus"
-        :key="m.label"
-        type="button"
-        class="w-full flex flex-row items-center gap-3 px-2 py-3.5 text-left active:scale-[0.99] transition-transform"
-        @click="m.action ? m.action() : $router.push(m.to)"
-      >
-        <span class="w-10 h-10 rounded-full grid place-items-center shrink-0" :style="{ background: m.bg, color: m.color }">
-          <component :is="m.icon" :size="18" />
-        </span>
-        <div class="flex-1 min-w-0">
-          <p class="font-semibold text-[15px] m-0">{{ m.label }}</p>
-          <p v-if="m.desc" class="text-[12px] text-[var(--mut)] m-0">{{ m.desc }}</p>
+    <!-- Skeleton profil -->
+    <div v-if="loading" class="animate-pulse" aria-hidden="true">
+      <div class="flex flex-col items-center text-center mb-6 pt-2">
+        <div class="w-24 h-24 rounded-full bg-[var(--card2)] mb-3" />
+        <div class="h-5 rounded-full bg-[var(--card2)] w-40 mb-2" />
+        <div class="h-3 rounded-full bg-[var(--card2)] w-16" />
+      </div>
+      <div class="px-1 space-y-1">
+        <div v-for="n in 6" :key="n" class="flex items-center gap-3 px-2 py-3.5">
+          <div class="w-10 h-10 rounded-full bg-[var(--card2)] shrink-0" />
+          <div class="flex-1 space-y-2">
+            <div class="h-3.5 rounded-full bg-[var(--card2)] w-[45%]" />
+            <div class="h-3 rounded-full bg-[var(--card2)] w-[60%]" />
+          </div>
+          <div class="w-4 h-4 rounded bg-[var(--card2)]" />
         </div>
-        <span v-if="m.right" class="text-[13px] text-[var(--mut)] shrink-0">{{ m.right }}</span>
-        <ChevronRight v-else :size="18" class="text-[var(--mut)] shrink-0" />
-      </button>
+      </div>
+      <div class="w-full h-12 mt-8 rounded-full bg-[var(--card2)]" />
     </div>
 
-    <button
-      type="button"
-      class="w-full min-h-[48px] mt-8 rounded-full bg-[var(--card2)] font-bold active:scale-[0.98] transition-transform"
-      @click="doLogout"
-    >
-      Keluar
-    </button>
+    <template v-else>
+      <div class="flex flex-col items-center text-center mb-6 pt-2">
+        <button
+          type="button"
+          class="relative w-24 h-24 mb-3 active:scale-95 transition-transform disabled:opacity-70"
+          aria-label="Ubah foto profil"
+          :disabled="uploadingFoto"
+          @click="pickFoto"
+        >
+          <span
+            class="absolute inset-0 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden"
+          >
+            <img v-if="fotoUrl" :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" />
+            <span v-else>{{ inisial }}</span>
+          </span>
+          <span
+            class="absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full bg-[var(--g)] text-white grid place-items-center border-2 border-[var(--bg)] z-10 shadow-sm"
+          >
+            <Camera :size="14" />
+          </span>
+        </button>
+        <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFoto" />
+        <p class="text-xl font-extrabold m-0">{{ user?.nama || 'Warga' }}</p>
+        <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ alamatLabel }}</p>
+        <p v-if="uploadingFoto" class="text-[12px] text-[var(--mut)] m-0 mt-1">Mengunggah foto…</p>
+      </div>
 
-    <p class="text-center text-[12px] text-[var(--mut)] mt-6 mb-2">rtdua · versi 0.1.0</p>
+      <div class="px-1 space-y-0.5">
+        <button
+          v-for="m in menus"
+          :key="m.label"
+          type="button"
+          class="w-full flex flex-row items-center gap-3 px-2 py-3.5 text-left active:scale-[0.99] transition-transform"
+          @click="m.action ? m.action() : $router.push(m.to)"
+        >
+          <span class="w-10 h-10 rounded-full grid place-items-center shrink-0" :style="{ background: m.bg, color: m.color }">
+            <component :is="m.icon" :size="18" />
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-[15px] m-0">{{ m.label }}</p>
+            <p v-if="m.desc" class="text-[12px] text-[var(--mut)] m-0">{{ m.desc }}</p>
+          </div>
+          <span v-if="m.right" class="text-[13px] text-[var(--mut)] shrink-0">{{ m.right }}</span>
+          <ChevronRight v-else :size="18" class="text-[var(--mut)] shrink-0" />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="w-full min-h-[48px] mt-8 rounded-full bg-[var(--card2)] font-bold active:scale-[0.98] transition-transform"
+        @click="doLogout"
+      >
+        Keluar
+      </button>
+
+      <p class="text-center text-[12px] text-[var(--mut)] mt-6 mb-2">rtdua · versi 0.1.0</p>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Camera, ChevronRight, KeyRound, Moon, User, Home, HelpCircle, Info
@@ -70,6 +91,7 @@ import { useTheme } from '@shared/composables/useTheme.js'
 import { useToast } from '@shared/composables/useToast.js'
 import { updateFotoProfil } from '@shared/services/auth.js'
 import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
+import { waitImages } from '@shared/utils/waitImages.js'
 
 const router = useRouter()
 const { user, logout } = useAuth()
@@ -78,6 +100,7 @@ const { show } = useToast()
 const fileInput = ref(null)
 const uploadingFoto = ref(false)
 const localFoto = ref('')
+const loading = ref(true)
 
 const inisial = computed(() => {
   const n = user.value?.nama || 'W'
@@ -144,6 +167,34 @@ const menus = computed(() => [
     color: '#7C3AED',
   },
 ])
+
+async function finishLoading() {
+  const url = fotoUrl.value
+  if (url) await waitImages([url])
+  loading.value = false
+}
+
+onMounted(() => {
+  // user biasanya sudah di-hydrate dari session; tunggu foto bila ada
+  if (user.value) finishLoading()
+  else {
+    // fallback singkat bila session belum siap
+    const t = setInterval(() => {
+      if (user.value) {
+        clearInterval(t)
+        finishLoading()
+      }
+    }, 50)
+    setTimeout(() => {
+      clearInterval(t)
+      loading.value = false
+    }, 3000)
+  }
+})
+
+watch(fotoUrl, (u) => {
+  if (u && loading.value) waitImages([u]).then(() => { loading.value = false })
+})
 
 function pickFoto() {
   if (uploadingFoto.value) return
