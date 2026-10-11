@@ -13,9 +13,6 @@
           <div class="min-w-0">
             <p class="font-bold text-lg m-0">{{ namaKepala }}</p>
             <p class="text-[13px] text-[var(--mut)] m-0">{{ alamatLabel }}</p>
-            <p v-if="detail.username" class="text-[12px] text-[var(--mut)] m-0">
-              Username login: <span class="font-semibold text-[var(--text)]">{{ detail.username }}</span>
-            </p>
           </div>
         </div>
         <p v-if="penanda" class="text-[12px] font-bold px-2.5 py-1 rounded-full bg-[var(--search)] text-[var(--mut)] inline-block m-0">{{ penanda }}</p>
