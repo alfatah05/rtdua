@@ -44,3 +44,9 @@ export function setStatusAnggota(anggotaId, payload) {
   if (USE_MOCK.warga) return Promise.resolve({ ok: true })
   return real.setStatusAnggota(anggotaId, payload)
 }
+
+export function portalKeluargaSaya() {
+  return USE_MOCK.warga
+    ? Promise.resolve({ ok: true, data: { id: 1, alamat: '—', anggota: [] } })
+    : real.portalKeluargaSaya()
+}
