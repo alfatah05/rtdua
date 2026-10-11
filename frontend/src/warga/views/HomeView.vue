@@ -17,7 +17,7 @@
     </div>
     <div class="h-px bg-[var(--line)] my-4"></div>
 
-    <div class="space-y-3 mb-4">
+    <div class="space-y-3 mb-5">
       <div
         v-for="(p, i) in pengumuman"
         :key="p.id"
@@ -50,10 +50,6 @@
       </div>
       <p v-if="!pengumuman.length && !loading" class="text-[13px] text-[var(--mut)] text-center py-2">Belum ada pengumuman</p>
     </div>
-
-    <router-link to="/pengumuman" class="block text-center text-[13px] font-semibold text-[var(--g)] mb-5 no-underline">
-      Pengumuman lain →
-    </router-link>
 
     <button
       type="button"
