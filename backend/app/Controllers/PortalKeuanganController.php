@@ -44,6 +44,17 @@ class PortalKeuanganController extends Controller
                     'catatan'       => $p['catatan'],
                 ];
             }, $ring['pembayaran']),
+            'riwayat' => array_map(static function ($r) {
+                return [
+                    'pembayaran_id' => $r['pembayaran_id'] ?? null,
+                    'tagihan_id'    => $r['tagihan_id'] ?? null,
+                    'tanggal'       => $r['tanggal'] ?? null,
+                    'jenis'         => $r['jenis'] ?? '',
+                    'periode'       => $r['periode'] ?? '',
+                    'jumlah'        => (int) ($r['jumlah'] ?? 0),
+                    'metode'        => $r['metode'] ?? null,
+                ];
+            }, $ring['riwayat'] ?? []),
         ]);
     }
 
@@ -71,64 +82,54 @@ class PortalKeuanganController extends Controller
         if (!$ctx) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $db = \Config\Database::connect();
-        $rows = $db->table('pembayaran_permintaan')
-            ->where('keluarga_id', $ctx['keluarga_id'])
-            ->orderBy('diajukan_pada', 'DESC')
-            ->limit(10)
-            ->get()
-            ->getResultArray();
-        $data = array_map(static function ($r) {
-            return [
-                'id'               => (int) $r['id'],
-                'nominal_diajukan' => (int) $r['nominal_diajukan'],
-                'nominal'          => (int) $r['nominal_diajukan'],
-                'status'           => $r['status'],
-                'diajukan_pada'    => $r['diajukan_pada'],
-                'alasan_tolak'     => $r['alasan_tolak'],
-                'nominal_dikonfirmasi' => $r['nominal_dikonfirmasi'] ? (int) $r['nominal_dikonfirmasi'] : null,
-            ];
-        }, $rows);
-        return ApiResponse::ok($data);
+        $list = (new PembayaranService())->listPermintaanKeluarga($ctx['keluarga_id']);
+        return ApiResponse::ok($list);
     }
 
-    /** Transparansi kas RT untuk warga (tanpa data internal). */
-    public function kas()
+    public function kasTransparansi()
     {
         $ctx = $this->requireWarga();
         if (!$ctx) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $svc = new \App\Services\KasService();
-        $bulan = $this->request->getGet('bulan');
-        $filter = [];
-        if ($bulan) {
-            $filter['bulan'] = $bulan;
+        $bulan = $this->request->getGet('bulan') ?: date('Y-m');
+        $db = \Config\Database::connect();
+        $items = $db->table('kas')
+            ->where('dibatalkan', 0)
+            ->like('tanggal', $bulan, 'after')
+            ->orderBy('tanggal', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->getResultArray();
+        $saldo = 0;
+        $all = $db->table('kas')->where('dibatalkan', 0)->get()->getResultArray();
+        foreach ($all as $r) {
+            if (($r['tipe'] ?? '') === 'masuk') {
+                $saldo += (int) $r['nominal'];
+            } else {
+                $saldo -= (int) $r['nominal'];
+            }
         }
-        $items = $svc->list($filter);
-        $safe = array_map(static function ($r) {
-            return [
-                'id'         => (int) ($r['id'] ?? 0),
-                'tipe'       => $r['tipe'] ?? '',
-                'nominal'    => (int) ($r['nominal'] ?? 0),
-                'kategori'   => $r['kategori'] ?? null,
-                'keterangan' => $r['keterangan'] ?? null,
-                'tanggal'    => $r['tanggal'] ?? null,
-            ];
-        }, $items);
-        $safe = array_slice($safe, 0, 50);
         return ApiResponse::ok([
-            'saldo' => $svc->saldo(),
-            'items' => $safe,
+            'saldo' => $saldo,
+            'bulan' => $bulan,
+            'items' => array_map(static function ($r) {
+                return [
+                    'id'         => (int) $r['id'],
+                    'tanggal'    => $r['tanggal'],
+                    'tipe'       => $r['tipe'],
+                    'kategori'   => $r['kategori'] ?? null,
+                    'keterangan' => $r['keterangan'] ?? null,
+                    'nominal'    => (int) $r['nominal'],
+                ];
+            }, $items),
         ]);
     }
 
-    /**
-     * @return array{user_id:int, keluarga_id:int}|null
-     */
     private function requireWarga(): ?array
     {
-        if (SideContext::fromRequest() !== 'warga') {
+        $side = SideContext::fromRequest();
+        if ($side !== 'warga') {
             return null;
         }
         $user = (new AuthService())->current('warga');
