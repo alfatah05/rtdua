@@ -58,7 +58,7 @@
     <button
       type="button"
       class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition mb-4"
-      @click="$router.push('/keuangan')"
+      @click="$router.push('/rincian-iuran')"
     >
       <div class="flex-1 min-w-0">
         <span class="block text-[13px] font-semibold text-[var(--mut)]">{{ iuranLabel }}</span>
