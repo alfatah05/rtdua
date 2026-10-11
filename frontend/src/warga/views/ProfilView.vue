@@ -1,27 +1,27 @@
 <template>
   <div>
-        <AppMainHeader />
+    <AppMainHeader />
 
-    <!-- Profile hero -->
     <div class="flex flex-col items-center text-center mb-6 pt-2">
       <button
         type="button"
         class="relative w-24 h-24 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden mb-3 active:scale-95 transition-transform"
         aria-label="Ubah foto profil"
-        @click="onFoto"
+        :disabled="uploadingFoto"
+        @click="pickFoto"
       >
-        <img v-if="foto" :src="foto" alt="Foto profil" class="w-full h-full object-cover" />
+        <img v-if="fotoUrl" :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" />
         <span v-else>{{ inisial }}</span>
         <span class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[var(--g)] text-white grid place-items-center border-2 border-[var(--bg)]">
           <Camera :size="14" />
         </span>
       </button>
+      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFoto" />
       <p class="text-xl font-extrabold m-0">{{ user?.nama || 'Warga' }}</p>
       <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ user?.username || '—' }}</p>
-      <p class="text-[13px] text-[var(--mut)] m-0">Blok / No. rumah · {{ alamat }}</p>
+      <p class="text-[13px] text-[var(--mut)] m-0">{{ alamatLabel }}</p>
     </div>
 
-    <!-- Menu -->
     <div class="px-1 space-y-0.5">
       <button
         v-for="m in menus"
@@ -59,28 +59,38 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Bell, Camera, ChevronRight, KeyRound, Moon, User, Home, HelpCircle, Info
+  Camera, ChevronRight, KeyRound, Moon, User, Home, HelpCircle, Info
 } from 'lucide-vue-next'
 import { useAuth } from '@shared/composables/useAuth.js'
 import { useTheme } from '@shared/composables/useTheme.js'
 import { useToast } from '@shared/composables/useToast.js'
+import { updateFotoProfil } from '@shared/services/auth.js'
+import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
 
 const router = useRouter()
 const { user, logout } = useAuth()
 const { mode, toggle } = useTheme()
 const { show } = useToast()
-const foto = ref(null) // nanti dari API / local
+const fileInput = ref(null)
+const uploadingFoto = ref(false)
 
 const inisial = computed(() => {
   const n = user.value?.nama || 'W'
   return n.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
 })
-const alamat = computed(() => (user.value?.username || 'AB2-22').toUpperCase())
+const alamatLabel = computed(() => {
+  const a = user.value?.alamat || user.value?.username || '—'
+  return String(a).toUpperCase()
+})
+const fotoUrl = computed(() => {
+  const f = user.value?.foto
+  return f ? mediaUrl(f) : ''
+})
 
 const menus = computed(() => [
   {
     label: 'Data keluarga',
-    desc: 'Lihat anggota di rumah Anda',
+    desc: 'Daftar warga RT',
     icon: User,
     to: '/warga',
     bg: 'rgba(6,182,212,.18)',
@@ -105,9 +115,9 @@ const menus = computed(() => [
   },
   {
     label: 'Alamat rumah',
-    desc: alamat.value,
+    desc: alamatLabel.value,
     icon: Home,
-    to: '/profil',
+    action: () => show(alamatLabel.value),
     bg: 'rgba(59,130,246,.18)',
     color: '#2563EB',
   },
@@ -129,9 +139,36 @@ const menus = computed(() => [
   },
 ])
 
-function onFoto() {
-  show('Upload foto menyusul (backend)')
+function pickFoto() {
+  fileInput.value?.click()
 }
+
+async function onFoto(e) {
+  const f = e.target.files?.[0]
+  e.target.value = ''
+  if (!f) return
+  uploadingFoto.value = true
+  const up = await uploadGambar(f, 'foto_profil', { maxSide: 800 })
+  if (!up.ok) {
+    uploadingFoto.value = false
+    show(up.error || 'Upload gagal')
+    return
+  }
+  const res = await updateFotoProfil(up.data.path)
+  uploadingFoto.value = false
+  if (!res.ok) {
+    show(res.error || 'Gagal menyimpan foto')
+    return
+  }
+  if (res.user && user.value) {
+    Object.assign(user.value, res.user)
+    try {
+      localStorage.setItem('rtdua-auth-warga', JSON.stringify(user.value))
+    } catch (err) {}
+  }
+  show('Foto profil diperbarui')
+}
+
 function doLogout() {
   logout('warga')
   router.replace('/login')
