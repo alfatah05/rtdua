@@ -2,7 +2,7 @@
   <div>
     <AppBackHeader title="Bantuan" />
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <p v-else-if="!list.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada kontak bantuan</p>
 
@@ -42,6 +42,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import { MessageCircle } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
