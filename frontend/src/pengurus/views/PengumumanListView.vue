@@ -16,6 +16,7 @@
         @click="$router.push('/konten/pengumuman/' + p.id)"
       >
         <div class="flex items-center gap-2 mb-1 flex-wrap">
+          <span v-if="aktifBeranda(p)" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--ok)] text-[var(--g)]">Aktif beranda</span>
           <span v-if="p.lampiran_file" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--search)] text-[var(--mut)]">📎 Lampiran</span>
           <span class="text-[12px] text-[var(--mut)] ml-auto">{{ formatTgl(p.diterbitkan_pada) }}</span>
         </div>
@@ -34,6 +35,12 @@ const daftar = ref([])
 const loading = ref(true)
 const err = ref('')
 
+function aktifBeranda(p) {
+  const now = Date.now()
+  const a = p.tampil_mulai ? new Date(String(p.tampil_mulai).replace(' ', 'T')).getTime() : 0
+  const b = p.tampil_selesai ? new Date(String(p.tampil_selesai).replace(' ', 'T')).getTime() : Infinity
+  return now >= a && now <= b
+}
 function formatTgl(s) {
   if (!s) return ''
   const d = new Date(String(s).replace(' ', 'T'))
