@@ -71,27 +71,29 @@
 
       <h2 class="text-[15px] font-bold m-0 mb-2">Rincian tagihan</h2>
       <div
-        class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-5 px-4 py-4"
+        class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
+        style="padding: 5px"
       >
         <div
-          class="flex items-center justify-between rounded-full px-4 py-2.5 mb-1"
-          style="background: rgba(34, 184, 99, 0.14)"
+          class="flex items-center justify-between px-3"
+          style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
         >
-          <span class="text-[13px] font-semibold text-[var(--gm)]">Jenis Pembayaran</span>
-          <span class="text-[13px] font-semibold text-[var(--gm)]">Biaya</span>
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Jenis Pembayaran</span>
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Biaya</span>
         </div>
 
         <template v-if="tagihanTerbuka.length">
           <div
             v-for="t in tagihanTerbuka"
             :key="t.id"
-            class="flex items-center gap-3 py-3"
+            class="flex items-center gap-3 py-2.5"
+            style="padding-left: 10px; padding-right: 10px"
           >
             <div
-              class="w-10 h-10 rounded-full grid place-items-center shrink-0"
+              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
               :style="{ background: iconMeta(t.jenis).bg, color: iconMeta(t.jenis).color }"
             >
-              <component :is="iconMeta(t.jenis).icon" :size="18" />
+              <component :is="iconMeta(t.jenis).icon" :size="16" />
             </div>
             <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">
               {{ labelTagihan(t) }}
@@ -101,13 +103,13 @@
             </span>
           </div>
 
-          <div class="flex justify-end pt-1">
+          <div class="flex justify-end" style="padding: 2px 0 4px">
             <div
-              class="inline-flex items-center justify-between gap-4 rounded-full px-4 py-2 min-w-[48%]"
-              style="background: rgba(34, 184, 99, 0.14)"
+              class="inline-flex items-center justify-between gap-4 px-3 min-w-[48%]"
+              style="height: 30px; border-radius: 15px; background: rgba(245, 158, 11, 0.16)"
             >
-              <span class="text-[13px] font-bold text-[var(--gm)]">Total</span>
-              <span class="text-[14px] font-extrabold tabular-nums text-[var(--g)]">
+              <span class="text-[12px] font-bold" style="color: #B45309">Total</span>
+              <span class="text-[13px] font-extrabold tabular-nums" style="color: #D97706">
                 {{ rp(totalTerbuka) }}
               </span>
             </div>
@@ -116,15 +118,28 @@
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">Tidak ada tagihan terbuka</p>
       </div>
 
-      <h2 class="text-[15px] font-bold m-0 mb-1">Riwayat pembayaran</h2>
-      <p class="text-[12px] text-[var(--mut)] m-0 mb-2">Per jenis tagihan yang sudah dibayar</p>
+      <button
+        type="button"
+        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition mb-6"
+        @click="$router.push('/transfer')"
+      >
+        Bayar tagihan
+      </button>
 
-      <div v-if="riwayat.length" class="mb-6">
+      <h2 class="text-[15px] font-bold m-0 mb-1">Riwayat pembayaran</h2>
+
+      <div v-if="riwayat.length" class="mb-2">
         <div
           v-for="(r, i) in riwayat"
           :key="(r.pembayaran_id || i) + '-' + (r.tagihan_id || i) + '-' + i"
           class="flex items-center gap-3 py-3 border-b border-[var(--line)] last:border-b-0"
         >
+          <div
+            class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+            :style="{ background: iconMeta(r.jenis).bg, color: iconMeta(r.jenis).color }"
+          >
+            <component :is="iconMeta(r.jenis).icon" :size="16" />
+          </div>
           <div class="min-w-0 flex-1">
             <p class="text-[14px] font-semibold m-0 leading-snug">{{ labelRiwayat(r) }}</p>
             <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
@@ -137,15 +152,8 @@
           </span>
         </div>
       </div>
-      <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 mb-6">Belum ada pembayaran</p>
+      <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 mb-2">Belum ada pembayaran</p>
 
-      <button
-        type="button"
-        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition"
-        @click="$router.push('/transfer')"
-      >
-        Saya sudah transfer
-      </button>
     </template>
   </div>
 </template>
@@ -187,19 +195,22 @@ function labelJenisDasar(jenis) {
 }
 
 function iconMeta(jenis) {
+  // Pastel non-hijau/non-oranye (palette beranda)
   if (jenis === 'kas') {
-    return { icon: Home, bg: 'rgba(34,184,99,.16)', color: '#0F9D4E' }
+    return { icon: Home, bg: 'rgba(59,130,246,.16)', color: '#2563EB' } // biru
   }
   if (jenis === 'denda_ronda') {
-    return { icon: ShieldAlert, bg: 'rgba(245,158,11,.16)', color: '#D97706' }
+    return { icon: ShieldAlert, bg: 'rgba(168,85,247,.16)', color: '#7C3AED' } // ungu
   }
   if (jenis === 'khusus') {
-    return { icon: Sparkles, bg: 'rgba(59,130,246,.16)', color: '#2563EB' }
+    return { icon: Sparkles, bg: 'rgba(236,72,153,.16)', color: '#DB2777' } // pink
   }
-  return { icon: Wallet, bg: 'rgba(107,114,128,.14)', color: '#6B7280' }
+  if (jenis === 'kelebihan') {
+    return { icon: Wallet, bg: 'rgba(6,182,212,.16)', color: '#0891B2' } // cyan
+  }
+  return { icon: Wallet, bg: 'rgba(99,102,241,.14)', color: '#4F46E5' } // indigo
 }
 
-/** Contoh: "Kas Oktober", "Denda ronda Oktober" */
 function labelTagihan(t) {
   const jenis = labelJenisDasar(t.jenis)
   const bln = bulanDariPeriode(t.periode)
