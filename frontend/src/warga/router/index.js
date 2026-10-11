@@ -19,6 +19,7 @@ import ProgramListView from '../views/ProgramListView.vue'
 import ProgramDetailView from '../views/ProgramDetailView.vue'
 import GaleriListView from '../views/GaleriListView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
+import DataKeluargaView from '../views/DataKeluargaView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -28,6 +29,7 @@ const routes = [
     children: [
       { path: '', name: 'home', component: HomeView },
       { path: 'warga', name: 'warga', component: WargaView },
+      { path: 'data-keluarga', name: 'data-keluarga', component: DataKeluargaView },
       { path: 'keuangan', name: 'keuangan', component: KeuanganView },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'pengumuman', name: 'pengumuman', component: PengumumanView },

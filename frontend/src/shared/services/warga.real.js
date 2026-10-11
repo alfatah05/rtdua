@@ -93,3 +93,12 @@ export async function listPortalWarga() {
     return { ok: false, error: e.message }
   }
 }
+
+export async function portalKeluargaSaya() {
+  try {
+    const res = await api('/portal/keluarga')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}

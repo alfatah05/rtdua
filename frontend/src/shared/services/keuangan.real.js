@@ -209,3 +209,13 @@ export async function portalStatusPermintaan() {
     return { ok: false, error: e.message }
   }
 }
+
+export async function portalKas(bulan) {
+  try {
+    const q = bulan ? ('?bulan=' + encodeURIComponent(bulan)) : ''
+    const res = await api('/portal/keuangan/kas' + q)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
