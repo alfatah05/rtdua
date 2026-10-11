@@ -7,19 +7,13 @@ class PengumumanService
     public function list(bool $hanyaBeranda = false): array
     {
         $db = \Config\Database::connect();
-        $q = $db->table('pengumuman')->orderBy('pin', 'DESC')->orderBy('diterbitkan_pada', 'DESC');
+        // Tanpa pin: urut terbaru. Beranda = 3 terbaru (nanti diganti waktu tampil).
+        $q = $db->table('pengumuman')->orderBy('diterbitkan_pada', 'DESC');
         if ($hanyaBeranda) {
-            $q->limit(20);
+            $q->limit(3);
         }
         $rows = $q->get()->getResultArray();
-        $out = array_map([$this, 'map'], $rows);
-        if ($hanyaBeranda) {
-            // max 3: pin dulu lalu terbaru
-            $pin = array_values(array_filter($out, static fn ($r) => $r['pin']));
-            $lain = array_values(array_filter($out, static fn ($r) => !$r['pin']));
-            return array_slice(array_merge($pin, $lain), 0, 3);
-        }
-        return $out;
+        return array_map([$this, 'map'], $rows);
     }
 
     public function detail(int $id): ?array
@@ -36,27 +30,22 @@ class PengumumanService
         if ($judul === '' || $isi === '') {
             return ['ok' => false, 'message' => 'Judul dan isi wajib.'];
         }
-        $pin = !empty($data['pin']) ? 1 : 0;
-        if ($pin && $this->jumlahPin() >= 2) {
-            return ['ok' => false, 'message' => 'Pin maksimal 2. Lepas salah satu dulu.'];
-        }
         $db = \Config\Database::connect();
         $db->table('pengumuman')->insert([
             'judul'            => mb_substr($judul, 0, 255),
             'isi'              => $isi,
             'lampiran_file'    => $data['lampiran_file'] ?? null,
             'lampiran_tipe'    => $data['lampiran_tipe'] ?? null,
-            'pin'              => $pin,
+            'pin'              => 0,
             'diterbitkan_pada' => date('Y-m-d H:i:s'),
             'dibuat_oleh'      => $userId,
             'created_at'       => date('Y-m-d H:i:s'),
         ]);
         $id = (int) $db->insertID();
 
-        // Push ke semua warga (satu notifikasi per akun warga)
         $this->kirimNotifSemua($judul, $id);
 
-        (new AuditService())->log('buat_pengumuman', 'pengumuman', $id, null, ['judul' => $judul, 'pin' => $pin], 'pengguna', true, $userId);
+        (new AuditService())->log('buat_pengumuman', 'pengumuman', $id, null, ['judul' => $judul], 'pengguna', true, $userId);
         return ['ok' => true, 'data' => $this->detail($id)];
     }
 
@@ -67,28 +56,23 @@ class PengumumanService
         if (!$old) {
             return ['ok' => false, 'message' => 'Tidak ditemukan.'];
         }
-        $update = ['updated_at' => date('Y-m-d H:i:s'), 'diubah_oleh' => $userId];
+        $update = [];
         if (array_key_exists('judul', $data)) {
-            $j = trim((string) $data['judul']);
-            if ($j === '') {
+            $judul = trim((string) $data['judul']);
+            if ($judul === '') {
                 return ['ok' => false, 'message' => 'Judul wajib.'];
             }
-            $update['judul'] = mb_substr($j, 0, 255);
+            $update['judul'] = mb_substr($judul, 0, 255);
         }
         if (array_key_exists('isi', $data)) {
-            $i = trim((string) $data['isi']);
-            if ($i === '') {
+            $isi = trim((string) $data['isi']);
+            if ($isi === '') {
                 return ['ok' => false, 'message' => 'Isi wajib.'];
             }
-            $update['isi'] = $i;
+            $update['isi'] = $isi;
         }
-        if (array_key_exists('pin', $data)) {
-            $pin = !empty($data['pin']) ? 1 : 0;
-            if ($pin && !(int) $old['pin'] && $this->jumlahPin() >= 2) {
-                return ['ok' => false, 'message' => 'Pin maksimal 2.'];
-            }
-            $update['pin'] = $pin;
-        }
+        // Pin dihapus dari sistem — selalu 0
+        $update['pin'] = 0;
         if (array_key_exists('lampiran_file', $data)) {
             $update['lampiran_file'] = $data['lampiran_file'];
             $update['lampiran_tipe'] = $data['lampiran_tipe'] ?? null;
@@ -119,12 +103,6 @@ class PengumumanService
         return ['ok' => true];
     }
 
-    private function jumlahPin(): int
-    {
-        $db = \Config\Database::connect();
-        return (int) $db->table('pengumuman')->where('pin', 1)->countAllResults();
-    }
-
     private function kirimNotifSemua(string $judul, int $id): void
     {
         $n = new NotifikasiService();
@@ -143,7 +121,7 @@ class PengumumanService
             'isi'              => $r['isi'],
             'lampiran_file'    => $r['lampiran_file'],
             'lampiran_tipe'    => $r['lampiran_tipe'],
-            'pin'              => (bool) $r['pin'],
+            'pin'              => false,
             'diterbitkan_pada' => $r['diterbitkan_pada'],
             'created_at'       => $r['created_at'],
         ];
