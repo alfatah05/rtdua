@@ -27,7 +27,6 @@ class PengumumanService
         self::$schemaOk = true;
     }
 
-    /** Normalisasi input datetime dari form (ISO / datetime-local). */
     private function parseDt(?string $s): ?string
     {
         $s = trim((string) $s);
@@ -45,6 +44,26 @@ class PengumumanService
         return date('Y-m-d H:i:s', $ts);
     }
 
+    private function isAktifSekarang(?string $mulaiRaw, ?string $selesaiRaw, \DateTimeImmutable $now, \DateTimeZone $tz): bool
+    {
+        if (!$selesaiRaw) {
+            return false;
+        }
+        $selesai = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', str_replace('T', ' ', (string) $selesaiRaw), $tz)
+            ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i', str_replace('T', ' ', (string) $selesaiRaw), $tz);
+        if (!$selesai || $now > $selesai) {
+            return false;
+        }
+        if ($mulaiRaw) {
+            $mulai = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', str_replace('T', ' ', (string) $mulaiRaw), $tz)
+                ?: \DateTimeImmutable::createFromFormat('Y-m-d H:i', str_replace('T', ' ', (string) $mulaiRaw), $tz);
+            if ($mulai && $now < $mulai) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public function list(bool $hanyaBeranda = false): array
     {
         $this->ensureSchema();
@@ -52,33 +71,30 @@ class PengumumanService
         $q = $db->table('pengumuman')->orderBy('diterbitkan_pada', 'DESC');
 
         if ($hanyaBeranda) {
-            // Ambil lebih banyak lalu filter di PHP (aman untuk NULL + shared hosting)
-            $q->limit(30);
+            $q->limit(50);
         }
 
         $rows = $q->get()->getResultArray();
         $out = array_map([$this, 'map'], $rows);
+
+        $tz = new \DateTimeZone('Asia/Jakarta');
+        $now = new \DateTimeImmutable('now', $tz);
+
         if ($hanyaBeranda) {
-            $now = time();
-            $out = array_values(array_filter($out, static function ($r) use ($now) {
-                $mulai = $r['tampil_mulai'] ?? null;
-                $selesai = $r['tampil_selesai'] ?? null;
-                if ($mulai) {
-                    $t0 = strtotime(str_replace('T', ' ', (string) $mulai));
-                    if ($t0 !== false && $now < $t0) {
-                        return false;
-                    }
-                }
-                if ($selesai) {
-                    $t1 = strtotime(str_replace('T', ' ', (string) $selesai));
-                    if ($t1 !== false && $now > $t1) {
-                        return false;
-                    }
-                }
-                return true;
+            $out = array_values(array_filter($out, function ($r) use ($now, $tz) {
+                return $this->isAktifSekarang($r['tampil_mulai'] ?? null, $r['tampil_selesai'] ?? null, $now, $tz);
             }));
             return array_slice($out, 0, 3);
         }
+
+        usort($out, function ($a, $b) use ($now, $tz) {
+            $aa = $this->isAktifSekarang($a['tampil_mulai'] ?? null, $a['tampil_selesai'] ?? null, $now, $tz) ? 1 : 0;
+            $bb = $this->isAktifSekarang($b['tampil_mulai'] ?? null, $b['tampil_selesai'] ?? null, $now, $tz) ? 1 : 0;
+            if ($aa !== $bb) {
+                return $bb <=> $aa;
+            }
+            return strcmp((string) ($b['diterbitkan_pada'] ?? ''), (string) ($a['diterbitkan_pada'] ?? ''));
+        });
         return $out;
     }
 
