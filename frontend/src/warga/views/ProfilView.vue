@@ -84,7 +84,7 @@ const alamatLabel = computed(() => {
 })
 const fotoUrl = computed(() => {
   const f = user.value?.foto
-  return f ? mediaUrl(f)
+  return f ? mediaUrl(f) : ''
 })
 
 const menus = computed(() => [
