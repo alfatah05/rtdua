@@ -6,10 +6,9 @@
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
     <template v-else>
-      <!-- Ketua: ukuran & posisi seperti Profil -->
-      <div v-if="ketua" class="flex flex-col items-center text-center mb-2 pt-2">
+      <div v-if="ketua" class="flex flex-col items-center text-center mb-6 pt-2">
         <div
-          class="w-24 h-24 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden mb-3 shadow-[var(--sh)] ring-4 ring-[var(--gd)]/40"
+          class="w-24 h-24 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden mb-3"
         >
           <img
             v-if="ketua.foto"
@@ -25,13 +24,6 @@
         >{{ ketua.jabatan || 'Ketua RT' }}</span>
       </div>
 
-      <!-- Garis penghubung pohon -->
-      <div v-if="ketua && pengurus.length" class="flex flex-col items-center my-4" aria-hidden="true">
-        <div class="w-px h-5 bg-[var(--line)]"></div>
-        <div class="w-10 h-px bg-[var(--line)]"></div>
-      </div>
-
-      <!-- Pengurus sejajar -->
       <div v-if="pengurus.length" class="grid grid-cols-2 gap-3">
         <div
           v-for="p in pengurus"
