@@ -6,22 +6,38 @@
     <template v-else>
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-14 h-14 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-lg overflow-hidden">
+          <div class="w-14 h-14 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-lg overflow-hidden shrink-0">
             <img v-if="fotoKepala" :src="fotoKepala" class="w-full h-full object-cover" alt="" />
             <span v-else>{{ inisial }}</span>
           </div>
-          <div>
+          <div class="min-w-0">
             <p class="font-bold text-lg m-0">{{ namaKepala }}</p>
-            <p class="text-[13px] text-[var(--mut)] m-0">{{ detail.alamat_label || detail.alamat || '—' }}</p>
-            <p v-if="detail.username" class="text-[12px] text-[var(--mut)] m-0">@{{ detail.username }}</p>
+            <p class="text-[13px] text-[var(--mut)] m-0">{{ alamatLabel }}</p>
+            <p v-if="detail.username" class="text-[12px] text-[var(--mut)] m-0">
+              Username login: <span class="font-semibold text-[var(--text)]">{{ detail.username }}</span>
+            </p>
           </div>
         </div>
         <p v-if="penanda" class="text-[12px] font-bold px-2.5 py-1 rounded-full bg-[var(--search)] text-[var(--mut)] inline-block m-0">{{ penanda }}</p>
       </div>
-      <h2 class="text-[15px] font-bold mb-2">Anggota</h2>
+
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-[15px] font-bold m-0">Anggota</h2>
+        <button
+          type="button"
+          class="text-[13px] font-bold text-[var(--g)]"
+          @click="$router.push('/warga/' + id + '/tambah-anggota')"
+        >
+          + Tambah
+        </button>
+      </div>
       <div class="space-y-2 mb-5">
-        <div v-for="a in detail.anggota || []" :key="a.id" class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5">
-          <div class="w-10 h-10 rounded-full bg-[var(--card2)] grid place-items-center font-bold text-xs overflow-hidden">
+        <div
+          v-for="a in detail.anggota || []"
+          :key="a.id"
+          class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5"
+        >
+          <div class="w-10 h-10 rounded-full bg-[var(--card2)] grid place-items-center font-bold text-xs overflow-hidden shrink-0">
             <img v-if="a.foto" :src="mediaUrl(a.foto)" class="w-full h-full object-cover" alt="" />
             <span v-else>{{ init(a.nama) }}</span>
           </div>
@@ -29,21 +45,54 @@
             <p class="font-bold text-[15px] m-0">{{ a.nama }}</p>
             <p class="text-[13px] text-[var(--mut)] m-0">{{ a.hubungan }} · {{ a.status }}</p>
           </div>
-          <span class="text-[12px] text-[var(--mut)]">{{ a.punya_nik ? 'NIK ✓' : 'Tanpa NIK' }}</span>
+          <span class="text-[12px] text-[var(--mut)] shrink-0">{{ a.punya_nik ? 'NIK ✓' : 'Tanpa NIK' }}</span>
         </div>
+        <p v-if="!(detail.anggota || []).length" class="text-[13px] text-[var(--mut)] text-center py-2">Belum ada anggota</p>
       </div>
+
       <h2 class="text-[15px] font-bold mb-2">Aksi</h2>
       <div class="space-y-2">
-        <button type="button" class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left" @click="$router.push('/warga/' + id + '/edit')">
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left"
+          @click="$router.push('/warga/' + id + '/tambah-anggota')"
+        >
+          <span class="font-semibold text-[15px]">Tambah anggota</span>
+        </button>
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left"
+          @click="$router.push('/warga/' + id + '/status-anggota')"
+        >
+          <span class="font-semibold text-[15px]">Status anggota</span>
+        </button>
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left"
+          @click="$router.push('/warga/' + id + '/edit')"
+        >
           <span class="font-semibold text-[15px]">Edit keluarga / foto</span>
         </button>
-        <button type="button" class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left" :disabled="resetting" @click="onResetPin">
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left"
+          :disabled="resetting"
+          @click="onResetPin"
+        >
           <span class="font-semibold text-[15px]">{{ resetting ? 'Mereset…' : 'Reset PIN' }}</span>
         </button>
-        <button type="button" class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left" @click="$router.push('/keuangan/tagihan/' + id)">
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left"
+          @click="$router.push('/keuangan/tagihan/' + id)"
+        >
           <span class="font-semibold text-[15px]">Lihat tagihan / catat bayar</span>
         </button>
-        <button type="button" class="w-full flex items-center gap-3 bg-red-50 border border-red-100 rounded-[16px] p-4 text-left" @click="$router.push('/warga/' + id + '/pindah')">
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 bg-red-50 border border-red-100 rounded-[16px] p-4 text-left"
+          @click="$router.push('/warga/' + id + '/pindah')"
+        >
           <span class="font-semibold text-[15px] text-red-600">Tandai pindah</span>
         </button>
       </div>
@@ -69,12 +118,14 @@ const resetting = ref(false)
 const aksiMsg = ref('')
 const aksiOk = ref(true)
 
-const title = computed(() => detail.value.alamat_label || detail.value.alamat || 'Detail keluarga')
 const namaKepala = computed(() => {
   const list = detail.value.anggota || []
   const k = list.find((a) => String(a.hubungan).toLowerCase().includes('kepala'))
   return k?.nama || list[0]?.nama || '—'
 })
+const alamatLabel = computed(() => detail.value.alamat_label || detail.value.alamat || '—')
+/** Judul navbar = nama kepala (bukan alamat). */
+const title = computed(() => (namaKepala.value && namaKepala.value !== '—' ? namaKepala.value : 'Detail keluarga'))
 const inisial = computed(() => init(namaKepala.value))
 const fotoKepala = computed(() => {
   const list = detail.value.anggota || []
