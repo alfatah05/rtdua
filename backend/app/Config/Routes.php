@@ -73,6 +73,7 @@ $routes->get('portal/keuangan/kas', 'PortalKeuanganController::kas', ['filter' =
 
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
 $routes->get('notifikasi/badge', 'NotifikasiController::badge', ['filter' => 'auth']);
+$routes->get('notifikasi/(:num)', 'NotifikasiController::show/$1', ['filter' => 'auth']);
 $routes->post('notifikasi/(:num)/baca', 'NotifikasiController::baca/$1', ['filter' => 'auth']);
 $routes->post('notifikasi/baca-semua', 'NotifikasiController::bacaSemua', ['filter' => 'auth']);
 $routes->get('push/vapid-public', 'PushController::vapidPublic', ['filter' => 'auth']);
