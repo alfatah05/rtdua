@@ -84,6 +84,7 @@ class PortalKeuanganController extends Controller
             return [
                 'id'               => (int) $r['id'],
                 'nominal_diajukan' => (int) $r['nominal_diajukan'],
+                'nominal'          => (int) $r['nominal_diajukan'],
                 'status'           => $r['status'],
                 'diajukan_pada'    => $r['diajukan_pada'],
                 'alasan_tolak'     => $r['alasan_tolak'],
