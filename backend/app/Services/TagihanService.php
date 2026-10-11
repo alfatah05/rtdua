@@ -19,7 +19,8 @@ class TagihanService
      *   status:string,
      *   menunggak:bool,
      *   tagihan:list<array>,
-     *   pembayaran:list<array>
+     *   pembayaran:list<array>,
+     *   riwayat:list<array>
      * }
      */
     public function ringkasanKeluarga(int $keluargaId): array
@@ -55,6 +56,7 @@ class TagihanService
         }
 
         $totalBayar = 0;
+        $riwayat = [];
         foreach ($pembayaran as $p) {
             $nominal = (int) $p['nominal'];
             $totalBayar += $nominal;
@@ -67,8 +69,29 @@ class TagihanService
                     }
                 }
                 unset($it);
+                $riwayat[] = [
+                    'pembayaran_id' => (int) $p['id'],
+                    'tagihan_id'    => (int) $pot['tagihan_id'],
+                    'tanggal'       => $p['tanggal_bayar'],
+                    'jenis'         => $pot['jenis'],
+                    'periode'       => $pot['periode'],
+                    'jumlah'        => (int) $pot['jumlah'],
+                    'metode'        => $p['metode'] ?? null,
+                ];
+            }
+            if (!empty($alok['sisaBayar']) && (int) $alok['sisaBayar'] > 0) {
+                $riwayat[] = [
+                    'pembayaran_id' => (int) $p['id'],
+                    'tagihan_id'    => null,
+                    'tanggal'       => $p['tanggal_bayar'],
+                    'jenis'         => 'kelebihan',
+                    'periode'       => '',
+                    'jumlah'        => (int) $alok['sisaBayar'],
+                    'metode'        => $p['metode'] ?? null,
+                ];
             }
         }
+        $riwayat = array_reverse($riwayat);
 
         $totalTagihan = 0;
         $sisaPositif = 0;
@@ -76,7 +99,6 @@ class TagihanService
             $totalTagihan += $it['nominal'];
             $sisaPositif += $it['sisa'];
         }
-        // total tampilan: tagihan - bayar (boleh minus = kelebihan)
         $total = $totalTagihan - $totalBayar;
 
         $bulanIni = date('Y-m');
@@ -113,14 +135,10 @@ class TagihanService
             'menunggak'   => $menunggak,
             'tagihan'     => $items,
             'pembayaran'  => $bayarList,
+            'riwayat'     => $riwayat,
         ];
     }
 
-    /**
-     * Pratinjau alokasi tanpa menyimpan.
-     *
-     * @return array{potongan:list, sisaBayar:int, total_sekarang:int, total_setelah:int}
-     */
     public function pratinjauAlokasi(int $keluargaId, int $nominalBayar): array
     {
         $ring = $this->ringkasanKeluarga($keluargaId);
@@ -133,10 +151,6 @@ class TagihanService
         ];
     }
 
-    /**
-     * Pastikan tagihan kas ada untuk periode tertentu (semua keluarga aktif).
-     * Dipakai saat ubah nominal "bulan ini" atau generate manual dev.
-     */
     public function pastikanTagihanKasBulan(string $periode, ?int $nominalOverride = null): int
     {
         $db = \Config\Database::connect();
@@ -148,10 +162,8 @@ class TagihanService
         $keluarga = $db->table('keluarga')->where('status', 'aktif')->get()->getResultArray();
         $dibuat = 0;
         foreach ($keluarga as $k) {
-            // Mulai bulan depan: lewati jika mulai_periode null atau > periode
             $mulai = $k['mulai_periode'];
             if ($mulai === null || $mulai === '') {
-                // belum mulai tagihan
                 continue;
             }
             if (strcmp($mulai, $periode) > 0) {
@@ -179,11 +191,6 @@ class TagihanService
         return $dibuat;
     }
 
-    /**
-     * Ubah nominal kas/denda di pengaturan + opsi terapkan ke tagihan bulan ini.
-     *
-     * @return array{ok:bool, message?:string, data?:array}
-     */
     public function ubahNominal(array $data, int $userId): array
     {
         $db = \Config\Database::connect();
@@ -218,7 +225,6 @@ class TagihanService
             $pratinjau['keluarga_terdampak'] = count($rows);
             $baru = $update['nominal_kas'];
             foreach ($rows as $r) {
-                // hitung apakah setelah ubah jadi kelebihan
                 $ring = $this->ringkasanKeluarga((int) $r['keluarga_id']);
                 $selisih = $baru - (int) $r['nominal'];
                 if ($ring['total'] + $selisih < 0) {
@@ -227,7 +233,6 @@ class TagihanService
             }
         }
 
-        // Mode pratinjau saja?
         if (!empty($data['pratinjau_saja'])) {
             return [
                 'ok'   => true,
@@ -250,7 +255,6 @@ class TagihanService
                 ->where('dibatalkan', 0)
                 ->update(['nominal' => $update['nominal_kas']]);
         }
-        // Denda ronda: hanya tagihan baru (bulan depan) — tidak ubah denda yang sudah terbit
         $db->transComplete();
 
         if (!$db->transStatus()) {
@@ -280,9 +284,6 @@ class TagihanService
         ];
     }
 
-    /**
-     * Daftar status iuran semua keluarga (halaman Iuran pengurus).
-     */
     public function daftarIuran(array $filter = []): array
     {
         $db = \Config\Database::connect();
@@ -296,7 +297,7 @@ class TagihanService
         $rows = $q->orderBy('b.nama')->orderBy('k.nomor')->get()->getResultArray();
 
         $out = [];
-        $filterStatus = $filter['status'] ?? null; // lunas|belum_lunas|menunggak
+        $filterStatus = $filter['status'] ?? null;
         foreach ($rows as $r) {
             $ring = $this->ringkasanKeluarga((int) $r['id']);
             if ($filterStatus && $ring['status'] !== $filterStatus) {
