@@ -14,7 +14,7 @@
       >
         <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--search)] text-[var(--mut)]">{{ p.status || '—' }}</span>
         <p class="font-bold text-[15px] m-0 mt-2">{{ p.judul }}</p>
-        <p class="text-[13px] text-[var(--mut)] m-0 mt-1 line-clamp-3">{{ strip(p.isi_html || p.isi) }}</p>
+        <p class="text-[13px] text-[var(--mut)] m-0 mt-1 line-clamp-3">{{ ringkas(p.isi_html || p.isi) }}</p>
       </button>
     </div>
   </div>
@@ -23,13 +23,16 @@
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listProgram } from '@shared/services/konten.js'
+import { plainFromMarkdown } from '@shared/utils/markdown.js'
+
 const daftar = ref([])
 const loading = ref(true)
 const err = ref('')
-function strip(h) {
-  const t = String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-  return t.length > 140 ? t.slice(0, 140) + '…' : t
+
+function ringkas(isi) {
+  return plainFromMarkdown(isi, 140)
 }
+
 onMounted(async () => {
   const res = await listProgram()
   loading.value = false
