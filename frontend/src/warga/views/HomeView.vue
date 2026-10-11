@@ -1,16 +1,40 @@
 <template>
   <div>
     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center overflow-hidden">
-        <img v-if="logoRtUrl" :src="logoRtUrl" alt="Logo RT" class="w-full h-full object-contain" @error="logoRtUrl = ''" />
+      <!-- Logo RT: kotak + object-contain agar PNG transparan tidak terpotong -->
+      <div
+        class="w-[60px] h-[60px] grid place-items-center shrink-0"
+        :class="logoRtUrl
+          ? 'rounded-[12px] bg-transparent'
+          : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
+      >
+        <img
+          v-if="logoRtUrl"
+          :src="logoRtUrl"
+          alt="Logo RT"
+          class="max-w-full max-h-full w-auto h-auto object-contain"
+          @error="logoRtUrl = ''"
+        />
         <Landmark v-else :size="26" class="text-[var(--mut)]" />
       </div>
-      <div>
+      <div class="min-w-0">
         <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
         <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
       </div>
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center overflow-hidden">
-        <img v-if="logoDesaUrl" :src="logoDesaUrl" alt="Logo desa" class="w-full h-full object-contain" @error="logoDesaUrl = ''" />
+      <!-- Logo desa: sama, kotak bila ada file -->
+      <div
+        class="w-[60px] h-[60px] grid place-items-center shrink-0"
+        :class="logoDesaUrl
+          ? 'rounded-[12px] bg-transparent'
+          : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
+      >
+        <img
+          v-if="logoDesaUrl"
+          :src="logoDesaUrl"
+          alt="Logo desa"
+          class="max-w-full max-h-full w-auto h-auto object-contain"
+          @error="logoDesaUrl = ''"
+        />
         <Handshake v-else :size="26" class="text-[var(--mut)]" />
       </div>
     </div>
