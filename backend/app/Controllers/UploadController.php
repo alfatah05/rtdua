@@ -18,9 +18,13 @@ class UploadController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $jenis = (string) ($this->request->getPost('jenis') ?? '');
-        if ($jenis === 'bukti' || $jenis === 'ronda') {
-            // warga atau pengurus
-        } elseif (in_array($jenis, ['galeri', 'banner', 'foto_profil', 'logo', 'lampiran'], true)) {
+
+        // bukti / ronda: warga atau pengurus
+        // foto_profil: warga (diri sendiri) atau pengurus
+        // galeri / banner / logo / lampiran: hanya pengurus
+        if ($jenis === 'bukti' || $jenis === 'ronda' || $jenis === 'foto_profil') {
+            // ok
+        } elseif (in_array($jenis, ['galeri', 'banner', 'logo', 'lampiran'], true)) {
             if ($side !== 'pengurus' || !in_array($user['role'], ['ketua', 'pengurus'], true)) {
                 return ApiResponse::fail('Hanya pengurus.', 403);
             }
@@ -30,6 +34,7 @@ class UploadController extends Controller
         } else {
             return ApiResponse::fail('Jenis tidak valid.', 422);
         }
+
         $file = $this->request->getFile('file');
         $thumb = $this->request->getPost('thumb') ?: null;
         $res = (new UploadService())->simpan($file, $jenis, is_string($thumb) ? $thumb : null);

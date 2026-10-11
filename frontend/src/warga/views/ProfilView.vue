@@ -1,22 +1,30 @@
 <template>
   <div>
     <div class="flex flex-col items-center text-center mb-6 pt-2">
+      <!-- overflow tidak di outer: biar badge kamera tidak terpotong -->
       <button
         type="button"
-        class="relative w-24 h-24 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden mb-3 active:scale-95 transition-transform"
+        class="relative w-24 h-24 mb-3 active:scale-95 transition-transform disabled:opacity-70"
         aria-label="Ubah foto profil"
         :disabled="uploadingFoto"
         @click="pickFoto"
       >
-        <img v-if="fotoUrl" :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" />
-        <span v-else>{{ inisial }}</span>
-        <span class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[var(--g)] text-white grid place-items-center border-2 border-[var(--bg)]">
+        <span
+          class="absolute inset-0 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden"
+        >
+          <img v-if="fotoUrl" :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" />
+          <span v-else>{{ inisial }}</span>
+        </span>
+        <span
+          class="absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full bg-[var(--g)] text-white grid place-items-center border-2 border-[var(--bg)] z-10 shadow-sm"
+        >
           <Camera :size="14" />
         </span>
       </button>
       <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFoto" />
       <p class="text-xl font-extrabold m-0">{{ user?.nama || 'Warga' }}</p>
       <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ alamatLabel }}</p>
+      <p v-if="uploadingFoto" class="text-[12px] text-[var(--mut)] m-0 mt-1">Mengunggah foto…</p>
     </div>
 
     <div class="px-1 space-y-0.5">
@@ -69,6 +77,7 @@ const { mode, toggle } = useTheme()
 const { show } = useToast()
 const fileInput = ref(null)
 const uploadingFoto = ref(false)
+const localFoto = ref('')
 
 const inisial = computed(() => {
   const n = user.value?.nama || 'W'
@@ -79,6 +88,7 @@ const alamatLabel = computed(() => {
   return String(a).toUpperCase()
 })
 const fotoUrl = computed(() => {
+  if (localFoto.value) return localFoto.value
   const f = user.value?.foto
   return f ? mediaUrl(f) : ''
 })
@@ -136,6 +146,7 @@ const menus = computed(() => [
 ])
 
 function pickFoto() {
+  if (uploadingFoto.value) return
   fileInput.value?.click()
 }
 
@@ -156,12 +167,14 @@ async function onFoto(e) {
     show(res.error || 'Gagal menyimpan foto')
     return
   }
-  if (res.user && user.value) {
-    Object.assign(user.value, res.user)
+  const updated = res.user || {}
+  if (user.value) {
+    Object.assign(user.value, updated)
     try {
       localStorage.setItem('rtdua-auth-warga', JSON.stringify(user.value))
     } catch (err) {}
   }
+  localFoto.value = updated.foto ? mediaUrl(updated.foto) : mediaUrl(up.data.path)
   show('Foto profil diperbarui')
 }
 
