@@ -71,41 +71,46 @@
 
       <h2 class="text-[15px] font-bold m-0 mb-2">Rincian tagihan</h2>
       <div
-        class="rounded-[20px] border border-[var(--line)] overflow-hidden bg-[var(--card)] shadow-[var(--sh)] mb-5"
+        class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-5 px-4 py-4"
       >
         <div
-          class="grid grid-cols-[36px_1fr_auto] gap-2 px-4 py-2.5 text-[12px] font-semibold text-[var(--mut)] border-b border-[var(--line)] bg-[var(--card2)]"
+          class="flex items-center justify-between rounded-full px-4 py-2.5 mb-1"
+          style="background: rgba(34, 184, 99, 0.14)"
         >
-          <span class="text-center">No</span>
-          <span>Jenis tagihan</span>
-          <span class="text-right">Biaya</span>
+          <span class="text-[13px] font-semibold text-[var(--gm)]">Jenis Pembayaran</span>
+          <span class="text-[13px] font-semibold text-[var(--gm)]">Biaya</span>
         </div>
 
         <template v-if="tagihanTerbuka.length">
           <div
-            v-for="(t, i) in tagihanTerbuka"
+            v-for="t in tagihanTerbuka"
             :key="t.id"
-            class="grid grid-cols-[36px_1fr_auto] gap-2 px-4 py-3 items-center border-b border-[var(--line)] last:border-b-0"
+            class="flex items-center gap-3 py-3"
           >
-            <span class="text-center text-[13px] text-[var(--mut)] tabular-nums">{{ i + 1 }}</span>
-            <div class="min-w-0">
-              <p class="text-[14px] font-semibold m-0 leading-snug truncate">{{ labelTagihan(t) }}</p>
-              <p v-if="subLabelTagihan(t)" class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
-                {{ subLabelTagihan(t) }}
-              </p>
+            <div
+              class="w-10 h-10 rounded-full grid place-items-center shrink-0"
+              :style="{ background: iconMeta(t.jenis).bg, color: iconMeta(t.jenis).color }"
+            >
+              <component :is="iconMeta(t.jenis).icon" :size="18" />
             </div>
-            <span class="text-[14px] font-bold tabular-nums text-right whitespace-nowrap">
+            <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">
+              {{ labelTagihan(t) }}
+            </p>
+            <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
               {{ rp(t.sisa ?? t.nominal) }}
             </span>
           </div>
-          <div
-            class="grid grid-cols-[36px_1fr_auto] gap-2 px-4 py-3 items-center bg-[var(--card2)] border-t border-[var(--line)]"
-          >
-            <span></span>
-            <span class="text-[14px] font-bold">Total</span>
-            <span class="text-[15px] font-extrabold tabular-nums text-right text-[var(--g)]">
-              {{ rp(totalTerbuka) }}
-            </span>
+
+          <div class="flex justify-end pt-1">
+            <div
+              class="inline-flex items-center justify-between gap-4 rounded-full px-4 py-2 min-w-[48%]"
+              style="background: rgba(34, 184, 99, 0.14)"
+            >
+              <span class="text-[13px] font-bold text-[var(--gm)]">Total</span>
+              <span class="text-[14px] font-extrabold tabular-nums text-[var(--g)]">
+                {{ rp(totalTerbuka) }}
+              </span>
+            </div>
           </div>
         </template>
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">Tidak ada tagihan terbuka</p>
@@ -147,7 +152,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Wallet } from 'lucide-vue-next'
+import { Wallet, Home, ShieldAlert, Sparkles } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalRingkasan, portalStatusPermintaan } from '@shared/services/keuangan.js'
 
@@ -181,17 +186,24 @@ function labelJenisDasar(jenis) {
   return jenis || 'Tagihan'
 }
 
+function iconMeta(jenis) {
+  if (jenis === 'kas') {
+    return { icon: Home, bg: 'rgba(34,184,99,.16)', color: '#0F9D4E' }
+  }
+  if (jenis === 'denda_ronda') {
+    return { icon: ShieldAlert, bg: 'rgba(245,158,11,.16)', color: '#D97706' }
+  }
+  if (jenis === 'khusus') {
+    return { icon: Sparkles, bg: 'rgba(59,130,246,.16)', color: '#2563EB' }
+  }
+  return { icon: Wallet, bg: 'rgba(107,114,128,.14)', color: '#6B7280' }
+}
+
+/** Contoh: "Kas Oktober", "Denda ronda Oktober" */
 function labelTagihan(t) {
   const jenis = labelJenisDasar(t.jenis)
   const bln = bulanDariPeriode(t.periode)
   return bln ? `${jenis} ${bln}` : jenis
-}
-
-function subLabelTagihan(t) {
-  if (t.jenis === 'denda_ronda') return 'Denda absen ronda'
-  if (t.jenis === 'khusus') return 'Iuran insidental'
-  if (t.jenis === 'kas') return 'Iuran pokok bulanan'
-  return ''
 }
 
 function labelRiwayat(r) {
