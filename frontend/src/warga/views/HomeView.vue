@@ -19,34 +19,32 @@
 
     <div class="space-y-3 mb-5">
       <div
-        v-for="(p, i) in pengumuman"
+        v-for="p in pengumuman"
         :key="p.id"
-        class="rounded-[20px] overflow-hidden relative"
-        :class="i === 0 ? 'text-white' : 'bg-[var(--card)] border border-[var(--line)] shadow-[var(--sh)]'"
-        :style="i === 0 ? heroStyle : null"
+        class="rounded-[20px] overflow-hidden relative text-white"
+        :style="cardStyle(true)"
       >
         <div class="p-5 relative z-10">
           <div class="flex items-center justify-between gap-2 flex-wrap">
-            <span class="flex items-center gap-2 text-[13px] font-semibold" :class="i === 0 ? 'text-white/90' : 'text-[var(--mut)]'">
+            <span class="flex items-center gap-2 text-[13px] font-semibold text-white/90">
               <Megaphone :size="16" /> Pengumuman
-              <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full" :class="i === 0 ? 'bg-white/20' : 'bg-[var(--search)] text-[var(--mut)]'">📎</span>
+              <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
             </span>
-            <span class="text-[12px] font-semibold px-3 py-1 rounded-full" :class="i === 0 ? 'bg-white/20' : 'bg-[var(--search)] text-[var(--mut)]'">
+            <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">
               {{ p.tanggal }}
             </span>
           </div>
-          <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1" :class="i === 0 ? 'text-white' : ''">{{ p.judul }}</h2>
-          <p class="text-[13px] m-0" :class="i === 0 ? 'text-white/90' : 'text-[var(--mut)]'">{{ p.ringkas }}</p>
+          <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
+          <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
           <button
             type="button"
-            class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px]"
-            :class="i === 0 ? 'bg-white text-[#0B6B34]' : 'bg-[var(--card2)] text-[var(--text)]'"
+            class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34]"
             @click="$router.push('/pengumuman/' + p.id)"
           >
             Lihat detail <ChevronRight :size="18" />
           </button>
         </div>
-        <div v-if="i === 0" class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
+        <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
       </div>
       <p v-if="!pengumuman.length && !loading" class="text-[13px] text-[var(--mut)] text-center py-2">Belum ada pengumuman</p>
     </div>
@@ -96,8 +94,26 @@ import {
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
 } from 'lucide-vue-next'
 
-const heroStyle = {
-  background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)'
+const styleAktif = {
+  background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
+}
+const styleSelesai = {
+  background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(145deg, #9CA3AF, #6B7280 55%, #4B5563)',
+}
+function cardStyle(aktif) {
+  return aktif ? styleAktif : styleSelesai
+}
+function isAktifTampil(p) {
+  const now = Date.now()
+  const selesai = p.tampil_selesai
+  if (!selesai) return false
+  const t1 = new Date(String(selesai).replace(' ', 'T')).getTime()
+  if (isNaN(t1) || now > t1) return false
+  if (p.tampil_mulai) {
+    const t0 = new Date(String(p.tampil_mulai).replace(' ', 'T')).getTime()
+    if (!isNaN(t0) && now < t0) return false
+  }
+  return true
 }
 
 const namaRt = ref('')
@@ -145,13 +161,18 @@ onMounted(async () => {
     logoDesaUrl.value = pg.data.logo_desa ? mediaUrl(pg.data.logo_desa) : ''
   }
   if (pn.ok) {
-    pengumuman.value = (pn.data || []).slice(0, 3).map((p) => ({
-      id: p.id,
-      judul: p.judul,
-      ringkas: ringkas(p.isi),
-      tanggal: formatTgl(p.diterbitkan_pada),
-      hasLampiran: !!p.lampiran_file,
-    }))
+    pengumuman.value = (pn.data || [])
+      .filter((p) => isAktifTampil(p))
+      .slice(0, 3)
+      .map((p) => ({
+        id: p.id,
+        judul: p.judul,
+        ringkas: ringkas(p.isi),
+        tanggal: formatTgl(p.diterbitkan_pada || p.created_at),
+        hasLampiran: !!p.lampiran_file,
+        tampil_mulai: p.tampil_mulai,
+        tampil_selesai: p.tampil_selesai,
+      }))
   }
   if (iu.ok && iu.data) {
     const total = Number(iu.data.total ?? iu.data.total_tagihan ?? 0)
