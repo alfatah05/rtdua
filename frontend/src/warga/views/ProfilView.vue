@@ -1,7 +1,5 @@
 <template>
   <div>
-    <AppMainHeader />
-
     <div class="flex flex-col items-center text-center mb-6 pt-2">
       <button
         type="button"
@@ -54,7 +52,6 @@
 </template>
 
 <script setup>
-import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
