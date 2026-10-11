@@ -27,11 +27,14 @@ const routes = [
     path: '/',
     component: MainLayout,
     children: [
-      { path: '', name: 'home', component: HomeView },
-      { path: 'warga', name: 'warga', component: WargaView },
+      // Tab utama — navbar bottom tampil
+      { path: '', name: 'home', component: HomeView, meta: { mainTab: true } },
+      { path: 'warga', name: 'warga', component: WargaView, meta: { mainTab: true } },
+      { path: 'keuangan', name: 'keuangan', component: KeuanganView, meta: { mainTab: true } },
+      { path: 'profil', name: 'profil', component: ProfilView, meta: { mainTab: true } },
+
+      // Halaman child — AppBackHeader, navbar bottom disembunyikan
       { path: 'data-keluarga', name: 'data-keluarga', component: DataKeluargaView },
-      { path: 'keuangan', name: 'keuangan', component: KeuanganView },
-      { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'pengumuman', name: 'pengumuman', component: PengumumanView },
       { path: 'pengumuman/:id', name: 'pengumuman-detail', component: PengumumanDetailView },
       { path: 'rincian-iuran', name: 'rincian-iuran', component: RincianIuranView },
