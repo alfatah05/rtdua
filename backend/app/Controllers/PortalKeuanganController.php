@@ -112,7 +112,7 @@ class PortalKeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $svc = new \App\Services\KasService();
-        $items = $svc->listTerbaru(100);
+        $items = $svc->list();
         $safe = array_map(static function ($r) {
             return [
                 'id'         => (int) ($r['id'] ?? 0),
