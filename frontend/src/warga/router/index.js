@@ -14,6 +14,7 @@ import RondaView from '../views/RondaView.vue'
 import BantuanView from '../views/BantuanView.vue'
 import StrukturView from '../views/StrukturView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
+import NotifikasiDetailView from '../views/NotifikasiDetailView.vue'
 import GantiPinView from '../views/GantiPinView.vue'
 import ProgramListView from '../views/ProgramListView.vue'
 import ProgramDetailView from '../views/ProgramDetailView.vue'
@@ -27,13 +28,11 @@ const routes = [
     path: '/',
     component: MainLayout,
     children: [
-      // Tab utama — navbar bottom tampil
       { path: '', name: 'home', component: HomeView, meta: { mainTab: true } },
       { path: 'warga', name: 'warga', component: WargaView, meta: { mainTab: true } },
       { path: 'keuangan', name: 'keuangan', component: KeuanganView, meta: { mainTab: true } },
       { path: 'profil', name: 'profil', component: ProfilView, meta: { mainTab: true } },
 
-      // Halaman child — AppBackHeader, navbar bottom disembunyikan
       { path: 'data-keluarga', name: 'data-keluarga', component: DataKeluargaView },
       { path: 'pengumuman', name: 'pengumuman', component: PengumumanView },
       { path: 'pengumuman/:id', name: 'pengumuman-detail', component: PengumumanDetailView },
@@ -43,6 +42,7 @@ const routes = [
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
       { path: 'struktur', name: 'struktur', component: StrukturView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
+      { path: 'notifikasi/:id', name: 'notifikasi-detail', component: NotifikasiDetailView },
       { path: 'ganti-pin', name: 'ganti-pin', component: GantiPinView },
       { path: 'program', name: 'program', component: ProgramListView },
       { path: 'program/:id', name: 'program-detail', component: ProgramDetailView },
