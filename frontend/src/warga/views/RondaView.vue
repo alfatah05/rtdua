@@ -120,7 +120,15 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { kalenderRonda, malamTerdekat, detailMalam, absenWarga } from '@shared/services/ronda.js'
+import {
+  kalenderRonda,
+  malamTerdekat,
+  detailMalam,
+  absenWarga,
+  listJadwalTetap,
+  listJadwalKhusus,
+  listTemplateCards,
+} from '@shared/services/ronda.js'
 import { mediaUrl, uploadGambar } from '@shared/services/upload.js'
 import { useAuth } from '@shared/composables/useAuth.js'
 import { useToast } from '@shared/composables/useToast.js'
@@ -145,8 +153,13 @@ const fileAbsen = ref(null)
 
 const kalCache = new Map()
 const hariTetapDow = ref([])
+const khususMap = ref({})
+const templateIds = ref({})
+const nMingguTemplate = ref(1)
+
 let kalReqSeq = 0
 let midnightTimer = null
+let metaLoaded = false
 
 function ymFromDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -270,6 +283,17 @@ function dayClass(day) {
   return 'text-[var(--text)]'
 }
 
+function mingguDariTanggal(y, m, day, n) {
+  const nSafe = Math.max(1, n || 1)
+  const dow = new Date(y, m - 1, day).getDay()
+  let count = 0
+  for (let d = 1; d <= day; d++) {
+    if (new Date(y, m - 1, d).getDay() === dow) count++
+  }
+  if (count < 1) return 1
+  return ((count - 1) % nSafe) + 1
+}
+
 function buildDays(kal) {
   const [y, m] = calYm.value.split('-').map(Number)
   const first = new Date(y, m - 1, 1)
@@ -281,17 +305,30 @@ function buildDays(kal) {
   }
   const today = todayStr()
   const kid = keluargaId.value
+  const nMinggu = nMingguTemplate.value
   const out = []
   for (let i = 0; i < startPad; i++) out.push({ n: null })
   for (let n = 1; n <= lastDate; n++) {
     const date = `${calYm.value}-${String(n).padStart(2, '0')}`
     const r = byDate[date]
     const dow = new Date(y, m - 1, n).getDay()
-    const khusus = r?.sumber === 'khusus'
+    const khMeta = khususMap.value[date]
+    const khusus = r?.sumber === 'khusus' || !!khMeta
     const tetapApi = r?.sumber === 'tetap'
-    const tetapFallback = !r && hariTetapDow.value.includes(dow)
-    const ronda = !!r || tetapFallback
-    const ids = (r?.keluarga_ids || []).map(Number)
+    const tetapHari = hariTetapDow.value.includes(dow)
+    const ronda = !!r || khusus || (!khusus && tetapHari)
+
+    let ids = []
+    if (Array.isArray(r?.keluarga_ids) && r.keluarga_ids.length) {
+      ids = r.keluarga_ids.map(Number)
+    } else if (khusus && Array.isArray(khMeta?.keluarga_ids)) {
+      ids = khMeta.keluarga_ids.map(Number)
+    } else if (!khusus && tetapHari) {
+      const minggu = mingguDariTanggal(y, m, n, nMinggu)
+      const key = `${minggu}-${dow}`
+      ids = (templateIds.value[key] || []).map(Number)
+    }
+
     const saya = kid > 0 && ids.includes(kid)
     out.push({
       n,
@@ -300,21 +337,51 @@ function buildDays(kal) {
       ronda,
       saya,
       khusus,
-      tetap: tetapApi || tetapFallback,
+      tetap: (tetapApi || tetapHari) && !khusus,
     })
   }
   days.value = out
 }
 
-function rememberHariTetap(kal) {
-  if (!Array.isArray(kal) || !kal.length) return
-  const set = new Set(hariTetapDow.value)
-  for (const r of kal) {
-    if (!r?.tanggal || r.sumber === 'khusus') continue
-    const d = new Date(r.tanggal + 'T12:00:00')
-    if (!Number.isNaN(d.getTime())) set.add(d.getDay())
+async function loadMeta() {
+  if (metaLoaded) return
+  const [tetapRes, khususRes, tplRes] = await Promise.all([
+    listJadwalTetap(),
+    listJadwalKhusus(),
+    listTemplateCards(),
+  ])
+
+  if (tetapRes.ok && Array.isArray(tetapRes.data)) {
+    hariTetapDow.value = tetapRes.data.map((t) => Number(t.hari)).filter((h) => h >= 0 && h <= 6)
   }
-  if (set.size) hariTetapDow.value = Array.from(set)
+
+  const km = {}
+  if (khususRes.ok && Array.isArray(khususRes.data)) {
+    for (const k of khususRes.data) {
+      if (!k?.tanggal) continue
+      km[k.tanggal] = {
+        keluarga_ids: (k.keluarga_ids || []).map(Number),
+        jam_mulai: k.jam_mulai,
+        jam_selesai: k.jam_selesai,
+      }
+    }
+  }
+  khususMap.value = km
+
+  const map = {}
+  let maxM = 1
+  if (tplRes.ok && Array.isArray(tplRes.data)) {
+    for (const c of tplRes.data) {
+      const minggu = Number(c.minggu) || 1
+      const hari = Number(c.hari)
+      if (minggu > maxM) maxM = minggu
+      const ids = (c.keluarga || []).map((x) => Number(x.keluarga_id)).filter((x) => x > 0)
+      map[`${minggu}-${hari}`] = ids
+    }
+  }
+  templateIds.value = map
+  nMingguTemplate.value = maxM
+  metaLoaded = true
 }
 
 async function loadKalender(ym, { force = false } = {}) {
@@ -334,7 +401,15 @@ async function loadKalender(ym, { force = false } = {}) {
     const res = await kalenderRonda(target)
     const data = res.ok && Array.isArray(res.data) ? res.data : []
     kalCache.set(target, data)
-    rememberHariTetap(data)
+    if (!hariTetapDow.value.length && data.length) {
+      const set = new Set()
+      for (const r of data) {
+        if (!r?.tanggal || r.sumber === 'khusus') continue
+        const d = new Date(r.tanggal + 'T12:00:00')
+        if (!Number.isNaN(d.getTime())) set.add(d.getDay())
+      }
+      if (set.size) hariTetapDow.value = Array.from(set)
+    }
     if (isCurrent() && seq === kalReqSeq) {
       buildDays(data)
       calLoading.value = false
@@ -343,6 +418,7 @@ async function loadKalender(ym, { force = false } = {}) {
     if (isCurrent() && seq === kalReqSeq) {
       calLoading.value = false
       if (kalCache.has(target)) buildDays(kalCache.get(target))
+      else buildDays([])
     }
   }
 }
@@ -422,6 +498,7 @@ function scheduleMidnightRefresh() {
       selectedDetail.value = null
     }
     kalCache.clear()
+    metaLoaded = false
     await reloadAll()
     scheduleMidnightRefresh()
   }, Math.max(1000, next.getTime() - now.getTime()))
@@ -429,10 +506,13 @@ function scheduleMidnightRefresh() {
 
 async function reloadAll() {
   malamLoading.value = true
+  await loadMeta()
   const ym = calYm.value
   const [mRes] = await Promise.all([malamTerdekat(), loadKalender(ym, { force: true })])
   malamLoading.value = false
   malam.value = mRes.ok && mRes.data ? mRes.data : null
+  if (kalCache.has(ym)) buildDays(kalCache.get(ym))
+  else buildDays([])
   const [y, m] = ym.split('-').map(Number)
   prefetchAround(new Date(y, m - 1, 1))
   if (selectedTanggal.value) {
@@ -458,11 +538,13 @@ onUnmounted(() => {
 watch(() => route.fullPath, (p) => {
   if (p === '/ronda' || p === '/ronda/') {
     calYm.value = ymFromDate(new Date())
+    metaLoaded = false
     reloadAll()
   }
 })
 
 watch(keluargaId, () => {
   if (kalCache.has(calYm.value)) buildDays(kalCache.get(calYm.value))
+  else buildDays([])
 })
 </script>
