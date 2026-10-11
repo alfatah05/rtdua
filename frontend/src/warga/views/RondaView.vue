@@ -11,7 +11,7 @@
           <p class="text-[13px] text-[var(--mut)] m-0">{{ jam(malam.jam_mulai) }}–{{ jam(malam.jam_selesai) }}</p>
           <p class="text-[13px] m-0 mt-2">Bertugas: {{ (malam.keluarga || []).map(k => k.alamat).join(', ') || '—' }}</p>
           <div v-if="statusSaya === 'hadir'" class="mt-3 text-[13px] font-semibold text-[var(--g)]">
-            Sudah absen{{ absenSaya?.waktu_server ? ' · ' + jam(absenSaya.waktu_server.slice(11, 16)) : '' }}
+            Sudah absen{{ absenWaktu ? ' · ' + absenWaktu : '' }}
           </div>
           <div v-else-if="bisaAbsen" class="mt-4">
             <p class="text-[12px] text-[var(--mut)] m-0 mb-2">Ambil foto langsung dari kamera (bukan galeri).</p>
@@ -63,6 +63,13 @@ const rowSaya = computed(() => {
 })
 const statusSaya = computed(() => rowSaya.value?.status || null)
 const absenSaya = computed(() => rowSaya.value?.absen || null)
+const absenWaktu = computed(() => {
+  const w = absenSaya.value?.waktu || absenSaya.value?.waktu_server || absenSaya.value?.created_at || ''
+  const s = String(w)
+  if (s.length >= 16 && s.includes(' ')) return s.slice(11, 16)
+  if (s.length >= 16 && s.includes('T')) return s.slice(11, 16)
+  return s ? s.slice(0, 5) : ''
+})
 
 function jam(j) { return j ? String(j).slice(0, 5) : '—' }
 function formatHari(tgl) {
