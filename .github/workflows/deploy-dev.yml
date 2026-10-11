@@ -82,6 +82,12 @@ jobs:
           cp -a frontend/dist/warga/. dist/warga/
           cp -a frontend/dist/pengurus/. dist/pengurus/
 
+          # stamp versi biar index.html pasti beda tiap deploy (bantu cache/FTP sync)
+          BUILD_ID=$(date -u +%Y%m%d%H%M%S)
+          echo "<!-- rtdua-build ${BUILD_ID} -->" >> dist/warga/index.html
+          echo "<!-- rtdua-build ${BUILD_ID} -->" >> dist/pengurus/index.html
+          echo "BUILD_ID=${BUILD_ID}"
+
           cp deploy/warga/.htaccess dist/warga/
           mkdir -p dist/warga/api && cp deploy/warga/api/index.php dist/warga/api/
           cp deploy/pengurus/.htaccess dist/pengurus/
@@ -117,7 +123,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/warga/
           server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA }}
-          dangerous-clean-slate: false
+          dangerous-clean-slate: true
           timeout: 600000
           security: loose
           exclude: |
@@ -135,7 +141,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/pengurus/
           server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS }}
-          dangerous-clean-slate: false
+          dangerous-clean-slate: true
           timeout: 600000
           security: loose
           exclude: |
@@ -166,16 +172,14 @@ jobs:
             **/writable/session/**
             **/writable/uploads/**
 
-      - name: Zip yang gagal FTP (untuk upload manual)
-        if: steps.ftp_warga.outcome == 'failure' || steps.ftp_pengurus.outcome == 'failure' || steps.ftp_backend.outcome == 'failure'
+      - name: Zip paket frontend (selalu — cadangan upload manual)
+        if: always()
         run: |
           set -e
           mkdir -p artifacts
-          if [ "${{ steps.ftp_warga.outcome }}" = "failure" ]; then
-            echo "ZIP warga..."
-            (cd dist && zip -r -q "../artifacts/warga-dev.zip" warga)
-            ls -lh artifacts/warga-dev.zip
-          fi
+          echo "ZIP warga..."
+          (cd dist && zip -r -q "../artifacts/warga-dev.zip" warga)
+          ls -lh artifacts/warga-dev.zip
           if [ "${{ steps.ftp_pengurus.outcome }}" = "failure" ]; then
             echo "ZIP pengurus..."
             (cd dist && zip -r -q "../artifacts/pengurus-dev.zip" pengurus)
@@ -190,7 +194,7 @@ jobs:
           ls -lh artifacts/ || true
 
       - name: Upload artifact warga-dev
-        if: steps.ftp_warga.outcome == 'failure'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: warga-dev
@@ -227,5 +231,5 @@ jobs:
             echo "  pengurus-dev.zip → folder pengurus-dev di hosting"
             echo "  rt-app-dev.zip   → folder backend (rt-app) di hosting"
           else
-            echo "Semua FTP sukses. Tidak ada zip artifact."
+            echo "Semua FTP sukses. Artifact warga-dev tetap di-upload sebagai cadangan."
           fi
