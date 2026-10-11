@@ -17,7 +17,7 @@
     </div>
     <div class="h-px bg-[var(--line)] my-4"></div>
 
-    <div class="space-y-3 mb-5">
+    <div v-if="pengumuman.length" class="space-y-3 mb-5">
       <div
         v-for="p in pengumuman"
         :key="p.id"
@@ -46,7 +46,6 @@
         </div>
         <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
       </div>
-      <p v-if="!pengumuman.length && !loading" class="text-[13px] text-[var(--mut)] text-center py-2">Belum ada pengumuman</p>
     </div>
 
     <button
