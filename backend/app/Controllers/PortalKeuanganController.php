@@ -22,7 +22,6 @@ class PortalKeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $ring = (new TagihanService())->ringkasanKeluarga($ctx['keluarga_id']);
-        // Sembunyikan detail internal yang tidak perlu warga
         return ApiResponse::ok([
             'total'      => $ring['total'],
             'status'     => $ring['status'],
@@ -55,7 +54,6 @@ class PortalKeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        // Upload bukti: terima path yang sudah diunggah, atau base64 sederhana (dev)
         if (!empty($json['bukti_base64']) && empty($json['bukti_file'])) {
             $path = $this->simpanBuktiBase64((string) $json['bukti_base64'], $ctx['keluarga_id']);
             if ($path === null) {
@@ -92,6 +90,37 @@ class PortalKeuanganController extends Controller
             ];
         }, $rows);
         return ApiResponse::ok($data);
+    }
+
+    /** Transparansi kas RT untuk warga (tanpa data internal). */
+    public function kas()
+    {
+        $ctx = $this->requireWarga();
+        if (!$ctx) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $svc = new \App\Services\KasService();
+        $bulan = $this->request->getGet('bulan');
+        $filter = [];
+        if ($bulan) {
+            $filter['bulan'] = $bulan;
+        }
+        $items = $svc->list($filter);
+        $safe = array_map(static function ($r) {
+            return [
+                'id'         => (int) ($r['id'] ?? 0),
+                'tipe'       => $r['tipe'] ?? '',
+                'nominal'    => (int) ($r['nominal'] ?? 0),
+                'kategori'   => $r['kategori'] ?? null,
+                'keterangan' => $r['keterangan'] ?? null,
+                'tanggal'    => $r['tanggal'] ?? null,
+            ];
+        }, $items);
+        $safe = array_slice($safe, 0, 50);
+        return ApiResponse::ok([
+            'saldo' => $svc->saldo(),
+            'items' => $safe,
+        ]);
     }
 
     /**
@@ -136,6 +165,6 @@ class PortalKeuanganController extends Controller
         if (file_put_contents($full, $raw) === false) {
             return null;
         }
-        return 'bukti/' . $name; // relatif terhadap writable/uploads
+        return 'bukti/' . $name;
     }
 }
