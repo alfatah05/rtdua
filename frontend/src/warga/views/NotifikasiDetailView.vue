@@ -1,6 +1,6 @@
 <template>
   <div>
-    <AppBackHeader title="Detail notifikasi" />
+    <AppBackHeader title="Detail notifikasi" :show-notif="false" />
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="item">
@@ -42,12 +42,14 @@ import {
   Bell, Images, CalendarDays,
 } from 'lucide-vue-next'
 import { detailNotifikasi, bacaNotifikasi } from '@shared/services/notifikasi.js'
+import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
 const route = useRoute()
 const router = useRouter()
 const item = ref(null)
 const loading = ref(true)
 const err = ref('')
+const { refresh: refreshBadge } = useNotifBadge()
 
 const JENIS = {
   pengumuman: { icon: Megaphone, bg: 'rgba(245,158,11,.18)', color: '#D97706', label: 'Pengumuman' },
@@ -101,7 +103,10 @@ onMounted(async () => {
   }
   item.value = res.data
   if (!res.data.dibaca) {
-    bacaNotifikasi(id).catch(() => {})
+    try {
+      await bacaNotifikasi(id)
+      await refreshBadge()
+    } catch (_) {}
   }
 })
 </script>
