@@ -99,4 +99,24 @@ class AuthController extends ResourceController
             return ApiResponse::fail('Server error: ' . $e->getMessage(), 500);
         }
     }
+
+    public function updateFoto()
+    {
+        try {
+            $side = SideContext::fromRequest();
+            $user = (new AuthService())->current($side);
+            if (!$user) {
+                return ApiResponse::fail('Unauthorized', 401);
+            }
+            $json = $this->jsonBody();
+            $path = trim((string) ($json['foto'] ?? $json['path'] ?? ''));
+            $res = (new AuthService())->updateFotoProfil($side, (int) $user['id'], $path);
+            return $res['ok']
+                ? ApiResponse::ok($res['data'] ?? null, 'Foto diperbarui')
+                : ApiResponse::fail($res['message'], 422);
+        } catch (\Throwable $e) {
+            log_message('error', 'Auth updateFoto: ' . $e->getMessage());
+            return ApiResponse::fail('Server error', 500);
+        }
+    }
 }
