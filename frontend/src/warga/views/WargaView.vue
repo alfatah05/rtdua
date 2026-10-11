@@ -9,7 +9,7 @@
     <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <div v-else class="space-y-1">
-      <div v-for="k in filtered" :key="k.id" class="flex items-center gap-3 px-2 py-3 border-b border-[var(--line)]">
+      <div v-for="k in filtered" :key="k.id" class="flex items-center gap-3 px-2 py-3 rounded-[12px]">
         <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0 overflow-hidden">
           <img v-if="k.fotoUrl" :src="k.fotoUrl" alt="" class="w-full h-full object-cover" @error="k.fotoUrl = ''" />
           <template v-else>{{ k.inisial }}</template>

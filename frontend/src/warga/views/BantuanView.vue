@@ -11,7 +11,7 @@
         class="flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 no-underline text-[var(--text)]">
         <div class="min-w-0 flex-1">
           <p class="font-bold m-0">{{ p.nama }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0">{{ p.jabatan }} · {{ p.nomor_hp || '—' }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0">{{ p.jabatan }}</p>
         </div>
       </a>
     </div>
@@ -21,12 +21,18 @@
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { getBantuan } from '@shared/services/struktur.js'
+import { useAuth } from '@shared/composables/useAuth.js'
+const { user } = useAuth()
 const list = ref([])
 const loading = ref(true)
 const err = ref('')
 function waLink(hp) {
   const n = String(hp || '').replace(/\D/g, '').replace(/^0/, '')
-  return n ? 'https://wa.me/62' + n : '#'
+  if (!n) return '#'
+  const nama = user.value?.nama || user.value?.username || 'warga'
+  const alamat = user.value?.alamat || user.value?.username || ''
+  const text = encodeURIComponent('Assalamualaikum, saya ' + nama + (alamat ? ' (' + alamat + ')' : '') + '.')
+  return 'https://wa.me/62' + n + '?text=' + text
 }
 onMounted(async () => {
   const res = await getBantuan()
