@@ -1,6 +1,6 @@
 <template>
   <div>
-    <AppMainHeader />
+    <AppBackHeader title="Jadwal ronda" />
 
     <div class="rounded-[20px] border border-[var(--line)] overflow-hidden mb-4 bg-[var(--card)]">
       <div class="px-4 py-3 flex items-center justify-between" :style="headerStyle">
@@ -64,10 +64,10 @@
     <div class="grid grid-cols-7 gap-1 text-center text-[12px] mb-1">
       <span v-for="d in ['M', 'S', 'S', 'R', 'K', 'J', 'S']" :key="d" class="text-[var(--mut)] font-semibold py-1">{{ d }}</span>
     </div>
-    <div class="grid grid-cols-7 gap-1 place-items-center">
+    <div class="grid grid-cols-7 gap-1 place-items-center" :class="calLoading ? 'opacity-60' : ''">
       <button
         v-for="(day, i) in days"
-        :key="i"
+        :key="(day.date || 'x') + '-' + i"
         type="button"
         class="w-9 h-9 rounded-full text-[13px] font-semibold grid place-items-center transition-transform active:scale-95"
         :class="dayClass(day)"
@@ -118,7 +118,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
-import AppMainHeader from '@shared/components/AppMainHeader.vue'
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { kalenderRonda, malamTerdekat, detailMalam, absenWarga } from '@shared/services/ronda.js'
 import { mediaUrl, uploadGambar } from '@shared/services/upload.js'
 import { useAuth } from '@shared/composables/useAuth.js'
@@ -136,6 +136,7 @@ const calYm = ref((() => {
   const t = new Date()
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`
 })())
+const calLoading = ref(false)
 const selectedTanggal = ref('')
 const selectedDetail = ref(null)
 const selectedLoading = ref(false)
@@ -143,6 +144,12 @@ const busy = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
 const fileAbsen = ref(null)
+
+/** Cache kalender per YYYY-MM agar pindah bulan tidak delay */
+const kalCache = new Map()
+/** Fallback: set weekday (0=Min…6=Sab) yang punya ronda tetap */
+const hariTetapDow = ref([])
+let kalReqSeq = 0
 
 const bulanLabel = computed(() => {
   const [y, m] = calYm.value.split('-').map(Number)
@@ -257,13 +264,6 @@ function dayClass(day) {
   return 'text-[var(--text)]'
 }
 
-function shiftMonth(delta) {
-  const [y, m] = calYm.value.split('-').map(Number)
-  const d = new Date(y, m - 1 + delta, 1)
-  calYm.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  loadKalender()
-}
-
 function todayStr() {
   const t0 = new Date()
   return [t0.getFullYear(), String(t0.getMonth() + 1).padStart(2, '0'), String(t0.getDate()).padStart(2, '0')].join('-')
@@ -282,7 +282,10 @@ function buildDays(kal) {
   for (let n = 1; n <= lastDate; n++) {
     const date = `${calYm.value}-${String(n).padStart(2, '0')}`
     const r = byDate[date]
-    const ronda = !!r
+    const dow = new Date(y, m - 1, n).getDay()
+    // Fallback highlight: hari tetap dari cache weekday, biar bulan lain tetap ada titik hijau
+    const dariFallback = !r && hariTetapDow.value.includes(dow)
+    const ronda = !!r || dariFallback
     const ids = (r?.keluarga_ids || []).map(Number)
     const saya = keluargaId.value > 0 && ids.includes(keluargaId.value)
     out.push({
@@ -297,9 +300,60 @@ function buildDays(kal) {
   days.value = out
 }
 
-async function loadKalender() {
-  const res = await kalenderRonda(calYm.value)
-  buildDays(res.ok && Array.isArray(res.data) ? res.data : [])
+function rememberHariTetap(kal) {
+  if (!Array.isArray(kal) || !kal.length) return
+  const set = new Set(hariTetapDow.value)
+  for (const r of kal) {
+    if (r?.sumber === 'khusus' || !r?.tanggal) continue
+    const d = new Date(r.tanggal + 'T12:00:00')
+    if (!Number.isNaN(d.getTime())) set.add(d.getDay())
+  }
+  if (set.size) hariTetapDow.value = Array.from(set)
+}
+
+async function loadKalender(ym = calYm.value, { preferCache = true } = {}) {
+  const seq = ++kalReqSeq
+  if (preferCache && kalCache.has(ym)) {
+    if (ym === calYm.value && seq === kalReqSeq) {
+      buildDays(kalCache.get(ym))
+      calLoading.value = false
+    }
+    // tetap refresh di background
+  } else if (ym === calYm.value) {
+    // tampilkan grid bulan baru segera (fallback hari tetap kalau ada)
+    buildDays([])
+    calLoading.value = true
+  }
+
+  const res = await kalenderRonda(ym)
+  if (seq !== kalReqSeq && ym === calYm.value) {
+    // request lebih baru sudah jalan; abaikan hasil lama hanya jika masih bulan sama
+  }
+  const data = res.ok && Array.isArray(res.data) ? res.data : []
+  kalCache.set(ym, data)
+  rememberHariTetap(data)
+  if (ym === calYm.value) {
+    buildDays(data)
+    calLoading.value = false
+  }
+}
+
+function shiftMonth(delta) {
+  const [y, m] = calYm.value.split('-').map(Number)
+  const d = new Date(y, m - 1 + delta, 1)
+  const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  calYm.value = next
+  selectedTanggal.value = ''
+  selectedDetail.value = null
+  // langsung ganti grid (cache / fallback), API menyusul
+  loadKalender(next)
+  // prefetch tetangga
+  const prev = new Date(d.getFullYear(), d.getMonth() - 1, 1)
+  const nxt = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+  const prevYm = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+  const nxtYm = `${nxt.getFullYear()}-${String(nxt.getMonth() + 1).padStart(2, '0')}`
+  if (!kalCache.has(prevYm)) loadKalender(prevYm, { preferCache: false })
+  if (!kalCache.has(nxtYm)) loadKalender(nxtYm, { preferCache: false })
 }
 
 async function onPickDay(day) {
@@ -341,9 +395,17 @@ async function onAbsen(e) {
 
 async function reloadAll() {
   malamLoading.value = true
-  const [mRes] = await Promise.all([malamTerdekat(), loadKalender()])
+  const [mRes] = await Promise.all([malamTerdekat(), loadKalender(calYm.value)])
   malamLoading.value = false
   malam.value = mRes.ok && mRes.data ? mRes.data : null
+  // prefetch tetangga biar chevron terasa instan
+  const [y, m] = calYm.value.split('-').map(Number)
+  const prev = new Date(y, m - 2, 1)
+  const nxt = new Date(y, m, 1)
+  const prevYm = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+  const nxtYm = `${nxt.getFullYear()}-${String(nxt.getMonth() + 1).padStart(2, '0')}`
+  if (!kalCache.has(prevYm)) loadKalender(prevYm, { preferCache: false })
+  if (!kalCache.has(nxtYm)) loadKalender(nxtYm, { preferCache: false })
   if (selectedTanggal.value) {
     const res = await detailMalam(selectedTanggal.value)
     selectedDetail.value = res.ok ? res.data : null
