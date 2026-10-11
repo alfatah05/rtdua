@@ -84,15 +84,15 @@ const alamatLabel = computed(() => {
 })
 const fotoUrl = computed(() => {
   const f = user.value?.foto
-  return f ? mediaUrl(f) : ''
+  return f ? mediaUrl(f)
 })
 
 const menus = computed(() => [
   {
     label: 'Data keluarga',
-    desc: 'Daftar warga RT',
+    desc: 'Anggota di rumah Anda',
     icon: User,
-    to: '/warga',
+    to: '/data-keluarga',
     bg: 'rgba(6,182,212,.18)',
     color: '#0891B2',
   },
