@@ -43,6 +43,7 @@ $routes->get('bantuan', 'PengurusController::bantuan', ['filter' => 'auth']);
 $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
+$routes->get('portal/warga/(:num)', 'PortalController::detailKeluarga/$1', ['filter' => 'auth']);
 $routes->get('portal/keluarga', 'PortalController::keluargaSaya', ['filter' => 'auth']);
 
 $routes->get('keuangan/iuran', 'KeuanganController::daftarIuran', ['filter' => 'auth']);

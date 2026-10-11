@@ -36,6 +36,26 @@ export function listPortalWarga() {
     : real.listPortalWarga()
 }
 
+export function portalDetailKeluarga(id) {
+  if (USE_MOCK.warga) {
+    return Promise.resolve({
+      ok: true,
+      data: {
+        id: Number(id),
+        nama: 'Budi (mock)',
+        alamat: 'AB2-22',
+        foto: null,
+        anggota: [
+          { id: 1, nama: 'Budi', hubungan: 'Kepala keluarga' },
+          { id: 2, nama: 'Siti', hubungan: 'Istri' },
+          { id: 3, nama: 'Andi', hubungan: 'Anak pertama' },
+        ],
+      },
+    })
+  }
+  return real.portalDetailKeluarga(id)
+}
+
 export function tambahAnggota(keluargaId, payload) {
   if (USE_MOCK.warga) return Promise.resolve({ ok: true, data: { id: 0 } })
   return real.tambahAnggota(keluargaId, payload)

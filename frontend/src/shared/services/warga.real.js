@@ -94,6 +94,15 @@ export async function listPortalWarga() {
   }
 }
 
+export async function portalDetailKeluarga(id) {
+  try {
+    const res = await api('/portal/warga/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function portalKeluargaSaya() {
   try {
     const res = await api('/portal/keluarga')

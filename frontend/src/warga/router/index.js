@@ -4,6 +4,7 @@ import MainLayout from '../layouts/MainLayout.vue'
 import LoginView from '../views/LoginView.vue'
 import HomeView from '../views/HomeView.vue'
 import WargaView from '../views/WargaView.vue'
+import WargaDetailView from '../views/WargaDetailView.vue'
 import KeuanganView from '../views/KeuanganView.vue'
 import ProfilView from '../views/ProfilView.vue'
 import PengumumanView from '../views/PengumumanView.vue'
@@ -30,6 +31,7 @@ const routes = [
     children: [
       { path: '', name: 'home', component: HomeView, meta: { mainTab: true } },
       { path: 'warga', name: 'warga', component: WargaView, meta: { mainTab: true } },
+      { path: 'warga/:id', name: 'warga-detail', component: WargaDetailView },
       { path: 'keuangan', name: 'keuangan', component: KeuanganView, meta: { mainTab: true } },
       { path: 'profil', name: 'profil', component: ProfilView, meta: { mainTab: true } },
 
