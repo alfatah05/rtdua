@@ -22,15 +22,10 @@
         <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" class="text-[13px] w-full" :disabled="uploading" @change="onPickLampiran" />
         <p v-if="uploading" class="text-[12px] text-[var(--mut)] mt-1">Mengunggah…</p>
       </div>
-      <label class="flex items-center gap-3 min-h-[44px]">
-        <input v-model="pin" type="checkbox" class="w-5 h-5 accent-[var(--g)]" />
-        <span class="text-[15px] font-semibold">Pin di Beranda warga (maks 2)</span>
-      </label>
       <label v-if="isEdit" class="flex items-center gap-3 min-h-[44px]">
         <input v-model="kirimNotif" type="checkbox" class="w-5 h-5 accent-[var(--g)]" />
         <span class="text-[15px] font-semibold">Kirim notifikasi lagi</span>
       </label>
-      <p v-if="pinError" class="text-[13px] text-red-600">{{ pinError }}</p>
       <button type="submit" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold" :disabled="saving || uploading">{{ saving ? 'Menyimpan…' : 'Simpan' }}</button>
       <button v-if="isEdit" type="button" class="w-full min-h-[44px] rounded-full bg-red-50 text-red-600 font-semibold" :disabled="saving" @click="onHapus">Hapus pengumuman</button>
       <p v-if="msg" class="text-[13px] text-center" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
@@ -42,16 +37,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { detailPengumuman, buatPengumuman, ubahPengumuman, hapusPengumuman } from '@shared/services/konten.js'
-import { uploadLampiran, mediaUrl } from '@shared/services/upload.js'
+import { uploadLampiran } from '@shared/services/upload.js'
 
 const route = useRoute()
 const router = useRouter()
 const isEdit = computed(() => !!route.params.id && route.params.id !== 'tambah')
 const judul = ref('')
 const isi = ref('')
-const pin = ref(false)
 const kirimNotif = ref(false)
-const pinError = ref('')
 const msg = ref('')
 const msgOk = ref(true)
 const saving = ref(false)
@@ -95,7 +88,6 @@ onMounted(async () => {
   if (res.ok && res.data) {
     judul.value = res.data.judul || ''
     isi.value = res.data.isi || ''
-    pin.value = !!res.data.pin
     if (res.data.lampiran_file) {
       lampiranFile.value = res.data.lampiran_file
       lampiranTipe.value = res.data.lampiran_tipe
@@ -108,7 +100,6 @@ onMounted(async () => {
 })
 
 async function onSave() {
-  pinError.value = ''
   msg.value = ''
   if (!judul.value.trim() || !isi.value.trim()) {
     msgOk.value = false
@@ -119,7 +110,6 @@ async function onSave() {
   const payload = {
     judul: judul.value.trim(),
     isi: isi.value.trim(),
-    pin: pin.value,
     lampiran_file: lampiranFile.value,
     lampiran_tipe: lampiranTipe.value,
   }
@@ -133,9 +123,7 @@ async function onSave() {
   saving.value = false
   if (!res.ok) {
     msgOk.value = false
-    const e = res.error || 'Gagal menyimpan'
-    if (/pin/i.test(e)) pinError.value = e
-    else msg.value = e
+    msg.value = res.error || 'Gagal menyimpan'
     return
   }
   msgOk.value = true
