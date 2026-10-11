@@ -18,8 +18,7 @@
       </button>
       <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFoto" />
       <p class="text-xl font-extrabold m-0">{{ user?.nama || 'Warga' }}</p>
-      <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ user?.username || '—' }}</p>
-      <p class="text-[13px] text-[var(--mut)] m-0">{{ alamatLabel }}</p>
+      <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ alamatLabel }}</p>
     </div>
 
     <div class="px-1 space-y-0.5">
