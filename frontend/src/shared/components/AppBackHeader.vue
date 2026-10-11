@@ -18,14 +18,18 @@
       <ChevronLeft :size="24" :stroke-width="2.25" />
     </button>
     <h1 class="flex-1 text-xl font-extrabold m-0 text-[var(--text)] leading-tight truncate pl-1">{{ title }}</h1>
-    <div v-if="showNotif || showProfilIcon" class="flex items-center shrink-0" style="margin-right: -6px">
+    <div v-if="showNotifIcon || showProfilIcon" class="flex items-center shrink-0" style="margin-right: -6px">
       <router-link
-        v-if="showNotif"
+        v-if="showNotifIcon"
         to="/notifikasi"
-        class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+        class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] relative"
         aria-label="Notifikasi"
       >
         <Bell :size="20" />
+        <span
+          v-if="badge > 0"
+          class="absolute top-1 right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center"
+        >{{ badge > 9 ? '9+' : badge }}</span>
       </router-link>
       <router-link
         v-if="showProfilIcon"
@@ -40,17 +44,27 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronLeft, Bell, UserRound } from 'lucide-vue-next'
+import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
 const props = defineProps({
   title: { type: String, required: true },
+  /** Tampilkan aksi kanan (notif/profil). Default true. */
   showActions: { type: Boolean, default: true },
+  /** Override icon notif. null = ikut showActions. */
+  showNotif: { type: Boolean, default: null },
+  /** Override icon profil. null = auto (warga=false, pengurus=true). */
   showProfil: { type: Boolean, default: null },
 })
 
-const showNotif = computed(() => props.showActions)
+const showNotifIcon = computed(() => {
+  if (!props.showActions) return false
+  if (props.showNotif === false) return false
+  if (props.showNotif === true) return true
+  return true
+})
 
 const showProfilIcon = computed(() => {
   if (!props.showActions) return false
@@ -65,6 +79,11 @@ const showProfilIcon = computed(() => {
     if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_SIDE === 'warga') return false
   } catch (e) {}
   return true
+})
+
+const { badge, ensure } = useNotifBadge()
+onMounted(() => {
+  if (showNotifIcon.value) ensure()
 })
 
 const router = useRouter()

@@ -34,34 +34,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted } from 'vue'
 import { Bell, UserRound } from 'lucide-vue-next'
-import { badgeNotifikasi } from '@shared/services/notifikasi.js'
+import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
 defineProps({
   showProfil: { type: Boolean, default: false },
 })
 
-const badge = ref(0)
-let timer = null
-
-async function refresh() {
-  const res = await badgeNotifikasi()
-  if (res.ok) badge.value = res.data?.belum_dibaca || 0
-}
-
-function onVis() {
-  if (document.visibilityState === 'visible') refresh()
-}
-
-onMounted(() => {
-  refresh()
-  timer = setInterval(refresh, 60000)
-  document.addEventListener('visibilitychange', onVis)
-})
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-  document.removeEventListener('visibilitychange', onVis)
-})
+const { badge, ensure } = useNotifBadge()
+onMounted(() => ensure())
 </script>

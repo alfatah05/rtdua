@@ -6,6 +6,8 @@
         ? 'pb-[calc(96px+env(safe-area-inset-bottom,0px))]'
         : 'pb-[calc(24px+env(safe-area-inset-bottom,0px))]'"
     >
+      <!-- Header utama stabil (tidak remount saat ganti tab) -->
+      <AppMainHeader v-if="showNav" />
       <router-view />
     </main>
     <AppBottomNav v-if="showNav" side="warga" />
@@ -16,8 +18,8 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBottomNav from '@shared/components/AppBottomNav.vue'
+import AppMainHeader from '@shared/components/AppMainHeader.vue'
 
 const route = useRoute()
-/** Tab utama (AppMainHeader): beranda, warga, keuangan, profil */
 const showNav = computed(() => !!route.meta.mainTab)
 </script>
