@@ -40,3 +40,12 @@ export async function changeCredential(payload) {
     return { ok: false, error: e.message || 'Gagal mengganti kredensial' }
   }
 }
+
+export async function updateFotoProfil(path) {
+  try {
+    const res = await api('/auth/update-foto', { method: 'POST', body: { foto: path } })
+    return { ok: true, user: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message || 'Gagal menyimpan foto' }
+  }
+}

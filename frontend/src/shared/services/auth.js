@@ -19,3 +19,6 @@ export function me() {
 export function changeCredential(payload) {
   return impl().changeCredential(payload)
 }
+export function updateFotoProfil(path) {
+  return impl().updateFotoProfil(path)
+}
