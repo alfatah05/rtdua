@@ -345,10 +345,12 @@ function buildDays(kal) {
 
 async function loadMeta() {
   if (metaLoaded) return
+  // skipUnauthorized: endpoint ini tadinya pengurus-only; jangan kick sesi warga
+  const silent = { skipUnauthorized: true }
   const [tetapRes, khususRes, tplRes] = await Promise.all([
-    listJadwalTetap(),
-    listJadwalKhusus(),
-    listTemplateCards(),
+    listJadwalTetap(silent),
+    listJadwalKhusus(silent),
+    listTemplateCards(silent),
   ])
 
   if (tetapRes.ok && Array.isArray(tetapRes.data)) {
