@@ -5,10 +5,12 @@ import { compressImage, makeThumb } from '../utils/imageCompress.js'
  */
 export async function uploadGambar(file, jenis, { maxSide = 1600, withThumb = false } = {}) {
   try {
-    const compressed = await compressImage(file, { maxSide })
+    // Logo & banner: sisi lebih kecil, tetap jaga PNG/WebP transparan lewat compressImage
+    const side = jenis === 'logo' ? Math.min(maxSide, 800) : maxSide
+    const compressed = await compressImage(file, { maxSide: side })
     const fd = new FormData()
     fd.append('jenis', jenis)
-    fd.append('file', compressed)
+    fd.append('file', compressed, compressed.name)
     if (withThumb) {
       const thumb = await makeThumb(file, 400)
       fd.append('thumb', thumb)
@@ -41,7 +43,7 @@ export async function uploadLampiran(file) {
     }
     const fd = new FormData()
     fd.append('jenis', 'lampiran')
-    fd.append('file', bodyFile, file.name || (isPdf ? 'lampiran.pdf' : 'lampiran.jpg'))
+    fd.append('file', bodyFile, file.name || (isPdf ? 'lampiran.pdf' : bodyFile.name || 'lampiran.jpg'))
     const res = await fetch('/api/upload', {
       method: 'POST',
       credentials: 'same-origin',
