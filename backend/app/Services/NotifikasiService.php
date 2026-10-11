@@ -20,18 +20,18 @@ class NotifikasiService
             ->get()
             ->getResultArray();
 
-        return array_map(static function ($r) {
-            return [
-                'id'         => (int) $r['id'],
-                'jenis'      => $r['jenis'],
-                'judul'      => $r['judul'],
-                'isi'        => $r['isi'],
-                'tautan'     => $r['tautan'],
-                'dibaca'     => !empty($r['dibaca_pada']),
-                'dibaca_pada'=> $r['dibaca_pada'],
-                'dibuat_pada'=> $r['dibuat_pada'],
-            ];
-        }, $rows);
+        return array_map([$this, 'mapRow'], $rows);
+    }
+
+    public function detailForUser(int $userId, int $id): ?array
+    {
+        $db = \Config\Database::connect();
+        $r = $db->table('notifikasi')
+            ->where('id', $id)
+            ->where('user_id', $userId)
+            ->get()
+            ->getRowArray();
+        return $r ? $this->mapRow($r) : null;
     }
 
     public function jumlahBelumDibaca(int $userId): int
@@ -138,5 +138,19 @@ class NotifikasiService
         $batas = date('Y-m-d H:i:s', strtotime("-{$hari} days"));
         $db->table('notifikasi')->where('dibuat_pada <', $batas)->delete();
         return $db->affectedRows();
+    }
+
+    private function mapRow(array $r): array
+    {
+        return [
+            'id'          => (int) $r['id'],
+            'jenis'       => $r['jenis'],
+            'judul'       => $r['judul'],
+            'isi'         => $r['isi'],
+            'tautan'      => $r['tautan'],
+            'dibaca'      => !empty($r['dibaca_pada']),
+            'dibaca_pada' => $r['dibaca_pada'],
+            'dibuat_pada' => $r['dibuat_pada'],
+        ];
     }
 }
