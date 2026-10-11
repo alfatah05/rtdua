@@ -1,6 +1,6 @@
 <template>
   <div>
-    <AppBackHeader title="Notifikasi" />
+    <AppBackHeader title="Notifikasi" :show-notif="false" />
     <button
       v-if="daftar.length"
       type="button"
@@ -53,11 +53,13 @@ import {
   Bell, ChevronRight, Images, CalendarDays,
 } from 'lucide-vue-next'
 import { listNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
+import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
 const router = useRouter()
 const daftar = ref([])
 const loading = ref(true)
 const err = ref('')
+const { refresh: refreshBadge } = useNotifBadge()
 
 const JENIS = {
   pengumuman: { icon: Megaphone, bg: 'rgba(245,158,11,.18)', color: '#D97706' },
@@ -109,6 +111,7 @@ function bukaDetail(n) {
 
 async function bacaSemua() {
   await bacaSemuaNotifikasi()
+  await refreshBadge()
   await load()
 }
 
