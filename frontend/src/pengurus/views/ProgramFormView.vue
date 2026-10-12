@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader :title="isEdit ? 'Edit program' : 'Tambah program'" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <form v-else class="space-y-4" @submit.prevent="onSave">
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Judul</label>
@@ -18,7 +18,7 @@
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Banner</label>
         <div v-if="bannerUrl" class="rounded-[12px] overflow-hidden h-32 mb-2 bg-[var(--card2)]">
-          <img :src="bannerUrl" class="w-full h-full object-cover" alt="" />
+          <img :src="bannerUrl" class="w-full h-full object-cover" alt=""  loading="lazy" decoding="async" />
         </div>
         <label class="inline-flex min-h-[44px] px-4 rounded-full bg-[var(--card2)] font-semibold items-center cursor-pointer">
           {{ uploading ? 'Mengunggah…' : 'Pilih gambar' }}
@@ -36,6 +36,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'

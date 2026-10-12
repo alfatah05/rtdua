@@ -42,7 +42,7 @@
       </button>
     </div>
 
-    <p v-if="loadingList" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loadingList" class="!py-6" />
     <p v-else-if="loadErr" class="text-[13px] text-red-600 text-center py-4">{{ loadErr }}</p>
     <EmptyState v-else-if="!transaksi.length" title="Belum ada transaksi" />
     <div v-else class="px-1 space-y-0.5">
@@ -66,6 +66,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted, computed } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
