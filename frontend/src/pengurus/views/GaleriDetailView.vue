@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader :title="album?.judul || 'Album'" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else>
       <p class="text-[13px] text-[var(--mut)] mb-3">{{ album?.tanggal_kegiatan || '—' }} · {{ (album?.foto || []).length }} foto</p>
@@ -58,11 +58,14 @@
 </style>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { detailAlbum, tambahFoto, hapusFoto, hapusAlbum as delAlbum } from '@shared/services/konten.js'
 import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
+import { waitImages, takeImageUrls } from '@shared/utils/waitImages.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -77,9 +80,20 @@ const msgOk = ref(true)
 async function load() {
   loading.value = true
   const res = await detailAlbum(route.params.id)
+  if (!res.ok) {
+    err.value = res.error || 'Gagal'
+    loading.value = false
+    return
+  }
+  album.value = res.data
+  const fotos = album.value?.foto || []
+  await waitImages(
+    takeImageUrls(
+      fotos.slice(0, 4).map((f) => mediaUrl(f.thumb || f.file)),
+      4
+    )
+  )
   loading.value = false
-  if (!res.ok) err.value = res.error || 'Gagal'
-  else album.value = res.data
 }
 
 async function onFiles(e) {
