@@ -2,7 +2,7 @@
   <div>
     <AppBackHeader title="Struktur pengurus" />
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-8">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
     <template v-else>
@@ -55,10 +55,13 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { getStruktur } from '@shared/services/struktur.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { waitImages, takeImageUrls } from '@shared/utils/waitImages.js'
 
 const loading = ref(true)
 const err = ref('')
@@ -73,13 +76,21 @@ function inisial(nama) {
 }
 
 onMounted(async () => {
+  loading.value = true
   const res = await getStruktur()
-  loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal'
+    loading.value = false
     return
   }
   ketua.value = res.data?.ketua || null
   pengurus.value = Array.isArray(res.data?.pengurus) ? res.data.pengurus : []
+  const urls = []
+  if (ketua.value?.foto) urls.push(mediaUrl(ketua.value.foto))
+  for (const x of pengurus.value) {
+    if (x.foto) urls.push(mediaUrl(x.foto))
+  }
+  await waitImages(takeImageUrls(urls, 12))
+  loading.value = false
 })
 </script>
