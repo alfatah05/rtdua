@@ -94,7 +94,7 @@
       <h2 class="text-[17px] font-bold m-0">Aktivitas terakhir</h2>
       <router-link to="/aktivitas" class="text-[13px] font-semibold text-[var(--g)] no-underline">Lihat semua</router-link>
     </div>
-    <p v-if="loadingAct" class="text-[13px] text-[var(--mut)] px-2">Memuat…</p>
+    <AppPageSpinner v-if="loadingAct" class="!py-6" />
     <EmptyState v-else-if="!aktivitas.length" title="Belum ada aktivitas" />
     <div v-else class="px-1 space-y-0.5">
       <div v-for="act in aktivitas" :key="act.id" class="w-full flex flex-row items-center gap-3 px-2 py-3">
@@ -111,6 +111,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
