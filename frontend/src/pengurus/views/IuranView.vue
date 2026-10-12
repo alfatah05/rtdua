@@ -56,7 +56,7 @@
       </button>
     </div>
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="loadErr" class="text-[13px] text-red-600 text-center py-4">{{ loadErr }}</p>
     <EmptyState v-else-if="!filtered.length" title="Tidak ada data iuran" />
     <div v-else class="px-1 space-y-0.5">
@@ -85,6 +85,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { Banknote, ChevronRight, Search } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
