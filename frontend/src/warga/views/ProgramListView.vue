@@ -1,12 +1,12 @@
 <template>
   <div>
     <AppBackHeader title="Program RT" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <p v-else-if="!daftar.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada program</p>
     <div v-else class="space-y-3">
       <div
-        v-for="p in daftar"
+        v-for="(p, idx) in daftar"
         :key="p.id"
         class="rounded-[20px] overflow-hidden relative text-white min-h-[168px]"
         :style="cardStyle(p)"
@@ -48,39 +48,34 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ClipboardList, ChevronRight } from 'lucide-vue-next'
 import { listProgram } from '@shared/services/konten.js'
 import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { waitImages, takeImageUrls } from '@shared/utils/waitImages.js'
 
 const daftar = ref([])
 const loading = ref(true)
 const err = ref('')
 
-const fallbackByStatus = {
-  berjalan:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
-  selesai:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(145deg, #9CA3AF, #6B7280 55%, #4B5563)',
-  direncanakan:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.22), transparent 55%), linear-gradient(145deg, #A78BFA, #7C3AED 55%, #5B21B6)',
-}
-
-function cardStyle(p) {
-  if (p.banner) return { background: '#1a1d1f' }
-  return { background: fallbackByStatus[p.status] || fallbackByStatus.direncanakan }
-}
+const fallback =
+  'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.22), transparent 55%), linear-gradient(145deg, #A78BFA, #7C3AED 55%, #5B21B6)'
 
 function bannerUrl(path) {
   return mediaUrl(path)
 }
 
+function cardStyle(p) {
+  if (p.banner) return { background: '#1a1d1f' }
+  return { background: fallback }
+}
+
 function labelStatus(s) {
-  if (s === 'berjalan') return 'Berjalan'
-  if (s === 'selesai') return 'Selesai'
-  return 'Direncanakan'
+  const map = { aktif: 'Aktif', selesai: 'Selesai', rencan: 'Rencana', rencana: 'Rencana' }
+  return map[s] || s || '—'
 }
 
 function ringkas(isi) {
@@ -88,9 +83,19 @@ function ringkas(isi) {
 }
 
 onMounted(async () => {
+  loading.value = true
   const res = await listProgram()
+  if (!res.ok) {
+    err.value = res.error || 'Gagal'
+    loading.value = false
+    return
+  }
+  daftar.value = res.data || []
+  const banners = takeImageUrls(
+    daftar.value.map((p) => (p.banner ? bannerUrl(p.banner) : '')),
+    8
+  )
+  await waitImages(banners)
   loading.value = false
-  if (!res.ok) err.value = res.error || 'Gagal'
-  else daftar.value = res.data || []
 })
 </script>
