@@ -1,4 +1,4 @@
-/* Handler push terpisah — di-import workbox SW (jangan dihapus). */
+/* Handler push terpisah — di-import workbox SW via importScripts (jangan dihapus). */
 self.addEventListener('push', (event) => {
   let data = { title: 'rtdua', body: '', url: '/notifikasi' }
   try {
@@ -8,8 +8,8 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'rtdua', {
       body: data.body || '',
       data: { url: data.url || '/notifikasi' },
-      icon: '/icons/warga-192.png',
-      badge: '/icons/warga-192.png',
+      icon: '/icons/icon-app.png',
+      badge: '/icons/icon-app.png',
     })
   )
 })
