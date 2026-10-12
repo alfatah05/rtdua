@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Galeri RT" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <p v-else-if="!daftar.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada album</p>
     <div v-else class="space-y-3">
@@ -48,11 +48,13 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { Images, ChevronRight } from 'lucide-vue-next'
 import { listAlbum } from '@shared/services/konten.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { waitImages, takeImageUrls } from '@shared/utils/waitImages.js'
 
 const daftar = ref([])
 const loading = ref(true)
@@ -78,9 +80,20 @@ function formatTgl(s) {
 }
 
 onMounted(async () => {
+  loading.value = true
   const res = await listAlbum()
+  if (!res.ok) {
+    err.value = res.error || 'Gagal'
+    loading.value = false
+    return
+  }
+  daftar.value = res.data || []
+  await waitImages(
+    takeImageUrls(
+      daftar.value.map((a) => (a.banner ? bannerUrl(a.banner) : '')),
+      8
+    )
+  )
   loading.value = false
-  if (!res.ok) err.value = res.error || 'Gagal'
-  else daftar.value = res.data || []
 })
 </script>

@@ -1,26 +1,25 @@
 <template>
   <div>
     <AppBackHeader :title="album?.judul || 'Album'" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="album">
       <p class="text-[13px] text-[var(--mut)] mb-3">{{ album.tanggal_kegiatan || '—' }} · {{ (album.foto || []).length }} foto</p>
       <div v-if="!(album.foto || []).length" class="text-[13px] text-[var(--mut)] text-center py-8">Belum ada foto</div>
 
-      <!-- Masonry 2 kolom: rasio asli landscape / portrait (Pinterest / bento) -->
       <div v-else class="galeri-masonry">
         <button
-          v-for="f in album.foto"
+          v-for="(f, idx) in album.foto"
           :key="f.id"
           type="button"
           class="galeri-masonry-item block w-full p-0 border-0 rounded-[12px] overflow-hidden bg-[var(--search)]"
           @click="preview = f"
         >
-          <img
+          <AppLazyImg
             :src="mediaUrl(f.thumb || f.file)"
-            class="block w-full h-auto"
+            :eager="idx < 4"
+            img-class="block w-full h-auto"
             alt=""
-            loading="lazy"
           />
         </button>
       </div>
@@ -60,11 +59,13 @@
 </style>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { detailAlbum } from '@shared/services/konten.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { waitImages, takeImageUrls } from '@shared/utils/waitImages.js'
 
 const route = useRoute()
 const album = ref(null)
@@ -73,9 +74,21 @@ const err = ref('')
 const preview = ref(null)
 
 onMounted(async () => {
+  loading.value = true
   const res = await detailAlbum(route.params.id)
+  if (!res.ok) {
+    err.value = res.error || 'Gagal'
+    loading.value = false
+    return
+  }
+  album.value = res.data
+  const fotos = album.value?.foto || []
+  await waitImages(
+    takeImageUrls(
+      fotos.slice(0, 4).map((f) => mediaUrl(f.thumb || f.file)),
+      4
+    )
+  )
   loading.value = false
-  if (!res.ok) err.value = res.error || 'Gagal'
-  else album.value = res.data
 })
 </script>
