@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Konfirmasi transfer" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <template v-else-if="item">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 mb-4">
         <p class="text-[13px] text-[var(--mut)] m-0">{{ item.alamat }}</p>
@@ -25,6 +25,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'

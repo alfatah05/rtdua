@@ -13,7 +13,7 @@
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Banner album</label>
         <div v-if="bannerUrl" class="rounded-[12px] overflow-hidden h-36 mb-2 bg-[var(--card2)]">
-          <img :src="bannerUrl" class="w-full h-full object-cover" alt="" />
+          <img :src="bannerUrl" class="w-full h-full object-cover" alt=""  loading="lazy" decoding="async" />
         </div>
         <label class="inline-flex min-h-[44px] px-4 rounded-full bg-[var(--card2)] font-semibold items-center cursor-pointer">
           {{ uploading ? 'Mengunggah…' : 'Pilih foto banner' }}
