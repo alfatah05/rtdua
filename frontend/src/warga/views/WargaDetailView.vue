@@ -2,11 +2,10 @@
   <div>
     <AppBackHeader title="Profil keluarga" />
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-8">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
     <template v-else-if="data">
-      <!-- Hero seperti profil -->
       <div class="flex flex-col items-center text-center mb-6 pt-2">
         <div
           class="w-24 h-24 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden mb-3"
@@ -50,11 +49,13 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalDetailKeluarga } from '@shared/services/warga.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { waitImages } from '@shared/utils/waitImages.js'
 
 const route = useRoute()
 const loading = ref(true)
@@ -70,14 +71,17 @@ function inisial(nama) {
 }
 
 onMounted(async () => {
+  loading.value = true
   const id = route.params.id
   const res = await portalDetailKeluarga(id)
-  loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
+    loading.value = false
     return
   }
   data.value = res.data
   fotoUrl.value = res.data?.foto ? mediaUrl(res.data.foto) : ''
+  if (fotoUrl.value) await waitImages([fotoUrl.value])
+  loading.value = false
 })
 </script>
