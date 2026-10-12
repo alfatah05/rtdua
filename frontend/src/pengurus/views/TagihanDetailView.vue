@@ -2,7 +2,7 @@
   <div>
     <AppBackHeader title="Rincian tagihan" />
 
-    <div v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-8">Memuat…</div>
+    <AppPageSpinner v-if="loading" />
     <div v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</div>
     <template v-else>
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4 text-center">
@@ -80,6 +80,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
