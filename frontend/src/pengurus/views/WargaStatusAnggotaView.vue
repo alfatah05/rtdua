@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Status anggota" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="loadErr" class="text-[13px] text-red-600 text-center py-4">{{ loadErr }}</p>
     <form v-else class="space-y-4" @submit.prevent="onSave">
       <p class="text-[13px] text-[var(--mut)] m-0">
@@ -61,6 +61,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
