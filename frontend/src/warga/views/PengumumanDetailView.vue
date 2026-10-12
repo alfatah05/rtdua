@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Detail pengumuman" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="item">
       <p class="text-[12px] text-[var(--mut)] m-0 mb-1">{{ formatTgl(item.diterbitkan_pada) }}</p>
@@ -11,7 +11,7 @@
       <div v-if="isImage" class="mb-4">
         <p class="text-[13px] font-semibold text-[var(--mut)] mb-2">Lampiran</p>
         <a :href="lampiranUrl" target="_blank" rel="noopener" class="block rounded-[16px] overflow-hidden border border-[var(--line)] bg-[var(--search)]">
-          <img :src="lampiranUrl" alt="Lampiran" class="w-full max-h-[420px] object-contain bg-white" @error="imgError = true" />
+          <img :src="lampiranUrl" alt="Lampiran" class="w-full max-h-[420px] object-contain bg-white" @error="imgError = true"  loading="lazy" decoding="async" />
         </a>
         <p v-if="imgError" class="text-[13px] text-red-600 mt-2">Gagal memuat gambar. Coba buka tautan di bawah.</p>
         <a :href="lampiranUrl" target="_blank" rel="noopener" class="inline-block mt-2 text-[13px] font-semibold text-[var(--g)]">Buka gambar penuh →</a>
@@ -36,6 +36,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { renderMarkdown } from '@shared/utils/markdown.js'
 import { useRoute } from 'vue-router'
