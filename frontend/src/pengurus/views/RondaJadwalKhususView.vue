@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Jadwal khusus" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
     <template v-else>
@@ -78,7 +78,7 @@
       <p v-if="msg" class="text-[13px] text-center mb-4" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
 
       <p class="text-[15px] font-bold mb-3 mt-2">Semua jadwal khusus</p>
-      <p v-if="listLoading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat…</p>
+      <AppPageSpinner v-if="listLoading" />
       <p v-else-if="!listMalam.length" class="text-[13px] text-[var(--mut)] text-center py-4">
         Belum ada jadwal khusus
       </p>
@@ -138,6 +138,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
