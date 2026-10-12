@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader :title="isEdit ? 'Edit pengumuman' : 'Tambah pengumuman'" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <form v-else class="space-y-4" @submit.prevent="onSave">
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Judul</label>
@@ -48,6 +48,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
