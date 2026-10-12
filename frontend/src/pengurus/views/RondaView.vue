@@ -21,7 +21,7 @@
         </button>
       </div>
       <div class="px-4 py-3 space-y-1">
-        <p v-if="malamLoading" class="text-[13px] text-[var(--mut)] m-0">Memuat…</p>
+        <AppPageSpinner v-if="malamLoading" class="!py-6" />
         <template v-else-if="malam">
           <div v-for="k in (malam.keluarga || [])" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-1">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -98,7 +98,7 @@
           <ChevronRight :size="20" />
         </button>
       </div>
-      <p v-if="selectedLoading" class="text-[13px] text-[var(--mut)] py-2">Memuat…</p>
+      <AppPageSpinner v-if="selectedLoading" class="!py-6" />
       <template v-else-if="selectedDetail">
         <div v-for="k in (selectedDetail.keluarga || [])" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-2">
           <div class="flex items-center gap-2.5 min-w-0">
@@ -121,6 +121,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Calendar, List, Banknote, ChevronRight, ChevronLeft } from 'lucide-vue-next'
@@ -257,7 +259,6 @@ function buildDays(kal) {
     const r = byDate[date]
     const dariKhusus = !!khususSet.value[date]
     const khusus = r?.sumber === 'khusus' || (!r && dariKhusus)
-    // Fallback: hari tetap dari listJadwalTetap (biar highlight tetap ada meski kalender API kosong)
     const dow = new Date(y, m - 1, n).getDay()
     const dariTetap = !!hariTetap.value[dow]
     const ronda = !!r || khusus || (!khusus && dariTetap)
