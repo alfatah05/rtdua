@@ -2,7 +2,7 @@
   <div class="pb-24">
     <AppBackHeader :title="title" />
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
     <template v-else>
@@ -16,7 +16,7 @@
         />
       </div>
 
-      <p v-if="wargaLoading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+      <AppPageSpinner v-if="wargaLoading" />
       <p v-else-if="!filtered.length" class="text-[13px] text-[var(--mut)] text-center py-6">Tidak ada data</p>
 
       <div v-else class="space-y-0.5">
@@ -70,6 +70,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search, Check } from 'lucide-vue-next'
