@@ -5,7 +5,7 @@
       <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Bulan</label>
       <input v-model="bulan" type="month" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" @change="load" />
     </div>
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="data">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4 space-y-2">
@@ -34,6 +34,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { laporan } from '@shared/services/keuangan.js'
