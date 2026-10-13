@@ -1,13 +1,21 @@
 import { compressImage, makeThumb } from '../utils/imageCompress.js'
 
 /**
- * Upload file gambar. jenis: bukti | ronda | galeri | banner | foto_profil | logo
+ * Upload file gambar.
+ * jenis: bukti | ronda | galeri | banner | foto_profil | logo
+ *
+ * Semua jenis (kecuali galeri) dikompres ke WebP (alpha aman).
+ * Galeri RT: hanya di-resize, format asli dipertahankan.
  */
 export async function uploadGambar(file, jenis, { maxSide = 1600, withThumb = false } = {}) {
   try {
-    // Logo & banner: sisi lebih kecil, tetap jaga PNG/WebP transparan lewat compressImage
+    const isGaleri = jenis === 'galeri'
     const side = jenis === 'logo' ? Math.min(maxSide, 800) : maxSide
-    const compressed = await compressImage(file, { maxSide: side })
+    const compressed = await compressImage(file, {
+      maxSide: side,
+      quality: isGaleri ? 0.85 : 0.8,
+      preferOriginal: isGaleri,
+    })
     const fd = new FormData()
     fd.append('jenis', jenis)
     fd.append('file', compressed, compressed.name)
@@ -33,17 +41,22 @@ export async function uploadGambar(file, jenis, { maxSide = 1600, withThumb = fa
 
 /**
  * Upload lampiran pengumuman: PDF atau gambar.
+ * Gambar → WebP; PDF tidak disentuh.
  */
 export async function uploadLampiran(file) {
   try {
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')
     let bodyFile = file
     if (!isPdf) {
-      bodyFile = await compressImage(file, { maxSide: 1600 })
+      bodyFile = await compressImage(file, { maxSide: 1600, quality: 0.8, preferOriginal: false })
     }
     const fd = new FormData()
     fd.append('jenis', 'lampiran')
-    fd.append('file', bodyFile, file.name || (isPdf ? 'lampiran.pdf' : bodyFile.name || 'lampiran.jpg'))
+    fd.append(
+      'file',
+      bodyFile,
+      isPdf ? file.name || 'lampiran.pdf' : bodyFile.name || 'lampiran.webp',
+    )
     const res = await fetch('/api/upload', {
       method: 'POST',
       credentials: 'same-origin',
