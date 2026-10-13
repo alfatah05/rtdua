@@ -70,6 +70,48 @@
         </div>
       </div>
 
+      <template v-if="komponenKas.length">
+        <h2 class="text-[15px] font-bold m-0 mb-2">Komposisi iuran tetap</h2>
+        <div
+          class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
+          style="padding: 5px"
+        >
+          <div
+            class="flex items-center justify-between px-3"
+            style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
+          >
+            <span class="text-[12px] font-semibold text-[var(--gm)]">Komponen</span>
+            <span class="text-[12px] font-semibold text-[var(--gm)]">Biaya</span>
+          </div>
+          <div
+            v-for="c in komponenKas"
+            :key="'k-' + c.id"
+            class="flex items-center gap-3 py-2.5"
+            style="padding-left: 10px; padding-right: 10px"
+          >
+            <div
+              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+              style="background: rgba(59,130,246,.16); color: #2563EB"
+            >
+              <Home :size="16" />
+            </div>
+            <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">{{ c.nama }}</p>
+            <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(c.nominal) }}</span>
+          </div>
+          <div class="flex justify-end" style="padding: 2px 0 4px">
+            <div
+              class="inline-flex items-center justify-between gap-4 px-3 min-w-[48%]"
+              style="height: 30px; border-radius: 15px; background: rgba(245, 158, 11, 0.16)"
+            >
+              <span class="text-[12px] font-bold" style="color: #B45309">Total / bulan</span>
+              <span class="text-[13px] font-extrabold tabular-nums" style="color: #D97706">
+                {{ rp(totalKasBulanan || komponenKas.reduce((s, c) => s + Number(c.nominal || 0), 0)) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+
       <h2 class="text-[15px] font-bold m-0 mb-2">Rincian tagihan</h2>
       <div
         class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
@@ -173,6 +215,8 @@ const total = ref(0)
 const tagihan = ref([])
 const riwayat = ref([])
 const permintaan = ref([])
+const komponenKas = ref([])
+const totalKasBulanan = ref(0)
 
 const BULAN = [
   '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -310,6 +354,8 @@ onMounted(async () => {
   }
   total.value = Number(res.data?.total ?? 0)
   tagihan.value = res.data?.tagihan || []
+  komponenKas.value = Array.isArray(res.data?.komponen_kas) ? res.data.komponen_kas : []
+  totalKasBulanan.value = Number(res.data?.total_kas_bulanan ?? 0)
   if (Array.isArray(res.data?.riwayat) && res.data.riwayat.length) {
     riwayat.value = res.data.riwayat
   } else {
