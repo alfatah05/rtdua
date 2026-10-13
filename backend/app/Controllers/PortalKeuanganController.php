@@ -22,15 +22,19 @@ class PortalKeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $ring = (new TagihanService())->ringkasanKeluarga($ctx['keluarga_id']);
+        $komponen = (new \App\Services\IuranKomponenService())->list(true);
         return ApiResponse::ok([
             'total'      => $ring['total'],
             'status'     => $ring['status'],
             'menunggak'  => $ring['menunggak'],
+            'komponen_kas' => $komponen,
+            'total_kas_bulanan' => (new \App\Services\IuranKomponenService())->totalAktif(),
             'tagihan'    => array_map(static function ($t) {
                 return [
                     'id'      => $t['id'],
                     'periode' => $t['periode'],
                     'jenis'   => $t['jenis'],
+                    'nama'    => $t['nama'] ?? null,
                     'nominal' => $t['nominal'],
                     'sisa'    => $t['sisa'],
                 ];
