@@ -181,6 +181,52 @@ export async function pastikanTagihanKas(periode) {
   }
 }
 
+// ---- Komponen iuran tetap ----
+export async function listIuranKomponen() {
+  try {
+    const res = await api('/keuangan/iuran-komponen')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function buatIuranKomponen(payload) {
+  try {
+    const res = await api('/keuangan/iuran-komponen', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function ubahIuranKomponen(id, payload) {
+  try {
+    const res = await api('/keuangan/iuran-komponen/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function hapusIuranKomponen(id) {
+  try {
+    const res = await api('/keuangan/iuran-komponen/' + id, { method: 'DELETE' })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function terapkanKomponenBulanIni() {
+  try {
+    const res = await api('/keuangan/iuran-komponen/terapkan-bulan-ini', { method: 'POST', body: {} })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 // ---- Portal warga ----
 
 export async function portalRingkasan() {
