@@ -25,7 +25,7 @@
 <script setup>
 import { computed } from 'vue'
 import {
-  Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2,
+  Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
   UserPlus, ScanLine, Download, Shield, Clock, Megaphone, Images, Network, Users, Settings
 } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
@@ -44,6 +44,7 @@ const groups = [
       { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(16,185,129,.18)', color: '#059669' },
       { label: 'Iuran khusus', icon: Banknote, to: '/keuangan/iuran-khusus', bg: 'rgba(16,185,129,.18)', color: '#059669' },
       { label: 'Tarif & denda', icon: Settings2, to: '/pengaturan-warga', bg: 'rgba(16,185,129,.18)', color: '#059669' },
+      { label: 'Rekening bayar', icon: CreditCard, to: '/rekening-pembayaran', bg: 'rgba(16,185,129,.18)', color: '#059669' },
     ],
   },
   {
