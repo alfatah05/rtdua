@@ -7,7 +7,7 @@
         : 'pb-[calc(24px+env(safe-area-inset-bottom,0px))]'"
     >
       <!-- Header utama stabil (tidak remount saat ganti tab) -->
-      <AppMainHeader v-if="showNav" />
+      <AppMainHeader v-if="showNav" show-pengumuman />
       <router-view />
     </main>
     <AppBottomNav v-if="showNav" side="warga" />
