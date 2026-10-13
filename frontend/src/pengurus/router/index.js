@@ -24,6 +24,7 @@ import AktivitasView from '../views/AktivitasView.vue'
 import AktivitasDetailView from '../views/AktivitasDetailView.vue'
 import ProfilView from '../views/ProfilView.vue'
 import LainnyaView from '../views/LainnyaView.vue'
+import RekeningPembayaranView from '../views/RekeningPembayaranView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import PengumumanListView from '../views/PengumumanListView.vue'
 import PengumumanFormView from '../views/PengumumanFormView.vue'
@@ -96,6 +97,7 @@ const routes = [
       { path: 'aktivitas/:id', component: AktivitasDetailView },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'lainnya', name: 'lainnya', component: LainnyaView },
+      { path: 'rekening-pembayaran', name: 'rekening-pembayaran', component: RekeningPembayaranView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
 
       { path: 'konten/pengumuman', component: PengumumanListView },
