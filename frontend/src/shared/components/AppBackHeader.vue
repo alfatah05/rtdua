@@ -18,7 +18,15 @@
       <ChevronLeft :size="24" :stroke-width="2.25" />
     </button>
     <h1 class="flex-1 text-xl font-extrabold m-0 text-[var(--text)] leading-tight truncate pl-1">{{ title }}</h1>
-    <div v-if="showNotifIcon || showProfilIcon" class="flex items-center shrink-0" style="margin-right: -6px">
+    <div v-if="showPengumumanIcon || showNotifIcon || showProfilIcon" class="flex items-center shrink-0" style="margin-right: -6px">
+      <router-link
+        v-if="showPengumumanIcon"
+        to="/pengumuman"
+        class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+        aria-label="Pengumuman"
+      >
+        <Megaphone :size="20" />
+      </router-link>
       <router-link
         v-if="showNotifIcon"
         to="/notifikasi"
@@ -46,23 +54,33 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ChevronLeft, Bell, UserRound } from 'lucide-vue-next'
+import { ChevronLeft, Bell, UserRound, Megaphone } from 'lucide-vue-next'
 import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
 const props = defineProps({
   title: { type: String, required: true },
-  /** Tampilkan aksi kanan (notif/profil). Default true. */
+  /** Tampilkan aksi kanan (pengumuman/notif/profil). Default true. */
   showActions: { type: Boolean, default: true },
   /** Override icon notif. null = ikut showActions. */
   showNotif: { type: Boolean, default: null },
   /** Override icon profil. null = auto (warga=false, pengurus=true). */
   showProfil: { type: Boolean, default: null },
+  /** Icon pengumuman. null = tampil bila showActions (child warga). */
+  showPengumuman: { type: Boolean, default: null },
 })
 
 const showNotifIcon = computed(() => {
   if (!props.showActions) return false
   if (props.showNotif === false) return false
   if (props.showNotif === true) return true
+  return true
+})
+
+const showPengumumanIcon = computed(() => {
+  if (!props.showActions) return false
+  if (props.showPengumuman === false) return false
+  if (props.showPengumuman === true) return true
+  // default: tampil di halaman child (sama seperti notif)
   return true
 })
 
