@@ -1,7 +1,5 @@
 <template>
   <div>
-    <AppBackHeader title="Struktur pengurus" />
-
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
@@ -58,7 +56,6 @@
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, onMounted } from 'vue'
-import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { getStruktur } from '@shared/services/struktur.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { waitImages, takeImageUrls } from '@shared/utils/waitImages.js'
