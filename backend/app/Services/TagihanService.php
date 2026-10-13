@@ -7,6 +7,7 @@ use App\Libraries\AlokasiPembayaran;
 /**
  * Tagihan per keluarga: total, sisa per item, status.
  * Sisa dihitung ulang dari seluruh pembayaran (tidak disimpan per alokasi).
+ * Jika pembayaran punya tagihan_ids (checklist warga), potongan hanya ke ID itu.
  */
 class TagihanService
 {
@@ -63,7 +64,9 @@ class TagihanService
         foreach ($pembayaran as $p) {
             $nominal = (int) $p['nominal'];
             $totalBayar += $nominal;
-            $alok = AlokasiPembayaran::alokasi($items, $nominal);
+            // Checklist warga: alokasi hanya ke tagihan yang dipilih
+            $hanyaIds = AlokasiPembayaran::parseIds($p['tagihan_ids'] ?? null);
+            $alok = AlokasiPembayaran::alokasi($items, $nominal, $hanyaIds);
             foreach ($alok['potongan'] as $pot) {
                 foreach ($items as &$it) {
                     if ($it['id'] === (int) $pot['tagihan_id']) {
