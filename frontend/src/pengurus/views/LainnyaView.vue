@@ -1,23 +1,21 @@
 <template>
   <div>
-    <AppMainHeader title="Lainnya" />
-    <div v-for="g in visibleGroups" :key="g.title" class="mb-5">
-      <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2 px-1">{{ g.title }}</h2>
-      <div class="grid grid-cols-3 gap-2">
+    <AppBackHeader title="Lainnya" />
+
+    <div v-for="group in visibleGroups" :key="group.title" class="mb-6">
+      <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2 px-1">{{ group.title }}</h2>
+      <div class="grid grid-cols-4 gap-3">
         <button
-          v-for="it in g.items"
-          :key="it.label"
+          v-for="item in group.items"
+          :key="item.label"
           type="button"
-          class="flex flex-col items-center gap-2 p-3 rounded-[16px] bg-[var(--card)] border border-[var(--line)] active:scale-[0.98] transition"
-          @click="$router.push(it.to)"
+          class="flex flex-col items-center gap-1.5 text-center"
+          @click="$router.push(item.to)"
         >
-          <div
-            class="w-11 h-11 rounded-full grid place-items-center"
-            :style="{ background: it.bg, color: it.color }"
-          >
-            <component :is="it.icon" :size="20" />
-          </div>
-          <span class="text-[11px] font-semibold text-center leading-tight">{{ it.label }}</span>
+          <span class="w-12 h-12 rounded-full grid place-items-center" :style="{ background: item.bg, color: item.color }">
+            <component :is="item.icon" :size="20" />
+          </span>
+          <span class="text-[11px] font-semibold leading-tight">{{ item.label }}</span>
         </button>
       </div>
     </div>
@@ -27,11 +25,10 @@
 <script setup>
 import { computed } from 'vue'
 import {
-  Banknote, ArrowDownLeft, ArrowUpRight, ClipboardList, FileText, Settings2,
-  CreditCard, UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network,
-  Settings, Users,
+  Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
+  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings,
 } from 'lucide-vue-next'
-import AppMainHeader from '@shared/components/AppMainHeader.vue'
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
 
 const { isKetua } = useAuth()
