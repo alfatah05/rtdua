@@ -11,6 +11,14 @@
     <h1 class="text-[24px] font-extrabold text-[var(--text)] tracking-tight m-0 leading-none">rtdua</h1>
     <div class="flex items-center" style="margin-right: -6px">
       <router-link
+        v-if="showPengumuman"
+        to="/pengumuman"
+        class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+        aria-label="Pengumuman"
+      >
+        <Megaphone :size="20" />
+      </router-link>
+      <router-link
         to="/notifikasi"
         class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] relative"
         aria-label="Notifikasi"
@@ -35,11 +43,13 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { Bell, UserRound } from 'lucide-vue-next'
+import { Bell, UserRound, Megaphone } from 'lucide-vue-next'
 import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
 defineProps({
   showProfil: { type: Boolean, default: false },
+  /** Icon pengumuman (warga beranda). */
+  showPengumuman: { type: Boolean, default: false },
 })
 
 const { badge, ensure } = useNotifBadge()
