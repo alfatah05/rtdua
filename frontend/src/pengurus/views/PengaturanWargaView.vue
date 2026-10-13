@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Tarif iuran & denda" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-8">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <form v-else class="space-y-4" @submit.prevent="onSave">
       <div>
@@ -43,6 +43,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { getPengaturan, updateWarga } from '@shared/services/pengaturan.js'

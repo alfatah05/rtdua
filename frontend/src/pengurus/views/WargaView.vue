@@ -17,7 +17,7 @@
       </button>
     </div>
     <p class="text-[13px] text-[var(--mut)] mb-1 px-2">{{ filtered.length }} keluarga</p>
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <div v-else class="px-1 space-y-0.5">
       <button v-for="k in filtered" :key="k.id" type="button"
         class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
@@ -38,6 +38,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'

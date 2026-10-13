@@ -13,7 +13,7 @@
       </button>
     </div>
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-8">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <EmptyState v-else-if="!items.length" title="Belum ada notifikasi" />
     <div v-else>
@@ -43,6 +43,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'

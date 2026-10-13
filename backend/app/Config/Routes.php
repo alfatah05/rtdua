@@ -43,6 +43,7 @@ $routes->get('bantuan', 'PengurusController::bantuan', ['filter' => 'auth']);
 $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
+$routes->get('portal/warga/(:num)', 'PortalController::detailKeluarga/$1', ['filter' => 'auth']);
 $routes->get('portal/keluarga', 'PortalController::keluargaSaya', ['filter' => 'auth']);
 
 $routes->get('keuangan/iuran', 'KeuanganController::daftarIuran', ['filter' => 'auth']);
@@ -73,6 +74,7 @@ $routes->get('portal/keuangan/kas', 'PortalKeuanganController::kas', ['filter' =
 
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
 $routes->get('notifikasi/badge', 'NotifikasiController::badge', ['filter' => 'auth']);
+$routes->get('notifikasi/(:num)', 'NotifikasiController::show/$1', ['filter' => 'auth']);
 $routes->post('notifikasi/(:num)/baca', 'NotifikasiController::baca/$1', ['filter' => 'auth']);
 $routes->post('notifikasi/baca-semua', 'NotifikasiController::bacaSemua', ['filter' => 'auth']);
 $routes->get('push/vapid-public', 'PushController::vapidPublic', ['filter' => 'auth']);

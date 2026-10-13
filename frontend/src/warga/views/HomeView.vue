@@ -1,122 +1,165 @@
 <template>
   <div>
-    <AppMainHeader />
-    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center overflow-hidden">
-        <img v-if="logoRtUrl" :src="logoRtUrl" alt="Logo RT" class="w-full h-full object-contain" @error="logoRtUrl = ''" />
-        <Landmark v-else :size="26" class="text-[var(--mut)]" />
-      </div>
-      <div>
-        <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
-        <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
-      </div>
-      <div class="w-[60px] h-[60px] rounded-full bg-[var(--card)] border border-[var(--line)] grid place-items-center overflow-hidden">
-        <img v-if="logoDesaUrl" :src="logoDesaUrl" alt="Logo desa" class="w-full h-full object-contain" @error="logoDesaUrl = ''" />
-        <Handshake v-else :size="26" class="text-[var(--mut)]" />
-      </div>
-    </div>
-    <div class="h-px bg-[var(--line)] my-4"></div>
-
-    <div v-if="pengumuman.length" class="space-y-3 mb-5">
-      <div
-        v-for="p in pengumuman"
-        :key="p.id"
-        class="rounded-[20px] overflow-hidden relative text-white"
-        :style="cardStyle(true)"
-      >
-        <div class="p-5 relative z-10">
-          <div class="flex items-center justify-between gap-2 flex-wrap">
-            <span class="flex items-center gap-2 text-[13px] font-semibold text-white/90">
-              <Megaphone :size="16" /> Pengumuman
-              <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
-            </span>
-            <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">
-              {{ p.tanggal }}
-            </span>
-          </div>
-          <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
-          <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34]"
-            @click="$router.push('/pengumuman/' + p.id)"
-          >
-            Lihat detail <ChevronRight :size="18" />
-          </button>
+    <!-- Skeleton beranda (header/nav tidak ikut) -->
+    <div v-if="loading" class="animate-pulse" aria-hidden="true">
+      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
+        <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
+        <div class="min-w-0 space-y-2">
+          <div class="h-5 rounded-full bg-[var(--card2)] w-[70%] mx-auto" />
+          <div class="h-3 rounded-full bg-[var(--card2)] w-[55%] mx-auto" />
         </div>
-        <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
+        <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
+      </div>
+      <div class="h-px bg-[var(--line)] my-4" />
+      <div class="rounded-[20px] h-[160px] bg-[var(--card2)] mb-3" />
+      <div class="rounded-[20px] h-[110px] bg-[var(--card2)] mb-4" />
+      <div class="grid grid-cols-2 gap-2">
+        <div v-for="n in 6" :key="n" class="rounded-[20px] h-[120px] bg-[var(--card2)]" />
       </div>
     </div>
 
-    <button
-      type="button"
-      class="w-full rounded-[20px] p-5 text-left active:scale-[0.98] transition mb-4 relative overflow-hidden shadow-[var(--sh)]"
-      :class="iuranStatus === 'loading' ? 'border border-[var(--line)]' : ''"
-      :style="iuranCardStyle"
-      @click="$router.push('/rincian-iuran')"
-    >
-      <div class="relative z-10 flex items-start gap-3">
+    <template v-else>
+      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
         <div
-          class="w-11 h-11 rounded-full grid place-items-center shrink-0"
-          :class="iuranStatus === 'loading' ? 'bg-[var(--card)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+          class="w-[60px] h-[60px] grid place-items-center shrink-0"
+          :class="logoRtUrl
+            ? 'rounded-[12px] bg-transparent'
+            : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
         >
-          <Wallet :size="20" />
+          <img
+            v-if="logoRtUrl"
+            :src="logoRtUrl"
+            alt="Logo RT"
+            class="max-w-full max-h-full w-auto h-auto object-contain"
+            @error="logoRtUrl = ''"
+          />
+          <Landmark v-else :size="26" class="text-[var(--mut)]" />
         </div>
-        <div class="flex-1 min-w-0">
-          <p
-            class="text-[13px] font-semibold m-0"
-            :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/90'"
-          >
-            {{ iuranTitle }}
-          </p>
-          <p
-            class="text-[28px] font-extrabold tracking-tight m-0 mt-1 leading-none"
-            :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
-          >
-            {{ iuranNominal }}
-          </p>
-          <p
-            class="text-[13px] m-0 mt-2 flex items-center gap-1"
-            :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
-          >
-            <span>{{ iuranHint }}</span>
-            <ChevronRight :size="16" class="opacity-80" />
-          </p>
+        <div class="min-w-0">
+          <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
+          <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
+        </div>
+        <div
+          class="w-[60px] h-[60px] grid place-items-center shrink-0"
+          :class="logoDesaUrl
+            ? 'rounded-[12px] bg-transparent'
+            : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
+        >
+          <img
+            v-if="logoDesaUrl"
+            :src="logoDesaUrl"
+            alt="Logo desa"
+            class="max-w-full max-h-full w-auto h-auto object-contain"
+            @error="logoDesaUrl = ''"
+          />
+          <Handshake v-else :size="26" class="text-[var(--mut)]" />
         </div>
       </div>
-      <div
-        v-if="iuranStatus !== 'loading'"
-        class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
-      ></div>
-    </button>
+      <div class="h-px bg-[var(--line)] my-4"></div>
 
-    <div class="grid grid-cols-2 gap-2">
+      <div v-if="pengumuman.length" class="space-y-3 mb-5">
+        <div
+          v-for="p in pengumuman"
+          :key="p.id"
+          class="rounded-[20px] overflow-hidden relative text-white"
+          :style="cardStyle(true)"
+        >
+          <div class="p-5 relative z-10">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="flex items-center gap-2 text-[13px] font-semibold text-white/90">
+                <Megaphone :size="16" /> Pengumuman
+                <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
+              </span>
+              <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">
+                {{ p.tanggal }}
+              </span>
+            </div>
+            <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
+            <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34]"
+              @click="$router.push('/pengumuman/' + p.id)"
+            >
+              Lihat detail <ChevronRight :size="18" />
+            </button>
+          </div>
+          <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
+        </div>
+      </div>
+
       <button
-        v-for="m in menus"
-        :key="m.to"
         type="button"
-        class="relative flex flex-col items-start gap-1 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition"
-        @click="$router.push(m.to)"
+        class="w-full rounded-[20px] p-5 text-left active:scale-[0.98] transition mb-4 relative overflow-hidden shadow-[var(--sh)]"
+        :class="iuranStatus === 'loading' ? 'border border-[var(--line)]' : ''"
+        :style="iuranCardStyle"
+        @click="$router.push('/rincian-iuran')"
       >
-        <span class="w-11 h-11 rounded-full grid place-items-center mb-2" :style="{ background: m.bg, color: m.color }">
-          <component :is="m.icon" :size="20" />
-        </span>
-        <b class="text-[15px] font-bold leading-tight">{{ m.label }}</b>
-        <span class="text-[13px] text-[var(--mut)] leading-snug">{{ m.desc }}</span>
-        <span class="absolute top-[26px] right-4 w-7 h-7 rounded-full grid place-items-center" :style="{ background: m.bg, color: m.color }">
-          <ChevronRight :size="16" />
-        </span>
+        <div class="relative z-10 flex items-start gap-3">
+          <div
+            class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+            :class="iuranStatus === 'loading' ? 'bg-[var(--card)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+          >
+            <Wallet :size="20" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p
+              class="text-[13px] font-semibold m-0"
+              :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/90'"
+            >
+              {{ iuranTitle }}
+            </p>
+            <p
+              class="text-[28px] font-extrabold tracking-tight m-0 mt-1 leading-none"
+              :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
+            >
+              {{ iuranNominal }}
+            </p>
+            <p
+              class="text-[13px] m-0 mt-2 flex items-center gap-1"
+              :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
+            >
+              <span>{{ iuranHint }}</span>
+              <ChevronRight :size="16" class="opacity-80" />
+            </p>
+          </div>
+        </div>
+        <div
+          v-if="iuranStatus !== 'loading'"
+          class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
+        ></div>
       </button>
-    </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          v-for="m in menus"
+          :key="m.to"
+          type="button"
+          class="relative flex flex-col items-start gap-1 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition"
+          @click="$router.push(m.to)"
+        >
+          <span class="w-11 h-11 rounded-full grid place-items-center mb-2" :style="{ background: m.bg, color: m.color }">
+            <component :is="m.icon" :size="20" />
+          </span>
+          <b class="text-[15px] font-bold leading-tight">{{ m.label }}</b>
+          <span class="text-[13px] text-[var(--mut)] leading-snug">{{ m.desc }}</span>
+          <span class="absolute top-[26px] right-4 w-7 h-7 rounded-full grid place-items-center" :style="{ background: m.bg, color: m.color }">
+            <ChevronRight :size="16" />
+          </span>
+        </button>
+      </div>
+    </template>
   </div>
 </template>
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
 import { portalRingkasan } from '@shared/services/keuangan.js'
 import { mediaUrl } from '@shared/services/upload.js'
+import { plainFromMarkdown } from '@shared/utils/markdown.js'
+import { waitImages } from '@shared/utils/waitImages.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight, Wallet,
   ShieldCheck, ClipboardList, Images, Network, MessageCircle
@@ -151,7 +194,7 @@ const logoDesaUrl = ref('')
 const pengumuman = ref([])
 const loading = ref(true)
 
-const iuranStatus = ref('loading') // loading | pending | lunas | lebih
+const iuranStatus = ref('loading')
 const iuranTitle = ref('Jumlah tagihan anda')
 const iuranNominal = ref('…')
 const iuranHint = ref('Ketuk untuk melihat rincian')
@@ -185,8 +228,7 @@ function formatTgl(s) {
   return Number.isNaN(d.getTime()) ? String(s).slice(0, 10) : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 function ringkas(isi) {
-  const t = String(isi || '').replace(/\s+/g, ' ').trim()
-  return t.length > 100 ? t.slice(0, 100) + '…' : t
+  return plainFromMarkdown(isi, 100)
 }
 function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
@@ -202,17 +244,21 @@ const menus = [
 ]
 
 onMounted(async () => {
+  loading.value = true
   const [pg, pn, iu] = await Promise.all([
     getPengaturan(),
     listPengumuman({ beranda: true }),
     portalRingkasan(),
   ])
-  loading.value = false
+
+  const imgs = []
   if (pg.ok && pg.data) {
     namaRt.value = pg.data.nama_rt || 'RT'
     namaPerumahan.value = pg.data.nama_perumahan || ''
     logoRtUrl.value = pg.data.logo_rt ? mediaUrl(pg.data.logo_rt) : ''
     logoDesaUrl.value = pg.data.logo_desa ? mediaUrl(pg.data.logo_desa) : ''
+    if (logoRtUrl.value) imgs.push(logoRtUrl.value)
+    if (logoDesaUrl.value) imgs.push(logoDesaUrl.value)
   }
   if (pn.ok) {
     pengumuman.value = (pn.data || [])
@@ -252,5 +298,8 @@ onMounted(async () => {
     iuranNominal.value = '—'
     iuranHint.value = 'Ketuk untuk melihat rincian'
   }
+
+  await waitImages(imgs)
+  loading.value = false
 })
 </script>

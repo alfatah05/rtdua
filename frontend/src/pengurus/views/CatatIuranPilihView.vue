@@ -8,7 +8,7 @@
       <input v-model="q" type="search" placeholder="Cari nama atau alamat" class="flex-1 bg-transparent outline-none text-[14px]" />
     </div>
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <EmptyState v-else-if="!filtered.length" title="Tidak ada keluarga" />
     <div v-else class="px-1 space-y-0.5">
@@ -33,6 +33,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { Search, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'

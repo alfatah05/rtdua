@@ -20,6 +20,14 @@ export async function listNotifikasi(opts) {
   return real.listNotifikasi(opts)
 }
 
+export async function detailNotifikasi(id) {
+  if (USE_MOCK.notifikasi) {
+    const item = mockList.find((x) => String(x.id) === String(id)) || mockList[0]
+    return { ok: true, data: item }
+  }
+  return real.detailNotifikasi(id)
+}
+
 export async function badgeNotifikasi() {
   if (USE_MOCK.notifikasi) return { ok: true, data: { belum_dibaca: 1 } }
   return real.badgeNotifikasi()

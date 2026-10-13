@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Filter" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-4">Memuat blok…</p>
+    <AppPageSpinner v-if="loading" />
     <div class="space-y-5 pb-28">
       <div>
         <p class="text-[13px] font-bold text-[var(--mut)] mb-2">Blok</p>
@@ -40,6 +40,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'

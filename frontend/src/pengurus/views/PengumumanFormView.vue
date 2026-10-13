@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader :title="isEdit ? 'Edit pengumuman' : 'Tambah pengumuman'" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <form v-else class="space-y-4" @submit.prevent="onSave">
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Judul</label>
@@ -9,9 +9,8 @@
           class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)]" />
       </div>
       <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Isi</label>
-        <textarea v-model="isi" rows="5" placeholder="Isi pengumuman"
-          class="w-full px-4 py-3 rounded-[12px] bg-[var(--search)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)] resize-none" />
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Isi (Markdown)</label>
+        <MarkdownEditor v-model="isi" :rows="8" placeholder="Tulis pengumuman… support **tebal**, list, tabel, dll." />
       </div>
       <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Lampiran (opsional, PDF atau gambar)</label>
@@ -49,9 +48,12 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
+import MarkdownEditor from '@shared/components/MarkdownEditor.vue'
 import { detailPengumuman, buatPengumuman, ubahPengumuman, hapusPengumuman } from '@shared/services/konten.js'
 import { uploadLampiran } from '@shared/services/upload.js'
 

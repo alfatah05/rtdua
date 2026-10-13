@@ -2,7 +2,7 @@
   <div>
     <AppBackHeader title="Rincian iuran" />
 
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else>
       <div
@@ -159,6 +159,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { Wallet, Home, ShieldAlert, Sparkles } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
@@ -195,20 +197,19 @@ function labelJenisDasar(jenis) {
 }
 
 function iconMeta(jenis) {
-  // Pastel non-hijau/non-oranye (palette beranda)
   if (jenis === 'kas') {
-    return { icon: Home, bg: 'rgba(59,130,246,.16)', color: '#2563EB' } // biru
+    return { icon: Home, bg: 'rgba(59,130,246,.16)', color: '#2563EB' }
   }
   if (jenis === 'denda_ronda') {
-    return { icon: ShieldAlert, bg: 'rgba(168,85,247,.16)', color: '#7C3AED' } // ungu
+    return { icon: ShieldAlert, bg: 'rgba(168,85,247,.16)', color: '#7C3AED' }
   }
   if (jenis === 'khusus') {
-    return { icon: Sparkles, bg: 'rgba(236,72,153,.16)', color: '#DB2777' } // pink
+    return { icon: Sparkles, bg: 'rgba(236,72,153,.16)', color: '#DB2777' }
   }
   if (jenis === 'kelebihan') {
-    return { icon: Wallet, bg: 'rgba(6,182,212,.16)', color: '#0891B2' } // cyan
+    return { icon: Wallet, bg: 'rgba(6,182,212,.16)', color: '#0891B2' }
   }
-  return { icon: Wallet, bg: 'rgba(99,102,241,.14)', color: '#4F46E5' } // indigo
+  return { icon: Wallet, bg: 'rgba(99,102,241,.14)', color: '#4F46E5' }
 }
 
 function labelTagihan(t) {

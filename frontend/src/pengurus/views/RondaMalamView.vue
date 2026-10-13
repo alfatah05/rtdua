@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Malam ronda" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-8">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="malam">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4">
@@ -25,7 +25,7 @@
 
       <div v-if="editMode" class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 mb-4">
         <p class="text-[13px] text-[var(--mut)] m-0 mb-2">Centang keluarga yang bertugas malam ini</p>
-        <p v-if="loadingOpsi" class="text-[13px] text-[var(--mut)]">Memuat daftar…</p>
+        <AppPageSpinner v-if="loadingOpsi" class="!py-6" />
         <div v-else class="max-h-64 overflow-y-auto space-y-1 mb-3">
           <label v-for="k in opsiKeluarga" :key="k.id" class="flex items-center gap-2 py-2 px-1">
             <input type="checkbox" :value="k.id" v-model="selectedIds" class="w-4 h-4" />
@@ -75,6 +75,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'

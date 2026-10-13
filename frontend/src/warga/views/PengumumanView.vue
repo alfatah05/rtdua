@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Pengumuman" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <p v-else-if="!daftar.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada pengumuman</p>
     <div v-else class="space-y-3">
@@ -42,10 +42,13 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { Megaphone, ChevronRight } from 'lucide-vue-next'
 import { listPengumuman } from '@shared/services/konten.js'
+import { plainFromMarkdown } from '@shared/utils/markdown.js'
 
 const daftar = ref([])
 const loading = ref(true)
@@ -81,8 +84,7 @@ function formatTgl(s) {
 }
 
 function ringkas(isi) {
-  const t = String(isi || '').replace(/\s+/g, ' ').trim()
-  return t.length > 120 ? t.slice(0, 120) + '…' : t
+  return plainFromMarkdown(isi, 120)
 }
 
 onMounted(async () => {

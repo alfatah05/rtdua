@@ -1,7 +1,7 @@
 <template>
   <div>
     <AppBackHeader title="Permintaan konfirmasi" />
-    <p v-if="loading" class="text-[13px] text-[var(--mut)] text-center py-6">Memuat…</p>
+    <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="item">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4 space-y-3">
@@ -24,7 +24,7 @@
         </div>
         <div v-if="item.bukti_file">
           <p class="text-[13px] text-[var(--mut)] m-0 mb-1">Bukti</p>
-          <img :src="buktiUrl" alt="Bukti" class="max-h-48 rounded-[12px] object-contain bg-[var(--search)]" />
+          <img :src="buktiUrl" alt="Bukti" class="max-h-48 rounded-[12px] object-contain bg-[var(--search)]"  loading="lazy" decoding="async" />
         </div>
         <div v-if="item.status && item.status !== 'menunggu'">
           <p class="text-[13px] text-[var(--mut)] m-0">Status</p>
@@ -41,6 +41,8 @@
   </div>
 </template>
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'

@@ -10,6 +10,15 @@ export async function listNotifikasi({ limit = 50, offset = 0 } = {}) {
   }
 }
 
+export async function detailNotifikasi(id) {
+  try {
+    const res = await api('/notifikasi/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function badgeNotifikasi() {
   try {
     const res = await api('/notifikasi/badge')

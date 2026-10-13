@@ -12,7 +12,7 @@
         </div>
       </div>
       <div class="px-4 py-3 space-y-1">
-        <p v-if="malamLoading" class="text-[13px] text-[var(--mut)] m-0">Memuat…</p>
+        <AppPageSpinner v-if="malamLoading" class="!py-6" />
         <template v-else-if="malam">
           <div
             v-for="k in (malam.keluarga || [])"
@@ -89,7 +89,7 @@
           <template v-if="selectedDetail"> · {{ jamLabel(selectedDetail.jam_mulai) }}–{{ jamLabel(selectedDetail.jam_selesai) }}</template>
         </p>
       </div>
-      <p v-if="selectedLoading" class="text-[13px] text-[var(--mut)] py-2">Memuat…</p>
+      <AppPageSpinner v-if="selectedLoading" class="!py-6" />
       <template v-else-if="selectedDetail">
         <div
           v-for="k in (selectedDetail.keluarga || [])"
@@ -116,6 +116,8 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
@@ -345,7 +347,6 @@ function buildDays(kal) {
 
 async function loadMeta() {
   if (metaLoaded) return
-  // skipUnauthorized: endpoint ini tadinya pengurus-only; jangan kick sesi warga
   const silent = { skipUnauthorized: true }
   const [tetapRes, khususRes, tplRes] = await Promise.all([
     listJadwalTetap(silent),
@@ -520,15 +521,10 @@ async function reloadAll() {
   if (selectedTanggal.value) {
     const res = await detailMalam(selectedTanggal.value)
     selectedDetail.value = res.ok ? res.data : null
-  } else {
-    const t = todayStr()
-    const dToday = days.value.find((d) => d.date === t)
-    if (dToday?.ronda) onPickDay(dToday)
   }
 }
 
 onMounted(() => {
-  calYm.value = ymFromDate(new Date())
   reloadAll()
   scheduleMidnightRefresh()
 })
@@ -539,10 +535,22 @@ onUnmounted(() => {
 
 watch(() => route.fullPath, (p) => {
   if (p === '/ronda' || p === '/ronda/') {
-    calYm.value = ymFromDate(new Date())
+    kalCache.clear()
     metaLoaded = false
     reloadAll()
   }
+})
+
+watch(() => todayStr(), () => {
+  const ym = ymFromDate(new Date())
+  if (calYm.value !== ym) {
+    calYm.value = ym
+    selectedTanggal.value = ''
+    selectedDetail.value = null
+  }
+  kalCache.clear()
+  metaLoaded = false
+  reloadAll()
 })
 
 watch(keluargaId, () => {

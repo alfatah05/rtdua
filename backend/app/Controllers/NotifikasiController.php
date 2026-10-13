@@ -32,6 +32,19 @@ class NotifikasiController extends ResourceController
         ]);
     }
 
+    public function show($id = null)
+    {
+        $uid = $this->userId();
+        if (!$uid) {
+            return ApiResponse::fail('Belum login.', 401);
+        }
+        $item = (new NotifikasiService())->detailForUser($uid, (int) $id);
+        if (!$item) {
+            return ApiResponse::fail('Notifikasi tidak ditemukan.', 404);
+        }
+        return ApiResponse::ok($item);
+    }
+
     public function badge()
     {
         $uid = $this->userId();
