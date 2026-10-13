@@ -13,8 +13,8 @@
       <div class="h-px bg-[var(--line)] my-4" />
       <div class="rounded-[20px] h-[160px] bg-[var(--card2)] mb-3" />
       <div class="rounded-[20px] h-[110px] bg-[var(--card2)] mb-4" />
-      <div class="grid grid-cols-2 gap-2">
-        <div v-for="n in 6" :key="n" class="rounded-[20px] h-[120px] bg-[var(--card2)]" />
+      <div class="flex flex-col gap-2.5">
+        <div v-for="n in 6" :key="n" class="rounded-[20px] h-[88px] bg-[var(--card2)]" />
       </div>
     </div>
 
@@ -130,22 +130,28 @@
         ></div>
       </button>
 
-      <div class="grid grid-cols-2 gap-2">
+      <div class="flex flex-col gap-2.5">
         <button
           v-for="m in menus"
           :key="m.to"
           type="button"
-          class="relative flex flex-col items-start gap-1 bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] shadow-[var(--sh)] text-left active:scale-[0.98] transition"
+          class="w-full rounded-[20px] p-5 text-left active:scale-[0.98] transition relative overflow-hidden shadow-[var(--sh)]"
+          :style="{ background: m.cardBg }"
           @click="$router.push(m.to)"
         >
-          <span class="w-11 h-11 rounded-full grid place-items-center mb-2" :style="{ background: m.bg, color: m.color }">
-            <component :is="m.icon" :size="20" />
-          </span>
-          <b class="text-[15px] font-bold leading-tight">{{ m.label }}</b>
-          <span class="text-[13px] text-[var(--mut)] leading-snug">{{ m.desc }}</span>
-          <span class="absolute top-[26px] right-4 w-7 h-7 rounded-full grid place-items-center" :style="{ background: m.bg, color: m.color }">
-            <ChevronRight :size="16" />
-          </span>
+          <div class="relative z-10 flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
+              <component :is="m.icon" :size="20" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[15px] font-bold m-0 text-white leading-tight">{{ m.label }}</p>
+              <p class="text-[13px] m-0 mt-1.5 flex items-center gap-1 text-white/85 leading-snug">
+                <span>{{ m.desc }}</span>
+                <ChevronRight :size="16" class="opacity-80 shrink-0" />
+              </p>
+            </div>
+          </div>
+          <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
         </button>
       </div>
     </template>
@@ -235,12 +241,48 @@ function rp(n) {
 }
 
 const menus = [
-  { to: '/pengumuman', label: 'Pengumuman', desc: 'Riwayat kabar pengurus', icon: Megaphone, bg: 'rgba(245,158,11,.18)', color: '#D97706' },
-  { to: '/ronda', label: 'Jadwal Ronda', desc: 'Giliran jaga malam', icon: ShieldCheck, bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { to: '/program', label: 'Program RT', desc: 'Kegiatan dan rencana RT', icon: ClipboardList, bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
-  { to: '/galeri', label: 'Galeri RT', desc: 'Foto kegiatan warga', icon: Images, bg: 'rgba(236,72,153,.18)', color: '#DB2777' },
-  { to: '/struktur', label: 'Struktur Pengurus', desc: 'Ketua dan pengurus', icon: Network, bg: 'rgba(99,102,241,.18)', color: '#4F46E5' },
-  { to: '/bantuan', label: 'Bantuan', desc: 'Hubungi via WhatsApp', icon: MessageCircle, bg: 'rgba(34,197,94,.18)', color: '#16A34A' },
+  {
+    to: '/pengumuman',
+    label: 'Pengumuman',
+    desc: 'Riwayat kabar pengurus',
+    icon: Megaphone,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FBBF24, #F59E0B 55%, #D97706)',
+  },
+  {
+    to: '/ronda',
+    label: 'Jadwal Ronda',
+    desc: 'Giliran jaga malam',
+    icon: ShieldCheck,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #60A5FA, #3B82F6 55%, #2563EB)',
+  },
+  {
+    to: '/program',
+    label: 'Program RT',
+    desc: 'Kegiatan dan rencana RT',
+    icon: ClipboardList,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #C084FC, #A855F7 55%, #7C3AED)',
+  },
+  {
+    to: '/galeri',
+    label: 'Galeri RT',
+    desc: 'Foto kegiatan warga',
+    icon: Images,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F472B6, #EC4899 55%, #DB2777)',
+  },
+  {
+    to: '/struktur',
+    label: 'Struktur Pengurus',
+    desc: 'Ketua dan pengurus',
+    icon: Network,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #818CF8, #6366F1 55%, #4F46E5)',
+  },
+  {
+    to: '/bantuan',
+    label: 'Bantuan',
+    desc: 'Hubungi via WhatsApp',
+    icon: MessageCircle,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #4ADE80, #22C55E 55%, #16A34A)',
+  },
 ]
 
 onMounted(async () => {
