@@ -1,5 +1,7 @@
 <template>
   <div>
+    <AppBackHeader title="Warga" />
+
     <div class="mb-3 relative">
       <Search
         :size="18"
@@ -50,6 +52,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ref, computed, onMounted } from 'vue'
 import { ChevronRight, Search } from 'lucide-vue-next'
 import { listPortalWarga } from '@shared/services/warga.js'
