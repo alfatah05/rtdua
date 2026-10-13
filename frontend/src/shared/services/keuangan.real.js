@@ -219,3 +219,45 @@ export async function portalKas(bulan) {
     return { ok: false, error: e.message }
   }
 }
+
+// ---- Rekening pembayaran ----
+export async function listRekening() {
+  try {
+    const res = await api('/keuangan/rekening')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function createRekening(payload) {
+  try {
+    const res = await api('/keuangan/rekening', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function updateRekening(id, payload) {
+  try {
+    const res = await api('/keuangan/rekening/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function deleteRekening(id) {
+  try {
+    await api('/keuangan/rekening/' + id, { method: 'DELETE' })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function portalListRekening() {
+  try {
+    const res = await api('/portal/keuangan/rekening')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
