@@ -28,6 +28,7 @@
               <p class="font-bold text-[15px] m-0">{{ i.nama }}</p>
               <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">
                 {{ rp(i.nominal) }} · {{ labelPeriode(i.periode) }}
+                <span v-if="i.jumlah_kk != null"> · {{ i.jumlah_kk }} KK</span>
               </p>
               <span
                 v-if="i.dibatalkan"
@@ -133,6 +134,13 @@ function openForm() {
   showForm.value = true
 }
 
+function asList(data) {
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data?.items)) return data.items
+  if (Array.isArray(data?.data)) return data.data
+  return []
+}
+
 async function load() {
   loading.value = true
   err.value = ''
@@ -140,9 +148,10 @@ async function load() {
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
+    daftar.value = []
     return
   }
-  daftar.value = Array.isArray(res.data) ? res.data : []
+  daftar.value = asList(res.data)
 }
 
 async function buat() {
