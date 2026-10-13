@@ -166,7 +166,7 @@ import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { waitImages } from '@shared/utils/waitImages.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight, Wallet,
-  ShieldCheck, ClipboardList, Images, Network
+  ShieldCheck, Images, Users
 } from 'lucide-vue-next'
 
 const styleAktif = {
@@ -247,11 +247,18 @@ const menus = [
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #60A5FA, #3B82F6 55%, #2563EB)',
   },
   {
-    to: '/program',
-    label: 'Program RT',
-    desc: 'Kegiatan dan rencana RT',
-    icon: ClipboardList,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #C084FC, #A855F7 55%, #7C3AED)',
+    to: '/warga',
+    label: 'Warga',
+    desc: 'Daftar keluarga RT',
+    icon: Users,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #38BDF8, #0EA5E9 55%, #0284C7)',
+  },
+  {
+    to: '/keuangan',
+    label: 'Keuangan',
+    desc: 'Kas RT dan transaksi',
+    icon: Wallet,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #34D399, #10B981 55%, #059669)',
   },
   {
     to: '/galeri',
@@ -259,13 +266,6 @@ const menus = [
     desc: 'Foto kegiatan warga',
     icon: Images,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F472B6, #EC4899 55%, #DB2777)',
-  },
-  {
-    to: '/struktur',
-    label: 'Struktur Pengurus',
-    desc: 'Ketua dan pengurus',
-    icon: Network,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #818CF8, #6366F1 55%, #4F46E5)',
   },
 ]
 
