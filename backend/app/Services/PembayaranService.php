@@ -7,9 +7,25 @@ use App\Libraries\AlokasiPembayaran;
 /**
  * Pembayaran jalur 1 (pengurus) dan jalur 2 (permintaan warga).
  * Semua mutasi dalam transaksi DB.
+ * Alokasi menghormati tagihan_ids (checklist warga) bila ada.
  */
 class PembayaranService
 {
+    /** Pastikan kolom tagihan_ids ada di tabel pembayaran (untuk alokasi checklist). */
+    public function ensurePembayaranColumns(): void
+    {
+        $db = \Config\Database::connect();
+        try {
+            $cols = $db->query('SHOW COLUMNS FROM pembayaran')->getResultArray();
+            $names = array_column($cols, 'Field');
+            if (!in_array('tagihan_ids', $names, true)) {
+                $db->query('ALTER TABLE pembayaran ADD COLUMN tagihan_ids TEXT NULL AFTER catatan');
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
     /**
      * Jalur 1: pengurus catat pembayaran langsung.
      */
@@ -31,12 +47,14 @@ class PembayaranService
             return ['ok' => false, 'message' => 'Keluarga tidak ditemukan.'];
         }
 
+        $this->ensurePembayaranColumns();
         $tagihanSvc = new TagihanService();
         $ring = $tagihanSvc->ringkasanKeluarga($keluargaId);
-        $alok = AlokasiPembayaran::alokasi($ring['tagihan'], $nominal);
+        $hanyaIds = AlokasiPembayaran::parseIds($data['tagihan_ids'] ?? null);
+        $alok = AlokasiPembayaran::alokasi($ring['tagihan'], $nominal, $hanyaIds);
 
         $db->transStart();
-        $db->table('pembayaran')->insert([
+        $insertBayar = [
             'keluarga_id'   => $keluargaId,
             'tanggal_bayar' => $tanggal,
             'metode'        => $metode,
@@ -46,7 +64,11 @@ class PembayaranService
             'dicatat_pada'  => date('Y-m-d H:i:s'),
             'permintaan_id' => null,
             'dibatalkan'    => 0,
-        ]);
+        ];
+        if ($hanyaIds !== null) {
+            $insertBayar['tagihan_ids'] = json_encode($hanyaIds);
+        }
+        $db->table('pembayaran')->insert($insertBayar);
         $pid = (int) $db->insertID();
 
         (new KasService())->masukDariPembayaran(
@@ -173,6 +195,7 @@ class PembayaranService
                 'status'           => $r['status'],
                 'alasan_tolak'     => $r['alasan_tolak'],
                 'nominal_dikonfirmasi' => $r['nominal_dikonfirmasi'] ? (int) $r['nominal_dikonfirmasi'] : null,
+                'tagihan_ids'      => $r['tagihan_ids'] ?? null,
             ];
         }, $rows);
     }
@@ -211,11 +234,14 @@ class PembayaranService
 
         $keluargaId = (int) $row['keluarga_id'];
         $tanggal = $data['tanggal'] ?? date('Y-m-d');
+        $this->ensurePembayaranColumns();
         $tagihanSvc = new TagihanService();
         $ring = $tagihanSvc->ringkasanKeluarga($keluargaId);
-        $alok = AlokasiPembayaran::alokasi($ring['tagihan'], $nominal);
+        // Checklist warga dari permintaan; pengurus bisa override via data['tagihan_ids']
+        $hanyaIds = AlokasiPembayaran::parseIds($data['tagihan_ids'] ?? ($row['tagihan_ids'] ?? null));
+        $alok = AlokasiPembayaran::alokasi($ring['tagihan'], $nominal, $hanyaIds);
 
-        $db->table('pembayaran')->insert([
+        $insertBayar = [
             'keluarga_id'   => $keluargaId,
             'tanggal_bayar' => $tanggal,
             'metode'        => 'transfer',
@@ -225,7 +251,11 @@ class PembayaranService
             'dicatat_pada'  => date('Y-m-d H:i:s'),
             'permintaan_id' => $id,
             'dibatalkan'    => 0,
-        ]);
+        ];
+        if ($hanyaIds !== null) {
+            $insertBayar['tagihan_ids'] = json_encode($hanyaIds);
+        }
+        $db->table('pembayaran')->insert($insertBayar);
         $pid = (int) $db->insertID();
 
         (new KasService())->masukDariPembayaran(
