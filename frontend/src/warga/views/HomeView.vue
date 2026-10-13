@@ -11,10 +11,10 @@
         <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
       </div>
       <div class="h-px bg-[var(--line)] my-4" />
-      <div class="rounded-[20px] h-[160px] bg-[var(--card2)] mb-3" />
-      <div class="rounded-[20px] h-[110px] bg-[var(--card2)] mb-4" />
       <div class="flex flex-col gap-2.5">
-        <div v-for="n in 6" :key="n" class="rounded-[20px] h-[88px] bg-[var(--card2)]" />
+        <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
+        <div class="rounded-[20px] h-[96px] bg-[var(--card2)]" />
+        <div v-for="n in 4" :key="n" class="rounded-[20px] h-[96px] bg-[var(--card2)]" />
       </div>
     </div>
 
@@ -57,11 +57,11 @@
       </div>
       <div class="h-px bg-[var(--line)] my-4"></div>
 
-      <div v-if="pengumuman.length" class="space-y-3 mb-5">
+      <div class="flex flex-col gap-2.5">
         <div
           v-for="p in pengumuman"
           :key="p.id"
-          class="rounded-[20px] overflow-hidden relative text-white"
+          class="rounded-[20px] overflow-hidden relative text-white shadow-[var(--sh)]"
           :style="cardStyle(true)"
         >
           <div class="p-5 relative z-10">
@@ -86,66 +86,64 @@
           </div>
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
-      </div>
 
-      <button
-        type="button"
-        class="w-full rounded-[20px] p-5 text-left active:scale-[0.98] transition mb-4 relative overflow-hidden shadow-[var(--sh)]"
-        :class="iuranStatus === 'loading' ? 'border border-[var(--line)]' : ''"
-        :style="iuranCardStyle"
-        @click="$router.push('/rincian-iuran')"
-      >
-        <div class="relative z-10 flex items-start gap-3">
+        <button
+          type="button"
+          class="w-full min-h-[96px] rounded-[20px] p-5 text-left active:scale-[0.98] transition relative overflow-hidden shadow-[var(--sh)]"
+          :class="iuranStatus === 'loading' ? 'border border-[var(--line)]' : ''"
+          :style="iuranCardStyle"
+          @click="$router.push('/rincian-iuran')"
+        >
+          <div class="relative z-10 flex items-center gap-3">
+            <div
+              class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+              :class="iuranStatus === 'loading' ? 'bg-[var(--card)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+            >
+              <Wallet :size="20" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p
+                class="text-[13px] font-semibold m-0"
+                :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/90'"
+              >
+                {{ iuranTitle }}
+              </p>
+              <p
+                class="text-[26px] font-extrabold tracking-tight m-0 mt-1 leading-none"
+                :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
+              >
+                {{ iuranNominal }}
+              </p>
+              <p
+                class="text-[13px] m-0 mt-1.5 flex items-center gap-1"
+                :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
+              >
+                <span>{{ iuranHint }}</span>
+                <ChevronRight :size="16" class="opacity-80 shrink-0" />
+              </p>
+            </div>
+          </div>
           <div
-            class="w-11 h-11 rounded-full grid place-items-center shrink-0"
-            :class="iuranStatus === 'loading' ? 'bg-[var(--card)] text-[var(--gm)]' : 'bg-white/20 text-white'"
-          >
-            <Wallet :size="20" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <p
-              class="text-[13px] font-semibold m-0"
-              :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/90'"
-            >
-              {{ iuranTitle }}
-            </p>
-            <p
-              class="text-[28px] font-extrabold tracking-tight m-0 mt-1 leading-none"
-              :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
-            >
-              {{ iuranNominal }}
-            </p>
-            <p
-              class="text-[13px] m-0 mt-2 flex items-center gap-1"
-              :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
-            >
-              <span>{{ iuranHint }}</span>
-              <ChevronRight :size="16" class="opacity-80" />
-            </p>
-          </div>
-        </div>
-        <div
-          v-if="iuranStatus !== 'loading'"
-          class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
-        ></div>
-      </button>
+            v-if="iuranStatus !== 'loading'"
+            class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
+          ></div>
+        </button>
 
-      <div class="flex flex-col gap-2.5">
         <button
           v-for="m in menus"
           :key="m.to"
           type="button"
-          class="w-full rounded-[20px] p-5 text-left active:scale-[0.98] transition relative overflow-hidden shadow-[var(--sh)]"
+          class="w-full min-h-[96px] rounded-[20px] p-5 text-left active:scale-[0.98] transition relative overflow-hidden shadow-[var(--sh)]"
           :style="{ background: m.cardBg }"
           @click="$router.push(m.to)"
         >
-          <div class="relative z-10 flex items-start gap-3">
+          <div class="relative z-10 flex items-center gap-3">
             <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
               <component :is="m.icon" :size="20" />
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-[15px] font-bold m-0 text-white leading-tight">{{ m.label }}</p>
-              <p class="text-[13px] m-0 mt-1.5 flex items-center gap-1 text-white/85 leading-snug">
+              <p class="text-[13px] m-0 mt-1 flex items-center gap-1 text-white/85 leading-snug">
                 <span>{{ m.desc }}</span>
                 <ChevronRight :size="16" class="opacity-80 shrink-0" />
               </p>
@@ -168,7 +166,7 @@ import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { waitImages } from '@shared/utils/waitImages.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight, Wallet,
-  ShieldCheck, ClipboardList, Images, Network, MessageCircle
+  ShieldCheck, ClipboardList, Images, Network
 } from 'lucide-vue-next'
 
 const styleAktif = {
@@ -242,13 +240,6 @@ function rp(n) {
 
 const menus = [
   {
-    to: '/pengumuman',
-    label: 'Pengumuman',
-    desc: 'Riwayat kabar pengurus',
-    icon: Megaphone,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FBBF24, #F59E0B 55%, #D97706)',
-  },
-  {
     to: '/ronda',
     label: 'Jadwal Ronda',
     desc: 'Giliran jaga malam',
@@ -275,13 +266,6 @@ const menus = [
     desc: 'Ketua dan pengurus',
     icon: Network,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #818CF8, #6366F1 55%, #4F46E5)',
-  },
-  {
-    to: '/bantuan',
-    label: 'Bantuan',
-    desc: 'Hubungi via WhatsApp',
-    icon: MessageCircle,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #4ADE80, #22C55E 55%, #16A34A)',
   },
 ]
 
