@@ -18,7 +18,8 @@
       <ChevronLeft :size="24" :stroke-width="2.25" />
     </button>
     <h1 class="flex-1 text-xl font-extrabold m-0 text-[var(--text)] leading-tight truncate pl-1">{{ title }}</h1>
-    <div v-if="showPengumumanIcon || showNotifIcon || showProfilIcon" class="flex items-center shrink-0" style="margin-right: -6px">
+    <div v-if="$slots.actions || showPengumumanIcon || showNotifIcon || showProfilIcon" class="flex items-center shrink-0" style="margin-right: -6px">
+      <slot name="actions" />
       <router-link
         v-if="showPengumumanIcon"
         to="/pengumuman"
