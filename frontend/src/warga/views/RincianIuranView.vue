@@ -122,7 +122,7 @@
       <button
         type="button"
         class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition mb-6"
-        @click="$router.push('/transfer')"
+        @click="$router.push('/bayar')"
       >
         Bayar tagihan
       </button>
