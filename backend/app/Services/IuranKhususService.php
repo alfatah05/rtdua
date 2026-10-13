@@ -43,16 +43,10 @@ class IuranKhususService
         ]);
         $iid = (int) $db->insertID();
 
+        // Semua keluarga aktif — iuran khusus tidak tergantung mulai_periode kas
         $keluarga = $db->table('keluarga')->where('status', 'aktif')->get()->getResultArray();
         $jumlah = 0;
         foreach ($keluarga as $k) {
-            $mulai = $k['mulai_periode'];
-            if ($mulai === null || $mulai === '') {
-                continue;
-            }
-            if (strcmp($mulai, $periode) > 0) {
-                continue;
-            }
             $db->table('iuran_tagihan')->insert([
                 'keluarga_id'     => (int) $k['id'],
                 'periode'         => $periode,
