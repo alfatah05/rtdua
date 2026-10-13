@@ -1,5 +1,7 @@
 <template>
   <div>
+    <AppBackHeader title="Keuangan" />
+
     <!-- Skeleton keuangan -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
       <div class="rounded-[20px] bg-[var(--card2)] p-5 mb-5">
@@ -100,6 +102,7 @@
 </template>
 
 <script setup>
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ref, computed, onMounted } from 'vue'
 import { Wallet, ArrowDownLeft, ArrowUpRight } from 'lucide-vue-next'
 import EmptyState from '@shared/components/EmptyState.vue'
