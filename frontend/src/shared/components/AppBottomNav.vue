@@ -23,7 +23,7 @@
 
 <script setup>
 import { useRoute } from 'vue-router'
-import { Home, Users, Wallet, UserRound, Activity } from 'lucide-vue-next'
+import { Home, Users, Wallet, UserRound, Activity, ClipboardList, Network } from 'lucide-vue-next'
 
 const props = defineProps({
   side: { type: String, required: true },
@@ -33,8 +33,8 @@ const route = useRoute()
 
 const wargaItems = [
   { to: '/', label: 'Beranda', icon: Home },
-  { to: '/warga', label: 'Warga', icon: Users },
-  { to: '/keuangan', label: 'Keuangan', icon: Wallet },
+  { to: '/program', label: 'Program', icon: ClipboardList },
+  { to: '/struktur', label: 'Struktur', icon: Network },
   { to: '/profil', label: 'Profil', icon: UserRound },
 ]
 
