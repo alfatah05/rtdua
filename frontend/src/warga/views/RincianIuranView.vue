@@ -70,48 +70,6 @@
         </div>
       </div>
 
-      <template v-if="komponenKas.length">
-        <h2 class="text-[15px] font-bold m-0 mb-2">Komposisi iuran tetap</h2>
-        <div
-          class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
-          style="padding: 5px"
-        >
-          <div
-            class="flex items-center justify-between px-3"
-            style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
-          >
-            <span class="text-[12px] font-semibold text-[var(--gm)]">Komponen</span>
-            <span class="text-[12px] font-semibold text-[var(--gm)]">Biaya</span>
-          </div>
-          <div
-            v-for="c in komponenKas"
-            :key="'k-' + c.id"
-            class="flex items-center gap-3 py-2.5"
-            style="padding-left: 10px; padding-right: 10px"
-          >
-            <div
-              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
-              style="background: rgba(59,130,246,.16); color: #2563EB"
-            >
-              <Home :size="16" />
-            </div>
-            <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">{{ c.nama }}</p>
-            <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(c.nominal) }}</span>
-          </div>
-          <div class="flex justify-end" style="padding: 2px 0 4px">
-            <div
-              class="inline-flex items-center justify-between gap-4 px-3 min-w-[48%]"
-              style="height: 30px; border-radius: 15px; background: rgba(245, 158, 11, 0.16)"
-            >
-              <span class="text-[12px] font-bold" style="color: #B45309">Total / bulan</span>
-              <span class="text-[13px] font-extrabold tabular-nums" style="color: #D97706">
-                {{ rp(totalKasBulanan || komponenKas.reduce((s, c) => s + Number(c.nominal || 0), 0)) }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </template>
-
       <h2 class="text-[15px] font-bold m-0 mb-2">Rincian tagihan</h2>
       <div
         class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
@@ -126,24 +84,49 @@
         </div>
 
         <template v-if="tagihanTerbuka.length">
-          <div
-            v-for="t in tagihanTerbuka"
-            :key="t.id"
-            class="flex items-center gap-3 py-2.5"
-            style="padding-left: 10px; padding-right: 10px"
-          >
-            <div
-              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
-              :style="{ background: iconMeta(t.jenis).bg, color: iconMeta(t.jenis).color }"
+          <div v-for="t in tagihanTerbuka" :key="t.id">
+            <button
+              type="button"
+              class="w-full flex items-center gap-3 py-2.5 text-left"
+              style="padding-left: 10px; padding-right: 10px"
+              :class="bisaExpandKas(t) ? 'active:opacity-80' : 'cursor-default'"
+              @click="bisaExpandKas(t) && toggleKas(t.id)"
             >
-              <component :is="iconMeta(t.jenis).icon" :size="16" />
+              <div
+                class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+                :style="{ background: iconMeta(t.jenis).bg, color: iconMeta(t.jenis).color }"
+              >
+                <component :is="iconMeta(t.jenis).icon" :size="16" />
+              </div>
+              <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">
+                {{ labelTagihan(t) }}
+              </p>
+              <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
+                {{ rp(t.sisa ?? t.nominal) }}
+              </span>
+              <ChevronDown
+                v-if="bisaExpandKas(t)"
+                :size="18"
+                class="shrink-0 text-[var(--mut)] transition-transform duration-200"
+                :class="isKasOpen(t.id) ? 'rotate-180' : ''"
+              />
+            </button>
+
+            <!-- Child komponen kas -->
+            <div
+              v-if="bisaExpandKas(t) && isKasOpen(t.id)"
+              class="pb-2"
+              style="padding-left: 52px; padding-right: 10px"
+            >
+              <div
+                v-for="c in komponenKas"
+                :key="'k-' + t.id + '-' + c.id"
+                class="flex items-center gap-2 py-1.5"
+              >
+                <span class="flex-1 min-w-0 text-[13px] text-[var(--mut)] m-0 truncate">{{ c.nama }}</span>
+                <span class="text-[13px] font-semibold tabular-nums text-[var(--mut)] shrink-0">{{ rp(c.nominal) }}</span>
+              </div>
             </div>
-            <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">
-              {{ labelTagihan(t) }}
-            </p>
-            <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
-              {{ rp(t.sisa ?? t.nominal) }}
-            </span>
           </div>
 
           <div class="flex justify-end" style="padding: 2px 0 4px">
@@ -205,7 +188,7 @@
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, computed, onMounted } from 'vue'
-import { Wallet, Home, ShieldAlert, Sparkles, Clock } from 'lucide-vue-next'
+import { Wallet, Home, ShieldAlert, Sparkles, Clock, ChevronDown } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalRingkasan, portalStatusPermintaan } from '@shared/services/keuangan.js'
 
@@ -217,6 +200,17 @@ const riwayat = ref([])
 const permintaan = ref([])
 const komponenKas = ref([])
 const totalKasBulanan = ref(0)
+const kasOpen = ref({})
+
+function bisaExpandKas(t) {
+  return t?.jenis === 'kas' && (komponenKas.value || []).length > 0
+}
+function isKasOpen(id) {
+  return !!kasOpen.value[id]
+}
+function toggleKas(id) {
+  kasOpen.value = { ...kasOpen.value, [id]: !kasOpen.value[id] }
+}
 
 const BULAN = [
   '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
