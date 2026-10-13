@@ -1,6 +1,7 @@
 <template>
   <div>
-    <AppBackHeader title="Lainnya" />
+    <AppMainHeader show-profil />
+    <h1 class="text-[20px] font-extrabold m-0 mb-4">Lainnya</h1>
 
     <div v-for="group in visibleGroups" :key="group.title" class="mb-6">
       <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2 px-1">{{ group.title }}</h2>
@@ -28,7 +29,7 @@ import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
   UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings,
 } from 'lucide-vue-next'
-import AppBackHeader from '@shared/components/AppBackHeader.vue'
+import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
 
 const { isKetua } = useAuth()
