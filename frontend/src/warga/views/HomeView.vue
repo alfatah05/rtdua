@@ -292,19 +292,12 @@ const menus = computed(() => [
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #60A5FA, #3B82F6 55%, #2563EB)',
   },
   {
-    to: '/warga',
-    label: 'Warga',
-    desc: 'Daftar keluarga RT',
-    icon: Users,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #38BDF8, #0EA5E9 55%, #0284C7)',
-  },
-  {
     to: '/keuangan',
     label: 'Jumlah kas ' + (namaRt.value || 'RT'),
     headline: kasHeadline.value,
     desc: 'Ketuk untuk riwayat kas',
     icon: Wallet,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #34D399, #10B981 55%, #059669)',
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #C084FC, #A855F7 55%, #7C3AED)',
   },
   {
     to: '/galeri',
@@ -312,6 +305,13 @@ const menus = computed(() => [
     desc: 'Foto kegiatan warga',
     icon: Images,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F472B6, #EC4899 55%, #DB2777)',
+  },
+  {
+    to: '/warga',
+    label: 'Warga',
+    desc: 'Daftar keluarga RT',
+    icon: Users,
+    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F87171, #EF4444 55%, #DC2626)',
   },
 ])
 
