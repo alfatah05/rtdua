@@ -66,7 +66,7 @@ const props = defineProps({
   showNotif: { type: Boolean, default: null },
   /** Override icon profil. null = auto (warga=false, pengurus=true). */
   showProfil: { type: Boolean, default: null },
-  /** Icon pengumuman. null = tampil bila showActions (child warga). */
+  /** Icon pengumuman. null = auto (warga=true, pengurus=false). */
   showPengumuman: { type: Boolean, default: null },
 })
 
@@ -81,8 +81,17 @@ const showPengumumanIcon = computed(() => {
   if (!props.showActions) return false
   if (props.showPengumuman === false) return false
   if (props.showPengumuman === true) return true
-  // default: tampil di halaman child (sama seperti notif)
-  return true
+  // default: hanya warga (pengurus kelola pengumuman lewat menu Lainnya)
+  try {
+    const h = String(location.hostname || '')
+    if (h.includes('pengurus')) return false
+    if (h.includes('warga')) return true
+  } catch (e) {}
+  try {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_SIDE === 'pengurus') return false
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_SIDE === 'warga') return true
+  } catch (e) {}
+  return false
 })
 
 const showProfilIcon = computed(() => {
