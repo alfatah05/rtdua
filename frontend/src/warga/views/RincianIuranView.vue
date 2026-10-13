@@ -44,28 +44,29 @@
         ></div>
       </div>
 
-      <div v-if="permintaanMenunggu.length || permintaanSelesai.length" class="mb-5 space-y-2">
+      <div v-if="permintaanMenunggu.length" class="mb-5 space-y-2.5">
         <h2 class="text-[15px] font-bold m-0 mb-1">Status permintaan</h2>
         <div
           v-for="p in permintaanMenunggu"
           :key="'pm-' + p.id"
-          class="bg-amber-500/10 border border-amber-500/25 rounded-[16px] p-3.5"
+          class="w-full rounded-[20px] p-5 relative overflow-hidden shadow-[var(--sh)]"
+          :style="stylePermintaan"
         >
-          <p class="font-bold m-0 text-[14px] text-amber-800 dark:text-amber-300">Menunggu konfirmasi pengurus</p>
-          <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">
-            {{ rp(p.nominal_diajukan ?? p.nominal) }} · {{ formatTgl(p.diajukan_pada) }}
-          </p>
-        </div>
-        <div
-          v-for="p in permintaanSelesai"
-          :key="'ps-' + p.id"
-          class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5"
-        >
-          <p class="font-bold m-0 text-[14px]">{{ labelStatus(p.status) }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">
-            {{ rp(p.nominal_dikonfirmasi ?? p.nominal_diajukan ?? p.nominal) }}
-            <span v-if="p.alasan_tolak"> · {{ p.alasan_tolak }}</span>
-          </p>
+          <div class="relative z-10 flex items-start gap-3">
+            <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
+              <Clock :size="20" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[13px] font-semibold m-0 text-white/90">Status permintaan</p>
+              <p class="text-[17px] font-extrabold m-0 mt-1 leading-snug text-white">
+                Menunggu konfirmasi pengurus
+              </p>
+              <p class="text-[13px] m-0 mt-1.5 text-white/85">
+                {{ rp(p.nominal_diajukan ?? p.nominal) }} · {{ formatTgl(p.diajukan_pada) }}
+              </p>
+            </div>
+          </div>
+          <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
       </div>
 
@@ -162,7 +163,7 @@
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, computed, onMounted } from 'vue'
-import { Wallet, Home, ShieldAlert, Sparkles } from 'lucide-vue-next'
+import { Wallet, Home, ShieldAlert, Sparkles, Clock } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalRingkasan, portalStatusPermintaan } from '@shared/services/keuangan.js'
 
@@ -230,13 +231,6 @@ function labelMetode(m) {
   return m || ''
 }
 
-function labelStatus(s) {
-  if (s === 'dikonfirmasi') return 'Dikonfirmasi'
-  if (s === 'ditolak') return 'Ditolak'
-  if (s === 'menunggu') return 'Menunggu konfirmasi'
-  return s || '—'
-}
-
 function formatTgl(s) {
   if (!s) return '—'
   const raw = String(s).replace(' ', 'T')
@@ -297,9 +291,11 @@ const heroStyle = computed(() => {
 const permintaanMenunggu = computed(() =>
   (permintaan.value || []).filter((p) => p.status === 'menunggu')
 )
-const permintaanSelesai = computed(() =>
-  (permintaan.value || []).filter((p) => p.status !== 'menunggu').slice(0, 3)
-)
+
+const stylePermintaan = {
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FBBF24, #F59E0B 55%, #D97706)',
+}
 
 onMounted(async () => {
   const [res, pm] = await Promise.all([portalRingkasan(), portalStatusPermintaan()])
