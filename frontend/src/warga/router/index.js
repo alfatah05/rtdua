@@ -11,17 +11,19 @@ import PengumumanView from '../views/PengumumanView.vue'
 import PengumumanDetailView from '../views/PengumumanDetailView.vue'
 import RincianIuranView from '../views/RincianIuranView.vue'
 import TransferView from '../views/TransferView.vue'
+import PreBayarView from '../views/PreBayarView.vue'
+import BayarDetailView from '../views/BayarDetailView.vue'
 import RondaView from '../views/RondaView.vue'
 import BantuanView from '../views/BantuanView.vue'
 import StrukturView from '../views/StrukturView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import NotifikasiDetailView from '../views/NotifikasiDetailView.vue'
 import GantiPinView from '../views/GantiPinView.vue'
+import DataKeluargaView from '../views/DataKeluargaView.vue'
 import ProgramListView from '../views/ProgramListView.vue'
 import ProgramDetailView from '../views/ProgramDetailView.vue'
 import GaleriListView from '../views/GaleriListView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
-import DataKeluargaView from '../views/DataKeluargaView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -39,7 +41,9 @@ const routes = [
       { path: 'pengumuman', name: 'pengumuman', component: PengumumanView },
       { path: 'pengumuman/:id', name: 'pengumuman-detail', component: PengumumanDetailView },
       { path: 'rincian-iuran', name: 'rincian-iuran', component: RincianIuranView },
-      { path: 'transfer', name: 'transfer', component: TransferView },
+      { path: 'transfer', name: 'transfer', component: PreBayarView },
+      { path: 'bayar', name: 'bayar', component: PreBayarView },
+      { path: 'bayar/detail', name: 'bayar-detail', component: BayarDetailView },
       { path: 'ronda', name: 'ronda', component: RondaView },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
       { path: 'struktur', name: 'struktur', component: StrukturView, meta: { mainTab: true } },
