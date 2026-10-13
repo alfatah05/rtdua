@@ -26,11 +26,13 @@ class TagihanService
     public function ringkasanKeluarga(int $keluargaId): array
     {
         $db = \Config\Database::connect();
-        $tagihan = $db->table('iuran_tagihan')
-            ->where('keluarga_id', $keluargaId)
-            ->where('dibatalkan', 0)
-            ->orderBy('periode', 'ASC')
-            ->orderBy('id', 'ASC')
+        $tagihan = $db->table('iuran_tagihan t')
+            ->select('t.*, ik.nama as nama_khusus')
+            ->join('iuran_khusus ik', 'ik.id = t.iuran_khusus_id', 'left')
+            ->where('t.keluarga_id', $keluargaId)
+            ->where('t.dibatalkan', 0)
+            ->orderBy('t.periode', 'ASC')
+            ->orderBy('t.id', 'ASC')
             ->get()
             ->getResultArray();
 
@@ -48,6 +50,7 @@ class TagihanService
                 'id'              => (int) $t['id'],
                 'periode'         => $t['periode'],
                 'jenis'           => $t['jenis'],
+                'nama'            => $t['nama_khusus'] ?? null,
                 'nominal'         => (int) $t['nominal'],
                 'sisa'            => (int) $t['nominal'],
                 'iuran_khusus_id' => $t['iuran_khusus_id'] ? (int) $t['iuran_khusus_id'] : null,
