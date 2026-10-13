@@ -8,8 +8,8 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'rtdua', {
       body: data.body || '',
       data: { url: data.url || '/notifikasi' },
-      icon: '/icons/icon-app.png',
-      badge: '/icons/icon-app.png',
+      icon: '/icons/app-icon.png',
+      badge: '/icons/app-icon.png',
     })
   )
 })

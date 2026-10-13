@@ -8,7 +8,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon-app.png'],
+      includeAssets: ['icons/app-icon.png'],
       manifest: {
         id: '/?app=warga',
         name: 'Warga rtdua',
@@ -22,9 +22,9 @@ export default defineConfig({
         scope: '/',
         lang: 'id',
         icons: [
-          { src: '/icons/icon-app.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icons/icon-app.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icons/icon-app.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/app-icon.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/app-icon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icons/app-icon.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
