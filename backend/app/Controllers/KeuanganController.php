@@ -189,6 +189,64 @@ class KeuanganController extends Controller
         return $res['ok'] ? ApiResponse::ok($res['data'], 'Kas dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
+    // ---- Komponen iuran tetap ----
+
+    public function listIuranKomponen()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $svc = new \App\Services\IuranKomponenService();
+        $items = $svc->list(false);
+        return ApiResponse::ok([
+            'items' => $items,
+            'total' => $svc->totalAktif(),
+        ]);
+    }
+
+    public function buatIuranKomponen()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new \App\Services\IuranKomponenService())->create($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Komponen ditambah') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function ubahIuranKomponen($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new \App\Services\IuranKomponenService())->update((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Disimpan') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function hapusIuranKomponen($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $res = (new \App\Services\IuranKomponenService())->delete((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Dihapus') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function terapkanKomponenBulanIni()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $res = (new \App\Services\IuranKomponenService())->terapkanBulanIni((int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Diterapkan ke bulan ini') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
+    }
+
     // ---- Iuran khusus ----
 
     public function listIuranKhusus()
