@@ -1,6 +1,5 @@
 <template>
   <div>
-    <AppBackHeader title="Program RT" />
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <p v-else-if="!daftar.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada program</p>
@@ -50,7 +49,6 @@
 <script setup>
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted } from 'vue'
-import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ClipboardList, ChevronRight } from 'lucide-vue-next'
 import { listProgram } from '@shared/services/konten.js'
 import { plainFromMarkdown } from '@shared/utils/markdown.js'
