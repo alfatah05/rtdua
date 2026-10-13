@@ -1,137 +1,257 @@
 <template>
   <div>
-    <AppBackHeader title="Tarif iuran & denda" />
+    <AppBackHeader title="Tarif iuran">
+      <template #actions>
+        <button
+          type="button"
+          class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+          aria-label="Tambah komponen"
+          @click="openForm()"
+        >
+          <PlusCircle :size="20" />
+        </button>
+      </template>
+    </AppBackHeader>
+
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
-    <form v-else class="space-y-4" @submit.prevent="onSave">
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Nominal kas / bulan</label>
-        <input v-model="kas" type="text" inputmode="numeric" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)]" />
-      </div>
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Denda ronda / ketidakhadiran</label>
-        <input v-model="denda" type="text" inputmode="numeric" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)]" />
-        <p class="text-[12px] text-[var(--mut)] mt-1 m-0">Denda yang sudah terbit tidak diubah; berlaku untuk denda baru.</p>
-      </div>
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Jam ronda default</label>
-        <div class="flex gap-2">
-          <input v-model="jamMulai" type="time" class="flex-1 min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
-          <input v-model="jamSelesai" type="time" class="flex-1 min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
+    <template v-else>
+      <p class="text-[13px] text-[var(--mut)] m-0 mb-4">
+        Pecah iuran tetap bulanan menjadi komponen (keamanan, kebersihan, dll). Total inilah yang ditagihkan ke warga tiap bulan.
+      </p>
+
+      <h2 class="text-[15px] font-bold m-0 mb-2">Rincian iuran tetap</h2>
+      <div
+        class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
+        style="padding: 5px"
+      >
+        <div
+          class="flex items-center justify-between px-3"
+          style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
+        >
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Komponen</span>
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Biaya</span>
         </div>
+
+        <template v-if="items.length">
+          <div
+            v-for="c in items"
+            :key="c.id"
+            class="flex items-center gap-3 py-2.5"
+            style="padding-left: 10px; padding-right: 10px"
+          >
+            <div
+              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+              style="background: rgba(59,130,246,.16); color: #2563EB"
+            >
+              <Home :size="16" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[14px] font-semibold m-0 truncate">{{ c.nama }}</p>
+              <div class="flex gap-2 mt-0.5">
+                <button type="button" class="text-[12px] font-semibold text-[var(--g)]" @click="openForm(c)">Ubah</button>
+                <button type="button" class="text-[12px] font-semibold text-red-600" @click="hapus(c)">Hapus</button>
+              </div>
+            </div>
+            <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
+              {{ rp(c.nominal) }}
+            </span>
+          </div>
+
+          <div class="flex justify-end" style="padding: 2px 0 4px">
+            <div
+              class="inline-flex items-center justify-between gap-4 px-3 min-w-[48%]"
+              style="height: 30px; border-radius: 15px; background: rgba(245, 158, 11, 0.16)"
+            >
+              <span class="text-[12px] font-bold" style="color: #B45309">Total / bulan</span>
+              <span class="text-[13px] font-extrabold tabular-nums" style="color: #D97706">
+                {{ rp(total) }}
+              </span>
+            </div>
+          </div>
+        </template>
+        <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">
+          Belum ada komponen. Ketuk + untuk menambah.
+        </p>
       </div>
-      <label class="flex items-start gap-3 p-3 rounded-[16px] bg-[var(--card)] border border-[var(--line)]">
-        <input v-model="terapkanBulanIni" type="checkbox" class="mt-1 w-4 h-4" />
+
+      <label class="flex items-start gap-3 p-3 rounded-[16px] bg-[var(--card)] border border-[var(--line)] mb-3">
+        <input v-model="terapkanBulanIni" type="checkbox" class="mt-1 w-4 h-4 accent-[var(--g)]" />
         <span>
-          <span class="block text-[14px] font-semibold">Terapkan juga ke bulan ini</span>
-          <span class="block text-[12px] text-[var(--mut)]">Ubah nominal tagihan kas periode {{ bulanIni }} untuk semua KK yang sudah punya tagihan.</span>
+          <span class="block text-[14px] font-semibold">Terapkan total ke tagihan bulan ini</span>
+          <span class="block text-[12px] text-[var(--mut)]">
+            Ubah nominal tagihan kas periode {{ bulanIni }} sesuai total di atas (untuk KK yang sudah punya tagihan).
+          </span>
         </span>
       </label>
-      <div v-if="pratinjau" class="p-3 rounded-[16px] bg-[var(--search)] text-[13px]">
-        <p class="font-semibold m-0 mb-1">Pratinjau dampak</p>
-        <p class="m-0 text-[var(--mut)]">Keluarga terdampak: <b class="text-[var(--text)]">{{ pratinjau.keluarga_terdampak }}</b></p>
-        <p class="m-0 text-[var(--mut)]">Berpotensi kelebihan bayar: <b class="text-[var(--text)]">{{ pratinjau.jadi_kelebihan }}</b></p>
+
+      <button
+        type="button"
+        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50 active:scale-[0.98] transition"
+        :disabled="saving || !items.length"
+        @click="terapkan"
+      >
+        {{ saving ? 'Menyimpan…' : 'Simpan & terapkan' }}
+      </button>
+      <p v-if="msg" class="text-[13px] text-center mt-3" :class="msgOk ? 'text-[var(--gm)]' : 'text-red-600'">{{ msg }}</p>
+    </template>
+
+    <div
+      v-if="showForm"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      @click.self="showForm = false"
+    >
+      <div class="w-full max-w-[560px] rounded-t-[24px] bg-[var(--bg)] p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))]">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-[17px] font-extrabold m-0">{{ form.id ? 'Ubah komponen' : 'Tambah komponen' }}</h2>
+          <button type="button" class="text-[13px] font-semibold text-[var(--mut)]" @click="showForm = false">Batal</button>
+        </div>
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nama</label>
+        <input
+          v-model="form.nama"
+          type="text"
+          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3"
+          placeholder="Keamanan, Kebersihan, …"
+        />
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nominal / bulan</label>
+        <input
+          v-model="form.nominal"
+          type="text"
+          inputmode="numeric"
+          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3"
+          placeholder="15000"
+        />
+        <p v-if="formErr" class="text-[13px] text-red-600 text-center mb-2">{{ formErr }}</p>
+        <button
+          type="button"
+          class="w-full min-h-12 rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50"
+          :disabled="formSaving"
+          @click="simpan"
+        >
+          {{ formSaving ? 'Menyimpan…' : 'Simpan' }}
+        </button>
       </div>
-      <button type="button" class="w-full min-h-[44px] rounded-full bg-[var(--card2)] font-semibold" :disabled="saving" @click="onPratinjau">
-        {{ saving ? '…' : 'Pratinjau dampak' }}
-      </button>
-      <button type="submit" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold" :disabled="saving">
-        {{ saving ? 'Menyimpan…' : 'Simpan' }}
-      </button>
-      <p v-if="msg" class="text-[13px] text-center" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
-    </form>
+    </div>
   </div>
 </template>
+
 <script setup>
-import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-
 import { ref, onMounted } from 'vue'
+import { PlusCircle, Home } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { getPengaturan, updateWarga } from '@shared/services/pengaturan.js'
-import { ubahNominal } from '@shared/services/keuangan.js'
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+import {
+  listIuranKomponen,
+  buatIuranKomponen,
+  ubahIuranKomponen,
+  hapusIuranKomponen,
+  terapkanKomponenBulanIni,
+} from '@shared/services/keuangan.js'
+import { useToast } from '@shared/composables/useToast.js'
 
+const { success, error } = useToast()
 const loading = ref(true)
-const saving = ref(false)
 const err = ref('')
+const items = ref([])
+const total = ref(0)
+const terapkanBulanIni = ref(false)
+const saving = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
-const kas = ref('')
-const denda = ref('')
-const jamMulai = ref('21:00')
-const jamSelesai = ref('00:00')
-const terapkanBulanIni = ref(false)
-const pratinjau = ref(null)
+const showForm = ref(false)
+const formSaving = ref(false)
+const formErr = ref('')
+const form = ref({ id: null, nama: '', nominal: '' })
 const bulanIni = new Date().toISOString().slice(0, 7)
 
+function rp(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
+}
+
 function toNum(v) {
-  return String(v || '').replace(/[^\d]/g, '')
+  return parseInt(String(v || '').replace(/\D/g, ''), 10) || 0
 }
 
 async function load() {
   loading.value = true
   err.value = ''
-  const res = await getPengaturan()
+  const res = await listIuranKomponen()
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
     return
   }
   const d = res.data || {}
-  kas.value = String(d.nominal_kas ?? '')
-  denda.value = String(d.denda_ronda ?? '')
-  jamMulai.value = (d.jam_ronda_mulai || '21:00').slice(0, 5)
-  jamSelesai.value = (d.jam_ronda_selesai || '00:00').slice(0, 5)
+  items.value = Array.isArray(d.items) ? d.items.filter((i) => i.aktif !== false) : []
+  total.value = Number(d.total ?? items.value.reduce((s, i) => s + Number(i.nominal || 0), 0))
 }
 
-async function onPratinjau() {
-  saving.value = true
-  msg.value = ''
-  pratinjau.value = null
-  const res = await ubahNominal({
-    nominal_kas: parseInt(toNum(kas.value), 10) || 0,
-    denda_ronda: parseInt(toNum(denda.value), 10) || 0,
-    terapkan_bulan_ini: terapkanBulanIni.value,
-    pratinjau_saja: true,
-  })
-  saving.value = false
+function openForm(row) {
+  formErr.value = ''
+  if (row) {
+    form.value = { id: row.id, nama: row.nama || '', nominal: String(row.nominal || '') }
+  } else {
+    form.value = { id: null, nama: '', nominal: '' }
+  }
+  showForm.value = true
+}
+
+async function simpan() {
+  formErr.value = ''
+  const nama = form.value.nama.trim()
+  const nominal = toNum(form.value.nominal)
+  if (!nama) {
+    formErr.value = 'Nama wajib'
+    return
+  }
+  if (nominal < 1) {
+    formErr.value = 'Nominal wajib'
+    return
+  }
+  formSaving.value = true
+  const res = form.value.id
+    ? await ubahIuranKomponen(form.value.id, { nama, nominal })
+    : await buatIuranKomponen({ nama, nominal })
+  formSaving.value = false
   if (!res.ok) {
-    msgOk.value = false
-    msg.value = res.error || 'Gagal pratinjau'
+    formErr.value = res.error || 'Gagal simpan'
     return
   }
-  pratinjau.value = res.data?.pratinjau || { keluarga_terdampak: 0, jadi_kelebihan: 0 }
-  msgOk.value = true
-  msg.value = 'Pratinjau siap'
+  showForm.value = false
+  success('Tersimpan')
+  await load()
 }
 
-async function onSave() {
-  saving.value = true
-  msg.value = ''
-  const jamRes = await updateWarga({
-    jam_ronda_mulai: jamMulai.value,
-    jam_ronda_selesai: jamSelesai.value,
-  })
-  if (!jamRes.ok) {
-    saving.value = false
-    msgOk.value = false
-    msg.value = jamRes.error || 'Gagal simpan jam'
+async function hapus(c) {
+  if (!confirm('Hapus komponen "' + c.nama + '"?')) return
+  const res = await hapusIuranKomponen(c.id)
+  if (!res.ok) {
+    error(res.error || 'Gagal hapus')
     return
   }
-  const res = await ubahNominal({
-    nominal_kas: parseInt(toNum(kas.value), 10) || 0,
-    denda_ronda: parseInt(toNum(denda.value), 10) || 0,
-    terapkan_bulan_ini: terapkanBulanIni.value,
-    pratinjau_saja: false,
-  })
+  success('Dihapus')
+  await load()
+}
+
+async function terapkan() {
+  if (!terapkanBulanIni.value) {
+    msgOk.value = true
+    msg.value = 'Total sudah tersimpan otomatis saat menambah/ubah komponen. Centang opsi di atas jika ingin ubah tagihan bulan ini.'
+    return
+  }
+  saving.value = true
+  msg.value = ''
+  const res = await terapkanKomponenBulanIni()
   saving.value = false
   msgOk.value = !!res.ok
   if (res.ok) {
-    pratinjau.value = res.data?.pratinjau || pratinjau.value
-    msg.value = terapkanBulanIni.value
-      ? `Disimpan. Tagihan bulan ini diubah (${pratinjau.value?.keluarga_terdampak ?? 0} KK).`
-      : 'Pengaturan disimpan'
+    const n = res.data?.keluarga_terdampak ?? 0
+    msg.value = `Total Rp ${Number(res.data?.total || total.value).toLocaleString('id-ID')} diterapkan ke ${n} tagihan kas bulan ini.`
+    success(msg.value)
+    await load()
   } else {
-    msg.value = res.error || 'Gagal menyimpan'
+    msg.value = res.error || 'Gagal menerapkan'
+    error(msg.value)
   }
 }
 
