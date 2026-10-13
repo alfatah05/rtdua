@@ -111,5 +111,25 @@ export function portalKas(bulan) {
     : real.portalKas(bulan)
 }
 
-// suppress unused
+export function listRekening() {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listRekening()
+}
+export function createRekening(payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1, ...payload } }) : real.createRekening(payload)
+}
+export function updateRekening(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id, ...payload } }) : real.updateRekening(id, payload)
+}
+export function deleteRekening(id) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.deleteRekening(id)
+}
+export function portalListRekening() {
+  return USE_MOCK.keuangan
+    ? Promise.resolve({
+        ok: true,
+        data: [{ id: 1, jenis: 'qris', nama: 'QRIS RT', nomor: null, atas_nama: null, qris_file: null, aktif: true, urutan: 0 }],
+      })
+    : real.portalListRekening()
+}
+
 void impl
