@@ -98,33 +98,46 @@
               >
                 <component :is="iconMeta(t.jenis).icon" :size="16" />
               </div>
-              <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">
-                {{ labelTagihan(t) }}
-              </p>
+              <div class="flex-1 min-w-0 flex items-center gap-1">
+                <p class="text-[14px] font-semibold m-0 truncate">
+                  {{ labelTagihan(t) }}
+                </p>
+                <ChevronDown
+                  v-if="bisaExpandKas(t)"
+                  :size="16"
+                  class="shrink-0 text-[var(--text)] transition-transform duration-200"
+                  :class="isKasOpen(t.id) ? 'rotate-180' : ''"
+                />
+              </div>
               <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
                 {{ rp(t.sisa ?? t.nominal) }}
               </span>
-              <ChevronDown
-                v-if="bisaExpandKas(t)"
-                :size="18"
-                class="shrink-0 text-[var(--mut)] transition-transform duration-200"
-                :class="isKasOpen(t.id) ? 'rotate-180' : ''"
-              />
             </button>
 
-            <!-- Child komponen kas -->
+            <!-- Child komponen kas: icon agar teks sejajar list parent (tanpa aksi) -->
             <div
               v-if="bisaExpandKas(t) && isKasOpen(t.id)"
-              class="pb-2"
-              style="padding-left: 52px; padding-right: 10px"
+              class="pb-1"
             >
               <div
                 v-for="c in komponenKas"
                 :key="'k-' + t.id + '-' + c.id"
-                class="flex items-center gap-2 py-1.5"
+                class="flex items-center gap-3 py-2.5"
+                style="padding-left: 10px; padding-right: 10px"
               >
-                <span class="flex-1 min-w-0 text-[13px] text-[var(--mut)] m-0 truncate">{{ c.nama }}</span>
-                <span class="text-[13px] font-semibold tabular-nums text-[var(--mut)] shrink-0">{{ rp(c.nominal) }}</span>
+                <div
+                  class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+                  style="background: rgba(59,130,246,.16); color: #2563EB"
+                  aria-hidden="true"
+                >
+                  <Home :size="16" />
+                </div>
+                <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate text-[var(--text)]">
+                  {{ c.nama }}
+                </p>
+                <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap text-[var(--text)]">
+                  {{ rp(c.nominal) }}
+                </span>
               </div>
             </div>
           </div>
