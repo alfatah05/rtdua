@@ -114,7 +114,7 @@
               </span>
             </button>
 
-            <!-- Child komponen kas: icon agar teks sejajar list parent (tanpa aksi) -->
+            <!-- Child: spacer transparan w-9 agar teks sejajar list yang pakai icon -->
             <div
               v-if="bisaExpandKas(t) && isKasOpen(t.id)"
               class="pb-1"
@@ -126,12 +126,9 @@
                 style="padding-left: 10px; padding-right: 10px"
               >
                 <div
-                  class="w-9 h-9 rounded-full grid place-items-center shrink-0"
-                  style="background: rgba(59,130,246,.16); color: #2563EB"
+                  class="w-9 h-9 shrink-0 opacity-0 pointer-events-none"
                   aria-hidden="true"
-                >
-                  <Home :size="16" />
-                </div>
+                ></div>
                 <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate text-[var(--text)]">
                   {{ c.nama }}
                 </p>
