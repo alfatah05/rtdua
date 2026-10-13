@@ -142,8 +142,15 @@
               <component :is="m.icon" :size="20" />
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-[15px] font-bold m-0 text-white leading-tight">{{ m.label }}</p>
-              <p class="text-[13px] m-0 mt-1 flex items-center gap-1 text-white/85 leading-snug">
+              <p
+                class="m-0 text-white leading-tight"
+                :class="m.headline ? 'text-[13px] font-semibold text-white/90' : 'text-[15px] font-bold'"
+              >{{ m.label }}</p>
+              <p
+                v-if="m.headline"
+                class="text-[26px] font-extrabold tracking-tight m-0 mt-1 leading-none text-white"
+              >{{ m.headline }}</p>
+              <p class="text-[13px] m-0 mt-1.5 flex items-center gap-1 text-white/85 leading-snug">
                 <span>{{ m.desc }}</span>
                 <ChevronRight :size="16" class="opacity-80 shrink-0" />
               </p>
@@ -160,7 +167,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
-import { portalRingkasan } from '@shared/services/keuangan.js'
+import { portalRingkasan, portalKas } from '@shared/services/keuangan.js'
+import { malamTerdekat } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { waitImages } from '@shared/utils/waitImages.js'
@@ -199,7 +207,7 @@ const pengumuman = ref([])
 const loading = ref(true)
 
 const iuranStatus = ref('loading')
-const iuranTitle = ref('Jumlah tagihan anda')
+const iuranTitle = ref('Iuran yang belum di bayar')
 const iuranNominal = ref('…')
 const iuranHint = ref('Ketuk untuk melihat rincian')
 
@@ -238,11 +246,48 @@ function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 }
 
-const menus = [
+const rondaHeadline = ref('…')
+const rondaDesc = ref('Ketuk untuk detail jadwal')
+const kasHeadline = ref('…')
+
+function weekIndex(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const day = (x.getDay() + 6) % 7
+  x.setDate(x.getDate() - day)
+  x.setHours(0, 0, 0, 0)
+  return x.getTime()
+}
+
+function labelKapanTgl(tanggal) {
+  if (!tanggal) return 'Belum ada jadwal'
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tgl = new Date(String(tanggal).slice(0, 10) + 'T00:00:00')
+  if (Number.isNaN(tgl.getTime())) return 'Belum ada jadwal'
+  if (tgl.getTime() === today.getTime()) return 'Malam ini'
+  const wToday = weekIndex(today)
+  const wTgl = weekIndex(tgl)
+  const diff = Math.round((wTgl - wToday) / (7 * 86400000))
+  if (diff === 0) return 'Minggu ini'
+  if (diff === 1) return 'Minggu depan'
+  if (diff > 1) return diff + ' minggu lagi'
+  if (diff < 0) return 'Sudah lewat'
+  return 'Ronda'
+}
+
+function formatHariPendek(s) {
+  if (!s) return ''
+  const d = new Date(String(s).length === 10 ? s + 'T00:00:00' : String(s).replace(' ', 'T'))
+  if (Number.isNaN(d.getTime())) return String(s).slice(0, 10)
+  return d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
+const menus = computed(() => [
   {
     to: '/ronda',
     label: 'Jadwal Ronda',
-    desc: 'Giliran jaga malam',
+    headline: rondaHeadline.value,
+    desc: rondaDesc.value,
     icon: ShieldCheck,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #60A5FA, #3B82F6 55%, #2563EB)',
   },
@@ -255,8 +300,9 @@ const menus = [
   },
   {
     to: '/keuangan',
-    label: 'Keuangan',
-    desc: 'Kas RT dan transaksi',
+    label: 'Jumlah kas ' + (namaRt.value || 'RT'),
+    headline: kasHeadline.value,
+    desc: 'Ketuk untuk riwayat kas',
     icon: Wallet,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #34D399, #10B981 55%, #059669)',
   },
@@ -267,14 +313,16 @@ const menus = [
     icon: Images,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F472B6, #EC4899 55%, #DB2777)',
   },
-]
+])
 
 onMounted(async () => {
   loading.value = true
-  const [pg, pn, iu] = await Promise.all([
+  const [pg, pn, iu, rn, kas] = await Promise.all([
     getPengaturan(),
     listPengumuman({ beranda: true }),
     portalRingkasan(),
+    malamTerdekat(),
+    portalKas(),
   ])
 
   const imgs = []
@@ -304,7 +352,7 @@ onMounted(async () => {
     const total = Number(iu.data.total ?? iu.data.total_tagihan ?? 0)
     if (total > 0) {
       iuranStatus.value = 'pending'
-      iuranTitle.value = 'Jumlah tagihan anda'
+      iuranTitle.value = 'Iuran yang belum di bayar'
       iuranNominal.value = rp(total)
       iuranHint.value = 'Belum lunas · Ketuk untuk rincian'
     } else if (total < 0) {
@@ -314,15 +362,31 @@ onMounted(async () => {
       iuranHint.value = 'Saldo menguntungkan · Ketuk untuk rincian'
     } else {
       iuranStatus.value = 'lunas'
-      iuranTitle.value = 'Jumlah tagihan anda'
+      iuranTitle.value = 'Iuran yang belum di bayar'
       iuranNominal.value = 'Lunas'
       iuranHint.value = 'Semua tagihan sudah dibayar'
     }
   } else {
     iuranStatus.value = 'loading'
-    iuranTitle.value = 'Jumlah tagihan anda'
+    iuranTitle.value = 'Iuran yang belum di bayar'
     iuranNominal.value = '—'
     iuranHint.value = 'Ketuk untuk melihat rincian'
+  }
+
+  // Card ronda: kapan giliran terdekat
+  if (rn.ok && rn.data?.tanggal) {
+    rondaHeadline.value = labelKapanTgl(rn.data.tanggal)
+    rondaDesc.value = formatHariPendek(rn.data.tanggal) + ' · Ketuk untuk detail'
+  } else {
+    rondaHeadline.value = 'Belum ada jadwal'
+    rondaDesc.value = 'Ketuk untuk melihat jadwal ronda'
+  }
+
+  // Card kas RT
+  if (kas.ok && kas.data) {
+    kasHeadline.value = rp(kas.data.saldo ?? 0)
+  } else {
+    kasHeadline.value = '—'
   }
 
   await waitImages(imgs)
