@@ -2,20 +2,21 @@ import { api } from '../api/http.js'
 
 export async function listKeluarga(params = {}) {
   try {
-    const qs = new URLSearchParams()
+    const q = new URLSearchParams()
     Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v))
+      if (v !== undefined && v !== null && v !== '') q.set(k, v)
     })
-    const res = await api('/warga' + (qs.toString() ? '?' + qs : ''))
+    const res = await api('/warga?' + q.toString())
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 
-export async function getKeluarga(id, { bukaNik = false } = {}) {
+export async function getKeluarga(id, opts = {}) {
   try {
-    const res = await api('/warga/' + id + (bukaNik ? '?buka_nik=1' : ''))
+    const q = opts.bukaNik ? '?buka_nik=1' : ''
+    const res = await api('/warga/' + id + q)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -106,6 +107,15 @@ export async function portalDetailKeluarga(id) {
 export async function portalKeluargaSaya() {
   try {
     const res = await api('/portal/keluarga')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function portalTambahAnggota(payload) {
+  try {
+    const res = await api('/portal/keluarga/anggota', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }

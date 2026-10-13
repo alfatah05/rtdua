@@ -70,3 +70,8 @@ export function portalKeluargaSaya() {
     ? Promise.resolve({ ok: true, data: { id: 1, alamat: '—', anggota: [] } })
     : real.portalKeluargaSaya()
 }
+
+export function portalTambahAnggota(payload) {
+  if (USE_MOCK.warga) return Promise.resolve({ ok: true, data: { id: 0 } })
+  return real.portalTambahAnggota(payload)
+}
