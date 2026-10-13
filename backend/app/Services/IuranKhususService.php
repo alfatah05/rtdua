@@ -10,17 +10,54 @@ class IuranKhususService
     public function list(): array
     {
         $db = \Config\Database::connect();
-        $rows = $db->table('iuran_khusus')->orderBy('periode', 'DESC')->orderBy('id', 'DESC')->get()->getResultArray();
-        return array_map(static function ($r) {
-            return [
-                'id'         => (int) $r['id'],
-                'nama'       => $r['nama'],
-                'periode'    => $r['periode'],
-                'nominal'    => (int) $r['nominal'],
-                'dibatalkan' => (bool) $r['dibatalkan'],
-                'created_at' => $r['created_at'],
+        // Semua iuran khusus (aktif + dibatalkan) — urut terbaru
+        $rows = $db->table('iuran_khusus')
+            ->orderBy('periode', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        // Jika master kosong tapi tagihan khusus masih ada → pulihkan dari tagihan
+        if ($rows === []) {
+            $orphan = $db->query(
+                "SELECT t.iuran_khusus_id AS id,
+                        COALESCE(MAX(ik.nama), CONCAT('Iuran khusus #', t.iuran_khusus_id)) AS nama,
+                        t.periode,
+                        MAX(t.nominal) AS nominal,
+                        COALESCE(MAX(ik.dibatalkan), 0) AS dibatalkan,
+                        MIN(t.created_at) AS created_at
+                 FROM iuran_tagihan t
+                 LEFT JOIN iuran_khusus ik ON ik.id = t.iuran_khusus_id
+                 WHERE t.jenis = 'khusus'
+                   AND t.iuran_khusus_id IS NOT NULL
+                   AND t.iuran_khusus_id > 0
+                 GROUP BY t.iuran_khusus_id, t.periode
+                 ORDER BY t.periode DESC, t.iuran_khusus_id DESC"
+            )->getResultArray();
+            $rows = $orphan ?: [];
+        }
+
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (int) ($r['id'] ?? 0);
+            $jumlah = 0;
+            if ($id > 0) {
+                $jumlah = (int) $db->table('iuran_tagihan')
+                    ->where('iuran_khusus_id', $id)
+                    ->where('dibatalkan', 0)
+                    ->countAllResults();
+            }
+            $out[] = [
+                'id'          => $id,
+                'nama'        => (string) ($r['nama'] ?? ''),
+                'periode'     => (string) ($r['periode'] ?? ''),
+                'nominal'     => (int) ($r['nominal'] ?? 0),
+                'dibatalkan'  => (int) ($r['dibatalkan'] ?? 0) === 1,
+                'created_at'  => $r['created_at'] ?? null,
+                'jumlah_kk'   => $jumlah,
             ];
-        }, $rows);
+        }
+        return $out;
     }
 
     public function buat(array $data, int $userId): array
