@@ -114,25 +114,25 @@
               </span>
             </button>
 
-            <!-- Child: spacer transparan w-9 agar teks sejajar list yang pakai icon -->
+            <!-- Child: spacer transparan w-9 agar teks sejajar; gap kecil + teks muted agar beda dari list utama -->
             <div
               v-if="bisaExpandKas(t) && isKasOpen(t.id)"
-              class="pb-1"
+              class="pb-0.5"
             >
               <div
                 v-for="c in komponenKas"
                 :key="'k-' + t.id + '-' + c.id"
-                class="flex items-center gap-3 py-2.5"
+                class="flex items-center gap-3 py-1"
                 style="padding-left: 10px; padding-right: 10px"
               >
                 <div
                   class="w-9 h-9 shrink-0 opacity-0 pointer-events-none"
                   aria-hidden="true"
                 ></div>
-                <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate text-[var(--text)]">
+                <p class="flex-1 min-w-0 text-[13px] font-medium m-0 truncate text-[var(--mut)]">
                   {{ c.nama }}
                 </p>
-                <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap text-[var(--text)]">
+                <span class="text-[13px] font-semibold tabular-nums shrink-0 whitespace-nowrap text-[var(--mut)]">
                   {{ rp(c.nominal) }}
                 </span>
               </div>
