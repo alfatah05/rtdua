@@ -310,7 +310,7 @@ const heroStatus = computed(() => {
 const heroTitle = computed(() => {
   if (heroStatus.value === 'lebih') return 'Kelebihan bayar'
   return 'Jumlah tagihan anda'
-}
+})
 const heroNominal = computed(() => {
   if (total.value > 0) return rp(total.value)
   if (total.value < 0) return rp(-total.value)
