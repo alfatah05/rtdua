@@ -87,9 +87,12 @@
           <div v-for="t in tagihanTerbuka" :key="t.id">
             <button
               type="button"
-              class="w-full flex items-center gap-3 py-2.5 text-left"
+              class="w-full flex items-center gap-3 text-left"
+              :class="[
+                bisaExpandKas(t) && isKasOpen(t.id) ? 'pt-2.5 pb-0.5' : 'py-2.5',
+                bisaExpandKas(t) ? 'active:opacity-80' : 'cursor-default',
+              ]"
               style="padding-left: 10px; padding-right: 10px"
-              :class="bisaExpandKas(t) ? 'active:opacity-80' : 'cursor-default'"
               @click="bisaExpandKas(t) && toggleKas(t.id)"
             >
               <div
@@ -114,25 +117,25 @@
               </span>
             </button>
 
-            <!-- Child: spacer transparan w-9 agar teks sejajar; gap kecil + teks muted agar beda dari list utama -->
+            <!-- Child: spacer lebar saja (tanpa h-9) supaya tinggi ikut teks; jarak parent–child = antar child -->
             <div
               v-if="bisaExpandKas(t) && isKasOpen(t.id)"
-              class="pb-0.5"
+              class="pb-1"
             >
               <div
                 v-for="c in komponenKas"
                 :key="'k-' + t.id + '-' + c.id"
-                class="flex items-center gap-3 py-1"
+                class="flex items-center gap-3 py-0.5"
                 style="padding-left: 10px; padding-right: 10px"
               >
                 <div
-                  class="w-9 h-9 shrink-0 opacity-0 pointer-events-none"
+                  class="w-9 shrink-0 opacity-0 pointer-events-none"
                   aria-hidden="true"
                 ></div>
-                <p class="flex-1 min-w-0 text-[13px] font-medium m-0 truncate text-[var(--mut)]">
+                <p class="flex-1 min-w-0 text-[13px] font-medium m-0 truncate text-[var(--mut)] leading-snug">
                   {{ c.nama }}
                 </p>
-                <span class="text-[13px] font-semibold tabular-nums shrink-0 whitespace-nowrap text-[var(--mut)]">
+                <span class="text-[13px] font-semibold tabular-nums shrink-0 whitespace-nowrap text-[var(--mut)] leading-snug">
                   {{ rp(c.nominal) }}
                 </span>
               </div>
