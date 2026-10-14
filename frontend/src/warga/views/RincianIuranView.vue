@@ -117,7 +117,7 @@
               </span>
             </button>
 
-            <!-- Child: spacer lebar saja (tanpa h-9) supaya tinggi ikut teks; jarak parent–child = antar child -->
+            <!-- Child: parent–child tetap rapat (parent pb-0.5); antar child py-1 seperti sebelumnya -->
             <div
               v-if="bisaExpandKas(t) && isKasOpen(t.id)"
               class="pb-1"
@@ -125,7 +125,7 @@
               <div
                 v-for="c in komponenKas"
                 :key="'k-' + t.id + '-' + c.id"
-                class="flex items-center gap-3 py-0.5"
+                class="flex items-center gap-3 py-1"
                 style="padding-left: 10px; padding-right: 10px"
               >
                 <div
@@ -310,7 +310,7 @@ const heroStatus = computed(() => {
 const heroTitle = computed(() => {
   if (heroStatus.value === 'lebih') return 'Kelebihan bayar'
   return 'Jumlah tagihan anda'
-})
+}
 const heroNominal = computed(() => {
   if (total.value > 0) return rp(total.value)
   if (total.value < 0) return rp(-total.value)
