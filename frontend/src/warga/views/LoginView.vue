@@ -1,21 +1,27 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center px-4 max-w-[400px] mx-auto">
-    <div class="text-center mb-8">
-      <div class="w-20 h-20 rounded-full bg-[var(--gd)] grid place-items-center mx-auto mb-4 overflow-hidden">
+  <div class="h-dvh max-h-dvh overflow-hidden flex flex-col justify-center px-5 max-w-[400px] mx-auto w-full py-6 box-border">
+    <div class="text-center mb-6 shrink-0">
+      <!-- Logo: tanpa crop lingkaran, tanpa background -->
+      <div class="mx-auto mb-4 flex items-center justify-center h-28 w-28">
         <img
           v-if="logoUrl"
           :src="logoUrl"
           alt="Logo"
-          class="w-full h-full object-contain p-1.5"
+          class="max-h-28 max-w-28 w-auto h-auto object-contain"
           @error="logoUrl = ''"
         />
-        <Home v-else :size="28" class="text-[var(--gm)]" />
+        <div
+          v-else
+          class="w-16 h-16 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center"
+        >
+          <Home :size="28" />
+        </div>
       </div>
-      <h1 class="text-2xl font-extrabold">Masuk Warga</h1>
-      <p class="text-[var(--mut)] mt-1 text-[13px]">Pilih blok, isi nomor rumah, lalu PIN</p>
+      <h1 class="text-2xl font-extrabold m-0">Masuk Warga</h1>
+      <p class="text-[var(--mut)] mt-1 mb-0 text-[13px]">Pilih blok, isi nomor rumah, lalu PIN</p>
     </div>
 
-    <form class="space-y-4" @submit.prevent="submit">
+    <form class="space-y-3.5 shrink-0" @submit.prevent="submit">
       <div class="flex gap-3 items-start">
         <div class="flex-1 min-w-0">
           <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Blok</label>
@@ -26,7 +32,7 @@
             <option value="" disabled>Pilih blok</option>
             <option v-for="b in blokList" :key="b.id" :value="b.nama">{{ b.nama }}</option>
           </select>
-          <p v-if="errors.blok" class="mt-1.5 text-[13px] text-red-600">{{ errors.blok }}</p>
+          <p v-if="errors.blok" class="mt-1.5 text-[13px] text-red-600 m-0">{{ errors.blok }}</p>
         </div>
         <div class="flex-1 min-w-0">
           <UiInput
@@ -51,7 +57,7 @@
         pill
         :error="errors.pin"
       />
-      <p v-if="formError" class="text-[13px] text-red-600">{{ formError }}</p>
+      <p v-if="formError" class="text-[13px] text-red-600 m-0">{{ formError }}</p>
       <UiButton type="submit" block :loading="loading">Masuk</UiButton>
     </form>
   </div>
@@ -94,7 +100,6 @@ onMounted(async () => {
     if (!json?.ok || !json.data) return
     const d = json.data
     if (Array.isArray(d)) {
-      // Backend belum deploy: hanya daftar blok
       blokList.value = d
       return
     }
