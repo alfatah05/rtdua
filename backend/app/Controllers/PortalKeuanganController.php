@@ -115,23 +115,12 @@ class PortalKeuanganController extends Controller
         if (!$ctx) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $svc = new \App\Services\KasService();
-        $items = $svc->list();
-        $safe = array_map(static function ($r) {
-            return [
-                'id'         => (int) ($r['id'] ?? 0),
-                'tipe'       => $r['tipe'] ?? null,
-                'nominal'    => (int) ($r['nominal'] ?? 0),
-                'kategori'   => $r['kategori'] ?? null,
-                'keterangan' => $r['keterangan'] ?? null,
-                'tanggal'    => $r['tanggal'] ?? null,
-            ];
-        }, $items);
-        $safe = array_slice($safe, 0, 50);
-        return ApiResponse::ok([
-            'saldo' => $svc->saldo(),
-            'items' => $safe,
-        ]);
+        try {
+            $data = (new \App\Services\KasService())->portalRingkasanKas();
+            return ApiResponse::ok($data);
+        } catch (\Throwable $e) {
+            return ApiResponse::fail('Gagal memuat kas: ' . $e->getMessage(), 500);
+        }
     }
 
     /**
