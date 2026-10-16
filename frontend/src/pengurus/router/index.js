@@ -54,6 +54,7 @@ import AngkatPengurusView from '../views/AngkatPengurusView.vue'
 import KelolaPengurusDetailView from '../views/KelolaPengurusDetailView.vue'
 import EksporIuranView from '../views/EksporIuranView.vue'
 import BatalDendaView from '../views/BatalDendaView.vue'
+import PosKasView from '../views/PosKasView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -92,6 +93,7 @@ const routes = [
       { path: 'keuangan/laporan', component: LaporanView },
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
       { path: 'keuangan/catat', component: CatatIuranPilihView },
+      { path: 'keuangan/pos-kas', component: PosKasView },
 
       { path: 'aktivitas', name: 'aktivitas', component: AktivitasView },
       { path: 'aktivitas/:id', component: AktivitasDetailView },
