@@ -139,12 +139,17 @@
                 <p class="font-bold text-[15px] m-0 leading-tight">{{ labelKasItem(t) }}</p>
                 <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
                   {{ formatTanggal(t.tanggal) }}
-                  <span v-if="t.kategori"> · {{ t.kategori }}</span>
-                  <span v-if="t.kas_pos_nama"> · {{ t.kas_pos_nama }}</span>
+                  <span v-if="isAlokasi(t)"> · Alokasi</span>
+                  <span v-else-if="t.kategori"> · {{ t.kategori }}</span>
+                  <span v-if="!isAlokasi(t) && t.kas_pos_nama"> · {{ t.kas_pos_nama }}</span>
                 </p>
               </div>
-              <span class="font-bold shrink-0 whitespace-nowrap" :class="t.tipe === 'masuk' ? 'text-[var(--g)]' : 'text-red-500'">
-                {{ t.tipe === 'masuk' ? '+' : '−' }}{{ formatRp(t.nominal) }}
+              <span
+                class="font-bold shrink-0 whitespace-nowrap"
+                :class="isAlokasi(t) ? 'text-sky-600' : (t.tipe === 'masuk' ? 'text-[var(--g)]' : 'text-red-500')"
+              >
+                <template v-if="isAlokasi(t)">{{ formatRp(t.nominal) }}</template>
+                <template v-else>{{ t.tipe === 'masuk' ? '+' : '−' }}{{ formatRp(t.nominal) }}</template>
               </span>
             </div>
           </div>
@@ -207,15 +212,19 @@ const ymSekarang = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 })
 
+function isAlokasi(t) {
+  return !!(t?.is_alokasi || t?.display_tipe === 'alokasi' || t?.kategori === 'Alokasi antar pos')
+}
+
 const totalMasuk = computed(() =>
   kasItems.value
-    .filter((t) => t.tipe === 'masuk' && String(t.tanggal || '').startsWith(ymSekarang.value))
+    .filter((t) => !isAlokasi(t) && t.tipe === 'masuk' && String(t.tanggal || '').startsWith(ymSekarang.value))
     .reduce((s, t) => s + Number(t.nominal || 0), 0)
 )
 
 const totalKeluar = computed(() =>
   kasItems.value
-    .filter((t) => t.tipe === 'keluar' && String(t.tanggal || '').startsWith(ymSekarang.value))
+    .filter((t) => !isAlokasi(t) && t.tipe === 'keluar' && String(t.tanggal || '').startsWith(ymSekarang.value))
     .reduce((s, t) => s + Number(t.nominal || 0), 0)
 )
 
@@ -286,7 +295,6 @@ onMounted(async () => {
   const d = kas.data || {}
   saldoKas.value = Number(d.saldo ?? 0)
   daftarKas.value = Array.isArray(d.pos) ? d.pos.filter((p) => p.aktif !== false) : []
-  // Backend sudah filter tanpa otomatis; jaga-jaga di client juga
   const rawItems = Array.isArray(d.items) ? d.items : []
   kasItems.value = rawItems.filter((t) => !t.otomatis && !(t.keterangan || '').startsWith('Otomatis dari pembayaran'))
   pembayaranItems.value = Array.isArray(d.pembayaran) ? d.pembayaran : []
