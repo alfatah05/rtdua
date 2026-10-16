@@ -37,7 +37,6 @@ class KeluargaService
             $out[] = $this->ringkasKeluarga($r, $filter);
         }
 
-        // Filter text by kepala name after load (nama di tabel warga)
         if (!empty($filter['q'])) {
             $s = mb_strtolower($filter['q']);
             $out = array_values(array_filter($out, static function ($k) use ($s) {
@@ -157,7 +156,7 @@ class KeluargaService
             'alamat'        => $data['alamat'] ?? null,
             'telepon'       => $data['telepon'] ?? null,
             'status'        => 'aktif',
-            'mulai_periode' => date('Y-m'), // ikut iuran bulan berjalan
+            'mulai_periode' => date('Y-m'),
             'created_at'    => date('Y-m-d H:i:s'),
         ]);
         $keluargaId = (int) $db->insertID();
@@ -195,7 +194,6 @@ class KeluargaService
             return ['ok' => false, 'message' => 'Harus ada tepat satu Kepala keluarga.'];
         }
 
-        // Akun warga: PIN awal 123456; tagihan iuran mulai bulan berjalan
         $username = $this->buatUsername($blok['nama'], $nomor, $akhiran);
         $db->table('users')->insert([
             'role'                    => 'warga',
@@ -219,7 +217,6 @@ class KeluargaService
             'akhiran'  => $akhiran,
         ], 'pengguna', true, $userId);
 
-        // Pastikan tagihan kas bulan ini langsung dibuat untuk keluarga baru
         try {
             (new TagihanService())->pastikanTagihanKasBulan(date('Y-m'));
         } catch (\Throwable $e) {
@@ -267,7 +264,6 @@ class KeluargaService
         $update['updated_at'] = date('Y-m-d H:i:s');
         $db->table('keluarga')->where('id', $id)->update($update);
 
-        // Sync username jika alamat berubah
         if (isset($update['blok_id'])) {
             $blok = $db->table('blok')->where('id', $update['blok_id'])->get()->getRowArray();
             $uname = $this->buatUsername($blok['nama'], $update['nomor'], $update['akhiran'] ?? '');
@@ -331,7 +327,15 @@ class KeluargaService
         $update = [];
         foreach (['nama', 'hubungan', 'no_kk', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'pekerjaan'] as $k) {
             if (array_key_exists($k, $a)) {
-                $update[$k] = $a[$k];
+                if ($k === 'nama') {
+                    $nama = trim((string) $a['nama']);
+                    if ($nama === '') {
+                        return ['ok' => false, 'message' => 'Nama tidak boleh kosong.'];
+                    }
+                    $update['nama'] = $nama;
+                } else {
+                    $update[$k] = $a[$k];
+                }
             }
         }
         if (array_key_exists('nik', $a)) {
@@ -349,6 +353,47 @@ class KeluargaService
         $db->table('warga')->where('id', $anggotaId)->update($update);
         (new AuditService())->log('ubah_anggota', 'warga', $anggotaId, ['nama' => $before['nama']], $update, 'pengguna', true, $userId);
         return ['ok' => true];
+    }
+
+    /**
+     * Soft-hapus anggota: status keluar. Kepala tidak boleh dihapus jika masih anggota aktif lain tanpa pengganti.
+     */
+    public function hapusAnggota(int $anggotaId, ?string $alasan, int $userId, ?int $kepalaBaruId = null): array
+    {
+        $db = \Config\Database::connect();
+        $a = $db->table('warga')->where('id', $anggotaId)->get()->getRowArray();
+        if (!$a) {
+            return ['ok' => false, 'message' => 'Anggota tidak ditemukan.'];
+        }
+        if (($a['status'] ?? '') !== 'aktif') {
+            return ['ok' => false, 'message' => 'Anggota sudah tidak aktif.'];
+        }
+        $keluargaId = (int) $a['keluarga_id'];
+        $isKepala = strcasecmp((string) $a['hubungan'], 'Kepala keluarga') === 0;
+
+        if ($isKepala) {
+            $lain = $db->table('warga')
+                ->where('keluarga_id', $keluargaId)
+                ->where('status', 'aktif')
+                ->where('id !=', $anggotaId)
+                ->countAllResults();
+            if ($lain > 0) {
+                if (!$kepalaBaruId) {
+                    return ['ok' => false, 'message' => 'Pilih kepala keluarga baru sebelum menghapus kepala.'];
+                }
+                $ganti = $this->gantiKepala($keluargaId, (int) $kepalaBaruId, $userId);
+                if (!$ganti['ok']) {
+                    return $ganti;
+                }
+            }
+        }
+
+        return $this->setStatusAnggota(
+            $anggotaId,
+            'keluar',
+            $alasan !== null && $alasan !== '' ? $alasan : 'Dihapus pengurus',
+            $userId
+        );
     }
 
     public function setStatusAnggota(int $anggotaId, string $status, ?string $alasan, int $userId): array
@@ -398,12 +443,56 @@ class KeluargaService
             $this->nonaktifkanPengurusDariWarga((int) $a['id'], $userId);
         }
         $db->table('users')->where('keluarga_id', $keluargaId)->where('role', 'warga')->update([
-            'aktif'     => 0,
-            'username'  => 'pindah_' . $keluargaId . '_' . time(),
-            'updated_at'=> date('Y-m-d H:i:s'),
+            'aktif'      => 0,
+            'username'   => 'pindah_' . $keluargaId . '_' . time(),
+            'updated_at' => date('Y-m-d H:i:s'),
         ]);
         $db->transComplete();
         (new AuditService())->log('pindah_keluarga', 'keluarga', $keluargaId, null, ['tanggal' => $tanggal, 'catatan' => $catatan], 'pengguna', true, $userId);
+        return ['ok' => true];
+    }
+
+    /**
+     * Soft-hapus keluarga: status hapus, anggota keluar, akun warga nonaktif.
+     * Riwayat tagihan/pembayaran tetap (tidak hard-delete).
+     */
+    public function hapusKeluarga(int $keluargaId, ?string $alasan, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $k = $db->table('keluarga')->where('id', $keluargaId)->get()->getRowArray();
+        if (!$k || $k['status'] !== 'aktif') {
+            return ['ok' => false, 'message' => 'Keluarga tidak ditemukan atau sudah tidak aktif.'];
+        }
+
+        $catatan = $alasan !== null && trim($alasan) !== '' ? trim($alasan) : 'Dihapus pengurus';
+
+        $db->transStart();
+        $db->table('keluarga')->where('id', $keluargaId)->update([
+            'status'         => 'hapus',
+            'tanggal_pindah' => date('Y-m-d'),
+            'catatan_pindah' => $catatan,
+            'updated_at'     => date('Y-m-d H:i:s'),
+        ]);
+        $anggota = $db->table('warga')->where('keluarga_id', $keluargaId)->where('status', 'aktif')->get()->getResultArray();
+        foreach ($anggota as $a) {
+            $db->table('warga')->where('id', $a['id'])->update([
+                'status'         => 'keluar',
+                'tanggal_status' => date('Y-m-d'),
+                'alasan'         => 'Keluarga dihapus',
+            ]);
+            $this->nonaktifkanPengurusDariWarga((int) $a['id'], $userId);
+        }
+        $db->table('users')->where('keluarga_id', $keluargaId)->where('role', 'warga')->update([
+            'aktif'      => 0,
+            'username'   => 'hapus_' . $keluargaId . '_' . time(),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $db->transComplete();
+        if ($db->transStatus() === false) {
+            return ['ok' => false, 'message' => 'Gagal menghapus keluarga.'];
+        }
+
+        (new AuditService())->log('hapus_keluarga', 'keluarga', $keluargaId, $k, ['alasan' => $catatan], 'pengguna', true, $userId);
         return ['ok' => true];
     }
 
