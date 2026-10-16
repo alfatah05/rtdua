@@ -38,6 +38,29 @@
       <p v-if="uploading" class="text-[12px] text-[var(--mut)]">Mengunggah logo…</p>
 
       <div>
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-2">Logo di halaman login</label>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="flex-1 min-h-[44px] rounded-full text-[13px] font-semibold border-2 transition"
+            :class="logoLogin === 'rt' ? 'border-[var(--g)] bg-[var(--gd)] text-[var(--gm)]' : 'border-transparent bg-[var(--card2)]'"
+            @click="logoLogin = 'rt'"
+          >
+            Logo RT
+          </button>
+          <button
+            type="button"
+            class="flex-1 min-h-[44px] rounded-full text-[13px] font-semibold border-2 transition"
+            :class="logoLogin === 'desa' ? 'border-[var(--g)] bg-[var(--gd)] text-[var(--gm)]' : 'border-transparent bg-[var(--card2)]'"
+            @click="logoLogin = 'desa'"
+          >
+            Logo desa
+          </button>
+        </div>
+        <p class="text-[12px] text-[var(--mut)] mt-1.5 m-0">Dipakai di login warga & pengurus. Jika kosong, fallback ke logo lain.</p>
+      </div>
+
+      <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Daftar blok</label>
         <div class="flex flex-wrap gap-2 mb-2">
           <span v-for="b in blok" :key="b.id || b.nama" class="px-3 py-1.5 rounded-full bg-[var(--card2)] text-[13px] font-semibold">{{ b.nama || b }}</span>
@@ -81,12 +104,14 @@ const logoRt = ref(null)
 const logoDesa = ref(null)
 const logoRtUrl = ref('')
 const logoDesaUrl = ref('')
+const logoLogin = ref('rt')
 
 function applyLogos(d) {
   logoRt.value = d.logo_rt || null
   logoDesa.value = d.logo_desa || null
   logoRtUrl.value = d.logo_rt ? mediaUrl(d.logo_rt) : ''
   logoDesaUrl.value = d.logo_desa ? mediaUrl(d.logo_desa) : ''
+  logoLogin.value = d.logo_login === 'desa' ? 'desa' : 'rt'
 }
 
 async function load() {
@@ -142,6 +167,7 @@ async function onSave() {
     akses_warga: aksesWarga.value,
     logo_rt: logoRt.value,
     logo_desa: logoDesa.value,
+    logo_login: logoLogin.value,
   })
   saving.value = false
   msgOk.value = !!res.ok
