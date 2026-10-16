@@ -28,7 +28,28 @@
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Alamat tambahan</label>
         <input v-model="alamat" type="text" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
       </div>
-      <h2 class="text-[15px] font-bold pt-2">Pas foto kepala keluarga</h2>
+
+      <h2 class="text-[15px] font-bold pt-2 m-0">Nama anggota</h2>
+      <p class="text-[12px] text-[var(--mut)] m-0">Ubah nama kepala keluarga dan anggota di sini.</p>
+      <div class="space-y-3">
+        <div
+          v-for="a in anggotaEdit"
+          :key="a.id"
+          class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5 space-y-2"
+        >
+          <p class="text-[12px] font-semibold text-[var(--mut)] m-0">{{ a.hubungan }} · {{ a.status }}</p>
+          <input
+            v-model="a.nama"
+            type="text"
+            class="w-full min-h-[44px] px-3 rounded-[12px] bg-[var(--search)] outline-none font-semibold"
+            :placeholder="a.hubungan"
+            required
+          />
+        </div>
+        <p v-if="!anggotaEdit.length" class="text-[13px] text-[var(--mut)]">Belum ada anggota</p>
+      </div>
+
+      <h2 class="text-[15px] font-bold pt-2 m-0">Pas foto kepala keluarga</h2>
       <div class="flex items-center gap-4">
         <div class="w-16 h-16 rounded-full bg-[var(--card2)] overflow-hidden grid place-items-center">
           <img v-if="fotoUrl" :src="fotoUrl" class="w-full h-full object-cover" alt="" />
@@ -72,6 +93,8 @@ const uploading = ref(false)
 const saving = ref(false)
 const msg = ref('')
 const msgOk = ref(true)
+const anggotaEdit = ref([])
+const anggotaAsli = ref([])
 
 onMounted(async () => {
   const [b, d] = await Promise.all([getBlok(), getKeluarga(route.params.id)])
@@ -84,7 +107,15 @@ onMounted(async () => {
   akhiran.value = data.akhiran || ''
   telepon.value = data.telepon || ''
   alamat.value = data.alamat || ''
-  const kepala = (data.anggota || []).find((a) => String(a.hubungan).toLowerCase().includes('kepala'))
+  const list = data.anggota || []
+  anggotaAsli.value = list.map((a) => ({ id: a.id, nama: a.nama || '' }))
+  anggotaEdit.value = list.map((a) => ({
+    id: a.id,
+    nama: a.nama || '',
+    hubungan: a.hubungan || 'Anggota',
+    status: a.status || 'aktif',
+  }))
+  const kepala = list.find((a) => String(a.hubungan).toLowerCase().includes('kepala'))
   if (kepala) {
     kepalaId.value = kepala.id
     if (kepala.foto) {
@@ -109,6 +140,15 @@ async function onFoto(e) {
 async function onSave() {
   saving.value = true
   msg.value = ''
+  for (const a of anggotaEdit.value) {
+    if (!String(a.nama || '').trim()) {
+      saving.value = false
+      msgOk.value = false
+      msg.value = 'Nama anggota tidak boleh kosong.'
+      return
+    }
+  }
+
   const res = await updateKeluarga(route.params.id, {
     blok_id: Number(blokId.value),
     nomor: nomor.value,
@@ -122,6 +162,21 @@ async function onSave() {
     msg.value = res.error || 'Gagal'
     return
   }
+
+  for (const a of anggotaEdit.value) {
+    const asal = anggotaAsli.value.find((x) => x.id === a.id)
+    const namaBaru = String(a.nama || '').trim()
+    if (!asal || asal.nama !== namaBaru) {
+      const r = await updateAnggota(a.id, { nama: namaBaru })
+      if (!r.ok) {
+        saving.value = false
+        msgOk.value = false
+        msg.value = r.error || 'Gagal menyimpan nama.'
+        return
+      }
+    }
+  }
+
   if (kepalaId.value && fotoPath.value) {
     await updateAnggota(kepalaId.value, { foto: fotoPath.value })
   }
