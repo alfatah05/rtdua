@@ -1,8 +1,8 @@
 <template>
-  <div class="h-dvh max-h-dvh overflow-hidden flex flex-col justify-center px-5 max-w-[400px] mx-auto w-full py-6 box-border">
-    <div class="text-center mb-6 shrink-0">
-      <!-- Logo: tanpa crop lingkaran, tanpa background -->
-      <div class="mx-auto mb-4 flex items-center justify-center h-28 w-28">
+  <!-- fixed + overflow body lock: tidak bisa scroll -->
+  <div class="login-page fixed inset-0 z-10 overflow-hidden overscroll-none flex flex-col justify-center px-5 w-full max-w-[400px] left-1/2 -translate-x-1/2 box-border">
+    <div class="text-center mb-5 shrink-0">
+      <div class="mx-auto mb-3 flex items-center justify-center h-28 w-28">
         <img
           v-if="logoUrl"
           :src="logoUrl"
@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Home } from 'lucide-vue-next'
 import UiInput from '@shared/components/UiInput.vue'
@@ -83,6 +83,31 @@ const errors = ref({})
 const formError = ref('')
 const logoUrl = ref('')
 
+function lockScroll() {
+  document.documentElement.style.overflow = 'hidden'
+  document.documentElement.style.overscrollBehavior = 'none'
+  document.body.style.overflow = 'hidden'
+  document.body.style.overscrollBehavior = 'none'
+  document.body.style.position = 'fixed'
+  document.body.style.width = '100%'
+  document.body.style.top = `-${window.scrollY}px`
+}
+
+function unlockScroll() {
+  const top = document.body.style.top
+  document.documentElement.style.overflow = ''
+  document.documentElement.style.overscrollBehavior = ''
+  document.body.style.overflow = ''
+  document.body.style.overscrollBehavior = ''
+  document.body.style.position = ''
+  document.body.style.width = ''
+  document.body.style.top = ''
+  if (top) {
+    const y = Math.abs(parseInt(top, 10) || 0)
+    window.scrollTo(0, y)
+  }
+}
+
 function setLogoFrom(d) {
   const path =
     d.logo ||
@@ -94,6 +119,7 @@ function setLogoFrom(d) {
 }
 
 onMounted(async () => {
+  lockScroll()
   try {
     const res = await fetch('/api/auth/blok-login', { headers: { Accept: 'application/json' } })
     const json = await res.json()
@@ -109,6 +135,8 @@ onMounted(async () => {
     // biarkan kosong
   }
 })
+
+onUnmounted(unlockScroll)
 
 function buildUsername() {
   const b = String(blokNama.value || '').trim()
@@ -131,6 +159,7 @@ async function submit() {
     formError.value = res.error || 'Login gagal'
     return
   }
+  unlockScroll()
   if (res.mustChange) {
     router.replace('/ganti-pin')
   } else {
