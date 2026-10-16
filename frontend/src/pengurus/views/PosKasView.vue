@@ -48,6 +48,81 @@
         </div>
       </div>
 
+      <!-- Alokasi antar pos -->
+      <div
+        v-if="aktifItems.length >= 2"
+        class="rounded-[16px] border border-[var(--line)] bg-[var(--card)] p-4 space-y-3 mb-6"
+      >
+        <p class="font-bold text-[15px] m-0">Alokasi antar pos</p>
+        <p class="text-[12px] text-[var(--mut)] m-0">
+          Pindah dana dari satu pos ke pos lain. Total saldo RT tidak berubah. Tercatat di Aktivitas.
+        </p>
+        <div>
+          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Dari pos</label>
+          <select
+            v-model="alokasiDari"
+            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
+          >
+            <option :value="null" disabled>Pilih pos sumber</option>
+            <option v-for="p in aktifItems" :key="'d' + p.id" :value="p.id">
+              {{ p.nama }} ({{ formatRp(p.saldo) }})
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Ke pos</label>
+          <select
+            v-model="alokasiKe"
+            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
+          >
+            <option :value="null" disabled>Pilih pos tujuan</option>
+            <option
+              v-for="p in aktifItems.filter((x) => x.id !== alokasiDari)"
+              :key="'k' + p.id"
+              :value="p.id"
+            >
+              {{ p.nama }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Nominal (Rp)</label>
+          <input
+            v-model="alokasiNominal"
+            type="text"
+            inputmode="numeric"
+            placeholder="200000"
+            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
+          />
+        </div>
+        <div>
+          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Keterangan (opsional)</label>
+          <input
+            v-model="alokasiKet"
+            type="text"
+            placeholder="Mis. isi kas sosial bulan ini"
+            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
+          />
+        </div>
+        <div>
+          <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Tanggal</label>
+          <input
+            v-model="alokasiTanggal"
+            type="date"
+            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
+          />
+        </div>
+        <p v-if="alokasiErr" class="text-[13px] text-red-600 m-0">{{ alokasiErr }}</p>
+        <button
+          type="button"
+          class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-60"
+          :disabled="alokasiSaving"
+          @click="onAlokasi"
+        >
+          {{ alokasiSaving ? 'Memproses…' : 'Alokasikan' }}
+        </button>
+      </div>
+
       <div class="rounded-[16px] border border-[var(--line)] bg-[var(--card)] p-4 space-y-3">
         <p class="font-bold text-[15px] m-0">{{ editId ? 'Ubah pos' : 'Tambah pos' }}</p>
         <div>
@@ -94,12 +169,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { formatRp } from '@shared/utils/format.js'
 import { useToast } from '@shared/composables/useToast.js'
-import { listKasPos, buatKasPos, ubahKasPos, nonaktifKasPos } from '@shared/services/keuangan.js'
+import {
+  listKasPos,
+  buatKasPos,
+  ubahKasPos,
+  nonaktifKasPos,
+  alokasiKasPos,
+} from '@shared/services/keuangan.js'
 
 const { success } = useToast()
 const loading = ref(true)
@@ -110,6 +191,16 @@ const formNama = ref('')
 const formJatah = ref('')
 const formErr = ref('')
 const saving = ref(false)
+
+const alokasiDari = ref(null)
+const alokasiKe = ref(null)
+const alokasiNominal = ref('')
+const alokasiKet = ref('')
+const alokasiTanggal = ref(new Date().toISOString().slice(0, 10))
+const alokasiErr = ref('')
+const alokasiSaving = ref(false)
+
+const aktifItems = computed(() => items.value.filter((p) => p.aktif !== false))
 
 async function load() {
   loading.value = true
@@ -170,6 +261,42 @@ async function onNonaktif(p) {
     return
   }
   success('Pos dinonaktifkan')
+  await load()
+}
+
+async function onAlokasi() {
+  alokasiErr.value = ''
+  const dari = alokasiDari.value
+  const ke = alokasiKe.value
+  const n = parseInt(String(alokasiNominal.value).replace(/\D/g, ''), 10) || 0
+  if (!dari || !ke) {
+    alokasiErr.value = 'Pilih pos sumber dan tujuan.'
+    return
+  }
+  if (dari === ke) {
+    alokasiErr.value = 'Pos sumber dan tujuan harus berbeda.'
+    return
+  }
+  if (n < 1) {
+    alokasiErr.value = 'Nominal wajib diisi.'
+    return
+  }
+  alokasiSaving.value = true
+  const res = await alokasiKasPos({
+    dari_pos_id: dari,
+    ke_pos_id: ke,
+    nominal: n,
+    keterangan: alokasiKet.value.trim() || null,
+    tanggal: alokasiTanggal.value,
+  })
+  alokasiSaving.value = false
+  if (!res.ok) {
+    alokasiErr.value = res.error || 'Gagal alokasi'
+    return
+  }
+  success('Alokasi berhasil')
+  alokasiNominal.value = ''
+  alokasiKet.value = ''
   await load()
 }
 
