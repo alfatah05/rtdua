@@ -87,7 +87,7 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted, computed } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ClipboardList, FileText, Landmarks } from 'lucide-vue-next'
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ClipboardList, FileText, Landmark } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
 import { listKas, listPermintaan } from '@shared/services/keuangan.js'
 
@@ -103,7 +103,7 @@ const aksi = computed(() => [
   { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: 'rgba(239,68,68,.15)', color: '#DC2626' },
   { label: 'Iuran', icon: ClipboardList, to: '/keuangan/iuran', bg: 'rgba(16,185,129,.18)', color: '#059669', badge: badgePermintaan.value || undefined },
   { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Pos kas', icon: Landmarks, to: '/keuangan/pos-kas', bg: 'rgba(14,165,233,.15)', color: '#0284C7' },
+  { label: 'Pos kas', icon: Landmark, to: '/keuangan/pos-kas', bg: 'rgba(14,165,233,.15)', color: '#0284C7' },
 ])
 
 function isAlokasi(t) {
