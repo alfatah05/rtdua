@@ -235,6 +235,20 @@ class KeuanganController extends Controller
         return $res['ok'] ? ApiResponse::ok(null, 'Pos dinonaktifkan') : ApiResponse::fail($res['message'], 422);
     }
 
+    /** Pindah dana antar pos (mis. Kas RT → Kas sosial). */
+    public function alokasiKasPos()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new KasService())->alokasiAntarPos($json, (int) $user['id']);
+        return $res['ok']
+            ? ApiResponse::ok($res['data'], 'Alokasi berhasil')
+            : ApiResponse::fail($res['message'], 422);
+    }
+
     // ---- Komponen iuran tetap ----
 
     public function listIuranKomponen()
