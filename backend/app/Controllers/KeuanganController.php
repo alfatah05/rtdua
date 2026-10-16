@@ -362,14 +362,16 @@ class KeuanganController extends Controller
         $bulan = $this->request->getGet('bulan') ?? date('Y-m');
         $kas = new KasService();
         $items = $kas->list(['bulan' => $bulan]);
-        $masuk = 0;
-        $keluar = 0;
+        $totals = $kas->totalMasukKeluarTanpaAlokasi($bulan);
         $perKat = [];
         foreach ($items as $it) {
-            if ($it['tipe'] === 'masuk') {
-                $masuk += $it['nominal'];
-            } else {
-                $keluar += $it['nominal'];
+            // Alokasi tidak masuk rekap masuk/keluar per kategori sebagai pengeluaran
+            if (!empty($it['is_alokasi'])) {
+                if (!isset($perKat[KasService::KAT_ALOKASI])) {
+                    $perKat[KasService::KAT_ALOKASI] = ['masuk' => 0, 'keluar' => 0, 'alokasi' => 0];
+                }
+                $perKat[KasService::KAT_ALOKASI]['alokasi'] += $it['nominal'];
+                continue;
             }
             $k = $it['kategori'];
             if (!isset($perKat[$k])) {
@@ -378,13 +380,13 @@ class KeuanganController extends Controller
             $perKat[$k][$it['tipe']] += $it['nominal'];
         }
         return ApiResponse::ok([
-            'bulan'          => $bulan,
+            'bulan'             => $bulan,
             'saldo_keseluruhan' => $kas->saldo(),
-            'total_masuk'    => $masuk,
-            'total_keluar'   => $keluar,
-            'per_kategori'   => $perKat,
-            'transaksi'      => $items,
-            'rekap_iuran'    => (new TagihanService())->daftarIuran([]),
+            'total_masuk'       => $totals['masuk'],
+            'total_keluar'      => $totals['keluar'],
+            'per_kategori'      => $perKat,
+            'transaksi'         => $items,
+            'rekap_iuran'       => (new TagihanService())->daftarIuran([]),
         ]);
     }
 
