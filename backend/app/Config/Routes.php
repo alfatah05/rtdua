@@ -50,6 +50,7 @@ $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth
 $routes->get('portal/warga/(:num)', 'PortalController::detailKeluarga/$1', ['filter' => 'auth']);
 $routes->get('portal/keluarga', 'PortalController::keluargaSaya', ['filter' => 'auth']);
 $routes->post('portal/keluarga/anggota', 'PortalController::tambahAnggotaSaya', ['filter' => 'auth']);
+$routes->put('portal/keluarga/anggota/(:num)', 'PortalController::updateAnggotaSaya/$1', ['filter' => 'auth']);
 
 $routes->get('keuangan/iuran', 'KeuanganController::daftarIuran', ['filter' => 'auth']);
 $routes->get('keuangan/keluarga/(:num)', 'KeuanganController::ringkasanKeluarga/$1', ['filter' => 'auth']);
