@@ -162,7 +162,7 @@
               class="w-full flex flex-row items-center gap-3 px-2 py-3"
             >
               <div class="min-w-0 flex-1">
-                <p class="font-bold text-[15px] m-0 leading-tight">{{ p.alamat || 'Pembayaran' }}</p>
+                <p class="font-bold text-[15px] m-0 leading-tight">{{ p.nama_kepala || p.alamat || 'Warga' }}</p>
                 <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
                   {{ formatTanggal(p.tanggal) }}
                   <span v-if="p.metode"> · {{ p.metode }}</span>
@@ -286,7 +286,9 @@ onMounted(async () => {
   const d = kas.data || {}
   saldoKas.value = Number(d.saldo ?? 0)
   daftarKas.value = Array.isArray(d.pos) ? d.pos.filter((p) => p.aktif !== false) : []
-  kasItems.value = Array.isArray(d.items) ? d.items : []
+  // Backend sudah filter tanpa otomatis; jaga-jaga di client juga
+  const rawItems = Array.isArray(d.items) ? d.items : []
+  kasItems.value = rawItems.filter((t) => !t.otomatis && !(t.keterangan || '').startsWith('Otomatis dari pembayaran'))
   pembayaranItems.value = Array.isArray(d.pembayaran) ? d.pembayaran : []
   loading.value = false
 })
