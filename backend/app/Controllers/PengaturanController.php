@@ -57,19 +57,16 @@ class PengaturanController extends Controller
     }
 
     /**
-     * Daftar blok aktif untuk form login warga (tanpa auth).
-     * Hanya nama blok — tidak ada data sensitif.
+     * Branding + daftar blok aktif untuk form login (tanpa auth).
+     * Tidak ada data sensitif.
      */
     public function listBlokLogin()
     {
         try {
-            $list = (new PengaturanService())->listBlok(false);
-            $data = array_map(static function ($b) {
-                return ['id' => $b['id'], 'nama' => $b['nama']];
-            }, $list);
+            $data = (new PengaturanService())->getLoginBranding();
             return ApiResponse::ok($data);
         } catch (\Throwable $e) {
-            return ApiResponse::fail('Gagal memuat blok: ' . $e->getMessage(), 500);
+            return ApiResponse::fail('Gagal memuat data login: ' . $e->getMessage(), 500);
         }
     }
 
