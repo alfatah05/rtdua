@@ -14,6 +14,12 @@
         />
       </div>
       <div>
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Pos kas</label>
+        <select v-model="kasPosId" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none">
+          <option v-for="p in posList" :key="p.id" :value="p.id">{{ p.nama }}</option>
+        </select>
+      </div>
+      <div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Kategori</label>
         <select v-model="kategori" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none">
           <option v-for="k in kategoriList" :key="k" :value="k">{{ k }}</option>
@@ -65,11 +71,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { useToast } from '@shared/composables/useToast.js'
-import { tambahKas } from '@shared/services/keuangan.js'
+import { tambahKas, listKasPos } from '@shared/services/keuangan.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -83,12 +89,22 @@ const ket = ref('')
 const tanggal = ref(new Date().toISOString().slice(0, 10))
 const err = ref('')
 const saving = ref(false)
+const posList = ref([])
+const kasPosId = ref(null)
 
 const kategoriList = computed(() =>
   isMasuk.value
     ? ['Saldo awal', 'Sumbangan', 'Lainnya']
     : ['Operasional', 'Pengembalian kelebihan', 'Lainnya']
 )
+
+onMounted(async () => {
+  const res = await listKasPos()
+  if (res.ok) {
+    posList.value = (res.data || []).filter((p) => p.aktif !== false)
+    if (posList.value[0]) kasPosId.value = posList.value[0].id
+  }
+})
 
 async function onSave() {
   err.value = ''
@@ -105,6 +121,7 @@ async function onSave() {
     metode: metode.value,
     keterangan: ket.value || null,
     tanggal: tanggal.value,
+    kas_pos_id: kasPosId.value || null,
   })
   saving.value = false
   if (!res.ok) {
