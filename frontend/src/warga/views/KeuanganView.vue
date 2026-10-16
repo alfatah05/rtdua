@@ -19,6 +19,12 @@
           <div class="h-10 rounded-full bg-[var(--line)]/60" />
           <div class="h-10 rounded-full bg-[var(--line)]/60" />
         </div>
+        <div class="mt-4 pt-3 space-y-2.5 border-t border-[var(--line)]/40">
+          <div v-for="n in 3" :key="n" class="flex items-center justify-between gap-3">
+            <div class="h-3.5 rounded-full bg-[var(--line)]/60 w-[40%]" />
+            <div class="h-3.5 rounded-full bg-[var(--line)]/60 w-20" />
+          </div>
+        </div>
       </div>
       <div class="h-4 rounded-full bg-[var(--card2)] w-28 mb-3 mx-2" />
       <div class="px-1 space-y-3">
@@ -44,7 +50,7 @@
                 <Wallet :size="20" />
               </div>
               <div class="min-w-0">
-                <p class="text-[13px] font-semibold text-white/90 m-0">Saldo kas</p>
+                <p class="text-[13px] font-semibold text-white/90 m-0">Total saldo kas</p>
                 <p class="text-[28px] font-extrabold m-0 mt-0.5 tracking-tight leading-none">
                   {{ formatRp(saldoKas) }}
                 </p>
@@ -66,6 +72,30 @@
               <ArrowUpRight :size="16" class="text-red-200 shrink-0" />
               <span class="text-[13px] font-bold text-red-100 truncate">
                 {{ formatRp(totalKeluar) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Rincian pos kas (UI dummy — backend menyusul) -->
+          <div
+            v-if="daftarKas.length"
+            class="mt-4 pt-3 border-t border-white/20 space-y-0"
+          >
+            <div
+              v-for="k in daftarKas"
+              :key="k.id"
+              class="flex items-center gap-3 py-1.5"
+            >
+              <div
+                class="w-8 h-8 rounded-full grid place-items-center shrink-0 bg-white/15 text-white"
+              >
+                <component :is="k.icon" :size="15" />
+              </div>
+              <p class="flex-1 min-w-0 text-[13px] font-medium m-0 truncate text-white/90">
+                {{ k.nama }}
+              </p>
+              <span class="text-[13px] font-bold tabular-nums shrink-0 text-white">
+                {{ formatRp(k.nominal) }}
               </span>
             </div>
           </div>
@@ -104,15 +134,28 @@
 <script setup>
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ref, computed, onMounted } from 'vue'
-import { Wallet, ArrowDownLeft, ArrowUpRight } from 'lucide-vue-next'
+import {
+  Wallet, ArrowDownLeft, ArrowUpRight,
+  Landmark, HeartHandshake, HardHat,
+} from 'lucide-vue-next'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { formatRp } from '@shared/utils/format.js'
 import { portalKas } from '@shared/services/keuangan.js'
 
 const loading = ref(true)
 const err = ref('')
-const saldoKas = ref(0)
 const kasItems = ref([])
+
+/** UI-only: pos kas terpisah. Nanti diganti data API. */
+const daftarKas = ref([
+  { id: 'rt', nama: 'Kas RT', nominal: 12_500_000, icon: Landmark },
+  { id: 'sosial', nama: 'Kas sosial', nominal: 3_200_000, icon: HeartHandshake },
+  { id: 'pembangunan', nama: 'Kas pembangunan', nominal: 8_750_000, icon: HardHat },
+])
+
+const saldoKas = computed(() =>
+  daftarKas.value.reduce((s, k) => s + Number(k.nominal || 0), 0)
+)
 
 const labelBulan = computed(() => {
   const d = new Date()
@@ -152,7 +195,7 @@ onMounted(async () => {
     loading.value = false
     return
   }
-  saldoKas.value = Number(kas.data?.saldo ?? 0)
+  // Total hero memakai daftarKas (dummy). Riwayat tetap dari API.
   kasItems.value = kas.data?.items || []
   loading.value = false
 })
