@@ -166,6 +166,14 @@ export async function nonaktifKasPos(id) {
     return { ok: false, error: e.message }
   }
 }
+export async function alokasiKasPos(payload) {
+  try {
+    const res = await api('/keuangan/kas-pos/alokasi', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
 
 export async function listIuranKhusus() {
   try {
