@@ -168,7 +168,8 @@ export async function nonaktifKasPos(id) {
 }
 export async function alokasiKasPos(payload) {
   try {
-    const res = await api('/keuangan/kas-pos/alokasi', { method: 'POST', body: payload })
+    // Path tegas (hindari 404 route lama di server)
+    const res = await api('/keuangan/alokasi-pos', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
