@@ -6,6 +6,7 @@ use App\Libraries\ApiResponse;
 use App\Libraries\SideContext;
 use App\Services\AuthService;
 use App\Services\IuranKhususService;
+use App\Services\KasPosService;
 use App\Services\KasService;
 use App\Services\PembayaranService;
 use App\Services\TagihanService;
@@ -156,13 +157,15 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $filter = [
-            'bulan'    => $this->request->getGet('bulan'),
-            'tipe'     => $this->request->getGet('tipe'),
-            'kategori' => $this->request->getGet('kategori'),
+            'bulan'      => $this->request->getGet('bulan'),
+            'tipe'       => $this->request->getGet('tipe'),
+            'kategori'   => $this->request->getGet('kategori'),
+            'kas_pos_id' => $this->request->getGet('kas_pos_id'),
         ];
         $svc = new KasService();
         return ApiResponse::ok([
             'saldo' => $svc->saldo(),
+            'pos'   => (new KasPosService())->list(false),
             'items' => $svc->list($filter),
         ]);
     }
@@ -187,6 +190,49 @@ class KeuanganController extends Controller
         $json = $this->request->getJSON(true) ?? [];
         $res = (new KasService())->batalkan((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
         return $res['ok'] ? ApiResponse::ok($res['data'], 'Kas dibatalkan') : ApiResponse::fail($res['message'], 422);
+    }
+
+    // ---- Pos kas (multi-kas) ----
+
+    public function listKasPos()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        return ApiResponse::ok((new KasPosService())->list(false));
+    }
+
+    public function buatKasPos()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new KasPosService())->create($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Pos kas ditambah') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function ubahKasPos($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new KasPosService())->update((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Disimpan') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function nonaktifKasPos($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $res = (new KasPosService())->nonaktifkan((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Pos dinonaktifkan') : ApiResponse::fail($res['message'], 422);
     }
 
     // ---- Komponen iuran tetap ----
