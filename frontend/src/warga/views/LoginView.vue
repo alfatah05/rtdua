@@ -1,8 +1,9 @@
 <template>
   <div class="min-h-screen flex flex-col justify-center px-4 max-w-[400px] mx-auto">
     <div class="text-center mb-8">
-      <div class="w-16 h-16 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center mx-auto mb-4">
-        <Home :size="28" />
+      <div class="w-20 h-20 rounded-full bg-[var(--gd)] grid place-items-center mx-auto mb-4 overflow-hidden">
+        <img v-if="logoUrl" :src="logoUrl" alt="Logo" class="w-full h-full object-contain p-1.5" @error="logoUrl = ''" />
+        <Home v-else :size="28" class="text-[var(--gm)]" />
       </div>
       <h1 class="text-2xl font-extrabold">Masuk Warga</h1>
       <p class="text-[var(--mut)] mt-1 text-[13px]">Pilih blok, isi nomor rumah, lalu PIN</p>
@@ -14,7 +15,7 @@
           <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Blok</label>
           <select
             v-model="blokNama"
-            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] text-[var(--text)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)] appearance-none"
+            class="w-full min-h-[48px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] outline-none focus:outline focus:outline-2 focus:outline-[var(--gh)] appearance-none"
           >
             <option value="" disabled>Pilih blok</option>
             <option v-for="b in blokList" :key="b.id" :value="b.nama">{{ b.nama }}</option>
@@ -27,6 +28,7 @@
             label="Nomor"
             placeholder="19 atau 19a"
             autocomplete="off"
+            pill
             :error="errors.nomor"
           />
         </div>
@@ -40,15 +42,12 @@
         maxlength="6"
         placeholder="6 angka"
         autocomplete="current-password"
+        pill
         :error="errors.pin"
       />
       <p v-if="formError" class="text-[13px] text-red-600">{{ formError }}</p>
       <UiButton type="submit" block :loading="loading">Masuk</UiButton>
     </form>
-
-    <p class="text-center text-[13px] text-[var(--mut)] mt-8">
-      PIN awal: 123456 (wajib diganti)
-    </p>
   </div>
 </template>
 
@@ -59,6 +58,7 @@ import { Home } from 'lucide-vue-next'
 import UiInput from '@shared/components/UiInput.vue'
 import UiButton from '@shared/components/UiButton.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
+import { mediaUrl } from '@shared/services/upload.js'
 
 const router = useRouter()
 const { loginWarga, loading } = useAuth()
@@ -69,16 +69,27 @@ const nomor = ref('')
 const pin = ref('')
 const errors = ref({})
 const formError = ref('')
+const logoUrl = ref('')
 
 onMounted(async () => {
   try {
     const res = await fetch('/api/auth/blok-login', { headers: { Accept: 'application/json' } })
     const json = await res.json()
-    if (json?.ok && Array.isArray(json.data)) {
-      blokList.value = json.data
+    if (json?.ok && json.data) {
+      const d = json.data
+      // format baru: { blok, logo_... } atau array blok lama
+      if (Array.isArray(d)) {
+        blokList.value = d
+      } else {
+        blokList.value = Array.isArray(d.blok) ? d.blok : []
+        const prefer = d.logo_login === 'desa' ? d.logo_desa : d.logo_rt
+        const fallback = d.logo_login === 'desa' ? d.logo_rt : d.logo_desa
+        const path = prefer || fallback || ''
+        logoUrl.value = path ? mediaUrl(path) : ''
+      }
     }
   } catch (e) {
-    // biarkan dropdown kosong jika API belum siap
+    // biarkan kosong jika API belum siap
   }
 })
 
