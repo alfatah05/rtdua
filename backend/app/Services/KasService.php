@@ -5,7 +5,7 @@ namespace App\Services;
 /**
  * Kas masuk/keluar.
  * Kategori tetap: Saldo awal, Pengembalian kelebihan,
- * otomatis Iuran kas / Iuran khusus / Denda ronda.
+ * otomatis Iuran kas / Iuran khusus / Denda ronda, Alokasi antar pos.
  * Selain itu keterangan bebas (pengurus mengisi).
  * Multi-pos: kolom kas_pos_id (opsional, setelah migrasi 025).
  */
@@ -16,6 +16,7 @@ class KasService
     public const KAT_IURAN_KAS = 'Iuran kas';
     public const KAT_IURAN_KHUSUS = 'Iuran khusus';
     public const KAT_DENDA = 'Denda ronda';
+    public const KAT_ALOKASI = 'Alokasi antar pos';
 
     public function saldo(): int
     {
@@ -100,8 +101,8 @@ class KasService
         if ($kategori === '') {
             $kategori = $tipe === 'masuk' ? self::KAT_SALDO_AWAL : 'Lainnya';
         }
-        if (in_array($kategori, [self::KAT_IURAN_KAS, self::KAT_IURAN_KHUSUS, self::KAT_DENDA], true)) {
-            return ['ok' => false, 'message' => 'Kategori iuran hanya dari pembayaran otomatis.'];
+        if (in_array($kategori, [self::KAT_IURAN_KAS, self::KAT_IURAN_KHUSUS, self::KAT_DENDA, self::KAT_ALOKASI], true)) {
+            return ['ok' => false, 'message' => 'Kategori khusus hanya dari sistem (pembayaran / alokasi).'];
         }
 
         $posId = !empty($data['kas_pos_id']) ? (int) $data['kas_pos_id'] : null;
@@ -135,6 +136,127 @@ class KasService
         ], 'pengguna', true, $userId);
 
         return ['ok' => true, 'data' => ['id' => $id, 'saldo' => $this->saldo()]];
+    }
+
+    /**
+     * Pindah dana antar pos: keluar di pos sumber + masuk di pos tujuan (nominal sama).
+     * Total saldo RT tidak berubah. Tercatat di audit (aktivitas pengurus).
+     */
+    public function alokasiAntarPos(array $data, int $userId): array
+    {
+        if (!$this->hasKasPosColumn()) {
+            return ['ok' => false, 'message' => 'Kolom kas_pos_id belum ada. Jalankan migrasi 025.'];
+        }
+
+        $dariId = (int) ($data['dari_pos_id'] ?? 0);
+        $keId = (int) ($data['ke_pos_id'] ?? 0);
+        $nominal = (int) ($data['nominal'] ?? 0);
+        $tanggal = $data['tanggal'] ?? date('Y-m-d');
+        $ketExtra = trim((string) ($data['keterangan'] ?? ''));
+
+        if ($dariId < 1 || $keId < 1) {
+            return ['ok' => false, 'message' => 'Pos sumber dan tujuan wajib dipilih.'];
+        }
+        if ($dariId === $keId) {
+            return ['ok' => false, 'message' => 'Pos sumber dan tujuan harus berbeda.'];
+        }
+        if ($nominal < 1) {
+            return ['ok' => false, 'message' => 'Nominal wajib lebih dari 0.'];
+        }
+
+        $posSvc = new KasPosService();
+        $db = \Config\Database::connect();
+        $dari = $db->table('kas_pos')->where('id', $dariId)->get()->getRowArray();
+        $ke = $db->table('kas_pos')->where('id', $keId)->get()->getRowArray();
+        if (!$dari || !$ke) {
+            return ['ok' => false, 'message' => 'Pos tidak ditemukan.'];
+        }
+        if ((int) $dari['aktif'] !== 1 || (int) $ke['aktif'] !== 1) {
+            return ['ok' => false, 'message' => 'Pos sumber dan tujuan harus aktif.'];
+        }
+
+        $saldoDari = $posSvc->saldoPos($dariId);
+        if ($saldoDari < $nominal) {
+            return [
+                'ok'      => false,
+                'message' => 'Saldo "' . $dari['nama'] . '" tidak cukup (tersedia ' . number_format($saldoDari, 0, ',', '.') . ').',
+            ];
+        }
+
+        $namaDari = $dari['nama'];
+        $namaKe = $ke['nama'];
+        $ketDasar = 'Alokasi: ' . $namaDari . ' → ' . $namaKe;
+        if ($ketExtra !== '') {
+            $ketDasar .= ' — ' . $ketExtra;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $base = [
+            'nominal'       => $nominal,
+            'kategori'      => self::KAT_ALOKASI,
+            'metode'        => 'tunai',
+            'keterangan'    => $ketDasar,
+            'tanggal'       => $tanggal,
+            'keluarga_id'   => null,
+            'pembayaran_id' => null,
+            'dibatalkan'    => 0,
+            'dicatat_oleh'  => $userId,
+            'dicatat_pada'  => $now,
+        ];
+
+        $db->transStart();
+
+        $rowKeluar = $base + [
+            'tipe'       => 'keluar',
+            'kas_pos_id' => $dariId,
+        ];
+        $db->table('kas_transaksi')->insert($rowKeluar);
+        $idKeluar = (int) $db->insertID();
+
+        $rowMasuk = $base + [
+            'tipe'       => 'masuk',
+            'kas_pos_id' => $keId,
+        ];
+        $db->table('kas_transaksi')->insert($rowMasuk);
+        $idMasuk = (int) $db->insertID();
+
+        $db->transComplete();
+        if ($db->transStatus() === false) {
+            return ['ok' => false, 'message' => 'Gagal menyimpan alokasi.'];
+        }
+
+        (new AuditService())->log(
+            'kas_alokasi_pos',
+            'kas_transaksi',
+            $idKeluar,
+            null,
+            [
+                'dari_pos_id'   => $dariId,
+                'dari_pos_nama' => $namaDari,
+                'ke_pos_id'     => $keId,
+                'ke_pos_nama'   => $namaKe,
+                'nominal'       => $nominal,
+                'tanggal'       => $tanggal,
+                'keterangan'    => $ketExtra !== '' ? $ketExtra : null,
+                'id_keluar'     => $idKeluar,
+                'id_masuk'      => $idMasuk,
+            ],
+            'pengguna',
+            true,
+            $userId
+        );
+
+        return [
+            'ok'   => true,
+            'data' => [
+                'id_keluar' => $idKeluar,
+                'id_masuk'  => $idMasuk,
+                'nominal'   => $nominal,
+                'dari'      => ['id' => $dariId, 'nama' => $namaDari, 'saldo' => $posSvc->saldoPos($dariId)],
+                'ke'        => ['id' => $keId, 'nama' => $namaKe, 'saldo' => $posSvc->saldoPos($keId)],
+                'saldo'     => $this->saldo(),
+            ],
+        ];
     }
 
     public function batalkan(int $id, string $alasan, int $userId): array
