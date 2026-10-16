@@ -2,7 +2,6 @@
   <div>
     <AppBackHeader title="Keuangan" />
 
-    <!-- Skeleton keuangan -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
       <div class="rounded-[20px] bg-[var(--card2)] p-5 mb-5">
         <div class="flex items-center justify-between gap-3 mb-2">
@@ -42,7 +41,6 @@
         style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)"
       >
         <div class="relative z-10">
-          <!-- Label + badge satu baris; nominal full-width agar tidak pecah -->
           <div class="flex items-center justify-between gap-2 mb-1.5">
             <p class="text-[13px] font-semibold text-white/90 m-0">Total saldo kas</p>
             <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20 shrink-0">
@@ -73,26 +71,20 @@
             </div>
           </div>
 
-          <!-- Rincian pos kas (UI dummy — backend menyusul) -->
-          <div
-            v-if="daftarKas.length"
-            class="mt-4 pt-3 border-t border-white/20 space-y-0"
-          >
+          <div v-if="daftarKas.length" class="mt-4 pt-3 border-t border-white/20 space-y-0">
             <div
               v-for="k in daftarKas"
               :key="k.id"
               class="flex items-center gap-3 py-1.5"
             >
-              <div
-                class="w-8 h-8 rounded-full grid place-items-center shrink-0 bg-white/15 text-white"
-              >
-                <component :is="k.icon" :size="15" />
+              <div class="w-8 h-8 rounded-full grid place-items-center shrink-0 bg-white/15 text-white">
+                <Landmark :size="15" />
               </div>
               <p class="flex-1 min-w-0 text-[13px] font-medium m-0 truncate text-white/90">
                 {{ k.nama }}
               </p>
               <span class="text-[13px] font-bold tabular-nums shrink-0 text-white whitespace-nowrap">
-                {{ formatRp(k.nominal) }}
+                {{ formatRp(k.saldo) }}
               </span>
             </div>
           </div>
@@ -100,7 +92,6 @@
         <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
       </div>
 
-      <!-- Tab pill: Riwayat kas | Riwayat iuran -->
       <div
         class="flex p-1 rounded-full bg-[var(--card2)] mb-3"
         role="tablist"
@@ -134,47 +125,53 @@
 
       <p v-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
 
-      <!-- Panel: Riwayat kas -->
       <template v-else-if="tab === 'kas'">
-        <EmptyState v-if="!kasItems.length" title="Belum ada transaksi" />
-        <div v-else class="px-1 space-y-0.5">
-          <div
-            v-for="t in kasItems"
-            :key="t.id"
-            class="w-full flex flex-row items-center gap-3 px-2 py-3"
-          >
-            <div class="min-w-0 flex-1">
-              <p class="font-bold text-[15px] m-0 leading-tight">{{ t.keterangan || t.kategori || (t.tipe === 'masuk' ? 'Masuk' : 'Keluar') }}</p>
-              <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
-                {{ formatTanggal(t.tanggal) }}
-                <span v-if="t.kategori"> · {{ t.kategori }}</span>
-              </p>
+        <EmptyState v-if="!grupKas.length" title="Belum ada transaksi" />
+        <div v-else class="px-1">
+          <div v-for="g in grupKas" :key="g.key" class="mb-3">
+            <p class="text-[13px] font-bold text-[var(--mut)] m-0 px-2 py-2">{{ g.label }}</p>
+            <div
+              v-for="t in g.items"
+              :key="t.id"
+              class="w-full flex flex-row items-center gap-3 px-2 py-3"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="font-bold text-[15px] m-0 leading-tight">{{ labelKasItem(t) }}</p>
+                <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
+                  {{ formatTanggal(t.tanggal) }}
+                  <span v-if="t.kategori"> · {{ t.kategori }}</span>
+                  <span v-if="t.kas_pos_nama"> · {{ t.kas_pos_nama }}</span>
+                </p>
+              </div>
+              <span class="font-bold shrink-0 whitespace-nowrap" :class="t.tipe === 'masuk' ? 'text-[var(--g)]' : 'text-red-500'">
+                {{ t.tipe === 'masuk' ? '+' : '−' }}{{ formatRp(t.nominal) }}
+              </span>
             </div>
-            <span class="font-bold shrink-0 whitespace-nowrap" :class="t.tipe === 'masuk' ? 'text-[var(--g)]' : 'text-red-500'">
-              {{ t.tipe === 'masuk' ? '+' : '−' }}{{ formatRp(t.nominal) }}
-            </span>
           </div>
         </div>
       </template>
 
-      <!-- Panel: Riwayat iuran (UI dummy — agregasi per bulan nanti) -->
       <template v-else>
-        <EmptyState v-if="!riwayatIuran.length" title="Belum ada riwayat iuran" />
-        <div v-else class="px-1 space-y-0.5">
-          <div
-            v-for="r in riwayatIuran"
-            :key="r.id"
-            class="w-full flex flex-row items-center gap-3 px-2 py-3"
-          >
-            <div class="min-w-0 flex-1">
-              <p class="font-bold text-[15px] m-0 leading-tight">{{ r.label }}</p>
-              <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
-                {{ r.sub }}
-              </p>
+        <EmptyState v-if="!grupIuran.length" title="Belum ada pembayaran iuran" />
+        <div v-else class="px-1">
+          <div v-for="g in grupIuran" :key="g.key" class="mb-3">
+            <p class="text-[13px] font-bold text-[var(--mut)] m-0 px-2 py-2">{{ g.label }}</p>
+            <div
+              v-for="p in g.items"
+              :key="p.id"
+              class="w-full flex flex-row items-center gap-3 px-2 py-3"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="font-bold text-[15px] m-0 leading-tight">{{ p.alamat || 'Pembayaran' }}</p>
+                <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
+                  {{ formatTanggal(p.tanggal) }}
+                  <span v-if="p.metode"> · {{ p.metode }}</span>
+                </p>
+              </div>
+              <span class="font-bold shrink-0 whitespace-nowrap text-[var(--g)]">
+                +{{ formatRp(p.nominal) }}
+              </span>
             </div>
-            <span class="font-bold shrink-0 whitespace-nowrap text-[var(--g)]">
-              +{{ formatRp(r.nominal) }}
-            </span>
           </div>
         </div>
       </template>
@@ -185,40 +182,20 @@
 <script setup>
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { ref, computed, onMounted } from 'vue'
-import {
-  Wallet, ArrowDownLeft, ArrowUpRight,
-  Landmark, HeartHandshake, HardHat,
-} from 'lucide-vue-next'
+import { Wallet, ArrowDownLeft, ArrowUpRight, Landmark } from 'lucide-vue-next'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { formatRp } from '@shared/utils/format.js'
 import { portalKas } from '@shared/services/keuangan.js'
 
 const loading = ref(true)
 const err = ref('')
+const saldoKas = ref(0)
+const daftarKas = ref([])
 const kasItems = ref([])
+const pembayaranItems = ref([])
 const tab = ref('kas')
 
-/** UI-only: pos kas terpisah. Nanti diganti data API. */
-const daftarKas = ref([
-  { id: 'rt', nama: 'Kas RT', nominal: 12_500_000, icon: Landmark },
-  { id: 'sosial', nama: 'Kas sosial', nominal: 3_200_000, icon: HeartHandshake },
-  { id: 'pembangunan', nama: 'Kas pembangunan', nominal: 8_750_000, icon: HardHat },
-])
-
-/**
- * UI-only: contoh rekap iuran per periode.
- * Nanti: total terkumpul per bulan / per iuran khusus (bukan tiap transaksi KK).
- * Hanya porsi tertentu yang mengalir ke kas.
- */
-const riwayatIuran = ref([
-  { id: 'i1', label: 'Iuran kas Oktober 2026', sub: 'Terkumpul · porsi kas 20%', nominal: 1_200_000 },
-  { id: 'i2', label: 'Iuran 17 Agustus', sub: 'Iuran khusus · porsi kas 20%', nominal: 450_000 },
-  { id: 'i3', label: 'Iuran kas September 2026', sub: 'Terkumpul · porsi kas 20%', nominal: 1_150_000 },
-])
-
-const saldoKas = computed(() =>
-  daftarKas.value.reduce((s, k) => s + Number(k.nominal || 0), 0)
-)
+const BULAN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
 const labelBulan = computed(() => {
   const d = new Date()
@@ -242,6 +219,54 @@ const totalKeluar = computed(() =>
     .reduce((s, t) => s + Number(t.nominal || 0), 0)
 )
 
+function ymFromTanggal(t) {
+  const s = String(t || '')
+  return s.length >= 7 ? s.slice(0, 7) : ''
+}
+
+function labelBulanYm(ym) {
+  if (!ym || ym.length < 7) return 'Lainnya'
+  const m = Number(ym.slice(5, 7))
+  const y = ym.slice(0, 4)
+  return `Kas ${BULAN[m] || ym} ${y}`
+}
+
+function labelIuranYm(ym) {
+  if (!ym || ym.length < 7) return 'Lainnya'
+  const m = Number(ym.slice(5, 7))
+  const y = ym.slice(0, 4)
+  return `Iuran ${BULAN[m] || ym} ${y}`
+}
+
+function groupByMonth(items, getTanggal, labelFn) {
+  const map = new Map()
+  for (const it of items) {
+    const ym = ymFromTanggal(getTanggal(it))
+    if (!map.has(ym)) map.set(ym, [])
+    map.get(ym).push(it)
+  }
+  const keys = [...map.keys()].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0))
+  return keys.map((k) => ({
+    key: k || 'x',
+    label: labelFn(k),
+    items: map.get(k),
+  }))
+}
+
+const grupKas = computed(() =>
+  groupByMonth(kasItems.value, (t) => t.tanggal, labelBulanYm)
+)
+
+const grupIuran = computed(() =>
+  groupByMonth(pembayaranItems.value, (p) => p.tanggal, labelIuranYm)
+)
+
+function labelKasItem(t) {
+  if (t.keterangan) return t.keterangan
+  if (t.kategori) return t.kategori
+  return t.tipe === 'masuk' ? 'Masuk' : 'Keluar'
+}
+
 function formatTanggal(t) {
   if (!t) return ''
   const d = new Date(String(t).length === 10 ? t + 'T00:00:00' : String(t).replace(' ', 'T'))
@@ -258,7 +283,11 @@ onMounted(async () => {
     loading.value = false
     return
   }
-  kasItems.value = kas.data?.items || []
+  const d = kas.data || {}
+  saldoKas.value = Number(d.saldo ?? 0)
+  daftarKas.value = Array.isArray(d.pos) ? d.pos.filter((p) => p.aktif !== false) : []
+  kasItems.value = Array.isArray(d.items) ? d.items : []
+  pembayaranItems.value = Array.isArray(d.pembayaran) ? d.pembayaran : []
   loading.value = false
 })
 </script>
