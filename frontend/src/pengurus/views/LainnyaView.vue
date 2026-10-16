@@ -27,7 +27,7 @@
 import { computed } from 'vue'
 import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
-  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings,
+  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet,
 } from 'lucide-vue-next'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
@@ -44,6 +44,7 @@ const groups = [
       { label: 'Iuran', icon: ClipboardList, to: '/keuangan/iuran', bg: 'rgba(16,185,129,.18)', color: '#059669' },
       { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(16,185,129,.18)', color: '#059669' },
       { label: 'Iuran khusus', icon: Banknote, to: '/keuangan/iuran-khusus', bg: 'rgba(16,185,129,.18)', color: '#059669' },
+      { label: 'Pos kas', icon: Wallet, to: '/keuangan/pos-kas', bg: 'rgba(16,185,129,.18)', color: '#059669' },
       { label: 'Tarif iuran', icon: Settings2, to: '/pengaturan-warga', bg: 'rgba(16,185,129,.18)', color: '#059669' },
       { label: 'Rekening bayar', icon: CreditCard, to: '/rekening-pembayaran', bg: 'rgba(16,185,129,.18)', color: '#059669' },
     ],
