@@ -67,14 +67,6 @@
           class="text-[13px] text-[var(--mut)] text-center py-4"
         >Belum ada anggota</p>
       </div>
-
-      <button
-        type="button"
-        class="w-full min-h-[48px] mt-4 rounded-full border border-[var(--line)] font-bold text-[15px]"
-        @click="$router.push('/data-keluarga/tambah')"
-      >
-        + Tambah anggota
-      </button>
     </template>
   </div>
 </template>
