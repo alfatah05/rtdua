@@ -133,6 +133,40 @@ export async function batalkanKas(id, alasan) {
   }
 }
 
+// ---- Pos kas ----
+export async function listKasPos() {
+  try {
+    const res = await api('/keuangan/kas-pos')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function buatKasPos(payload) {
+  try {
+    const res = await api('/keuangan/kas-pos', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function ubahKasPos(id, payload) {
+  try {
+    const res = await api('/keuangan/kas-pos/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function nonaktifKasPos(id) {
+  try {
+    await api('/keuangan/kas-pos/' + id + '/nonaktif', { method: 'POST', body: {} })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function listIuranKhusus() {
   try {
     const res = await api('/keuangan/iuran-khusus')
