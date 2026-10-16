@@ -18,6 +18,9 @@ export function createKeluarga(payload) {
 export function updateKeluarga(id, payload) {
   return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.updateKeluarga(id, payload)
 }
+export function hapusKeluarga(id, payload) {
+  return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.hapusKeluarga(id, payload)
+}
 export function updateAnggota(id, payload) {
   return USE_MOCK.warga ? Promise.resolve({ ok: true }) : real.updateAnggota(id, payload)
 }
@@ -63,6 +66,10 @@ export function tambahAnggota(keluargaId, payload) {
 export function setStatusAnggota(anggotaId, payload) {
   if (USE_MOCK.warga) return Promise.resolve({ ok: true })
   return real.setStatusAnggota(anggotaId, payload)
+}
+export function hapusAnggota(anggotaId, payload) {
+  if (USE_MOCK.warga) return Promise.resolve({ ok: true })
+  return real.hapusAnggota(anggotaId, payload)
 }
 
 export function portalKeluargaSaya() {
