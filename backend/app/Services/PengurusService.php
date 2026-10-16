@@ -17,6 +17,23 @@ class PengurusService
             ->get()
             ->getResultArray();
         return array_map(static function ($r) {
+            $isKetua = ($r['role'] ?? '') === 'ketua';
+            // Ketua: tidak pakai data warga (akun mandiri)
+            if ($isKetua) {
+                return [
+                    'id'                => (int) $r['id'],
+                    'role'              => $r['role'],
+                    'username'          => $r['username'],
+                    'nama'              => $r['jabatan'] ?: $r['username'],
+                    'jabatan'           => $r['jabatan'],
+                    'nomor_hp'          => $r['nomor_hp'],
+                    'tampil_di_bantuan' => (bool) $r['tampil_di_bantuan'],
+                    'urutan_struktur'   => (int) $r['urutan_struktur'],
+                    'aktif'             => (bool) $r['aktif'],
+                    'warga_id'          => null,
+                    'foto'              => null,
+                ];
+            }
             $foto = $r['foto_warga'] ?? null;
             if ($foto !== null && $foto === '') {
                 $foto = null;
@@ -67,7 +84,8 @@ class PengurusService
         $username = strtolower(trim((string) ($data['username'] ?? '')));
         $password = (string) ($data['password'] ?? '');
         $jabatan = trim((string) ($data['jabatan'] ?? 'Pengurus'));
-        $role = ($data['role'] ?? 'pengurus') === 'ketua' ? 'ketua' : 'pengurus';
+        // Angkat hanya untuk pengurus biasa — ketua tidak diangkat lewat tautan warga
+        $role = 'pengurus';
 
         if ($wargaId < 1 || $username === '' || strlen($password) < 8) {
             return ['ok' => false, 'message' => 'warga_id, username, dan password (min 8) wajib.'];
@@ -90,6 +108,7 @@ class PengurusService
             'username'               => $username,
             'password_hash'          => password_hash($password, PASSWORD_DEFAULT),
             'warga_id'               => $wargaId,
+            'keluarga_id'            => null,
             'jabatan'                => $jabatan,
             'nomor_hp'               => $data['nomor_hp'] ?? null,
             'tampil_di_bantuan'      => !empty($data['tampil_di_bantuan']) ? 1 : 0,
@@ -129,6 +148,10 @@ class PengurusService
             $update['urutan_struktur'] = (int) $data['urutan_struktur'];
         }
         if (array_key_exists('aktif', $data)) {
+            // Ketua tidak boleh dinonaktifkan lewat form ini
+            if (($u['role'] ?? '') === 'ketua' && empty($data['aktif'])) {
+                return ['ok' => false, 'message' => 'Akun ketua tidak bisa dinonaktifkan dari sini.'];
+            }
             $update['aktif'] = $data['aktif'] ? 1 : 0;
         }
         if (!empty($data['password']) && strlen((string) $data['password']) >= 8) {
