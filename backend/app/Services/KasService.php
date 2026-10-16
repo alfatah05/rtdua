@@ -6,7 +6,8 @@ namespace App\Services;
  * Kas masuk/keluar.
  * Kategori tetap: Saldo awal, Pengembalian kelebihan,
  * otomatis Iuran kas / Iuran khusus / Denda ronda, Alokasi antar pos.
- * Selain itu keterangan bebas (pengurus mengisi).
+ * Alokasi antar pos: 2 baris DB (keluar+masuk) agar saldo per-pos benar,
+ * tapi di list ringkas hanya 1 baris (bukan pengeluaran).
  * Multi-pos: kolom kas_pos_id (opsional, setelah migrasi 025).
  */
 class KasService
@@ -36,6 +37,34 @@ class KasService
             ->getRow()
             ->nominal;
         return $masuk - $keluar;
+    }
+
+    /**
+     * Total masuk/keluar (untuk laporan) — alokasi antar pos tidak dihitung.
+     *
+     * @return array{masuk:int, keluar:int}
+     */
+    public function totalMasukKeluarTanpaAlokasi(?string $bulan = null): array
+    {
+        $db = \Config\Database::connect();
+        $masukQ = $db->table('kas_transaksi')
+            ->selectSum('nominal')
+            ->where('tipe', 'masuk')
+            ->where('dibatalkan', 0)
+            ->where('kategori !=', self::KAT_ALOKASI);
+        $keluarQ = $db->table('kas_transaksi')
+            ->selectSum('nominal')
+            ->where('tipe', 'keluar')
+            ->where('dibatalkan', 0)
+            ->where('kategori !=', self::KAT_ALOKASI);
+        if ($bulan) {
+            $masukQ->like('tanggal', $bulan, 'after');
+            $keluarQ->like('tanggal', $bulan, 'after');
+        }
+        return [
+            'masuk'  => (int) ($masukQ->get()->getRow()->nominal ?? 0),
+            'keluar' => (int) ($keluarQ->get()->getRow()->nominal ?? 0),
+        ];
     }
 
     public function list(array $filter = []): array
@@ -69,8 +98,18 @@ class KasService
                 ->groupEnd();
         }
         $rows = $q->orderBy('kt.tanggal', 'DESC')->orderBy('kt.id', 'DESC')->get()->getResultArray();
-        return array_map(static function ($r) use ($hasPos) {
-            return [
+
+        // Ringkas alokasi: 1 baris (sisi keluar) kecuali filter per-pos
+        $ringkasAlokasi = empty($filter['kas_pos_id']) && empty($filter['tanpa_ringkas_alokasi']);
+
+        $out = [];
+        foreach ($rows as $r) {
+            $isAlokasi = ($r['kategori'] ?? '') === self::KAT_ALOKASI;
+            if ($ringkasAlokasi && $isAlokasi && ($r['tipe'] ?? '') === 'masuk') {
+                // Pasangan masuk tidak ditampilkan di list ringkas (hindari seolah pengeluaran+pemasukan)
+                continue;
+            }
+            $item = [
                 'id'            => (int) $r['id'],
                 'tipe'          => $r['tipe'],
                 'nominal'       => (int) $r['nominal'],
@@ -83,8 +122,17 @@ class KasService
                 'keluarga_id'   => $r['keluarga_id'] ? (int) $r['keluarga_id'] : null,
                 'pembayaran_id' => $r['pembayaran_id'] ? (int) $r['pembayaran_id'] : null,
                 'otomatis'      => !empty($r['pembayaran_id']),
+                'is_alokasi'    => $isAlokasi,
             ];
-        }, $rows);
+            // Untuk UI: alokasi bukan masuk/keluar biasa
+            if ($isAlokasi) {
+                $item['display_tipe'] = 'alokasi';
+            } else {
+                $item['display_tipe'] = $r['tipe'];
+            }
+            $out[] = $item;
+        }
+        return $out;
     }
 
     /**
@@ -140,7 +188,7 @@ class KasService
 
     /**
      * Pindah dana antar pos: keluar di pos sumber + masuk di pos tujuan (nominal sama).
-     * Total saldo RT tidak berubah. Tercatat di audit (aktivitas pengurus).
+     * Total saldo RT tidak berubah. Bukan pengeluaran. Tercatat di audit.
      */
     public function alokasiAntarPos(array $data, int $userId): array
     {
@@ -206,17 +254,15 @@ class KasService
 
         $db->transStart();
 
-        $rowKeluar = $base + [
-            'tipe'       => 'keluar',
-            'kas_pos_id' => $dariId,
-        ];
+        $rowKeluar = $base;
+        $rowKeluar['tipe'] = 'keluar';
+        $rowKeluar['kas_pos_id'] = $dariId;
         $db->table('kas_transaksi')->insert($rowKeluar);
         $idKeluar = (int) $db->insertID();
 
-        $rowMasuk = $base + [
-            'tipe'       => 'masuk',
-            'kas_pos_id' => $keId,
-        ];
+        $rowMasuk = $base;
+        $rowMasuk['tipe'] = 'masuk';
+        $rowMasuk['kas_pos_id'] = $keId;
         $db->table('kas_transaksi')->insert($rowMasuk);
         $idMasuk = (int) $db->insertID();
 
@@ -272,6 +318,24 @@ class KasService
         }
         if (!empty($row['pembayaran_id'])) {
             return ['ok' => false, 'message' => 'Kas dari iuran hanya batal bersama pembatalan pembayaran.'];
+        }
+        // Batalkan pasangan alokasi (keluar+masuk) bersama
+        if (($row['kategori'] ?? '') === self::KAT_ALOKASI) {
+            $pairQ = $db->table('kas_transaksi')
+                ->where('kategori', self::KAT_ALOKASI)
+                ->where('dibatalkan', 0)
+                ->where('nominal', (int) $row['nominal'])
+                ->where('tanggal', $row['tanggal'])
+                ->where('keterangan', $row['keterangan'])
+                ->where('dicatat_pada', $row['dicatat_pada']);
+            $pairQ->update([
+                'dibatalkan'      => 1,
+                'dibatalkan_oleh' => $userId,
+                'dibatalkan_pada' => date('Y-m-d H:i:s'),
+                'alasan_batal'    => $alasan,
+            ]);
+            (new AuditService())->log('batal_kas_alokasi', 'kas_transaksi', $id, $row, ['alasan' => $alasan], 'pengguna', true, $userId);
+            return ['ok' => true, 'data' => ['saldo' => $this->saldo()]];
         }
         $db->table('kas_transaksi')->where('id', $id)->update([
             'dibatalkan'      => 1,
@@ -350,7 +414,6 @@ class KasService
     {
         $posSvc = new KasPosService();
         $pos = $posSvc->list(true);
-        // Hanya transaksi kas manual / non-pembayaran (bukan "Otomatis dari pembayaran #…")
         $items = $this->list(['tanpa_otomatis' => true]);
         $items = array_slice($items, 0, 80);
 
@@ -364,7 +427,6 @@ class KasService
             ->get()
             ->getResultArray();
 
-        // Nama kepala keluarga per keluarga_id
         $kepalaMap = [];
         $keluargaIds = array_values(array_unique(array_filter(array_map(
             static fn ($r) => (int) ($r['keluarga_id'] ?? 0),
@@ -388,7 +450,6 @@ class KasService
                     $kepalaMap[$kid] = $w['nama'];
                 }
             }
-            // Fallback: anggota aktif pertama jika belum ada label kepala
             $missing = array_diff($keluargaIds, array_keys($kepalaMap));
             if ($missing !== []) {
                 $fb = $db->table('warga')
@@ -427,6 +488,7 @@ class KasService
                 return [
                     'id'           => $r['id'],
                     'tipe'         => $r['tipe'],
+                    'display_tipe' => $r['display_tipe'] ?? $r['tipe'],
                     'nominal'      => $r['nominal'],
                     'kategori'     => $r['kategori'],
                     'kas_pos_id'   => $r['kas_pos_id'],
@@ -434,6 +496,7 @@ class KasService
                     'keterangan'   => $r['keterangan'],
                     'tanggal'      => $r['tanggal'],
                     'otomatis'     => false,
+                    'is_alokasi'   => !empty($r['is_alokasi']),
                 ];
             }, $items),
             'pembayaran' => $pembayaran,
