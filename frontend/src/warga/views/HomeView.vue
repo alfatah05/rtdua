@@ -79,8 +79,9 @@
             <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
             <button
               type="button"
-              class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] active:scale-95 transition-transform duration-150 ease-out"
-              @click="$router.push('/pengumuman/' + p.id)"
+              class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] transition-transform duration-150 ease-out touch-manipulation"
+              :class="pressedKey === 'peng-' + p.id ? 'scale-95' : 'scale-100'"
+              @click="goTo('/pengumuman/' + p.id, 'peng-' + p.id)"
             >
               Lihat detail <ChevronRight :size="18" />
             </button>
@@ -88,13 +89,16 @@
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
 
-        <!-- Iuran: animasi klik -->
+        <!-- Iuran: animasi klik + delay navigasi -->
         <button
           type="button"
-          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] active:scale-[0.97] transition-transform duration-150 ease-out"
-          :class="iuranStatus === 'loading' ? 'border border-[var(--line)]' : ''"
+          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] transition-transform duration-150 ease-out touch-manipulation will-change-transform"
+          :class="[
+            iuranStatus === 'loading' ? 'border border-[var(--line)]' : '',
+            pressedKey === 'iuran' ? 'scale-[0.96]' : 'scale-100',
+          ]"
           :style="iuranCardStyle"
-          @click="$router.push('/rincian-iuran')"
+          @click="goTo('/rincian-iuran', 'iuran')"
         >
           <div class="relative z-10 flex items-center gap-3">
             <div
@@ -131,14 +135,15 @@
           ></div>
         </button>
 
-        <!-- Menu cards: animasi klik -->
+        <!-- Menu cards: animasi klik + delay navigasi -->
         <button
           v-for="m in menus"
           :key="m.to"
           type="button"
-          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] active:scale-[0.97] transition-transform duration-150 ease-out"
+          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] transition-transform duration-150 ease-out touch-manipulation will-change-transform"
+          :class="pressedKey === m.to ? 'scale-[0.96]' : 'scale-100'"
           :style="{ background: m.cardBg }"
-          @click="$router.push(m.to)"
+          @click="goTo(m.to, m.to)"
         >
           <div class="relative z-10 flex items-center gap-3">
             <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
@@ -223,6 +228,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
 import { portalRingkasan, portalKas } from '@shared/services/keuangan.js'
@@ -264,6 +270,24 @@ const logoDesaUrl = ref('')
 const pengumuman = ref([])
 const loading = ref(true)
 const bazisOpen = ref(false)
+const router = useRouter()
+const pressedKey = ref('')
+let navLock = false
+
+/** Tahan scale sebentar biar animasi klik terasa sebelum pindah halaman */
+async function goTo(to, key) {
+  if (navLock) return
+  navLock = true
+  pressedKey.value = key
+  await new Promise((r) => setTimeout(r, 170))
+  try {
+    await router.push(to)
+  } finally {
+    // reset setelah navigasi (kalau tetap di halaman, lepas lock)
+    pressedKey.value = ''
+    navLock = false
+  }
+}
 
 // Dummy Bazis Oktober — RT 001–008
 const bazisDummy = [
