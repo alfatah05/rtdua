@@ -22,8 +22,12 @@
         class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
         @click="$router.push('/aktivitas/' + act.id)"
       >
-        <div class="w-10 h-10 rounded-full grid place-items-center shrink-0 bg-[var(--card2)] text-[var(--mut)]">
-          <Activity :size="18" />
+        <div
+          class="w-10 h-10 rounded-full grid place-items-center shrink-0"
+          :class="act.isAlokasi ? 'bg-sky-500/15 text-sky-600' : 'bg-[var(--card2)] text-[var(--mut)]'"
+        >
+          <ArrowLeftRight v-if="act.isAlokasi" :size="18" />
+          <Activity v-else :size="18" />
         </div>
         <div class="min-w-0 flex-1">
           <p class="font-bold text-[15px] m-0 leading-tight">{{ act.text }}</p>
@@ -39,7 +43,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { listAktivitas } from '@shared/services/aktivitas.js'
-import { Activity, ChevronRight } from 'lucide-vue-next'
+import { Activity, ChevronRight, ArrowLeftRight } from 'lucide-vue-next'
 
 const now = new Date()
 const bulan = ref(now.getMonth() + 1)
@@ -53,14 +57,36 @@ const daftarBulan = [
 const daftarTahun = [String(now.getFullYear()), String(now.getFullYear() - 1)]
 const items = ref([])
 
+function formatRp(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
+}
+
+function labelAksi(a) {
+  const aksi = String(a.aksi || '')
+  if (aksi === 'kas_alokasi_pos') {
+    const s = a.sesudah || {}
+    const dari = s.dari_pos_nama || 'pos'
+    const ke = s.ke_pos_nama || 'pos'
+    const nom = s.nominal != null ? formatRp(s.nominal) : ''
+    return `Alokasi ${dari} → ${ke}${nom ? ' · ' + nom : ''}`
+  }
+  return aksi.replace(/_/g, ' ')
+}
+
 async function load() {
   const res = await listAktivitas({ bulan: bulan.value, tahun: tahun.value })
   if (res.ok) {
-    items.value = (res.data || []).map((a) => ({
-      id: a.id,
-      text: `${a.pelaku} · ${String(a.aksi || '').replace(/_/g, ' ')}`,
-      waktu: a.waktu,
-    }))
+    items.value = (res.data || []).map((a) => {
+      const isAlokasi = String(a.aksi || '') === 'kas_alokasi_pos'
+      return {
+        id: a.id,
+        text: isAlokasi
+          ? `${a.pelaku} · ${labelAksi(a)}`
+          : `${a.pelaku} · ${labelAksi(a)}`,
+        waktu: a.waktu,
+        isAlokasi,
+      }
+    })
   }
 }
 
