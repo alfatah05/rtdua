@@ -20,11 +20,11 @@ class KeluargaController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $filter = [
-            'status'         => $this->request->getGet('status') ?? 'aktif',
-            'blok_id'        => $this->request->getGet('blok_id'),
-            'q'              => $this->request->getGet('q'),
-            'belum_lengkap'  => $this->request->getGet('belum_lengkap') === '1',
-            'belum_ganti_pin'=> $this->request->getGet('belum_ganti_pin') === '1',
+            'status'          => $this->request->getGet('status') ?? 'aktif',
+            'blok_id'         => $this->request->getGet('blok_id'),
+            'q'               => $this->request->getGet('q'),
+            'belum_lengkap'   => $this->request->getGet('belum_lengkap') === '1',
+            'belum_ganti_pin' => $this->request->getGet('belum_ganti_pin') === '1',
         ];
         return ApiResponse::ok((new KeluargaService())->list($filter));
     }
@@ -93,7 +93,7 @@ class KeluargaController extends Controller
         if (array_key_exists('foto', $json)) {
             $db = \Config\Database::connect();
             $db->table('warga')->where('id', (int) $anggotaId)->update([
-                'foto' => $json['foto'] ? (string) $json['foto'] : null,
+                'foto'       => $json['foto'] ? (string) $json['foto'] : null,
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
             if (!$res['ok'] && ($res['message'] ?? '') === 'Tidak ada perubahan.') {
@@ -123,6 +123,22 @@ class KeluargaController extends Controller
         return $res['ok'] ? ApiResponse::ok(null, 'Status diperbarui') : ApiResponse::fail($res['message'], 422);
     }
 
+    public function hapusAnggota($anggotaId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new KeluargaService())->hapusAnggota(
+            (int) $anggotaId,
+            $json['alasan'] ?? null,
+            (int) $user['id'],
+            !empty($json['kepala_baru_id']) ? (int) $json['kepala_baru_id'] : null
+        );
+        return $res['ok'] ? ApiResponse::ok(null, 'Anggota dihapus') : ApiResponse::fail($res['message'], 422);
+    }
+
     public function pindah($id)
     {
         $user = $this->requirePengurus();
@@ -134,10 +150,17 @@ class KeluargaController extends Controller
         return $res['ok'] ? ApiResponse::ok(null, 'Keluarga ditandai pindah') : ApiResponse::fail($res['message'], 422);
     }
 
-    /**
-     * Reset PIN warga ke 123456 + wajib ganti.
-     * Jika akun role warga belum ada, dibuat otomatis dari alamat keluarga.
-     */
+    public function hapus($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new KeluargaService())->hapusKeluarga((int) $id, $json['alasan'] ?? null, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Keluarga dihapus') : ApiResponse::fail($res['message'], 422);
+    }
+
     public function resetPin($id)
     {
         $user = $this->requirePengurus();
@@ -201,7 +224,6 @@ class KeluargaController extends Controller
             try {
                 (new AuditService())->log('reset_pin', 'users', $uid, null, ['keluarga_id' => $keluargaId], 'pengguna', true, (int) $user['id']);
             } catch (Throwable $e) {
-                // jangan gagalkan reset
             }
 
             try {
@@ -213,7 +235,6 @@ class KeluargaController extends Controller
                     '/ganti-pin'
                 );
             } catch (Throwable $e) {
-                // jangan gagalkan reset
             }
 
             return ApiResponse::ok(['user_id' => $uid], $msg);
