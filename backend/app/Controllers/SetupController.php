@@ -39,7 +39,10 @@ class SetupController extends Controller
             $perumahan  = trim((string) ($json['nama_perumahan'] ?? ''));
             $username   = strtolower(trim((string) ($json['username'] ?? '')));
             $password   = (string) ($json['password'] ?? '');
-            $namaKetua  = trim((string) ($json['nama_ketua'] ?? 'Ketua RT'));
+            $jabatanKetua = trim((string) ($json['nama_ketua'] ?? 'Ketua RT'));
+            if ($jabatanKetua === '') {
+                $jabatanKetua = 'Ketua RT';
+            }
             $blokList   = $json['blok'] ?? ['AB1', 'AB2', 'AB11', 'AB12'];
             if (!is_array($blokList) || $blokList === []) {
                 $blokList = ['AB1', 'AB2', 'AB11', 'AB12'];
@@ -49,7 +52,6 @@ class SetupController extends Controller
                 return ApiResponse::fail('nama_rt, username, dan password (min 8) wajib.', 422);
             }
 
-            // Username unik
             if ($db->table('users')->where('username', $username)->countAllResults() > 0) {
                 return ApiResponse::fail('Username sudah dipakai.', 422);
             }
@@ -63,14 +65,10 @@ class SetupController extends Controller
                 'updated_at'     => date('Y-m-d H:i:s'),
             ]);
 
-            $firstBlokName = null;
             foreach ($blokList as $b) {
                 $b = strtoupper(trim((string) $b));
                 if ($b === '') {
                     continue;
-                }
-                if ($firstBlokName === null) {
-                    $firstBlokName = $b;
                 }
                 $exists = $db->table('blok')->where('nama', $b)->countAllResults();
                 if ($exists === 0) {
@@ -81,41 +79,14 @@ class SetupController extends Controller
                 }
             }
 
-            if ($firstBlokName === null) {
-                $firstBlokName = 'AB1';
-                $db->table('blok')->insert(['nama' => 'AB1', 'aktif' => 1]);
-            }
-
-            $blokRow = $db->table('blok')->where('nama', $firstBlokName)->get()->getRowArray();
-            $blokId  = $blokRow ? (int) $blokRow['id'] : 0;
-            if ($blokId < 1) {
-                $db->table('blok')->insert(['nama' => $firstBlokName, 'aktif' => 1]);
-                $blokId = (int) $db->insertID();
-            }
-
-            $db->table('keluarga')->insert([
-                'blok_id'       => $blokId,
-                'nomor'         => '1',
-                'akhiran'       => '',
-                'status'        => 'aktif',
-                'mulai_periode' => date('Y-m'),
-            ]);
-            $keluargaId = (int) $db->insertID();
-
-            $db->table('warga')->insert([
-                'keluarga_id' => $keluargaId,
-                'nama'        => $namaKetua !== '' ? $namaKetua : 'Ketua RT',
-                'hubungan'    => 'Kepala keluarga',
-                'status'      => 'aktif',
-            ]);
-            $wargaId = (int) $db->insertID();
-
+            // Akun ketua mandiri — TIDAK tertaut warga_id / keluarga_id
             $db->table('users')->insert([
                 'role'                   => 'ketua',
                 'username'               => $username,
                 'password_hash'          => password_hash($password, PASSWORD_DEFAULT),
-                'warga_id'               => $wargaId,
-                'jabatan'                => 'Ketua RT',
+                'warga_id'               => null,
+                'keluarga_id'            => null,
+                'jabatan'                => $jabatanKetua,
                 'tampil_di_bantuan'      => 1,
                 'urutan_struktur'        => 1,
                 'is_developer'           => 0,
@@ -136,7 +107,6 @@ class SetupController extends Controller
                     'username_ketua' => $username,
                 ], 'pengguna', true, $userId);
             } catch (Throwable $e) {
-                // Audit gagal tidak membatalkan setup yang sudah sukses
             }
 
             return ApiResponse::ok([
