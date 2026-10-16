@@ -31,10 +31,6 @@ class PortalController extends Controller
         return ApiResponse::ok($data);
     }
 
-    /**
-     * Detail keluarga publik untuk warga lain.
-     * Hanya nama, alamat, foto kepala, anggota (nama + hubungan). Tanpa NIK/telepon.
-     */
     public function detailKeluarga($id)
     {
         if (SideContext::fromRequest() !== 'warga') {
@@ -97,7 +93,7 @@ class PortalController extends Controller
         ]);
     }
 
-    /** Data keluarga sendiri untuk warga (tanpa NIK). */
+    /** Data keluarga sendiri untuk warga (tanpa NIK plaintext). */
     public function keluargaSaya()
     {
         $side = SideContext::fromRequest();
@@ -119,7 +115,7 @@ class PortalController extends Controller
             return ApiResponse::fail('Keluarga tidak ditemukan', 404);
         }
         $anggota = $db->table('warga')
-            ->select('id, nama, hubungan, jenis_kelamin, tanggal_lahir, foto, status')
+            ->select('id, nama, hubungan, jenis_kelamin, tempat_lahir, tanggal_lahir, agama, pekerjaan, foto, status, nik_enc')
             ->where('keluarga_id', $kid)
             ->whereIn('status', ['aktif', 'meninggal'])
             ->orderBy('id', 'ASC')
@@ -140,9 +136,13 @@ class PortalController extends Controller
                 'nama'          => $a['nama'],
                 'hubungan'      => $hub !== '' ? $hub : '—',
                 'jenis_kelamin' => $a['jenis_kelamin'],
+                'tempat_lahir'  => $a['tempat_lahir'],
                 'tanggal_lahir' => $a['tanggal_lahir'],
+                'agama'         => $a['agama'],
+                'pekerjaan'     => $a['pekerjaan'],
                 'foto'          => $a['foto'],
                 'status'        => $a['status'],
+                'punya_nik'     => !empty($a['nik_enc']),
             ];
         }
         if ($kepalaNama === null && $anggota) {
@@ -159,11 +159,6 @@ class PortalController extends Controller
         ]);
     }
 
-    /**
-     * Warga menambah anggota untuk keluarga sendiri saja.
-     * Field selaras pengurus: nama, hubungan, nik, jenis_kelamin, tempat/tanggal lahir, agama, pekerjaan.
-     * Kepala keluarga hanya lewat pengurus.
-     */
     public function tambahAnggotaSaya()
     {
         $side = SideContext::fromRequest();
@@ -209,5 +204,92 @@ class PortalController extends Controller
             return ApiResponse::fail($res['message'] ?? 'Gagal', 422);
         }
         return ApiResponse::ok($res['data'] ?? ['id' => 0], 'Anggota ditambahkan');
+    }
+
+    /**
+     * Warga ubah data anggota milik keluarga sendiri.
+     * Tidak bisa ganti jadi/bukan Kepala keluarga (kecuali sudah kepala: hubungan dikunci).
+     */
+    public function updateAnggotaSaya($id)
+    {
+        $side = SideContext::fromRequest();
+        if ($side !== 'warga') {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $user = (new AuthService())->current($side);
+        if (!$user || empty($user['keluarga_id'])) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $kid = (int) $user['keluarga_id'];
+        $anggotaId = (int) $id;
+        if ($anggotaId < 1) {
+            return ApiResponse::fail('Tidak valid', 400);
+        }
+
+        $db = \Config\Database::connect();
+        $row = $db->table('warga')
+            ->where('id', $anggotaId)
+            ->where('keluarga_id', $kid)
+            ->get()->getRowArray();
+        if (!$row) {
+            return ApiResponse::fail('Anggota tidak ditemukan di keluarga Anda', 404);
+        }
+        if (($row['status'] ?? '') !== 'aktif') {
+            return ApiResponse::fail('Anggota tidak aktif, tidak bisa diubah', 422);
+        }
+
+        $body = $this->request->getJSON(true) ?? [];
+        $isKepala = str_contains(strtolower((string) ($row['hubungan'] ?? '')), 'kepala');
+
+        $payload = [];
+        if (array_key_exists('nama', $body)) {
+            $nama = trim((string) $body['nama']);
+            if ($nama === '') {
+                return ApiResponse::fail('Nama tidak boleh kosong', 422);
+            }
+            $payload['nama'] = $nama;
+        }
+
+        if (array_key_exists('hubungan', $body)) {
+            $hub = trim((string) $body['hubungan']);
+            if ($isKepala) {
+                // Kepala tetap kepala — abaikan perubahan hubungan
+                $payload['hubungan'] = 'Kepala keluarga';
+            } else {
+                if ($hub === '' || str_contains(strtolower($hub), 'kepala')) {
+                    return ApiResponse::fail('Hubungan Kepala keluarga hanya bisa diatur pengurus', 422);
+                }
+                $payload['hubungan'] = $hub;
+            }
+        }
+
+        foreach (['jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'pekerjaan'] as $k) {
+            if (array_key_exists($k, $body)) {
+                $v = $body[$k];
+                if ($v === '' || $v === null) {
+                    $payload[$k] = null;
+                } else {
+                    $payload[$k] = is_string($v) ? trim($v) : $v;
+                }
+            }
+        }
+
+        if (array_key_exists('nik', $body) && $body['nik'] !== null && $body['nik'] !== '') {
+            $nik = preg_replace('/\D/', '', (string) $body['nik']);
+            if (strlen($nik) !== 16) {
+                return ApiResponse::fail('NIK harus 16 digit jika diisi.', 422);
+            }
+            $payload['nik'] = $nik;
+        }
+
+        if ($payload === []) {
+            return ApiResponse::fail('Tidak ada perubahan', 422);
+        }
+
+        $res = (new KeluargaService())->updateAnggota($anggotaId, $payload, (int) $user['id']);
+        if (!($res['ok'] ?? false)) {
+            return ApiResponse::fail($res['message'] ?? 'Gagal', 422);
+        }
+        return ApiResponse::ok(null, 'Data anggota disimpan');
     }
 }
