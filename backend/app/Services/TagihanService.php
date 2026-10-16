@@ -169,8 +169,9 @@ class TagihanService
         $dibuat = 0;
         foreach ($keluarga as $k) {
             $mulai = $k['mulai_periode'];
+            // Kosong/null = ikut periode berjalan (bukan tunda ke bulan depan)
             if ($mulai === null || $mulai === '') {
-                continue;
+                $mulai = date('Y-m');
             }
             if (strcmp($mulai, $periode) > 0) {
                 continue;
