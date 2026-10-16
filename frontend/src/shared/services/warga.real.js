@@ -139,3 +139,12 @@ export async function portalTambahAnggota(payload) {
     return { ok: false, error: e.message }
   }
 }
+
+export async function portalUpdateAnggota(id, payload) {
+  try {
+    const res = await api('/portal/keluarga/anggota/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
