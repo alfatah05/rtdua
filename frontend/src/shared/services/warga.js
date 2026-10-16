@@ -82,3 +82,8 @@ export function portalTambahAnggota(payload) {
   if (USE_MOCK.warga) return Promise.resolve({ ok: true, data: { id: 0 } })
   return real.portalTambahAnggota(payload)
 }
+
+export function portalUpdateAnggota(id, payload) {
+  if (USE_MOCK.warga) return Promise.resolve({ ok: true })
+  return real.portalUpdateAnggota(id, payload)
+}
