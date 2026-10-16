@@ -40,6 +40,9 @@ class AuthService
             }
         }
 
+        // Ketua: akun pengurus mandiri — lepas tautan warga/keluarga jika masih ada
+        $user = $this->detachKetuaDariWarga($user);
+
         $this->recordAttempt($usernameNorm, $side, true);
         $this->startSession($side, $user);
 
@@ -82,7 +85,11 @@ class AuthService
         }
         $db = \Config\Database::connect();
         $user = $db->table('users')->where('id', $id)->where('aktif', 1)->get()->getRowArray();
-        return $user ? $this->publicUser($user) : null;
+        if (!$user) {
+            return null;
+        }
+        $user = $this->detachKetuaDariWarga($user);
+        return $this->publicUser($user);
     }
 
     public function changeCredential(string $side, int $userId, string $newSecret): array
@@ -134,8 +141,55 @@ class AuthService
         ]);
     }
 
+    /**
+     * Ketua = akun pengurus mandiri, tidak terhubung ke akun keluarga/warga.
+     * Membersihkan tautan lama di DB (self-heal).
+     */
+    private function detachKetuaDariWarga(array $user): array
+    {
+        if (($user['role'] ?? '') !== 'ketua') {
+            return $user;
+        }
+        $need = !empty($user['warga_id']) || !empty($user['keluarga_id']);
+        if (!$need) {
+            return $user;
+        }
+        $db = \Config\Database::connect();
+        $db->table('users')->where('id', (int) $user['id'])->update([
+            'warga_id'    => null,
+            'keluarga_id' => null,
+            'updated_at'  => date('Y-m-d H:i:s'),
+        ]);
+        $user['warga_id'] = null;
+        $user['keluarga_id'] = null;
+        return $user;
+    }
+
     private function publicUser(array $user): array
     {
+        $role = $user['role'] ?? '';
+        $isKetua = $role === 'ketua';
+
+        // Ketua: nama dari jabatan/username saja — tidak ambil dari data warga
+        if ($isKetua) {
+            $nama = !empty($user['jabatan'])
+                ? $user['jabatan']
+                : $user['username'];
+            return [
+                'id'                     => (int) $user['id'],
+                'username'               => $user['username'],
+                'nama'                   => $nama,
+                'alamat'                 => null,
+                'foto'                   => null,
+                'role'                   => $role,
+                'jabatan'                => $user['jabatan'],
+                'keluarga_id'            => null,
+                'warga_id'               => null,
+                'is_developer'           => (bool) $user['is_developer'],
+                'harus_ganti_kredensial' => (bool) $user['harus_ganti_kredensial'],
+            ];
+        }
+
         $nama = $user['jabatan']
             ? ($user['username'] . ' · ' . $user['jabatan'])
             : $user['username'];
@@ -159,7 +213,7 @@ class AuthService
                     $keluargaId = (int) $w['keluarga_id'];
                 }
             }
-        } elseif ($keluargaId && ($user['role'] ?? '') === 'warga') {
+        } elseif ($keluargaId && $role === 'warga') {
             $kep = $db->table('warga')
                 ->where('keluarga_id', $keluargaId)
                 ->where('status', 'aktif')
@@ -183,28 +237,24 @@ class AuthService
             }
         }
 
-        if (in_array($user['role'] ?? '', ['ketua', 'pengurus'], true) && $user['jabatan']) {
-            $base = $nama;
-            if ($wargaId) {
-                $w = $db->table('warga')->select('nama')->where('id', $wargaId)->get()->getRowArray();
-                if ($w && !empty($w['nama'])) {
-                    $base = $w['nama'];
-                }
+        if ($role === 'pengurus' && $user['jabatan'] && $wargaId) {
+            $w = $db->table('warga')->select('nama')->where('id', $wargaId)->get()->getRowArray();
+            if ($w && !empty($w['nama'])) {
+                $nama = $w['nama'];
             }
-            $nama = $base;
         }
 
         return [
-            'id'         => (int) $user['id'],
-            'username'   => $user['username'],
-            'nama'       => $nama,
-            'alamat'     => $alamat,
-            'foto'       => $foto,
-            'role'       => $user['role'],
-            'jabatan'    => $user['jabatan'],
-            'keluarga_id'=> $keluargaId,
-            'warga_id'   => $wargaId,
-            'is_developer' => (bool) $user['is_developer'],
+            'id'                     => (int) $user['id'],
+            'username'               => $user['username'],
+            'nama'                   => $nama,
+            'alamat'                 => $alamat,
+            'foto'                   => $foto,
+            'role'                   => $role,
+            'jabatan'                => $user['jabatan'],
+            'keluarga_id'            => $keluargaId,
+            'warga_id'               => $wargaId,
+            'is_developer'           => (bool) $user['is_developer'],
             'harus_ganti_kredensial' => (bool) $user['harus_ganti_kredensial'],
         ];
     }
@@ -219,6 +269,11 @@ class AuthService
         $user = $db->table('users')->where('id', $userId)->where('aktif', 1)->get()->getRowArray();
         if (!$user) {
             return ['ok' => false, 'message' => 'Akun tidak ditemukan.'];
+        }
+
+        // Ketua tidak tertaut warga — foto profil via tautan warga tidak tersedia
+        if (($user['role'] ?? '') === 'ketua') {
+            return ['ok' => false, 'message' => 'Akun ketua tidak tertaut data warga; foto profil belum didukung di akun ini.'];
         }
 
         $wargaId = $user['warga_id'] ? (int) $user['warga_id'] : null;
