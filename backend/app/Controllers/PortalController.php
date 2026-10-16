@@ -161,7 +161,8 @@ class PortalController extends Controller
 
     /**
      * Warga menambah anggota untuk keluarga sendiri saja.
-     * Body: nama (wajib), hubungan (opsional, default Anggota).
+     * Field selaras pengurus: nama, hubungan, nik, jenis_kelamin, tempat/tanggal lahir, agama, pekerjaan.
+     * Kepala keluarga hanya lewat pengurus.
      */
     public function tambahAnggotaSaya()
     {
@@ -183,18 +184,30 @@ class PortalController extends Controller
         if ($hubungan === '') {
             $hubungan = 'Anggota';
         }
-        // Kepala keluarga hanya lewat pengurus
         if (str_contains(strtolower($hubungan), 'kepala')) {
             return ApiResponse::fail('Hubungan Kepala keluarga hanya bisa diatur pengurus', 422);
         }
+
+        $nik = isset($body['nik']) ? preg_replace('/\D/', '', (string) $body['nik']) : '';
+        if ($nik !== '' && strlen($nik) !== 16) {
+            return ApiResponse::fail('NIK harus 16 digit jika diisi.', 422);
+        }
+
         $payload = [
-            'nama'     => $nama,
-            'hubungan' => $hubungan,
+            'nama'          => $nama,
+            'hubungan'      => $hubungan,
+            'nik'           => $nik !== '' ? $nik : null,
+            'jenis_kelamin' => !empty($body['jenis_kelamin']) ? (string) $body['jenis_kelamin'] : null,
+            'tempat_lahir'  => !empty($body['tempat_lahir']) ? trim((string) $body['tempat_lahir']) : null,
+            'tanggal_lahir' => !empty($body['tanggal_lahir']) ? (string) $body['tanggal_lahir'] : null,
+            'agama'         => !empty($body['agama']) ? trim((string) $body['agama']) : null,
+            'pekerjaan'     => !empty($body['pekerjaan']) ? trim((string) $body['pekerjaan']) : null,
+            'no_kk'         => !empty($body['no_kk']) ? trim((string) $body['no_kk']) : null,
         ];
         $res = (new KeluargaService())->tambahAnggota($kid, $payload, (int) $user['id']);
         if (!($res['ok'] ?? false)) {
             return ApiResponse::fail($res['message'] ?? 'Gagal', 422);
         }
-        return ApiResponse::ok($res['data'] ?? ['id' => 0]);
+        return ApiResponse::ok($res['data'] ?? ['id' => 0], 'Anggota ditambahkan');
     }
 }
