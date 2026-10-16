@@ -24,6 +24,8 @@ import ProgramListView from '../views/ProgramListView.vue'
 import ProgramDetailView from '../views/ProgramDetailView.vue'
 import GaleriListView from '../views/GaleriListView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
+import PosyanduView from '../views/PosyanduView.vue'
+import TalimView from '../views/TalimView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -54,6 +56,8 @@ const routes = [
       { path: 'program/:id', name: 'program-detail', component: ProgramDetailView },
       { path: 'galeri', name: 'galeri', component: GaleriListView },
       { path: 'galeri/:id', name: 'galeri-detail', component: GaleriDetailView },
+      { path: 'posyandu', name: 'posyandu', component: PosyanduView },
+      { path: 'talim', name: 'talim', component: TalimView },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
