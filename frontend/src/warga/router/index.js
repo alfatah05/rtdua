@@ -20,6 +20,7 @@ import NotifikasiView from '../views/NotifikasiView.vue'
 import NotifikasiDetailView from '../views/NotifikasiDetailView.vue'
 import GantiPinView from '../views/GantiPinView.vue'
 import DataKeluargaView from '../views/DataKeluargaView.vue'
+import TambahAnggotaView from '../views/TambahAnggotaView.vue'
 import ProgramListView from '../views/ProgramListView.vue'
 import ProgramDetailView from '../views/ProgramDetailView.vue'
 import GaleriListView from '../views/GaleriListView.vue'
@@ -40,6 +41,7 @@ const routes = [
       { path: 'profil', name: 'profil', component: ProfilView, meta: { mainTab: true } },
 
       { path: 'data-keluarga', name: 'data-keluarga', component: DataKeluargaView },
+      { path: 'data-keluarga/tambah', name: 'data-keluarga-tambah', component: TambahAnggotaView },
       { path: 'pengumuman', name: 'pengumuman', component: PengumumanView },
       { path: 'pengumuman/:id', name: 'pengumuman-detail', component: PengumumanDetailView },
       { path: 'rincian-iuran', name: 'rincian-iuran', component: RincianIuranView },
