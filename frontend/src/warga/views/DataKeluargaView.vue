@@ -6,7 +6,7 @@
           type="button"
           class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
           aria-label="Tambah anggota"
-          @click="openTambah"
+          @click="$router.push('/data-keluarga/tambah')"
         >
           <PlusCircle :size="20" />
         </button>
@@ -58,52 +58,15 @@
           class="text-[13px] text-[var(--mut)] text-center py-4"
         >Belum ada anggota</p>
       </div>
-    </template>
 
-    <!-- Sheet tambah anggota -->
-    <div
-      v-if="showForm"
-      class="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
-      @click.self="closeForm"
-    >
-      <div
-        class="w-full max-w-[560px] rounded-t-[24px] bg-[var(--bg)] p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))] shadow-lg"
+      <button
+        type="button"
+        class="w-full min-h-[48px] mt-4 rounded-full border border-[var(--line)] font-bold text-[15px]"
+        @click="$router.push('/data-keluarga/tambah')"
       >
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-[17px] font-extrabold m-0">Tambah anggota</h2>
-          <button
-            type="button"
-            class="text-[13px] font-semibold text-[var(--mut)]"
-            @click="closeForm"
-          >Batal</button>
-        </div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nama lengkap</label>
-        <input
-          v-model="form.nama"
-          type="text"
-          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] border-0 outline-none text-[15px] mb-3"
-          placeholder="Contoh: Siti Aminah"
-          autocomplete="name"
-        />
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Hubungan</label>
-        <input
-          v-model="form.hubungan"
-          type="text"
-          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] border-0 outline-none text-[15px] mb-2"
-          placeholder="Contoh: istri, anak pertama"
-        />
-        <p class="text-[12px] text-[var(--mut)] m-0 mb-4">Hanya untuk keluarga Anda. Tidak bisa menambah keluarga baru.</p>
-        <p v-if="formErr" class="text-[13px] text-red-600 text-center mb-3">{{ formErr }}</p>
-        <button
-          type="button"
-          class="w-full min-h-12 rounded-full font-bold text-white bg-[var(--g)] active:scale-[0.98] transition disabled:opacity-60"
-          :disabled="saving"
-          @click="submitTambah"
-        >
-          {{ saving ? 'Menyimpan…' : 'Simpan anggota' }}
-        </button>
-      </div>
-    </div>
+        + Tambah anggota
+      </button>
+    </template>
   </div>
 </template>
 
@@ -112,21 +75,14 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted } from 'vue'
 import { PlusCircle } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { portalKeluargaSaya, portalTambahAnggota } from '@shared/services/warga.js'
+import { portalKeluargaSaya } from '@shared/services/warga.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { waitImages } from '@shared/utils/waitImages.js'
-import { useToast } from '@shared/composables/useToast.js'
 
-const { show } = useToast()
 const loading = ref(true)
 const err = ref('')
 const data = ref(null)
 const fotoUrl = ref('')
-
-const showForm = ref(false)
-const saving = ref(false)
-const formErr = ref('')
-const form = ref({ nama: '', hubungan: '' })
 
 function inisial(nama) {
   const p = String(nama || '').trim().split(/\s+/).filter(Boolean)
@@ -148,39 +104,6 @@ async function load() {
   fotoUrl.value = res.data?.foto ? mediaUrl(res.data.foto) : ''
   if (fotoUrl.value) await waitImages([fotoUrl.value])
   loading.value = false
-}
-
-function openTambah() {
-  form.value = { nama: '', hubungan: '' }
-  formErr.value = ''
-  showForm.value = true
-}
-
-function closeForm() {
-  if (saving.value) return
-  showForm.value = false
-}
-
-async function submitTambah() {
-  formErr.value = ''
-  const nama = form.value.nama.trim()
-  if (!nama) {
-    formErr.value = 'Nama wajib diisi'
-    return
-  }
-  saving.value = true
-  const res = await portalTambahAnggota({
-    nama,
-    hubungan: form.value.hubungan.trim() || 'Anggota',
-  })
-  saving.value = false
-  if (!res.ok) {
-    formErr.value = res.error || 'Gagal menyimpan'
-    return
-  }
-  showForm.value = false
-  show('Anggota ditambahkan')
-  await load()
 }
 
 onMounted(load)
