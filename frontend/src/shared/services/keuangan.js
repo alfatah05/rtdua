@@ -3,8 +3,6 @@ import * as real from './keuangan.real.js'
 import { mockTagihan, mockKasSaldo } from '../mock/keuangan.js'
 import { alokasiPembayaran } from '../utils/alokasiPembayaran.js'
 
-const impl = () => (USE_MOCK.keuangan ? null : real)
-
 // ---- Mock fallbacks (UI Stage 1–8) ----
 async function mockDaftarIuran() {
   return {
@@ -79,6 +77,22 @@ export function tambahKas(payload) {
 export function batalkanKas(id, alasan) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.batalkanKas(id, alasan)
 }
+
+export function listKasPos() {
+  return USE_MOCK.keuangan
+    ? Promise.resolve({ ok: true, data: [{ id: 1, nama: 'Kas RT', jatah_bulanan: 0, aktif: true, urutan: 1, saldo: mockKasSaldo }] })
+    : real.listKasPos()
+}
+export function buatKasPos(payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 2 } }) : real.buatKasPos(payload)
+}
+export function ubahKasPos(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id } }) : real.ubahKasPos(id, payload)
+}
+export function nonaktifKasPos(id) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.nonaktifKasPos(id)
+}
+
 export function listIuranKhusus() {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listIuranKhusus()
 }
@@ -109,7 +123,15 @@ export function portalStatusPermintaan() {
 }
 export function portalKas(bulan) {
   return USE_MOCK.keuangan
-    ? Promise.resolve({ ok: true, data: { saldo: mockKasSaldo, items: [] } })
+    ? Promise.resolve({
+        ok: true,
+        data: {
+          saldo: mockKasSaldo,
+          pos: [{ id: 1, nama: 'Kas RT', saldo: mockKasSaldo, jatah_bulanan: 0, aktif: true }],
+          items: [],
+          pembayaran: [],
+        },
+      })
     : real.portalKas(bulan)
 }
 
