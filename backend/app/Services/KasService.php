@@ -60,6 +60,13 @@ class KasService
         if ($hasPos && !empty($filter['kas_pos_id'])) {
             $q->where('kt.kas_pos_id', (int) $filter['kas_pos_id']);
         }
+        // Portal warga: jangan tampilkan kas otomatis dari pembayaran (sudah di tab iuran)
+        if (!empty($filter['tanpa_otomatis'])) {
+            $q->groupStart()
+                ->where('kt.pembayaran_id', null)
+                ->orWhere('kt.pembayaran_id', 0)
+                ->groupEnd();
+        }
         $rows = $q->orderBy('kt.tanggal', 'DESC')->orderBy('kt.id', 'DESC')->get()->getResultArray();
         return array_map(static function ($r) use ($hasPos) {
             return [
@@ -215,20 +222,19 @@ class KasService
     }
 
     /**
-     * Data portal warga: saldo, pos, items kas, pembayaran (riwayat iuran RT).
+     * Data portal warga: saldo, pos, items kas (tanpa otomatis bayar), pembayaran + nama kepala.
      */
     public function portalRingkasanKas(): array
     {
         $posSvc = new KasPosService();
         $pos = $posSvc->list(true);
-        $items = $this->list();
+        // Hanya transaksi kas manual / non-pembayaran (bukan "Otomatis dari pembayaran #…")
+        $items = $this->list(['tanpa_otomatis' => true]);
         $items = array_slice($items, 0, 80);
 
         $db = \Config\Database::connect();
         $payRows = $db->table('pembayaran p')
-            ->select('p.id, p.tanggal_bayar, p.nominal, p.metode, p.catatan, k.nomor, k.akhiran, b.nama as blok_nama')
-            ->join('keluarga k', 'k.id = p.keluarga_id', 'left')
-            ->join('blok b', 'b.id = k.blok_id', 'left')
+            ->select('p.id, p.tanggal_bayar, p.nominal, p.metode, p.catatan, p.keluarga_id')
             ->where('p.dibatalkan', 0)
             ->orderBy('p.tanggal_bayar', 'DESC')
             ->orderBy('p.id', 'DESC')
@@ -236,18 +242,59 @@ class KasService
             ->get()
             ->getResultArray();
 
-        $pembayaran = array_map(static function ($r) {
-            $blok = $r['blok_nama'] ?? '';
-            $nomor = $r['nomor'] ?? '';
-            $akhir = $r['akhiran'] ?? '';
-            $alamat = trim($blok . ($nomor !== '' ? '-' . $nomor : '') . $akhir);
+        // Nama kepala keluarga per keluarga_id
+        $kepalaMap = [];
+        $keluargaIds = array_values(array_unique(array_filter(array_map(
+            static fn ($r) => (int) ($r['keluarga_id'] ?? 0),
+            $payRows
+        ))));
+        if ($keluargaIds !== []) {
+            $wRows = $db->table('warga')
+                ->select('keluarga_id, nama')
+                ->whereIn('keluarga_id', $keluargaIds)
+                ->where('status', 'aktif')
+                ->groupStart()
+                    ->where('hubungan', 'Kepala keluarga')
+                    ->orWhere('hubungan', 'Kepala Keluarga')
+                ->groupEnd()
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getResultArray();
+            foreach ($wRows as $w) {
+                $kid = (int) $w['keluarga_id'];
+                if (!isset($kepalaMap[$kid])) {
+                    $kepalaMap[$kid] = $w['nama'];
+                }
+            }
+            // Fallback: anggota aktif pertama jika belum ada label kepala
+            $missing = array_diff($keluargaIds, array_keys($kepalaMap));
+            if ($missing !== []) {
+                $fb = $db->table('warga')
+                    ->select('keluarga_id, nama')
+                    ->whereIn('keluarga_id', $missing)
+                    ->where('status', 'aktif')
+                    ->orderBy('id', 'ASC')
+                    ->get()
+                    ->getResultArray();
+                foreach ($fb as $w) {
+                    $kid = (int) $w['keluarga_id'];
+                    if (!isset($kepalaMap[$kid])) {
+                        $kepalaMap[$kid] = $w['nama'];
+                    }
+                }
+            }
+        }
+
+        $pembayaran = array_map(static function ($r) use ($kepalaMap) {
+            $kid = (int) ($r['keluarga_id'] ?? 0);
+            $nama = $kepalaMap[$kid] ?? 'Warga';
             return [
-                'id'       => (int) $r['id'],
-                'tanggal'  => $r['tanggal_bayar'],
-                'nominal'  => (int) $r['nominal'],
-                'metode'   => $r['metode'],
-                'catatan'  => $r['catatan'],
-                'alamat'   => $alamat !== '' ? $alamat : '—',
+                'id'           => (int) $r['id'],
+                'tanggal'      => $r['tanggal_bayar'],
+                'nominal'      => (int) $r['nominal'],
+                'metode'       => $r['metode'],
+                'catatan'      => $r['catatan'],
+                'nama_kepala'  => $nama,
             ];
         }, $payRows);
 
@@ -264,7 +311,7 @@ class KasService
                     'kas_pos_nama' => $r['kas_pos_nama'],
                     'keterangan'   => $r['keterangan'],
                     'tanggal'      => $r['tanggal'],
-                    'otomatis'     => $r['otomatis'],
+                    'otomatis'     => false,
                 ];
             }, $items),
             'pembayaran' => $pembayaran,
