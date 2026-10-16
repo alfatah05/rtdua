@@ -67,9 +67,11 @@ $routes->get('keuangan/kas/saldo', 'KeuanganController::saldoKas', ['filter' => 
 $routes->get('keuangan/kas', 'KeuanganController::listKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas', 'KeuanganController::tambahKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas/(:num)/batal', 'KeuanganController::batalkanKas/$1', ['filter' => 'auth']);
+// Alokasi antar pos — path tegas (hindari bentrok / cache route lama)
+$routes->post('keuangan/alokasi-pos', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
+$routes->post('keuangan/kas-pos/alokasi', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
 $routes->get('keuangan/kas-pos', 'KeuanganController::listKasPos', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos', 'KeuanganController::buatKasPos', ['filter' => 'auth']);
-$routes->post('keuangan/kas-pos/alokasi', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
 $routes->put('keuangan/kas-pos/(:num)', 'KeuanganController::ubahKasPos/$1', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos/(:num)/nonaktif', 'KeuanganController::nonaktifKasPos/$1', ['filter' => 'auth']);
 $routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['filter' => 'auth']);
