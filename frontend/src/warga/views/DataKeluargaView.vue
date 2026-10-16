@@ -34,7 +34,16 @@
         <p class="text-[13px] text-[var(--mut)] m-0 mt-1">{{ data.alamat }}</p>
       </div>
 
-      <p class="text-[13px] font-semibold text-[var(--mut)] mb-1 px-1">Anggota keluarga</p>
+      <div class="flex items-center justify-between mb-1 px-1">
+        <p class="text-[13px] font-semibold text-[var(--mut)] m-0">Anggota keluarga</p>
+        <button
+          type="button"
+          class="text-[13px] font-semibold text-[var(--g)] m-0"
+          @click="$router.push('/data-keluarga/edit')"
+        >
+          Edit
+        </button>
+      </div>
 
       <div class="px-1">
         <div
