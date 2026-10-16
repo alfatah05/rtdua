@@ -58,6 +58,7 @@
       <div class="h-px bg-[var(--line)] my-4"></div>
 
       <div class="flex flex-col gap-2.5">
+        <!-- Pengumuman: card tidak dianimasi; hanya tombol Lihat detail -->
         <div
           v-for="p in pengumuman"
           :key="p.id"
@@ -78,7 +79,7 @@
             <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
             <button
               type="button"
-              class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34]"
+              class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] active:scale-95 transition-transform duration-150 ease-out"
               @click="$router.push('/pengumuman/' + p.id)"
             >
               Lihat detail <ChevronRight :size="18" />
@@ -87,9 +88,10 @@
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
 
+        <!-- Iuran: animasi klik -->
         <button
           type="button"
-          class="w-full min-h-[96px] rounded-[20px] p-5 text-left active:scale-[0.98] transition relative overflow-hidden shadow-[var(--sh)]"
+          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] active:scale-[0.97] transition-transform duration-150 ease-out"
           :class="iuranStatus === 'loading' ? 'border border-[var(--line)]' : ''"
           :style="iuranCardStyle"
           @click="$router.push('/rincian-iuran')"
@@ -129,11 +131,12 @@
           ></div>
         </button>
 
+        <!-- Menu cards: animasi klik -->
         <button
           v-for="m in menus"
           :key="m.to"
           type="button"
-          class="w-full min-h-[96px] rounded-[20px] p-5 text-left active:scale-[0.98] transition relative overflow-hidden shadow-[var(--sh)]"
+          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] active:scale-[0.97] transition-transform duration-150 ease-out"
           :style="{ background: m.cardBg }"
           @click="$router.push(m.to)"
         >
@@ -159,14 +162,14 @@
           <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
         </button>
 
-        <!-- Bazis: expand dropdown (bukan halaman) -->
+        <!-- Bazis: expand dropdown — tanpa animasi scale (bukan navigasi) -->
         <div
           class="rounded-[20px] overflow-hidden shadow-[var(--sh)]"
           style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #34D399, #059669 55%, #047857)"
         >
           <button
             type="button"
-            class="w-full min-h-[96px] p-5 text-left active:scale-[0.99] transition relative overflow-hidden"
+            class="w-full min-h-[96px] p-5 text-left relative overflow-hidden"
             :aria-expanded="bazisOpen"
             @click="bazisOpen = !bazisOpen"
           >
@@ -180,7 +183,7 @@
                   <span>{{ bazisLabelBulan }} · total per RT</span>
                   <ChevronDown
                     :size="16"
-                    class="opacity-80 shrink-0 transition-transform"
+                    class="opacity-80 shrink-0 transition-transform duration-200"
                     :class="bazisOpen ? 'rotate-180' : ''"
                   />
                 </p>
