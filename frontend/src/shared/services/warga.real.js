@@ -41,6 +41,15 @@ export async function updateKeluarga(id, payload) {
   }
 }
 
+export async function hapusKeluarga(id, payload = {}) {
+  try {
+    await api('/warga/' + id + '/hapus', { method: 'POST', body: payload })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function updateAnggota(id, payload) {
   try {
     const res = await api('/anggota/' + id, { method: 'PUT', body: payload })
@@ -63,6 +72,15 @@ export async function setStatusAnggota(anggotaId, payload) {
   try {
     const res = await api('/anggota/' + anggotaId + '/status', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function hapusAnggota(anggotaId, payload = {}) {
+  try {
+    await api('/anggota/' + anggotaId + '/hapus', { method: 'POST', body: payload })
+    return { ok: true }
   } catch (e) {
     return { ok: false, error: e.message }
   }
