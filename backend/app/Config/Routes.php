@@ -69,6 +69,7 @@ $routes->post('keuangan/kas', 'KeuanganController::tambahKas', ['filter' => 'aut
 $routes->post('keuangan/kas/(:num)/batal', 'KeuanganController::batalkanKas/$1', ['filter' => 'auth']);
 $routes->get('keuangan/kas-pos', 'KeuanganController::listKasPos', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos', 'KeuanganController::buatKasPos', ['filter' => 'auth']);
+$routes->post('keuangan/kas-pos/alokasi', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
 $routes->put('keuangan/kas-pos/(:num)', 'KeuanganController::ubahKasPos/$1', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos/(:num)/nonaktif', 'KeuanganController::nonaktifKasPos/$1', ['filter' => 'auth']);
 $routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['filter' => 'auth']);
