@@ -1,21 +1,27 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center px-4 max-w-[400px] mx-auto">
-    <div class="text-center mb-8">
-      <div class="w-20 h-20 rounded-full bg-[var(--gd)] grid place-items-center mx-auto mb-4 overflow-hidden">
+  <div class="h-dvh max-h-dvh overflow-hidden flex flex-col justify-center px-5 max-w-[400px] mx-auto w-full py-6 box-border">
+    <div class="text-center mb-6 shrink-0">
+      <!-- Logo: tanpa crop lingkaran, tanpa background -->
+      <div class="mx-auto mb-4 flex items-center justify-center h-28 w-28">
         <img
           v-if="logoUrl"
           :src="logoUrl"
           alt="Logo"
-          class="w-full h-full object-contain p-1.5"
+          class="max-h-28 max-w-28 w-auto h-auto object-contain"
           @error="logoUrl = ''"
         />
-        <Shield v-else :size="28" class="text-[var(--gm)]" />
+        <div
+          v-else
+          class="w-16 h-16 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center"
+        >
+          <Shield :size="28" />
+        </div>
       </div>
-      <h1 class="text-2xl font-extrabold">Masuk Pengurus</h1>
-      <p class="text-[var(--mut)] mt-1 text-[13px]">Username + password</p>
+      <h1 class="text-2xl font-extrabold m-0">Masuk Pengurus</h1>
+      <p class="text-[var(--mut)] mt-1 mb-0 text-[13px]">Username + password</p>
     </div>
 
-    <form class="space-y-4" @submit.prevent="submit">
+    <form class="space-y-3.5 shrink-0" @submit.prevent="submit">
       <UiInput
         v-model="username"
         label="Username"
@@ -33,7 +39,7 @@
         pill
         :error="errors.password"
       />
-      <p v-if="formError" class="text-[13px] text-red-600">{{ formError }}</p>
+      <p v-if="formError" class="text-[13px] text-red-600 m-0">{{ formError }}</p>
       <UiButton type="submit" block :loading="loading">Masuk</UiButton>
     </form>
   </div>
