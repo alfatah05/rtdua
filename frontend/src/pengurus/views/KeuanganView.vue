@@ -53,12 +53,28 @@
         class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
         @click="$router.push('/keuangan/kas/' + t.id)"
       >
-        <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0 leading-tight">{{ t.keterangan || t.kategori }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ formatTanggal(t.tanggal) }} · {{ t.kategori }}</p>
+        <div
+          class="w-10 h-10 rounded-full grid place-items-center shrink-0"
+          :class="isAlokasi(t) ? 'bg-sky-500/15 text-sky-600' : (t.tipe === 'masuk' ? 'bg-emerald-500/15 text-emerald-600' : 'bg-red-500/15 text-red-600')"
+        >
+          <ArrowLeftRight v-if="isAlokasi(t)" :size="18" />
+          <ArrowDownLeft v-else-if="t.tipe === 'masuk'" :size="18" />
+          <ArrowUpRight v-else :size="18" />
         </div>
-        <span class="font-bold shrink-0" :class="t.tipe === 'masuk' ? 'text-[var(--g)]' : 'text-red-500'">
-          {{ t.tipe === 'masuk' ? '+' : '−' }}{{ formatRp(t.nominal) }}
+        <div class="min-w-0 flex-1">
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ labelItem(t) }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
+            {{ formatTanggal(t.tanggal) }}
+            <span v-if="!isAlokasi(t)"> · {{ t.kategori }}</span>
+            <span v-else> · Alokasi</span>
+          </p>
+        </div>
+        <span
+          class="font-bold shrink-0"
+          :class="isAlokasi(t) ? 'text-sky-600' : (t.tipe === 'masuk' ? 'text-[var(--g)]' : 'text-red-500')"
+        >
+          <template v-if="isAlokasi(t)">{{ formatRp(t.nominal) }}</template>
+          <template v-else>{{ t.tipe === 'masuk' ? '+' : '−' }}{{ formatRp(t.nominal) }}</template>
         </span>
       </button>
     </div>
@@ -71,7 +87,7 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, onMounted, computed } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
-import { ArrowDownLeft, ArrowUpRight, ClipboardList, FileText, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ClipboardList, FileText, Landmarks } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
 import { listKas, listPermintaan } from '@shared/services/keuangan.js'
 
@@ -87,8 +103,17 @@ const aksi = computed(() => [
   { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: 'rgba(239,68,68,.15)', color: '#DC2626' },
   { label: 'Iuran', icon: ClipboardList, to: '/keuangan/iuran', bg: 'rgba(16,185,129,.18)', color: '#059669', badge: badgePermintaan.value || undefined },
   { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Filter', icon: SlidersHorizontal, to: '/keuangan/filter-kas', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
+  { label: 'Pos kas', icon: Landmarks, to: '/keuangan/pos-kas', bg: 'rgba(14,165,233,.15)', color: '#0284C7' },
 ])
+
+function isAlokasi(t) {
+  return !!(t?.is_alokasi || t?.display_tipe === 'alokasi' || t?.kategori === 'Alokasi antar pos')
+}
+
+function labelItem(t) {
+  if (isAlokasi(t)) return t.keterangan || 'Alokasi antar pos'
+  return t.keterangan || t.kategori || (t.tipe === 'masuk' ? 'Masuk' : 'Keluar')
+}
 
 function formatTanggal(t) {
   if (!t) return ''
