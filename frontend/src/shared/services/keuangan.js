@@ -92,6 +92,11 @@ export function ubahKasPos(id, payload) {
 export function nonaktifKasPos(id) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.nonaktifKasPos(id)
 }
+export function alokasiKasPos(payload) {
+  return USE_MOCK.keuangan
+    ? Promise.resolve({ ok: true, data: { id_keluar: 1, id_masuk: 2, nominal: payload.nominal } })
+    : real.alokasiKasPos(payload)
+}
 
 export function listIuranKhusus() {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listIuranKhusus()
