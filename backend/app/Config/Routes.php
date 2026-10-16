@@ -28,9 +28,13 @@ $routes->get('warga', 'KeluargaController::index', ['filter' => 'auth']);
 $routes->get('warga/(:num)', 'KeluargaController::show/$1', ['filter' => 'auth']);
 $routes->post('warga', 'KeluargaController::create', ['filter' => 'auth']);
 $routes->put('warga/(:num)', 'KeluargaController::update/$1', ['filter' => 'auth']);
+$routes->delete('warga/(:num)', 'KeluargaController::hapus/$1', ['filter' => 'auth']);
+$routes->post('warga/(:num)/hapus', 'KeluargaController::hapus/$1', ['filter' => 'auth']);
 $routes->post('warga/(:num)/anggota', 'KeluargaController::tambahAnggota/$1', ['filter' => 'auth']);
 $routes->put('anggota/(:num)', 'KeluargaController::updateAnggota/$1', ['filter' => 'auth']);
 $routes->post('anggota/(:num)/status', 'KeluargaController::statusAnggota/$1', ['filter' => 'auth']);
+$routes->post('anggota/(:num)/hapus', 'KeluargaController::hapusAnggota/$1', ['filter' => 'auth']);
+$routes->delete('anggota/(:num)', 'KeluargaController::hapusAnggota/$1', ['filter' => 'auth']);
 $routes->post('warga/(:num)/pindah', 'KeluargaController::pindah/$1', ['filter' => 'auth']);
 $routes->post('warga/(:num)/reset-pin', 'KeluargaController::resetPin/$1', ['filter' => 'auth']);
 
@@ -67,7 +71,6 @@ $routes->get('keuangan/kas/saldo', 'KeuanganController::saldoKas', ['filter' => 
 $routes->get('keuangan/kas', 'KeuanganController::listKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas', 'KeuanganController::tambahKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas/(:num)/batal', 'KeuanganController::batalkanKas/$1', ['filter' => 'auth']);
-// Alokasi antar pos — path tegas (hindari bentrok / cache route lama)
 $routes->post('keuangan/alokasi-pos', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos/alokasi', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
 $routes->get('keuangan/kas-pos', 'KeuanganController::listKasPos', ['filter' => 'auth']);
