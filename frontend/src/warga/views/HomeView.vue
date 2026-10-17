@@ -238,7 +238,7 @@ import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { waitImages } from '@shared/utils/waitImages.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight, ChevronDown, Wallet,
-  ShieldCheck, Images, Users, Baby, BookOpen, HandCoins
+  ShieldCheck, Images, Users, HeartHandshake, BookOpen, HandCoins
 } from 'lucide-vue-next'
 
 const styleAktif = {
@@ -283,7 +283,6 @@ async function goTo(to, key) {
   try {
     await router.push(to)
   } finally {
-    // reset setelah navigasi (kalau tetap di halaman, lepas lock)
     pressedKey.value = ''
     navLock = false
   }
@@ -409,21 +408,21 @@ const menus = computed(() => [
   {
     to: '/warga',
     label: 'Warga',
-    desc: 'Daftar keluarga RT',
+    desc: 'Daftar warga RT 002',
     icon: Users,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F87171, #EF4444 55%, #DC2626)',
   },
   {
     to: '/posyandu',
-    label: 'Posyandu',
-    desc: 'Informasi & kegiatan posyandu',
-    icon: Baby,
+    label: 'Kader RT 002',
+    desc: 'Data & informasi kader RT 002',
+    icon: HeartHandshake,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FB923C, #F97316 55%, #EA580C)',
   },
   {
     to: '/talim',
-    label: "Ta'lim",
-    desc: 'Jadwal kajian & ta\'lim',
+    label: 'DKM',
+    desc: 'Kegiatan & informasi DKM',
     icon: BookOpen,
     cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #38BDF8, #0EA5E9 55%, #0284C7)',
   },
