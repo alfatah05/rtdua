@@ -5,7 +5,6 @@ namespace App\Services;
 class AuthService
 {
     private const MAX_FAIL = 5;
-    /** Kunci sementara setelah gagal berulang (menit). Dev: 1 menit. */
     private const LOCK_MINUTES = 1;
 
     public function attempt(string $side, string $username, string $secret): array
@@ -128,9 +127,6 @@ class AuthService
         return ['ok' => true, 'message' => 'Kredensial diperbarui.'];
     }
 
-    /**
-     * Ubah nama tampilan (dan opsional jabatan/nomor_hp) akun ketua/pengurus.
-     */
     public function updateProfil(int $userId, array $data): array
     {
         $db = \Config\Database::connect();
@@ -210,8 +206,8 @@ class AuthService
     {
         $role = $user['role'] ?? '';
         $isKetua = $role === 'ketua';
+        $fotoAkun = !empty($user['foto']) ? $user['foto'] : null;
 
-        // Ketua: nama tampilan dari kolom users.nama → fallback username (BUKAN jabatan)
         if ($isKetua) {
             $nama = trim((string) ($user['nama'] ?? ''));
             if ($nama === '') {
@@ -222,7 +218,7 @@ class AuthService
                 'username'               => $user['username'],
                 'nama'                   => $nama,
                 'alamat'                 => null,
-                'foto'                   => null,
+                'foto'                   => $fotoAkun,
                 'role'                   => $role,
                 'jabatan'                => $user['jabatan'] ?: 'Ketua RT',
                 'keluarga_id'            => null,
@@ -239,7 +235,7 @@ class AuthService
                 : $user['username'];
         }
         $alamat = null;
-        $foto = null;
+        $foto = $fotoAkun;
         $wargaId = $user['warga_id'] ? (int) $user['warga_id'] : null;
         $keluargaId = $user['keluarga_id'] ? (int) $user['keluarga_id'] : null;
 
@@ -251,7 +247,7 @@ class AuthService
                 if (!empty($w['nama'])) {
                     $nama = $w['nama'];
                 }
-                if (!empty($w['foto'])) {
+                if (!$foto && !empty($w['foto'])) {
                     $foto = $w['foto'];
                 }
                 if (!$keluargaId && !empty($w['keluarga_id'])) {
@@ -266,7 +262,9 @@ class AuthService
                 ->get()->getRowArray();
             if ($kep) {
                 $nama = $kep['nama'] ?: $nama;
-                $foto = $kep['foto'] ?? null;
+                if (!$foto) {
+                    $foto = $kep['foto'] ?? null;
+                }
                 $wargaId = (int) $kep['id'];
             }
         }
@@ -297,6 +295,12 @@ class AuthService
         ];
     }
 
+    /**
+     * Simpan foto profil.
+     * - warga: ke tabel warga (kepala / tautan)
+     * - ketua & pengurus: ke users.foto (ketua tidak tertaut warga)
+     * - pengurus bertaut warga: users.foto + warga.foto
+     */
     public function updateFotoProfil(string $side, int $userId, string $path): array
     {
         $path = trim($path);
@@ -309,10 +313,22 @@ class AuthService
             return ['ok' => false, 'message' => 'Akun tidak ditemukan.'];
         }
 
-        if (($user['role'] ?? '') === 'ketua') {
-            return ['ok' => false, 'message' => 'Akun ketua tidak tertaut data warga; foto profil belum didukung di akun ini.'];
+        $role = $user['role'] ?? '';
+
+        if (in_array($role, ['ketua', 'pengurus'], true)) {
+            $db->table('users')->where('id', $userId)->update([
+                'foto'       => $path,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            // Sinkron ke data warga bila pengurus tertaut
+            if ($role === 'pengurus' && !empty($user['warga_id'])) {
+                $db->table('warga')->where('id', (int) $user['warga_id'])->update(['foto' => $path]);
+            }
+            $fresh = $db->table('users')->where('id', $userId)->get()->getRowArray();
+            return ['ok' => true, 'data' => $this->publicUser($fresh ?: $user)];
         }
 
+        // Warga: simpan di tabel warga
         $wargaId = $user['warga_id'] ? (int) $user['warga_id'] : null;
         if (!$wargaId && !empty($user['keluarga_id'])) {
             $kep = $db->table('warga')
@@ -328,9 +344,7 @@ class AuthService
             return ['ok' => false, 'message' => 'Data warga tidak tertaut ke akun.'];
         }
 
-        $db->table('warga')->where('id', $wargaId)->update([
-            'foto' => $path,
-        ]);
+        $db->table('warga')->where('id', $wargaId)->update(['foto' => $path]);
 
         $fresh = $db->table('users')->where('id', $userId)->get()->getRowArray();
         return ['ok' => true, 'data' => $this->publicUser($fresh ?: $user)];
