@@ -16,6 +16,7 @@ $routes->post('auth/logout', 'AuthController::logout');
 $routes->get('auth/me', 'AuthController::me', ['filter' => 'auth']);
 $routes->post('auth/change-credential', 'AuthController::changeCredential', ['filter' => 'auth']);
 $routes->post('auth/update-foto', 'AuthController::updateFoto', ['filter' => 'auth']);
+$routes->put('auth/profil', 'AuthController::updateProfil', ['filter' => 'auth']);
 $routes->get('auth/blok-login', 'PengaturanController::listBlokLogin');
 
 $routes->get('pengaturan', 'PengaturanController::index', ['filter' => 'auth']);
