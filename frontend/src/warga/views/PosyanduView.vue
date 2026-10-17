@@ -1,10 +1,10 @@
 <template>
   <div>
-    <AppBackHeader title="Posyandu" />
+    <AppBackHeader title="Kader RT 002" />
     <div class="px-1 py-8 text-center">
-      <p class="text-[15px] font-semibold text-[var(--text)] m-0">Posyandu</p>
+      <p class="text-[15px] font-semibold text-[var(--text)] m-0">Kader RT 002</p>
       <p class="text-[13px] text-[var(--mut)] m-0 mt-2 leading-relaxed">
-        Konten segera hadir. Jadwal, informasi, dan kegiatan posyandu akan ditampilkan di sini.
+        Konten segera hadir. Data dan informasi kader RT 002 akan ditampilkan di sini.
       </p>
     </div>
   </div>
