@@ -17,7 +17,6 @@ trait KeluargaHelpers
                 break;
             }
         }
-        // fallback: anggota aktif pertama yang punya foto
         if ($foto === null) {
             foreach ($anggota as $a) {
                 if ($a['status'] === 'aktif' && !empty($a['foto'])) {
@@ -88,17 +87,32 @@ trait KeluargaHelpers
         return $q->countAllResults() > 0;
     }
 
-    private function buatUsername(string $blok, string $nomor, string $akhiran): string
+    /**
+     * Username login warga = blok-nomorakhiran (lowercase).
+     * Suffix x1, x2… hanya jika username sudah dipakai akun LAIN.
+     *
+     * @param int|null $kecualiUserId ID user yang sedang di-update (jangan dianggap bentrok dengan dirinya sendiri)
+     */
+    private function buatUsername(string $blok, string $nomor, string $akhiran, ?int $kecualiUserId = null): string
     {
         $base = strtolower($blok . '-' . $nomor . $akhiran);
         $db = \Config\Database::connect();
         $u = $base;
         $i = 0;
-        while ($db->table('users')->where('username', $u)->countAllResults() > 0) {
+        while (true) {
+            $q = $db->table('users')->where('username', $u);
+            if ($kecualiUserId) {
+                $q->where('id !=', $kecualiUserId);
+            }
+            if ($q->countAllResults() === 0) {
+                return $u;
+            }
             $i++;
             $u = $base . 'x' . $i;
+            if ($i > 100) {
+                return $base . 'x' . time();
+            }
         }
-        return $u;
     }
 
     private function nonaktifkanPengurusDariWarga(int $wargaId, int $userId): void
