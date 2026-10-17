@@ -5,19 +5,28 @@
     <div class="flex flex-col items-center text-center mb-6 pt-2">
       <button
         type="button"
-        class="relative w-24 h-24 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden mb-3 active:scale-95 transition-transform"
+        class="relative w-24 h-24 mb-3 active:scale-95 transition-transform disabled:opacity-70"
         aria-label="Ubah foto profil"
-        @click="onFoto"
+        :disabled="uploadingFoto"
+        @click="pickFoto"
       >
-        <img v-if="foto" :src="foto" alt="Foto profil" class="w-full h-full object-cover" />
-        <span v-else>{{ inisial }}</span>
-        <span class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[var(--g)] text-white grid place-items-center border-2 border-[var(--bg)]">
+        <span
+          class="absolute inset-0 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-3xl font-bold overflow-hidden"
+        >
+          <img v-if="fotoUrl" :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" />
+          <span v-else>{{ inisial }}</span>
+        </span>
+        <span
+          class="absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full bg-[var(--g)] text-white grid place-items-center border-2 border-[var(--bg)] z-10 shadow-sm"
+        >
           <Camera :size="14" />
         </span>
       </button>
+      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFoto" />
       <p class="text-xl font-extrabold m-0">{{ user?.nama || 'Pengurus' }}</p>
       <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ user?.jabatan || user?.role || '—' }}</p>
       <p class="text-[13px] text-[var(--mut)] m-0">@{{ user?.username || '—' }}</p>
+      <p v-if="uploadingFoto" class="text-[12px] text-[var(--mut)] m-0 mt-1">Mengunggah foto…</p>
     </div>
 
     <div class="px-1 space-y-0.5">
@@ -50,7 +59,6 @@
 
     <p class="text-center text-[12px] text-[var(--mut)] mt-6 mb-2">rtdua · versi 0.1.0</p>
 
-    <!-- Sheet edit nama -->
     <div
       v-if="showNama"
       class="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
@@ -91,12 +99,17 @@ import { useAuth } from '@shared/composables/useAuth.js'
 import { useTheme } from '@shared/composables/useTheme.js'
 import { useToast } from '@shared/composables/useToast.js'
 import { api } from '@shared/api/http.js'
+import { updateFotoProfil } from '@shared/services/auth.js'
+import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
 
 const router = useRouter()
 const { user, logout, isKetua, ensureSession } = useAuth()
 const { mode, toggle } = useTheme()
 const { show } = useToast()
-const foto = ref(null)
+
+const fileInput = ref(null)
+const uploadingFoto = ref(false)
+const localFoto = ref('')
 
 const showNama = ref(false)
 const namaForm = ref('')
@@ -106,6 +119,12 @@ const namaSaving = ref(false)
 const inisial = computed(() => {
   const n = user.value?.nama || 'P'
   return n.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
+})
+
+const fotoUrl = computed(() => {
+  if (localFoto.value) return localFoto.value
+  const f = user.value?.foto
+  return f ? mediaUrl(f) : ''
 })
 
 const menus = computed(() => {
@@ -126,10 +145,9 @@ const menus = computed(() => {
       label: 'Ganti password',
       desc: 'Ubah kata sandi masuk',
       icon: KeyRound,
-      to: '/profil',
+      action: () => show('Ganti password menyusul'),
       bg: 'rgba(16,185,129,.18)',
       color: '#059669',
-      action: () => show('Ganti password menyusul'),
     },
     {
       label: 'Mode gelap',
@@ -172,6 +190,39 @@ const menus = computed(() => {
   return list
 })
 
+function pickFoto() {
+  if (uploadingFoto.value) return
+  fileInput.value?.click()
+}
+
+async function onFoto(e) {
+  const f = e.target.files?.[0]
+  e.target.value = ''
+  if (!f) return
+  uploadingFoto.value = true
+  const up = await uploadGambar(f, 'foto_profil', { maxSide: 800 })
+  if (!up.ok) {
+    uploadingFoto.value = false
+    show(up.error || 'Upload gagal')
+    return
+  }
+  const res = await updateFotoProfil(up.data.path)
+  uploadingFoto.value = false
+  if (!res.ok) {
+    show(res.error || 'Gagal menyimpan foto')
+    return
+  }
+  const updated = res.user || {}
+  if (user.value) {
+    Object.assign(user.value, updated)
+    try {
+      localStorage.setItem('rtdua-auth-pengurus', JSON.stringify(user.value))
+    } catch (err) {}
+  }
+  localFoto.value = updated.foto ? mediaUrl(updated.foto) : mediaUrl(up.data.path)
+  show('Foto profil diperbarui')
+}
+
 async function simpanNama() {
   namaErr.value = ''
   const n = String(namaForm.value || '').trim()
@@ -181,13 +232,10 @@ async function simpanNama() {
   }
   namaSaving.value = true
   try {
-    const res = await api('/auth/profil', { method: 'PUT', body: { nama: n } })
+    await api('/auth/profil', { method: 'PUT', body: { nama: n } })
     showNama.value = false
     show('Nama disimpan')
     await ensureSession('pengurus')
-    if (res?.data?.user) {
-      // ensureSession biasanya refresh; biarkan
-    }
   } catch (e) {
     namaErr.value = e.message || 'Gagal menyimpan'
   } finally {
@@ -195,9 +243,6 @@ async function simpanNama() {
   }
 }
 
-function onFoto() {
-  show('Upload foto menyusul (backend)')
-}
 function doLogout() {
   logout('pengurus')
   router.replace('/login')
