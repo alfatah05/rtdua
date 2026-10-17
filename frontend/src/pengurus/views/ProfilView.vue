@@ -2,7 +2,6 @@
   <div>
     <AppBackHeader title="Profil" />
 
-    <!-- Profile hero -->
     <div class="flex flex-col items-center text-center mb-6 pt-2">
       <button
         type="button"
@@ -50,6 +49,34 @@
     </button>
 
     <p class="text-center text-[12px] text-[var(--mut)] mt-6 mb-2">rtdua · versi 0.1.0</p>
+
+    <!-- Sheet edit nama -->
+    <div
+      v-if="showNama"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      @click.self="showNama = false"
+    >
+      <div class="w-full max-w-[560px] rounded-t-[24px] bg-[var(--bg)] p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))]">
+        <h2 class="text-[17px] font-extrabold m-0 mb-1">Ubah nama tampilan</h2>
+        <p class="text-[12px] text-[var(--mut)] m-0 mb-4">Username login tidak berubah ({{ user?.username }}).</p>
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nama</label>
+        <input
+          v-model="namaForm"
+          type="text"
+          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] border-0 outline-none text-[15px] mb-3"
+          placeholder="Nama lengkap"
+        />
+        <p v-if="namaErr" class="text-[13px] text-red-600 text-center mb-2">{{ namaErr }}</p>
+        <button
+          type="button"
+          class="w-full min-h-12 rounded-full font-bold text-white bg-[var(--g)] disabled:opacity-60"
+          :disabled="namaSaving"
+          @click="simpanNama"
+        >
+          {{ namaSaving ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -57,18 +84,24 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Camera, ChevronRight, KeyRound, Moon, Settings, Users, Info, Shield
+  Camera, ChevronRight, KeyRound, Moon, Settings, Users, Info, UserRound
 } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
 import { useTheme } from '@shared/composables/useTheme.js'
 import { useToast } from '@shared/composables/useToast.js'
+import { api } from '@shared/api/http.js'
 
 const router = useRouter()
-const { user, logout, isKetua } = useAuth()
+const { user, logout, isKetua, ensureSession } = useAuth()
 const { mode, toggle } = useTheme()
 const { show } = useToast()
 const foto = ref(null)
+
+const showNama = ref(false)
+const namaForm = ref('')
+const namaErr = ref('')
+const namaSaving = ref(false)
 
 const inisial = computed(() => {
   const n = user.value?.nama || 'P'
@@ -77,6 +110,18 @@ const inisial = computed(() => {
 
 const menus = computed(() => {
   const list = [
+    {
+      label: 'Ubah nama',
+      desc: 'Nama tampilan di profil & struktur',
+      icon: UserRound,
+      action: () => {
+        namaForm.value = user.value?.nama || ''
+        namaErr.value = ''
+        showNama.value = true
+      },
+      bg: 'rgba(16,185,129,.18)',
+      color: '#059669',
+    },
     {
       label: 'Ganti password',
       desc: 'Ubah kata sandi masuk',
@@ -126,6 +171,29 @@ const menus = computed(() => {
   })
   return list
 })
+
+async function simpanNama() {
+  namaErr.value = ''
+  const n = String(namaForm.value || '').trim()
+  if (!n) {
+    namaErr.value = 'Nama wajib diisi'
+    return
+  }
+  namaSaving.value = true
+  try {
+    const res = await api('/auth/profil', { method: 'PUT', body: { nama: n } })
+    showNama.value = false
+    show('Nama disimpan')
+    await ensureSession('pengurus')
+    if (res?.data?.user) {
+      // ensureSession biasanya refresh; biarkan
+    }
+  } catch (e) {
+    namaErr.value = e.message || 'Gagal menyimpan'
+  } finally {
+    namaSaving.value = false
+  }
+}
 
 function onFoto() {
   show('Upload foto menyusul (backend)')
