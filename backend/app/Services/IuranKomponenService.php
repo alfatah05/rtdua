@@ -163,6 +163,8 @@ class IuranKomponenService
     {
         $total = $this->syncNominalKas();
         $bulanIni = date('Y-m');
+        // Buat dulu tagihan kas untuk keluarga aktif yang belum punya (warga SQL/import)
+        $dibuat = (new TagihanService())->pastikanTagihanKasBulan($bulanIni, $total);
         $db = \Config\Database::connect();
         $db->table('iuran_tagihan')
             ->where('periode', $bulanIni)
@@ -178,7 +180,13 @@ class IuranKomponenService
             'periode' => $bulanIni,
             'nominal' => $total,
             'kk' => $n,
+            'baru_dibuat' => $dibuat,
         ], 'pengguna', true, $userId);
-        return ['ok' => true, 'data' => ['total' => $total, 'keluarga_terdampak' => $n, 'periode' => $bulanIni]];
+        return ['ok' => true, 'data' => [
+            'total' => $total,
+            'keluarga_terdampak' => $n,
+            'baru_dibuat' => $dibuat,
+            'periode' => $bulanIni,
+        ]];
     }
 }
