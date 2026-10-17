@@ -15,10 +15,19 @@ class Session extends BaseConfig
      */
     public string $cookieName = 'sesi_warga';
 
-    public int $expiration = 7200;
+    /**
+     * Lama sesi login (detik).
+     * 2592000 = 30 hari — biar warga/pengurus jarang login ulang.
+     * Sebelumnya 7200 (2 jam).
+     */
+    public int $expiration = 2592000;
+
     public string $savePath = WRITEPATH . 'session';
     public bool $matchIP = false;
-    public int $timeToUpdate = 300;
+
+    /** Regenerasi ID sesi tiap 1 hari (keamanan), tanpa memutus login. */
+    public int $timeToUpdate = 86400;
+
     public bool $regenerateDestroy = false;
 
     // Properti wajib CI4.5+ (hindari Error di PHP 8 saat session start)
