@@ -13,6 +13,8 @@ class TagihanService
 {
     /**
      * Ringkasan iuran satu keluarga.
+     * Otomatis memastikan tagihan kas bulan berjalan ada (aman untuk keluarga
+     * yang ditambah lewat SQL / tanpa lewat create app).
      *
      * @return array{
      *   keluarga_id:int,
@@ -26,6 +28,13 @@ class TagihanService
      */
     public function ringkasanKeluarga(int $keluargaId): array
     {
+        // Safety net: keluarga baru (SQL/app) tanpa tagihan kas bulan ini
+        try {
+            $this->pastikanTagihanKasKeluarga($keluargaId, date('Y-m'));
+        } catch (\Throwable $e) {
+            log_message('error', 'pastikanTagihanKasKeluarga: ' . $e->getMessage());
+        }
+
         $db = \Config\Database::connect();
         $tagihan = $db->table('iuran_tagihan t')
             ->select('t.*, ik.nama as nama_khusus')
@@ -64,7 +73,6 @@ class TagihanService
         foreach ($pembayaran as $p) {
             $nominal = (int) $p['nominal'];
             $totalBayar += $nominal;
-            // Checklist warga: alokasi hanya ke tagihan yang dipilih
             $hanyaIds = AlokasiPembayaran::parseIds($p['tagihan_ids'] ?? null);
             $alok = AlokasiPembayaran::alokasi($items, $nominal, $hanyaIds);
             foreach ($alok['potongan'] as $pot) {
@@ -157,43 +165,72 @@ class TagihanService
         ];
     }
 
-    public function pastikanTagihanKasBulan(string $periode, ?int $nominalOverride = null): int
+    /**
+     * Pastikan satu keluarga punya tagihan kas untuk periode.
+     * @return bool true jika baru dibuat
+     */
+    public function pastikanTagihanKasKeluarga(int $keluargaId, string $periode, ?int $nominalOverride = null): bool
     {
+        if ($keluargaId < 1 || !preg_match('/^\d{4}-\d{2}$/', $periode)) {
+            return false;
+        }
         $db = \Config\Database::connect();
+        $k = $db->table('keluarga')->where('id', $keluargaId)->where('status', 'aktif')->get()->getRowArray();
+        if (!$k) {
+            return false;
+        }
+        $mulai = $k['mulai_periode'];
+        if ($mulai === null || $mulai === '') {
+            $mulai = date('Y-m');
+        }
+        if (strcmp((string) $mulai, $periode) > 0) {
+            return false;
+        }
+
+        $ada = $db->table('iuran_tagihan')
+            ->where('keluarga_id', $keluargaId)
+            ->where('periode', $periode)
+            ->where('jenis', 'kas')
+            ->where('dibatalkan', 0)
+            ->countAllResults();
+        if ($ada > 0) {
+            return false;
+        }
+
         $peng = $db->table('pengaturan')->where('id', 1)->get()->getRowArray();
         $nominal = $nominalOverride !== null
             ? max(0, $nominalOverride)
             : (int) ($peng['nominal_kas'] ?? 0);
 
+        // Prefer total komponen aktif jika tersedia
+        try {
+            $totalKomp = (new IuranKomponenService())->totalAktif();
+            if ($totalKomp > 0 && $nominalOverride === null) {
+                $nominal = $totalKomp;
+            }
+        } catch (\Throwable $e) {
+        }
+
+        $db->table('iuran_tagihan')->insert([
+            'keluarga_id' => $keluargaId,
+            'periode'     => $periode,
+            'jenis'       => 'kas',
+            'nominal'     => $nominal,
+            'dibatalkan'  => 0,
+            'created_at'  => date('Y-m-d H:i:s'),
+        ]);
+        return true;
+    }
+
+    public function pastikanTagihanKasBulan(string $periode, ?int $nominalOverride = null): int
+    {
+        $db = \Config\Database::connect();
         $keluarga = $db->table('keluarga')->where('status', 'aktif')->get()->getResultArray();
         $dibuat = 0;
         foreach ($keluarga as $k) {
-            $mulai = $k['mulai_periode'];
-            // Kosong/null = ikut periode berjalan (bukan tunda ke bulan depan)
-            if ($mulai === null || $mulai === '') {
-                $mulai = date('Y-m');
+            if ($this->pastikanTagihanKasKeluarga((int) $k['id'], $periode, $nominalOverride)) {
+                $dibuat++;
             }
-            if (strcmp($mulai, $periode) > 0) {
-                continue;
-            }
-            $ada = $db->table('iuran_tagihan')
-                ->where('keluarga_id', (int) $k['id'])
-                ->where('periode', $periode)
-                ->where('jenis', 'kas')
-                ->where('dibatalkan', 0)
-                ->countAllResults();
-            if ($ada > 0) {
-                continue;
-            }
-            $db->table('iuran_tagihan')->insert([
-                'keluarga_id' => (int) $k['id'],
-                'periode'     => $periode,
-                'jenis'       => 'kas',
-                'nominal'     => $nominal,
-                'dibatalkan'  => 0,
-                'created_at'  => date('Y-m-d H:i:s'),
-            ]);
-            $dibuat++;
         }
         return $dibuat;
     }
@@ -294,6 +331,13 @@ class TagihanService
     public function daftarIuran(array $filter = []): array
     {
         $db = \Config\Database::connect();
+        // Pastikan semua keluarga aktif punya tagihan kas bulan ini
+        try {
+            $this->pastikanTagihanKasBulan(date('Y-m'));
+        } catch (\Throwable $e) {
+            log_message('error', 'pastikanTagihanKasBulan di daftarIuran: ' . $e->getMessage());
+        }
+
         $q = $db->table('keluarga k')
             ->select('k.id, k.blok_id, k.nomor, k.akhiran, k.status, b.nama as blok_nama')
             ->join('blok b', 'b.id = k.blok_id')
