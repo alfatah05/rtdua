@@ -9,7 +9,6 @@ use CodeIgniter\RESTful\ResourceController;
 
 class AuthController extends ResourceController
 {
-    /** Baca body JSON tanpa throw (CI getJSON() melempar HTTPException jika body kosong/rusak). */
     private function jsonBody(): array
     {
         $raw = $this->request->getBody();
@@ -117,6 +116,31 @@ class AuthController extends ResourceController
         } catch (\Throwable $e) {
             log_message('error', 'Auth updateFoto: ' . $e->getMessage());
             return ApiResponse::fail('Server error', 500);
+        }
+    }
+
+    /** Ubah nama tampilan / jabatan (ketua & pengurus). */
+    public function updateProfil()
+    {
+        try {
+            $side = SideContext::fromRequest();
+            if ($side !== 'pengurus') {
+                return ApiResponse::fail('Hanya aplikasi pengurus.', 403);
+            }
+            $auth = new AuthService();
+            $user = $auth->current($side);
+            if (!$user) {
+                return ApiResponse::fail('Unauthorized', 401);
+            }
+            $json = $this->jsonBody();
+            $res = $auth->updateProfil((int) $user['id'], $json);
+            if (!$res['ok']) {
+                return ApiResponse::fail($res['message'], 422);
+            }
+            return ApiResponse::ok(['user' => $res['data']], 'Profil disimpan');
+        } catch (\Throwable $e) {
+            log_message('error', 'Auth updateProfil: ' . $e->getMessage());
+            return ApiResponse::fail('Server error: ' . $e->getMessage(), 500);
         }
     }
 }
