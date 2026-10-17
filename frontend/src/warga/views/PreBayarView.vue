@@ -1,101 +1,203 @@
 <template>
   <div>
     <AppBackHeader title="Bayar tagihan" />
-
-    <p v-if="loading" class="text-[13px] text-[var(--mut)]">Memuat…</p>
-    <p v-else-if="err" class="text-[13px] text-red-600">{{ err }}</p>
-
+    <AppPageSpinner v-if="loading" />
+    <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else>
-      <section class="mb-4">
-        <h2 class="text-[15px] font-bold m-0 mb-2">Pilih tagihan</h2>
-        <div v-if="tagihanTerbuka.length" class="space-y-2">
+      <h2 class="text-[15px] font-bold m-0 mb-2">Pilih tagihan</h2>
+      <div
+        class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
+        style="padding: 5px"
+      >
+        <div
+          class="flex items-center justify-between px-3"
+          style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
+        >
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Jenis Pembayaran</span>
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Biaya</span>
+        </div>
+
+        <template v-if="tagihanTerbuka.length">
           <label
             v-for="t in tagihanTerbuka"
             :key="t.id"
-            class="flex items-start gap-3 p-3 rounded-2xl border border-[var(--line)] bg-white cursor-pointer"
+            class="flex items-center gap-3 py-2.5 cursor-pointer"
+            style="padding-left: 10px; padding-right: 10px"
           >
-            <input v-model="checked" type="checkbox" class="mt-1" :value="t.id" />
-            <div class="flex-1 min-w-0">
-              <p class="m-0 text-[14px] font-semibold text-[var(--text)]">{{ labelTagihan(t) }}</p>
-              <p class="m-0 text-[12px] text-[var(--mut)]">Sisa {{ formatRp(t.sisa ?? t.nominal) }}</p>
+            <input
+              v-model="checked"
+              type="checkbox"
+              class="w-5 h-5 rounded accent-[var(--g)] shrink-0"
+              :value="t.id"
+            />
+            <div
+              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+              :style="{ background: iconMeta(t.jenis).bg, color: iconMeta(t.jenis).color }"
+            >
+              <component :is="iconMeta(t.jenis).icon" :size="16" />
             </div>
+            <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">{{ labelTagihan(t) }}</p>
+            <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(t.sisa ?? t.nominal) }}</span>
           </label>
-        </div>
-        <p v-else class="text-[13px] text-[var(--mut)] m-0">Tidak ada tagihan terbuka</p>
-      </section>
 
-      <section class="mb-4">
-        <h2 class="text-[15px] font-bold m-0 mb-2">Metode pembayaran</h2>
-        <div class="space-y-2">
+          <div class="flex justify-end" style="padding: 2px 0 4px">
+            <div
+              class="inline-flex items-center justify-between gap-4 px-3 min-w-[48%]"
+              style="height: 30px; border-radius: 15px; background: rgba(245, 158, 11, 0.16)"
+            >
+              <span class="text-[12px] font-bold" style="color: #B45309">Total</span>
+              <span class="text-[13px] font-extrabold tabular-nums" style="color: #D97706">{{ rp(totalChecked) }}</span>
+            </div>
+          </div>
+        </template>
+        <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">Tidak ada tagihan terbuka</p>
+      </div>
+
+      <h2 class="text-[15px] font-bold m-0 mb-2">Metode pembayaran</h2>
+
+      <div v-if="grupQris.length" class="mb-2 space-y-2">
+        <label
+          v-for="r in grupQris"
+          :key="r.id"
+          class="flex items-center gap-3 p-4 rounded-[16px] border bg-[var(--card)] cursor-pointer"
+          :class="selectedId === r.id ? 'border-[var(--g)] shadow-[var(--sh)]' : 'border-[var(--line)]'"
+        >
+          <input v-model="selectedId" type="radio" class="accent-[var(--g)]" :value="r.id" />
+          <div class="w-10 h-10 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center shrink-0">
+            <QrCode :size="18" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-bold m-0 text-[14px]">{{ r.nama }}</p>
+            <p class="text-[12px] text-[var(--mut)] m-0">Scan QRIS merchant RT</p>
+          </div>
+        </label>
+      </div>
+
+      <div v-if="grupEwallet.length" class="mb-2 rounded-[16px] border border-[var(--line)] bg-[var(--card)] overflow-hidden">
+        <button type="button" class="w-full flex items-center gap-3 p-4 text-left" @click="openEw = !openEw">
+          <div class="w-10 h-10 rounded-full grid place-items-center shrink-0" style="background: rgba(236,72,153,.16); color: #DB2777">
+            <Wallet :size="18" />
+          </div>
+          <span class="flex-1 font-bold text-[14px]">E-wallet</span>
+          <ChevronDown :size="18" class="text-[var(--mut)] transition" :class="openEw ? 'rotate-180' : ''" />
+        </button>
+        <div v-show="openEw" class="px-3 pb-3 space-y-2">
           <label
-            v-for="r in rekening"
+            v-for="r in grupEwallet"
             :key="r.id"
-            class="flex items-center gap-3 p-3 rounded-2xl border border-[var(--line)] bg-white cursor-pointer"
-            :class="selectedId === r.id ? 'ring-2 ring-[var(--g)]' : ''"
+            class="flex items-center gap-3 p-3 rounded-[12px] border cursor-pointer"
+            :class="selectedId === r.id ? 'border-[var(--g)] bg-[var(--gd)]' : 'border-[var(--line)]'"
           >
             <input v-model="selectedId" type="radio" class="accent-[var(--g)]" :value="r.id" />
-            <div class="flex-1 min-w-0">
-              <p class="m-0 text-[14px] font-semibold">{{ r.nama }}</p>
-              <p class="m-0 text-[12px] text-[var(--mut)] uppercase">{{ r.jenis }}</p>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold m-0 text-[14px]">{{ r.nama }}</p>
+              <p class="text-[12px] text-[var(--mut)] m-0">{{ r.nomor || '—' }}</p>
             </div>
           </label>
         </div>
-      </section>
-
-      <div class="sticky bottom-0 -mx-4 px-4 py-3 bg-[var(--bg)] border-t border-[var(--line)]">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-[13px] text-[var(--mut)]">Total dipilih</span>
-          <span class="text-[16px] font-extrabold text-[var(--g)]">{{ formatRp(totalChecked) }}</span>
-        </div>
-        <button
-          type="button"
-          class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50"
-          :disabled="!canBayar"
-          @click="lanjut"
-        >
-          Lanjut
-        </button>
       </div>
+
+      <div v-if="grupBank.length" class="mb-4 rounded-[16px] border border-[var(--line)] bg-[var(--card)] overflow-hidden">
+        <button type="button" class="w-full flex items-center gap-3 p-4 text-left" @click="openBank = !openBank">
+          <div class="w-10 h-10 rounded-full grid place-items-center shrink-0" style="background: rgba(59,130,246,.16); color: #2563EB">
+            <Building2 :size="18" />
+          </div>
+          <span class="flex-1 font-bold text-[14px]">Transfer bank</span>
+          <ChevronDown :size="18" class="text-[var(--mut)] transition" :class="openBank ? 'rotate-180' : ''" />
+        </button>
+        <div v-show="openBank" class="px-3 pb-3 space-y-2">
+          <label
+            v-for="r in grupBank"
+            :key="r.id"
+            class="flex items-center gap-3 p-3 rounded-[12px] border cursor-pointer"
+            :class="selectedId === r.id ? 'border-[var(--g)] bg-[var(--gd)]' : 'border-[var(--line)]'"
+          >
+            <input v-model="selectedId" type="radio" class="accent-[var(--g)]" :value="r.id" />
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold m-0 text-[14px]">{{ r.nama }}</p>
+              <p class="text-[12px] text-[var(--mut)] m-0">{{ r.nomor || '—' }} · {{ r.atas_nama || '' }}</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <p v-if="!rekening.length" class="text-[13px] text-[var(--mut)] text-center mb-4">Belum ada metode pembayaran. Hubungi pengurus.</p>
+
+      <button
+        type="button"
+        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition disabled:opacity-50"
+        :disabled="!canBayar"
+        @click="lanjut"
+      >
+        Bayar {{ totalChecked > 0 ? rp(totalChecked) : '' }}
+      </button>
     </template>
   </div>
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Wallet, Home, ShieldAlert, Sparkles, QrCode, Building2, ChevronDown } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { portalRingkasan, portalListRekening } from '@shared/api/warga.js'
+import { portalRingkasan, portalListRekening } from '@shared/services/keuangan.js'
 
-const DRAFT_KEY = 'warga_bayar_draft'
+const DRAFT_KEY = 'rtdua_bayar_draft'
 const router = useRouter()
 const loading = ref(true)
 const err = ref('')
 const tagihan = ref([])
-const checked = ref([])
 const rekening = ref([])
+const checked = ref([])
 const selectedId = ref(null)
+const openEw = ref(false)
+const openBank = ref(false)
+
+const BULAN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+
+function rp(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
+}
+function bulanDariPeriode(periode) {
+  if (!periode || String(periode).length < 7) return ''
+  const m = Number(String(periode).slice(5, 7))
+  return BULAN[m] || String(periode)
+}
+function labelJenisDasar(jenis) {
+  if (jenis === 'kas') return 'Kas'
+  if (jenis === 'denda_ronda') return 'Denda ronda'
+  if (jenis === 'khusus') return 'Iuran khusus'
+  return jenis || 'Tagihan'
+}
+function labelTagihan(t) {
+  if (t.jenis === 'khusus' && t.nama) {
+    const bln = bulanDariPeriode(t.periode)
+    return bln ? `${t.nama} (${bln})` : t.nama
+  }
+  const jenis = labelJenisDasar(t.jenis)
+  const bln = bulanDariPeriode(t.periode)
+  return bln ? `${jenis} ${bln}` : jenis
+}
+function iconMeta(jenis) {
+  if (jenis === 'kas') return { icon: Home, bg: 'rgba(59,130,246,.16)', color: '#2563EB' }
+  if (jenis === 'denda_ronda') return { icon: ShieldAlert, bg: 'rgba(168,85,247,.16)', color: '#7C3AED' }
+  if (jenis === 'khusus') return { icon: Sparkles, bg: 'rgba(236,72,153,.16)', color: '#DB2777' }
+  return { icon: Wallet, bg: 'rgba(99,102,241,.14)', color: '#4F46E5' }
+}
 
 const tagihanTerbuka = computed(() =>
   (tagihan.value || []).filter((t) => Number(t.sisa ?? t.nominal ?? 0) > 0)
 )
-
 const totalChecked = computed(() =>
   tagihanTerbuka.value
     .filter((t) => checked.value.includes(t.id))
     .reduce((s, t) => s + Number(t.sisa ?? t.nominal ?? 0), 0)
 )
-
+const grupQris = computed(() => rekening.value.filter((r) => r.jenis === 'qris'))
+const grupEwallet = computed(() => rekening.value.filter((r) => r.jenis === 'ewallet'))
+const grupBank = computed(() => rekening.value.filter((r) => r.jenis === 'bank'))
 const canBayar = computed(() => checked.value.length > 0 && selectedId.value && totalChecked.value > 0)
-
-function formatRp(n) {
-  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
-}
-
-function labelTagihan(t) {
-  if (t.jenis === 'kas') return `Kas ${t.periode || ''}`
-  if (t.jenis === 'denda_ronda') return `Denda ronda ${t.periode || ''}`
-  return t.nama || t.jenis || 'Tagihan'
-}
 
 function lanjut() {
   const metode = rekening.value.find((r) => r.id === selectedId.value)
