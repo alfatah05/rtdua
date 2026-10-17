@@ -54,12 +54,53 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ChevronLeft, Bell, UserRound, Megaphone } from 'lucide-vue-next'
 import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
+/**
+ * Parent logis per route name (warga + pengurus yang share komponen ini).
+ * Back selalu ke parent, bukan history browser — supaya setelah submit/form
+ * tidak perlu tekan back berkali-kali.
+ */
+const PARENT_BY_ROUTE = {
+  // warga
+  'warga': '/',
+  'warga-detail': '/warga',
+  'keuangan': '/',
+  'data-keluarga': '/profil',
+  'data-keluarga-tambah': '/data-keluarga',
+  'data-keluarga-edit': '/data-keluarga',
+  'pengumuman': '/',
+  'pengumuman-detail': '/pengumuman',
+  'rincian-iuran': '/keuangan',
+  'transfer': '/rincian-iuran',
+  'bayar': '/rincian-iuran',
+  'bayar-detail': '/bayar',
+  'ronda': '/',
+  'bantuan': '/profil',
+  'notifikasi': '/',
+  'notifikasi-detail': '/notifikasi',
+  'ganti-pin': '/',
+  'program-detail': '/program',
+  'galeri': '/',
+  'galeri-detail': '/galeri',
+  'posyandu': '/',
+  'talim': '/',
+  // pengurus (nama route yang umum)
+  'warga-edit': '/warga',
+  'warga-tambah': '/warga',
+  'iuran-detail': '/iuran',
+  'kas-detail': '/kas',
+}
+
 const props = defineProps({
   title: { type: String, required: true },
+  /**
+   * Parent eksplisit (path atau name object).
+   * Prioritas tertinggi di atas PARENT_BY_ROUTE.
+   */
+  to: { type: [String, Object], default: null },
   /** Tampilkan aksi kanan (pengumuman/notif/profil). Default true. */
   showActions: { type: Boolean, default: true },
   /** Override icon notif. null = ikut showActions. */
@@ -81,7 +122,6 @@ const showPengumumanIcon = computed(() => {
   if (!props.showActions) return false
   if (props.showPengumuman === false) return false
   if (props.showPengumuman === true) return true
-  // default: hanya warga (pengurus kelola pengumuman lewat menu Lainnya)
   try {
     const h = String(location.hostname || '')
     if (h.includes('pengurus')) return false
@@ -115,7 +155,29 @@ onMounted(() => {
 })
 
 const router = useRouter()
+const route = useRoute()
+
+function resolveParent() {
+  if (props.to != null && props.to !== '') return props.to
+  const name = String(route.name || '')
+  if (name && PARENT_BY_ROUTE[name]) return PARENT_BY_ROUTE[name]
+  // path-based fallback (jika name tidak terdaftar)
+  const path = String(route.path || '')
+  if (path.startsWith('/data-keluarga/')) return '/data-keluarga'
+  if (path.startsWith('/pengumuman/')) return '/pengumuman'
+  if (path.startsWith('/notifikasi/')) return '/notifikasi'
+  if (path.startsWith('/warga/')) return '/warga'
+  if (path.startsWith('/program/')) return '/program'
+  if (path.startsWith('/galeri/')) return '/galeri'
+  if (path.startsWith('/bayar')) return '/rincian-iuran'
+  if (path === '/rincian-iuran') return '/keuangan'
+  if (path === '/keuangan' || path === '/ronda' || path === '/pengumuman') return '/'
+  return '/'
+}
+
 function goBack() {
-  router.back()
+  const parent = resolveParent()
+  // replace: tidak menumpuk history, back berikutnya tidak kembali ke child
+  router.replace(parent)
 }
 </script>
