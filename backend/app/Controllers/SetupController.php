@@ -39,9 +39,9 @@ class SetupController extends Controller
             $perumahan  = trim((string) ($json['nama_perumahan'] ?? ''));
             $username   = strtolower(trim((string) ($json['username'] ?? '')));
             $password   = (string) ($json['password'] ?? '');
-            $jabatanKetua = trim((string) ($json['nama_ketua'] ?? 'Ketua RT'));
-            if ($jabatanKetua === '') {
-                $jabatanKetua = 'Ketua RT';
+            $namaKetua  = trim((string) ($json['nama_ketua'] ?? ''));
+            if ($namaKetua === '') {
+                $namaKetua = $username;
             }
             $blokList   = $json['blok'] ?? ['AB1', 'AB2', 'AB11', 'AB12'];
             if (!is_array($blokList) || $blokList === []) {
@@ -79,14 +79,15 @@ class SetupController extends Controller
                 }
             }
 
-            // Akun ketua mandiri — TIDAK tertaut warga_id / keluarga_id
+            // Akun ketua mandiri — nama tampilan terpisah dari jabatan & username
             $db->table('users')->insert([
                 'role'                   => 'ketua',
                 'username'               => $username,
+                'nama'                   => $namaKetua,
                 'password_hash'          => password_hash($password, PASSWORD_DEFAULT),
                 'warga_id'               => null,
                 'keluarga_id'            => null,
-                'jabatan'                => $jabatanKetua,
+                'jabatan'                => 'Ketua RT',
                 'tampil_di_bantuan'      => 1,
                 'urutan_struktur'        => 1,
                 'is_developer'           => 0,
@@ -105,6 +106,7 @@ class SetupController extends Controller
                 (new AuditService())->log('setup_awal', 'pengaturan', 1, null, [
                     'nama_rt'        => $namaRt,
                     'username_ketua' => $username,
+                    'nama_ketua'     => $namaKetua,
                 ], 'pengguna', true, $userId);
             } catch (Throwable $e) {
             }
