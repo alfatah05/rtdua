@@ -8,7 +8,7 @@ class PengurusService
     {
         $db = \Config\Database::connect();
         $rows = $db->table('users u')
-            ->select('u.id, u.role, u.username, u.nama as nama_akun, u.jabatan, u.nomor_hp, u.tampil_di_bantuan, u.urutan_struktur, u.aktif, u.warga_id, w.nama as nama_warga, w.foto as foto_warga')
+            ->select('u.id, u.role, u.username, u.nama as nama_akun, u.foto as foto_akun, u.jabatan, u.nomor_hp, u.tampil_di_bantuan, u.urutan_struktur, u.aktif, u.warga_id, w.nama as nama_warga, w.foto as foto_warga')
             ->join('warga w', 'w.id = u.warga_id', 'left')
             ->whereIn('u.role', ['ketua', 'pengurus'])
             ->where('u.is_developer', 0)
@@ -18,6 +18,7 @@ class PengurusService
             ->getResultArray();
         return array_map(static function ($r) {
             $isKetua = ($r['role'] ?? '') === 'ketua';
+            $fotoAkun = !empty($r['foto_akun']) ? $r['foto_akun'] : null;
             if ($isKetua) {
                 $nama = trim((string) ($r['nama_akun'] ?? ''));
                 if ($nama === '') {
@@ -34,10 +35,10 @@ class PengurusService
                     'urutan_struktur'   => (int) $r['urutan_struktur'],
                     'aktif'             => (bool) $r['aktif'],
                     'warga_id'          => null,
-                    'foto'              => null,
+                    'foto'              => $fotoAkun,
                 ];
             }
-            $foto = $r['foto_warga'] ?? null;
+            $foto = $fotoAkun ?: ($r['foto_warga'] ?? null);
             if ($foto !== null && $foto === '') {
                 $foto = null;
             }
