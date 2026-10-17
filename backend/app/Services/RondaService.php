@@ -34,7 +34,9 @@ class RondaService
 
     /**
      * Index minggu template (1..N) untuk tanggal.
-     * Urutan kemunculan hari DI BULAN KALENDER ini (Jumat ke-1 = Minggu 1).
+     * Siklus kontinu (bukan reset tiap bulan kalender):
+     * Sabtu ke-5 → Minggu 1, Sabtu pertama bulan berikutnya → Minggu 2.
+     * Semua hari dalam minggu kalender yang sama memakai index minggu yang sama.
      */
     public function mingguDariTanggal(string $tanggal): int
     {
@@ -47,22 +49,15 @@ class RondaService
             return 1;
         }
 
-        $y = (int) date('Y', $ts);
-        $m = (int) date('n', $ts);
-        $day = (int) date('j', $ts);
-        $dow = (int) date('w', $ts);
-
-        $count = 0;
-        for ($d = 1; $d <= $day; $d++) {
-            $t = strtotime(sprintf('%04d-%02d-%02d 12:00:00', $y, $m, $d));
-            if ((int) date('w', $t) === $dow) {
-                $count++;
-            }
+        // Senin 6 Jan 2020 = minggu ke-0 (anchor stabil)
+        $epoch = strtotime('2020-01-06 12:00:00');
+        $days = (int) floor(($ts - $epoch) / 86400);
+        $weekIndex = (int) floor($days / 7);
+        $mod = $weekIndex % $n;
+        if ($mod < 0) {
+            $mod += $n;
         }
-        if ($count < 1) {
-            return 1;
-        }
-        return (($count - 1) % $n) + 1;
+        return $mod + 1;
     }
 
     private function labelMinggu(int $m): string
@@ -80,57 +75,23 @@ class RondaService
     {
         $db = \Config\Database::connect();
         $rows = $db->table('ronda_template_keluarga tk')
-            ->select('tk.keluarga_id, k.nomor, k.akhiran, b.nama as blok')
-            ->join('keluarga k', 'k.id = tk.keluarga_id', 'left')
+            ->select('k.id, k.nomor, k.akhiran, b.nama as blok_nama')
+            ->join('keluarga k', 'k.id = tk.keluarga_id')
             ->join('blok b', 'b.id = k.blok_id', 'left')
             ->where('tk.card_id', $cardId)
             ->get()->getResultArray();
         $out = [];
-        foreach ($rows as $k) {
-            $kid = (int) $k['keluarga_id'];
-            $nama = null;
-            $foto = null;
-            $kep = $db->table('warga')
-                ->select('nama, foto, hubungan')
-                ->where('keluarga_id', $kid)
-                ->where('status', 'aktif')
-                ->orderBy('id', 'ASC')
-                ->get()->getResultArray();
-            foreach ($kep as $w) {
-                $hub = strtolower((string) ($w['hubungan'] ?? ''));
-                if (str_contains($hub, 'kepala')) {
-                    $nama = $w['nama'];
-                    $foto = $w['foto'] ?? null;
-                    break;
-                }
-            }
-            if ($nama === null && $kep) {
-                $nama = $kep[0]['nama'] ?? null;
-                $foto = $kep[0]['foto'] ?? null;
-            }
-            $out[] = [
-                'keluarga_id' => $kid,
-                'nama' => $nama,
-                'alamat' => ($k['blok'] ?? '') . '-' . ($k['nomor'] ?? '') . ($k['akhiran'] ?? ''),
-                'foto' => $foto,
-            ];
-        }
-        return $out;
-    }
-
-    public function listJadwalTetap(): array
-    {
-        $this->ensureTemplateTables();
-        $db = \Config\Database::connect();
-        $rows = $db->table('ronda_jadwal_tetap')->orderBy('hari', 'ASC')->get()->getResultArray();
-        $out = [];
         foreach ($rows as $r) {
+            $kep = $db->table('warga')
+                ->where('keluarga_id', (int) $r['id'])
+                ->where('status', 'aktif')
+                ->where('hubungan', 'Kepala keluarga')
+                ->get()->getRowArray();
             $out[] = [
                 'id' => (int) $r['id'],
-                'hari' => (int) $r['hari'],
-                'jam_mulai' => $r['jam_mulai'],
-                'jam_selesai' => $r['jam_selesai'],
-                'keluarga' => [],
+                'nama' => $kep['nama'] ?? '—',
+                'alamat' => ($r['blok_nama'] ?? '') . '-' . ($r['nomor'] ?? '') . ($r['akhiran'] ?? ''),
+                'foto' => $kep['foto'] ?? null,
             ];
         }
         return $out;
@@ -158,33 +119,18 @@ class RondaService
         return $out;
     }
 
-    public function simpanJadwalTetap(array $data, int $userId): array
+    public function listJadwalTetap(): array
     {
-        $hari = (int) ($data['hari'] ?? -1);
-        if ($hari < 0 || $hari > 6) {
-            return ['ok' => false, 'message' => 'Hari 0–6 (Minggu–Sabtu).'];
-        }
         $db = \Config\Database::connect();
-        $jamM = $data['jam_mulai'] ?? '21:00:00';
-        $jamS = $data['jam_selesai'] ?? '00:00:00';
-        $hapus = !empty($data['hapus']) || (isset($data['aktif']) && !$data['aktif']);
-        $existing = $db->table('ronda_jadwal_tetap')->where('hari', $hari)->get()->getRowArray();
-        if ($hapus) {
-            if ($existing) {
-                $id = (int) $existing['id'];
-                $db->table('ronda_jadwal_tetap_keluarga')->where('jadwal_id', $id)->delete();
-                $db->table('ronda_jadwal_tetap')->where('id', $id)->delete();
-            }
-            return ['ok' => true, 'data' => ['id' => null, 'deleted' => true, 'hari' => $hari]];
-        }
-        if ($existing) {
-            $id = (int) $existing['id'];
-            $db->table('ronda_jadwal_tetap')->where('id', $id)->update(['jam_mulai' => $jamM, 'jam_selesai' => $jamS]);
-        } else {
-            $db->table('ronda_jadwal_tetap')->insert(['hari' => $hari, 'jam_mulai' => $jamM, 'jam_selesai' => $jamS]);
-            $id = (int) $db->insertID();
-        }
-        return ['ok' => true, 'data' => ['id' => $id, 'hari' => $hari]];
+        $rows = $db->table('ronda_jadwal_tetap')->orderBy('hari', 'ASC')->get()->getResultArray();
+        return array_map(static function ($r) {
+            return [
+                'id' => (int) $r['id'],
+                'hari' => (int) $r['hari'],
+                'jam_mulai' => $r['jam_mulai'],
+                'jam_selesai' => $r['jam_selesai'],
+            ];
+        }, $rows);
     }
 
     public function buatTemplateCards(array $data, int $userId): array
@@ -230,8 +176,9 @@ class RondaService
         if ($durasi === 'minggu' || $durasi === 'week' || $durasi === '0') {
             $nMinggu = 1;
         } else {
+            // 1 bulan = 4 card minggu (siklus 4 minggu, hari ke-5 pakai Minggu 1)
             $bulan = max(1, min(12, (int) $durasi));
-            $nMinggu = $bulan * 5;
+            $nMinggu = $bulan * 4;
         }
 
         $oldCards = $db->table('ronda_template_card')->get()->getResultArray();
@@ -240,8 +187,6 @@ class RondaService
             $key = ((int) $oc['minggu']) . '-' . ((int) $oc['hari']);
             $kids = $db->table('ronda_template_keluarga')->where('card_id', (int) $oc['id'])->get()->getResultArray();
             $oldKel[$key] = array_map(static fn ($x) => (int) $x['keluarga_id'], $kids);
-        }
-        foreach ($oldCards as $oc) {
             $db->table('ronda_template_keluarga')->where('card_id', (int) $oc['id'])->delete();
             $db->table('ronda_template_card')->where('id', (int) $oc['id'])->delete();
         }
@@ -264,96 +209,38 @@ class RondaService
             }
         }
 
-        return ['ok' => true, 'data' => [
+        return [
+            'ok' => true,
             'dibuat' => $dibuat,
             'minggu' => $nMinggu,
             'hari' => $hariReq,
             'cards' => $this->listTemplateCards(),
-        ]];
+        ];
     }
 
     public function simpanTemplateKeluarga(int $cardId, array $keluargaIds, int $userId): array
     {
         $this->ensureTemplateTables();
+        $db = \Config\Database::connect();
         if ($cardId < 1) {
             return ['ok' => false, 'message' => 'Card tidak valid.'];
         }
-        $db = \Config\Database::connect();
         $card = $db->table('ronda_template_card')->where('id', $cardId)->get()->getRowArray();
         if (!$card) {
             return ['ok' => false, 'message' => 'Card tidak ditemukan.'];
         }
-        $ids = array_values(array_unique(array_filter(array_map('intval', $keluargaIds), static fn ($x) => $x > 0)));
-        if ($ids) {
-            $valid = $db->table('keluarga')->select('id')->whereIn('id', $ids)->get()->getResultArray();
-            $ids = array_values(array_map(static fn ($r) => (int) $r['id'], $valid));
-        }
+        $ids = array_values(array_unique(array_map('intval', $keluargaIds)));
+        $ids = array_values(array_filter($ids, static fn ($x) => $x > 0));
         $db->table('ronda_template_keluarga')->where('card_id', $cardId)->delete();
         foreach ($ids as $kid) {
             $db->table('ronda_template_keluarga')->insert(['card_id' => $cardId, 'keluarga_id' => $kid]);
         }
-        return ['ok' => true, 'data' => [
+        return [
+            'ok' => true,
             'id' => $cardId,
-            'jumlah' => count($ids),
+            'keluarga_ids' => $ids,
             'keluarga' => $this->fetchCardKeluarga($cardId),
-        ]];
-    }
-
-    public function listJadwalKhusus(): array
-    {
-        $db = \Config\Database::connect();
-        $rows = $db->table('ronda_jadwal_khusus')->orderBy('tanggal', 'ASC')->get()->getResultArray();
-        $out = [];
-        foreach ($rows as $r) {
-            $kel = $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', $r['id'])->get()->getResultArray();
-            $out[] = [
-                'id' => (int) $r['id'],
-                'tanggal' => $r['tanggal'],
-                'jam_mulai' => $r['jam_mulai'],
-                'jam_selesai' => $r['jam_selesai'],
-                'keterangan' => $r['keterangan'],
-                'keluarga_ids' => array_map(static fn ($k) => (int) $k['keluarga_id'], $kel),
-            ];
-        }
-        return $out;
-    }
-
-    public function simpanJadwalKhusus(array $data, int $userId): array
-    {
-        $tanggal = $data['tanggal'] ?? '';
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
-            return ['ok' => false, 'message' => 'Tanggal wajib (YYYY-MM-DD).'];
-        }
-        if ($tanggal < date('Y-m-d')) {
-            return ['ok' => false, 'message' => 'Tanggal tidak boleh di masa lalu.'];
-        }
-        $db = \Config\Database::connect();
-        $jamM = $data['jam_mulai'] ?? '21:00:00';
-        $jamS = $data['jam_selesai'] ?? '00:00:00';
-        $ket = $data['keterangan'] ?? null;
-        $keluargaIds = array_values(array_filter(array_map('intval', $data['keluarga_ids'] ?? []), static fn ($x) => $x > 0));
-        $hapus = !empty($data['hapus']);
-        $existing = $db->table('ronda_jadwal_khusus')->where('tanggal', $tanggal)->get()->getRowArray();
-        if ($hapus) {
-            if ($existing) {
-                $id = (int) $existing['id'];
-                $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', $id)->delete();
-                $db->table('ronda_jadwal_khusus')->where('id', $id)->delete();
-            }
-            return ['ok' => true, 'data' => ['deleted' => true, 'tanggal' => $tanggal]];
-        }
-        if ($existing) {
-            $id = (int) $existing['id'];
-            $db->table('ronda_jadwal_khusus')->where('id', $id)->update(['jam_mulai' => $jamM, 'jam_selesai' => $jamS, 'keterangan' => $ket]);
-            $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', $id)->delete();
-        } else {
-            $db->table('ronda_jadwal_khusus')->insert(['tanggal' => $tanggal, 'jam_mulai' => $jamM, 'jam_selesai' => $jamS, 'keterangan' => $ket]);
-            $id = (int) $db->insertID();
-        }
-        foreach ($keluargaIds as $kid) {
-            $db->table('ronda_jadwal_khusus_keluarga')->insert(['jadwal_id' => $id, 'keluarga_id' => $kid]);
-        }
-        return ['ok' => true, 'data' => ['id' => $id, 'tanggal' => $tanggal]];
+        ];
     }
 
     public function kalender(string $periode): array
@@ -361,30 +248,36 @@ class RondaService
         if (!preg_match('/^\d{4}-\d{2}$/', $periode)) {
             $periode = date('Y-m');
         }
-        $db = \Config\Database::connect();
         $this->ensureTemplateTables();
+        $db = \Config\Database::connect();
+
         $tetap = $db->table('ronda_jadwal_tetap')->get()->getResultArray();
-        $active = array_fill_keys(array_map(static fn ($r) => (int) $r['hari'], $tetap), true);
+        $active = [];
         $jamByHari = [];
         foreach ($tetap as $t) {
-            $jamByHari[(int) $t['hari']] = $t;
+            $h = (int) $t['hari'];
+            $active[$h] = true;
+            $jamByHari[$h] = ['jam_mulai' => $t['jam_mulai'], 'jam_selesai' => $t['jam_selesai']];
         }
+
         $khususRows = $db->table('ronda_jadwal_khusus')->like('tanggal', $periode, 'after')->get()->getResultArray();
-        $khususMap = [];
         $khususKids = [];
         foreach ($khususRows as $k) {
-            $khususMap[$k['tanggal']] = $k;
             $kids = $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', (int) $k['id'])->get()->getResultArray();
             $khususKids[$k['tanggal']] = array_map(static fn ($x) => (int) $x['keluarga_id'], $kids);
         }
+
         $y = (int) substr($periode, 0, 4);
         $m = (int) substr($periode, 5, 2);
-        $last = (int) date('t', strtotime(sprintf('%04d-%02d-01 12:00:00', $y, $m)));
+        $daysInMonth = (int) date('t', strtotime(sprintf('%04d-%02d-01', $y, $m)));
         $out = [];
-        for ($d = 1; $d <= $last; $d++) {
+        for ($d = 1; $d <= $daysInMonth; $d++) {
             $tgl = sprintf('%04d-%02d-%02d', $y, $m, $d);
-            if (isset($khususMap[$tgl])) {
-                $k = $khususMap[$tgl];
+            if (isset($khususKids[$tgl]) || $db->table('ronda_jadwal_khusus')->where('tanggal', $tgl)->countAllResults() > 0) {
+                $k = $db->table('ronda_jadwal_khusus')->where('tanggal', $tgl)->get()->getRowArray();
+                if (!$k) {
+                    continue;
+                }
                 $out[] = [
                     'tanggal' => $tgl,
                     'sumber' => 'khusus',
@@ -449,10 +342,9 @@ class RondaService
             if ($keluargaId === null || $keluargaId < 1) {
                 return $detail;
             }
-            foreach ($detail['keluarga'] ?? [] as $k) {
-                if ((int) ($k['keluarga_id'] ?? 0) === $keluargaId) {
-                    return $detail;
-                }
+            $ids = $detail['keluarga_ids'] ?? [];
+            if (in_array($keluargaId, $ids, true)) {
+                return $detail;
             }
         }
         return null;
@@ -460,253 +352,179 @@ class RondaService
 
     public function detailMalam(string $tanggal): ?array
     {
+        $this->ensureTemplateTables();
+        $db = \Config\Database::connect();
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
             return null;
         }
-        $this->ensureTemplateTables();
-        $db = \Config\Database::connect();
-        $khusus = $db->table('ronda_jadwal_khusus')->where('tanggal', $tanggal)->get()->getRowArray();
-        $tetap = $db->table('ronda_jadwal_tetap')->get()->getResultArray();
-        $active = array_fill_keys(array_map(static fn ($r) => (int) $r['hari'], $tetap), true);
-        $w = (int) date('w', strtotime($tanggal . ' 12:00:00'));
-        if (!$khusus && !isset($active[$w])) {
-            $m0 = $db->table('ronda_malam')->where('tanggal', $tanggal)->get()->getRowArray();
-            if (!$m0) {
-                return null;
-            }
-        }
-        $sumber = $khusus ? 'khusus' : 'tetap';
+
+        $kh = $db->table('ronda_jadwal_khusus')->where('tanggal', $tanggal)->get()->getRowArray();
+        $sumber = 'tetap';
         $jamM = '21:00:00';
         $jamS = '00:00:00';
-        if ($khusus) {
-            $jamM = $khusus['jam_mulai'];
-            $jamS = $khusus['jam_selesai'];
+        $keluargaIds = [];
+
+        if ($kh) {
+            $sumber = 'khusus';
+            $jamM = $kh['jam_mulai'];
+            $jamS = $kh['jam_selesai'];
+            $kids = $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', (int) $kh['id'])->get()->getResultArray();
+            $keluargaIds = array_map(static fn ($x) => (int) $x['keluarga_id'], $kids);
         } else {
-            foreach ($tetap as $t) {
-                if ((int) $t['hari'] === $w) {
-                    $jamM = $t['jam_mulai'];
-                    $jamS = $t['jam_selesai'];
-                    break;
-                }
+            $w = (int) date('w', strtotime($tanggal . ' 12:00:00'));
+            $tetap = $db->table('ronda_jadwal_tetap')->where('hari', $w)->get()->getRowArray();
+            if (!$tetap) {
+                return null;
             }
-        }
-        $m = $db->table('ronda_malam')->where('tanggal', $tanggal)->get()->getRowArray();
-        if (!$m) {
-            $db->table('ronda_malam')->insert([
-                'tanggal' => $tanggal,
-                'jam_mulai' => $jamM,
-                'jam_selesai' => $jamS,
-                'sumber' => $sumber,
-            ]);
-            $m = $db->table('ronda_malam')->where('tanggal', $tanggal)->get()->getRowArray();
-        }
-        $mid = (int) $m['id'];
-        $keluarga = [];
-        if ($khusus) {
-            $kel = $db->table('ronda_jadwal_khusus_keluarga jk')
-                ->select('jk.keluarga_id, k.nomor, k.akhiran, b.nama as blok')
-                ->join('keluarga k', 'k.id = jk.keluarga_id', 'left')
-                ->join('blok b', 'b.id = k.blok_id', 'left')
-                ->where('jk.jadwal_id', (int) $khusus['id'])
-                ->get()->getResultArray();
-            foreach ($kel as $k) {
-                $kid = (int) $k['keluarga_id'];
-                $nama = null;
-                $foto = null;
-                $kep = $db->table('warga')->select('nama, foto, hubungan')->where('keluarga_id', $kid)->where('status', 'aktif')->orderBy('id', 'ASC')->get()->getResultArray();
-                foreach ($kep as $ww) {
-                    if (str_contains(strtolower((string) ($ww['hubungan'] ?? '')), 'kepala')) {
-                        $nama = $ww['nama'];
-                        $foto = $ww['foto'] ?? null;
-                        break;
-                    }
-                }
-                if ($nama === null && $kep) {
-                    $nama = $kep[0]['nama'] ?? null;
-                    $foto = $kep[0]['foto'] ?? null;
-                }
-                $keluarga[] = [
-                    'keluarga_id' => $kid,
-                    'nama' => $nama,
-                    'alamat' => ($k['blok'] ?? '') . '-' . ($k['nomor'] ?? '') . ($k['akhiran'] ?? ''),
-                    'foto' => $foto,
-                ];
-            }
-        } else {
+            $jamM = $tetap['jam_mulai'];
+            $jamS = $tetap['jam_selesai'];
             $minggu = $this->mingguDariTanggal($tanggal);
             $card = $db->table('ronda_template_card')->where('minggu', $minggu)->where('hari', $w)->get()->getRowArray();
             if ($card) {
-                $keluarga = $this->fetchCardKeluarga((int) $card['id']);
+                $kids = $db->table('ronda_template_keluarga')->where('card_id', (int) $card['id'])->get()->getResultArray();
+                $keluargaIds = array_map(static fn ($x) => (int) $x['keluarga_id'], $kids);
             }
         }
 
-        $absenRows = $db->table('ronda_absen')->where('malam_id', $mid)->get()->getResultArray();
-        $absenByKel = [];
-        foreach ($absenRows as $a) {
-            $absenByKel[(int) $a['keluarga_id']] = $a;
-        }
-        $periode = substr($tanggal, 0, 7);
-        $terkunci = (bool) $db->table('ronda_kunci_bulan')->where('periode', $periode)->get()->getRowArray();
-
-        $keluargaOut = [];
-        foreach ($keluarga as $kk) {
-            $kid = (int) $kk['keluarga_id'];
-            $ab = $absenByKel[$kid] ?? null;
-            $keluargaOut[] = [
-                'keluarga_id' => $kid,
-                'nama' => $kk['nama'] ?? null,
-                'alamat' => $kk['alamat'] ?? '',
-                'foto' => $kk['foto'] ?? null,
-                'status' => $ab ? 'hadir' : 'belum',
-                'absen' => $ab ? [
-                    'id' => (int) $ab['id'],
-                    'via' => $ab['via'] ?? 'manual',
-                    'waktu' => $ab['created_at'] ?? null,
-                    'foto' => $ab['foto'] ?? null,
-                ] : null,
+        $keluarga = [];
+        foreach ($keluargaIds as $kid) {
+            $k = $db->table('keluarga k')
+                ->select('k.id, k.nomor, k.akhiran, b.nama as blok_nama')
+                ->join('blok b', 'b.id = k.blok_id', 'left')
+                ->where('k.id', $kid)
+                ->get()->getRowArray();
+            if (!$k) {
+                continue;
+            }
+            $kep = $db->table('warga')
+                ->where('keluarga_id', $kid)
+                ->where('status', 'aktif')
+                ->where('hubungan', 'Kepala keluarga')
+                ->get()->getRowArray();
+            $abs = $db->table('ronda_absen')->where('tanggal', $tanggal)->where('keluarga_id', $kid)->get()->getRowArray();
+            $keluarga[] = [
+                'id' => $kid,
+                'nama' => $kep['nama'] ?? '—',
+                'alamat' => ($k['blok_nama'] ?? '') . '-' . ($k['nomor'] ?? '') . ($k['akhiran'] ?? ''),
+                'foto' => $kep['foto'] ?? null,
+                'status_absen' => $abs['status'] ?? null,
+                'waktu_absen' => $abs['waktu'] ?? null,
             ];
         }
 
+        $periode = substr($tanggal, 0, 7);
+        $kunci = $db->table('ronda_kunci_bulan')->where('periode', $periode)->get()->getRowArray();
+
         return [
-            'id' => $mid,
             'tanggal' => $tanggal,
+            'sumber' => $sumber,
             'jam_mulai' => $jamM,
             'jam_selesai' => $jamS,
-            'sumber' => $sumber,
-            'keluarga' => $keluargaOut,
-            'terkunci' => $terkunci,
-            'bulan_terkunci' => $terkunci,
+            'keluarga_ids' => $keluargaIds,
+            'keluarga' => $keluarga,
+            'terkunci' => (bool) $kunci,
         ];
     }
 
-    public function gantiKeluargaMalam(int $malamId, array $keluargaIds, int $userId): array
+    public function gantiKeluargaMalam(string $tanggal, array $keluargaIds, int $userId): array
     {
-        if ($malamId < 1) {
-            return ['ok' => false, 'message' => 'Malam tidak valid.'];
-        }
         $db = \Config\Database::connect();
-        $m = $db->table('ronda_malam')->where('id', $malamId)->get()->getRowArray();
-        if (!$m) {
-            return ['ok' => false, 'message' => 'Malam tidak ditemukan.'];
-        }
-        $tanggal = $m['tanggal'];
-        $ids = array_values(array_unique(array_filter(array_map('intval', $keluargaIds), static fn ($x) => $x > 0)));
-        if ($ids) {
-            $valid = $db->table('keluarga')->select('id')->whereIn('id', $ids)->get()->getResultArray();
-            $ids = array_values(array_map(static fn ($r) => (int) $r['id'], $valid));
-        }
-        $db->table('ronda_malam_keluarga')->where('malam_id', $malamId)->delete();
-        foreach ($ids as $kid) {
-            $db->table('ronda_malam_keluarga')->insert(['malam_id' => $malamId, 'keluarga_id' => $kid]);
-        }
-        $khusus = $db->table('ronda_jadwal_khusus')->where('tanggal', $tanggal)->get()->getRowArray();
-        if ($khusus) {
-            $jid = (int) $khusus['id'];
-            $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', $jid)->delete();
+        $ids = array_values(array_unique(array_map('intval', $keluargaIds)));
+        $ids = array_values(array_filter($ids, static fn ($x) => $x > 0));
+
+        $kh = $db->table('ronda_jadwal_khusus')->where('tanggal', $tanggal)->get()->getRowArray();
+        if ($kh) {
+            $db->table('ronda_jadwal_khusus_keluarga')->where('jadwal_id', (int) $kh['id'])->delete();
+            foreach ($ids as $kid) {
+                $db->table('ronda_jadwal_khusus_keluarga')->insert(['jadwal_id' => (int) $kh['id'], 'keluarga_id' => $kid]);
+            }
+        } else {
+            $db->table('ronda_jadwal_khusus')->insert([
+                'tanggal' => $tanggal,
+                'jam_mulai' => '21:00:00',
+                'jam_selesai' => '00:00:00',
+                'catatan' => 'Ganti keluarga malam',
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
+            $jid = (int) $db->insertID();
             foreach ($ids as $kid) {
                 $db->table('ronda_jadwal_khusus_keluarga')->insert(['jadwal_id' => $jid, 'keluarga_id' => $kid]);
             }
+        }
+
+        try {
+            (new AuditService())->log('ganti_keluarga_ronda', 'ronda', null, null, [
+                'tanggal' => $tanggal,
+                'keluarga_ids' => $ids,
+            ], 'pengguna', true, $userId);
+        } catch (\Throwable $e) {
+        }
+
+        return ['ok' => true, 'data' => $this->detailMalam($tanggal)];
+    }
+
+    public function absen(string $tanggal, int $keluargaId, string $status, int $userId): array
+    {
+        if (!in_array($status, ['hadir', 'izin', 'alfa'], true)) {
+            return ['ok' => false, 'message' => 'Status absen tidak valid.'];
+        }
+        $db = \Config\Database::connect();
+        $exist = $db->table('ronda_absen')->where('tanggal', $tanggal)->where('keluarga_id', $keluargaId)->get()->getRowArray();
+        if ($exist) {
+            $db->table('ronda_absen')->where('id', (int) $exist['id'])->update([
+                'status' => $status,
+                'waktu' => date('Y-m-d H:i:s'),
+                'oleh_user_id' => $userId,
+            ]);
         } else {
-            $w = (int) date('w', strtotime($tanggal . ' 12:00:00'));
-            $minggu = $this->mingguDariTanggal($tanggal);
-            $card = $db->table('ronda_template_card')->where('minggu', $minggu)->where('hari', $w)->get()->getRowArray();
-            if ($card) {
-                $cid = (int) $card['id'];
-                $db->table('ronda_template_keluarga')->where('card_id', $cid)->delete();
-                foreach ($ids as $kid) {
-                    $db->table('ronda_template_keluarga')->insert(['card_id' => $cid, 'keluarga_id' => $kid]);
-                }
-            }
+            $db->table('ronda_absen')->insert([
+                'tanggal' => $tanggal,
+                'keluarga_id' => $keluargaId,
+                'status' => $status,
+                'waktu' => date('Y-m-d H:i:s'),
+                'oleh_user_id' => $userId,
+            ]);
         }
         return ['ok' => true, 'data' => $this->detailMalam($tanggal)];
     }
 
-    public function absenManual(int $malamId, int $keluargaId, int $userId): array
+    public function terbitkanDenda(int $userId): array
     {
-        if ($malamId < 1 || $keluargaId < 1) {
-            return ['ok' => false, 'message' => 'Data tidak valid.'];
-        }
         $db = \Config\Database::connect();
-        $exist = $db->table('ronda_absen')->where('malam_id', $malamId)->where('keluarga_id', $keluargaId)->get()->getRowArray();
-        if ($exist) {
-            return ['ok' => true];
+        $periodeLalu = date('Y-m', strtotime('first day of last month'));
+        $periodeTagihan = date('Y-m');
+        $existKunci = $db->table('ronda_kunci_bulan')->where('periode', $periodeLalu)->get()->getRowArray();
+        if ($existKunci) {
+            return ['ok' => false, 'message' => 'Denda periode ' . $periodeLalu . ' sudah diterbitkan.'];
         }
-        $db->table('ronda_absen')->insert([
-            'malam_id' => $malamId,
-            'keluarga_id' => $keluargaId,
-            'via' => 'manual',
-            'created_at' => date('Y-m-d H:i:s'),
-        ]);
-        return ['ok' => true];
-    }
 
-    public function absenWarga(int $malamId, int $keluargaId, string $foto): array
-    {
-        if ($malamId < 1 || $keluargaId < 1) {
-            return ['ok' => false, 'message' => 'Data tidak valid.'];
-        }
-        $db = \Config\Database::connect();
-        $m = $db->table('ronda_malam')->where('id', $malamId)->get()->getRowArray();
-        if (!$m) {
-            return ['ok' => false, 'message' => 'Malam tidak ditemukan.'];
-        }
-        $exist = $db->table('ronda_absen')->where('malam_id', $malamId)->where('keluarga_id', $keluargaId)->get()->getRowArray();
-        if ($exist) {
-            return ['ok' => false, 'message' => 'Sudah absen.'];
-        }
-        $db->table('ronda_absen')->insert([
-            'malam_id' => $malamId,
-            'keluarga_id' => $keluargaId,
-            'via' => 'foto',
-            'foto' => $foto,
-            'created_at' => date('Y-m-d H:i:s'),
-        ]);
-        return ['ok' => true, 'data' => ['id' => (int) $db->insertID()]];
-    }
-
-    public function batalkanAbsen(int $absenId, int $userId): array
-    {
-        $db = \Config\Database::connect();
-        $db->table('ronda_absen')->where('id', $absenId)->delete();
-        return ['ok' => true];
-    }
-
-    public function terbitkanDenda(string $periodeLalu, string $periodeTagihan): array
-    {
-        $db = \Config\Database::connect();
-        if (!preg_match('/^\d{4}-\d{2}$/', $periodeLalu) || !preg_match('/^\d{4}-\d{2}$/', $periodeTagihan)) {
-            return ['ok' => false, 'message' => 'Format periode YYYY-MM.'];
-        }
-        $locked = $db->table('ronda_kunci_bulan')->where('periode', $periodeLalu)->get()->getRowArray();
-        if ($locked) {
-            return ['ok' => false, 'message' => 'Periode sudah dikunci.'];
-        }
-        $settings = $db->table('pengaturan')->where('kunci', 'denda_ronda')->get()->getRowArray();
-        $nominal = (int) ($settings['nilai'] ?? 25000);
+        $peng = $db->table('pengaturan')->where('id', 1)->get()->getRowArray();
+        $nominal = (int) ($peng['denda_ronda'] ?? 0);
         if ($nominal < 1) {
-            $nominal = 25000;
+            return ['ok' => false, 'message' => 'Nominal denda ronda belum diatur.'];
         }
-        $start = $periodeLalu . '-01';
-        $end = date('Y-m-t', strtotime($start));
-        $malams = $db->table('ronda_malam')->where('tanggal >=', $start)->where('tanggal <=', $end)->get()->getResultArray();
+
+        $y = (int) substr($periodeLalu, 0, 4);
+        $m = (int) substr($periodeLalu, 5, 2);
+        $days = (int) date('t', strtotime($periodeLalu . '-01'));
         $dendaCount = 0;
         $totalNominal = 0;
         $notified = [];
-        foreach ($malams as $malam) {
-            $mid = (int) $malam['id'];
-            $tgl = $malam['tanggal'];
+
+        for ($d = 1; $d <= $days; $d++) {
+            $tgl = sprintf('%04d-%02d-%02d', $y, $m, $d);
             $detail = $this->detailMalam($tgl);
             if (!$detail) {
                 continue;
             }
-            foreach ($detail['keluarga'] ?? [] as $kk) {
-                if (($kk['status'] ?? '') === 'hadir') {
+            foreach ($detail['keluarga'] ?? [] as $k) {
+                $st = $k['status_absen'] ?? null;
+                if ($st === 'hadir' || $st === 'izin') {
                     continue;
                 }
-                $kid = (int) $kk['keluarga_id'];
+                $kid = (int) $k['id'];
                 $exist = $db->table('iuran_tagihan')
                     ->where('keluarga_id', $kid)
-                    ->where('periode', $periodeTagihan)
                     ->where('jenis', 'denda_ronda')
                     ->where('ref_tanggal', $tgl)
                     ->get()->getRowArray();
