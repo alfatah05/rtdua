@@ -40,7 +40,6 @@ class AuthService
             }
         }
 
-        // Ketua: akun pengurus mandiri — lepas tautan warga/keluarga jika masih ada
         $user = $this->detachKetuaDariWarga($user);
 
         $this->recordAttempt($usernameNorm, $side, true);
@@ -49,7 +48,6 @@ class AuthService
         try {
             (new AuditService())->log('login', 'users', $user['id'], null, ['side' => $side], 'pengguna', true, (int) $user['id']);
         } catch (\Throwable $e) {
-            // jangan gagalkan login
         }
 
         return [
@@ -130,6 +128,53 @@ class AuthService
         return ['ok' => true, 'message' => 'Kredensial diperbarui.'];
     }
 
+    /**
+     * Ubah nama tampilan (dan opsional jabatan/nomor_hp) akun ketua/pengurus.
+     */
+    public function updateProfil(int $userId, array $data): array
+    {
+        $db = \Config\Database::connect();
+        $user = $db->table('users')->where('id', $userId)->where('aktif', 1)->get()->getRowArray();
+        if (!$user) {
+            return ['ok' => false, 'message' => 'Akun tidak ditemukan.'];
+        }
+        if (!in_array($user['role'] ?? '', ['ketua', 'pengurus'], true)) {
+            return ['ok' => false, 'message' => 'Hanya akun pengurus/ketua.'];
+        }
+
+        $update = [];
+        if (array_key_exists('nama', $data)) {
+            $nama = trim((string) $data['nama']);
+            if ($nama === '') {
+                return ['ok' => false, 'message' => 'Nama tidak boleh kosong.'];
+            }
+            if (mb_strlen($nama) > 128) {
+                return ['ok' => false, 'message' => 'Nama terlalu panjang.'];
+            }
+            $update['nama'] = $nama;
+        }
+        if (array_key_exists('jabatan', $data) && ($user['role'] ?? '') === 'ketua') {
+            $jab = trim((string) $data['jabatan']);
+            $update['jabatan'] = $jab !== '' ? $jab : 'Ketua RT';
+        }
+        if (array_key_exists('nomor_hp', $data)) {
+            $hp = trim((string) ($data['nomor_hp'] ?? ''));
+            $update['nomor_hp'] = $hp !== '' ? $hp : null;
+        }
+        if ($update === []) {
+            return ['ok' => false, 'message' => 'Tidak ada perubahan.'];
+        }
+        $update['updated_at'] = date('Y-m-d H:i:s');
+        $db->table('users')->where('id', $userId)->update($update);
+
+        $fresh = $db->table('users')->where('id', $userId)->get()->getRowArray();
+        try {
+            (new AuditService())->log('ubah_profil', 'users', $userId, null, $update, 'pengguna', true, $userId);
+        } catch (\Throwable $e) {
+        }
+        return ['ok' => true, 'data' => $this->publicUser($fresh ?: $user)];
+    }
+
     private function startSession(string $side, array $user): void
     {
         $session = session();
@@ -141,10 +186,6 @@ class AuthService
         ]);
     }
 
-    /**
-     * Ketua = akun pengurus mandiri, tidak terhubung ke akun keluarga/warga.
-     * Membersihkan tautan lama di DB (self-heal).
-     */
     private function detachKetuaDariWarga(array $user): array
     {
         if (($user['role'] ?? '') !== 'ketua') {
@@ -170,11 +211,12 @@ class AuthService
         $role = $user['role'] ?? '';
         $isKetua = $role === 'ketua';
 
-        // Ketua: nama dari jabatan/username saja — tidak ambil dari data warga
+        // Ketua: nama tampilan dari kolom users.nama → fallback username (BUKAN jabatan)
         if ($isKetua) {
-            $nama = !empty($user['jabatan'])
-                ? $user['jabatan']
-                : $user['username'];
+            $nama = trim((string) ($user['nama'] ?? ''));
+            if ($nama === '') {
+                $nama = $user['username'];
+            }
             return [
                 'id'                     => (int) $user['id'],
                 'username'               => $user['username'],
@@ -182,7 +224,7 @@ class AuthService
                 'alamat'                 => null,
                 'foto'                   => null,
                 'role'                   => $role,
-                'jabatan'                => $user['jabatan'],
+                'jabatan'                => $user['jabatan'] ?: 'Ketua RT',
                 'keluarga_id'            => null,
                 'warga_id'               => null,
                 'is_developer'           => (bool) $user['is_developer'],
@@ -190,9 +232,12 @@ class AuthService
             ];
         }
 
-        $nama = $user['jabatan']
-            ? ($user['username'] . ' · ' . $user['jabatan'])
-            : $user['username'];
+        $nama = trim((string) ($user['nama'] ?? ''));
+        if ($nama === '') {
+            $nama = $user['jabatan']
+                ? ($user['username'] . ' · ' . $user['jabatan'])
+                : $user['username'];
+        }
         $alamat = null;
         $foto = null;
         $wargaId = $user['warga_id'] ? (int) $user['warga_id'] : null;
@@ -237,13 +282,6 @@ class AuthService
             }
         }
 
-        if ($role === 'pengurus' && $user['jabatan'] && $wargaId) {
-            $w = $db->table('warga')->select('nama')->where('id', $wargaId)->get()->getRowArray();
-            if ($w && !empty($w['nama'])) {
-                $nama = $w['nama'];
-            }
-        }
-
         return [
             'id'                     => (int) $user['id'],
             'username'               => $user['username'],
@@ -271,7 +309,6 @@ class AuthService
             return ['ok' => false, 'message' => 'Akun tidak ditemukan.'];
         }
 
-        // Ketua tidak tertaut warga — foto profil via tautan warga tidak tersedia
         if (($user['role'] ?? '') === 'ketua') {
             return ['ok' => false, 'message' => 'Akun ketua tidak tertaut data warga; foto profil belum didukung di akun ini.'];
         }
