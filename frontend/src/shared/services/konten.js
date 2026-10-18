@@ -1,18 +1,17 @@
-import { api, USE_MOCK } from './api.js'
+import { api } from '../api/http.js'
+import { USE_MOCK } from '../config/dataSource.js'
 
-export async function listPengumuman(params = {}) {
+export async function listPengumuman({ beranda = false } = {}) {
   if (USE_MOCK.konten) return { ok: true, data: [] }
   try {
-    const q = new URLSearchParams()
-    if (params.beranda) q.set('beranda', '1')
-    const qs = q.toString()
-    const res = await api('/pengumuman' + (qs ? '?' + qs : ''))
+    const res = await api('/pengumuman' + (beranda ? '?beranda=1' : ''))
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 export async function detailPengumuman(id) {
+  if (USE_MOCK.konten) return { ok: false, error: 'mock' }
   try {
     const res = await api('/pengumuman/' + id)
     return { ok: true, data: res.data }
