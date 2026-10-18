@@ -58,13 +58,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ChevronLeft, Bell, UserRound, Megaphone } from 'lucide-vue-next'
 import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 
-/**
- * Parent logis per route name (warga + pengurus yang share komponen ini).
- * Back selalu ke parent, bukan history browser — supaya setelah submit/form
- * tidak perlu tekan back berkali-kali.
- */
 const PARENT_BY_ROUTE = {
-  // warga
   'warga': '/',
   'warga-detail': '/warga',
   'keuangan': '/',
@@ -87,11 +81,13 @@ const PARENT_BY_ROUTE = {
   'galeri-detail': '/galeri',
   'posyandu': '/',
   'posyandu-detail': '/posyandu',
+  'posyandu-item': '/posyandu/detail',
   'posyandu-pengajian': '/posyandu',
+  'posyandu-pengajian-item': '/posyandu/pengajian',
   'posyandu-lingkungan': '/posyandu',
+  'posyandu-lingkungan-item': '/posyandu/lingkungan',
   'talim': '/',
   'talim-jadwal': '/talim',
-  // pengurus (nama route yang umum)
   'warga-edit': '/warga',
   'warga-tambah': '/warga',
   'iuran-detail': '/iuran',
@@ -100,18 +96,10 @@ const PARENT_BY_ROUTE = {
 
 const props = defineProps({
   title: { type: String, required: true },
-  /**
-   * Parent eksplisit (path atau name object).
-   * Prioritas tertinggi di atas PARENT_BY_ROUTE.
-   */
   to: { type: [String, Object], default: null },
-  /** Tampilkan aksi kanan (pengumuman/notif/profil). Default true. */
   showActions: { type: Boolean, default: true },
-  /** Override icon notif. null = ikut showActions. */
   showNotif: { type: Boolean, default: null },
-  /** Override icon profil. null = auto (warga=false, pengurus=true). */
   showProfil: { type: Boolean, default: null },
-  /** Icon pengumuman. null = auto (warga=true, pengurus=false). */
   showPengumuman: { type: Boolean, default: null },
 })
 
@@ -165,7 +153,6 @@ function resolveParent() {
   if (props.to != null && props.to !== '') return props.to
   const name = String(route.name || '')
   if (name && PARENT_BY_ROUTE[name]) return PARENT_BY_ROUTE[name]
-  // path-based fallback (jika name tidak terdaftar)
   const path = String(route.path || '')
   if (path.startsWith('/data-keluarga/')) return '/data-keluarga'
   if (path.startsWith('/pengumuman/')) return '/pengumuman'
@@ -173,6 +160,9 @@ function resolveParent() {
   if (path.startsWith('/warga/')) return '/warga'
   if (path.startsWith('/program/')) return '/program'
   if (path.startsWith('/galeri/')) return '/galeri'
+  if (path.startsWith('/posyandu/detail/')) return '/posyandu/detail'
+  if (path.startsWith('/posyandu/pengajian/')) return '/posyandu/pengajian'
+  if (path.startsWith('/posyandu/lingkungan/')) return '/posyandu/lingkungan'
   if (path.startsWith('/bayar')) return '/rincian-iuran'
   if (path === '/rincian-iuran') return '/keuangan'
   if (path === '/keuangan' || path === '/ronda' || path === '/pengumuman') return '/'
@@ -181,7 +171,6 @@ function resolveParent() {
 
 function goBack() {
   const parent = resolveParent()
-  // replace: tidak menumpuk history, back berikutnya tidak kembali ke child
   router.replace(parent)
 }
 </script>
