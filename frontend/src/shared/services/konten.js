@@ -179,3 +179,35 @@ export async function hapusKaderKonten(id) {
     return { ok: false, error: e.message }
   }
 }
+
+// ---- Bazis ----
+export async function getBazis() {
+  if (USE_MOCK.konten) {
+    return {
+      ok: true,
+      data: {
+        label_bulan: 'Bazis',
+        items: [
+          { rt: 'RT 001', total: 0 }, { rt: 'RT 002', total: 0 },
+          { rt: 'RT 003', total: 0 }, { rt: 'RT 004', total: 0 },
+          { rt: 'RT 005', total: 0 }, { rt: 'RT 006', total: 0 },
+          { rt: 'RT 007', total: 0 }, { rt: 'RT 008', total: 0 },
+        ],
+      },
+    }
+  }
+  try {
+    const res = await api('/bazis')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function simpanBazis(payload) {
+  try {
+    const res = await api('/bazis', { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
