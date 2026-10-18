@@ -27,7 +27,7 @@
 import { computed } from 'vue'
 import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
-  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet,
+  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf,
 } from 'lucide-vue-next'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
@@ -68,6 +68,9 @@ const groups = [
     items: [
       { label: 'Pengumuman', icon: Megaphone, to: '/konten/pengumuman', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
       { label: 'Program RT', icon: ClipboardList, to: '/konten/program', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
+      { label: 'Posyandu', icon: Baby, to: '/konten/posyandu', bg: 'rgba(249,115,22,.18)', color: '#EA580C' },
+      { label: 'Pengajian', icon: BookOpen, to: '/konten/pengajian', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
+      { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: 'rgba(34,184,99,.18)', color: '#0B8442' },
       { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
       { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
     ],

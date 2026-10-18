@@ -32,6 +32,9 @@ import TalimJadwalView from '../views/TalimJadwalView.vue'
 import PosyanduDetailView from '../views/PosyanduDetailView.vue'
 import PengajianView from '../views/PengajianView.vue'
 import LingkunganView from '../views/LingkunganView.vue'
+import PosyanduItemDetailView from '../views/PosyanduItemDetailView.vue'
+import PengajianItemDetailView from '../views/PengajianItemDetailView.vue'
+import LingkunganItemDetailView from '../views/LingkunganItemDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -66,8 +69,11 @@ const routes = [
       { path: 'galeri/:id', name: 'galeri-detail', component: GaleriDetailView },
       { path: 'posyandu', name: 'posyandu', component: PosyanduView },
       { path: 'posyandu/detail', name: 'posyandu-detail', component: PosyanduDetailView },
+      { path: 'posyandu/detail/:id', name: 'posyandu-item', component: PosyanduItemDetailView },
       { path: 'posyandu/pengajian', name: 'posyandu-pengajian', component: PengajianView },
+      { path: 'posyandu/pengajian/:id', name: 'posyandu-pengajian-item', component: PengajianItemDetailView },
       { path: 'posyandu/lingkungan', name: 'posyandu-lingkungan', component: LingkunganView },
+      { path: 'posyandu/lingkungan/:id', name: 'posyandu-lingkungan-item', component: LingkunganItemDetailView },
       { path: 'talim', name: 'talim', component: TalimView },
       { path: 'talim/jadwal', name: 'talim-jadwal', component: TalimJadwalView },
     ],
