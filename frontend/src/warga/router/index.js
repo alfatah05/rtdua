@@ -28,6 +28,10 @@ import GaleriListView from '../views/GaleriListView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
 import PosyanduView from '../views/PosyanduView.vue'
 import TalimView from '../views/TalimView.vue'
+import TalimJadwalView from '../views/TalimJadwalView.vue'
+import PosyanduDetailView from '../views/PosyanduDetailView.vue'
+import PengajianView from '../views/PengajianView.vue'
+import LingkunganView from '../views/LingkunganView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -61,7 +65,11 @@ const routes = [
       { path: 'galeri', name: 'galeri', component: GaleriListView },
       { path: 'galeri/:id', name: 'galeri-detail', component: GaleriDetailView },
       { path: 'posyandu', name: 'posyandu', component: PosyanduView },
+      { path: 'posyandu/detail', name: 'posyandu-detail', component: PosyanduDetailView },
+      { path: 'posyandu/pengajian', name: 'posyandu-pengajian', component: PengajianView },
+      { path: 'posyandu/lingkungan', name: 'posyandu-lingkungan', component: LingkunganView },
       { path: 'talim', name: 'talim', component: TalimView },
+      { path: 'talim/jadwal', name: 'talim-jadwal', component: TalimJadwalView },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
