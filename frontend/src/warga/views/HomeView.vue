@@ -79,8 +79,8 @@
             <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
             <button
               type="button"
-              class="inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] transition-transform duration-150 ease-out touch-manipulation"
-              :class="pressedKey === 'peng-' + p.id ? 'scale-95' : 'scale-100'"
+              class="btn-press inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] touch-manipulation"
+              :class="pressedKey === 'peng-' + p.id ? 'is-pressed' : ''"
               @click="goTo('/pengumuman/' + p.id, 'peng-' + p.id)"
             >
               Lihat detail <ChevronRight :size="18" />
@@ -92,10 +92,10 @@
         <!-- Iuran + menu: rounded rectangle style -->
         <button
           type="button"
-          class="menu-row w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
+          class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
           :class="[
             iuranStatus === 'loading' ? 'menu-row--muted' : '',
-            pressedKey === 'iuran' ? 'scale-[0.97]' : 'scale-100',
+            pressedKey === 'iuran' ? 'is-pressed' : '',
           ]"
           :style="iuranStatus === 'loading' ? undefined : iuranCardStyle"
           @click="goTo('/rincian-iuran', 'iuran')"
@@ -129,8 +129,8 @@
           v-for="m in menus"
           :key="m.to"
           type="button"
-          class="menu-row w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
-          :class="pressedKey === m.to ? 'scale-[0.97]' : 'scale-100'"
+          class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
+          :class="pressedKey === m.to ? 'is-pressed' : ''"
           :style="{ background: m.cardBg }"
           @click="goTo(m.to, m.to)"
         >
@@ -201,16 +201,19 @@ const router = useRouter()
 const pressedKey = ref('')
 let navLock = false
 
-/** Tahan scale sebentar biar animasi klik terasa sebelum pindah halaman */
+/** Tekan → mantul naik → baru navigasi */
 async function goTo(to, key) {
   if (navLock) return
   navLock = true
   pressedKey.value = key
-  await new Promise((r) => setTimeout(r, 170))
+  // tekan ke bawah
+  await new Promise((r) => setTimeout(r, 90))
+  // lepas + biarkan spring bounce naik
+  pressedKey.value = ''
+  await new Promise((r) => setTimeout(r, 160))
   try {
     await router.push(to)
   } finally {
-    pressedKey.value = ''
     navLock = false
   }
 }
@@ -419,11 +422,27 @@ onMounted(async () => {
   border-radius: 18px;
   min-height: 64px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transform: scale(1);
+  /* naik: spring bounce */
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.menu-row.is-pressed {
+  transform: scale(0.96);
+  /* turun: cepat */
+  transition: transform 0.08s ease-out;
 }
 .menu-row--muted {
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: none;
+}
+.btn-press {
+  transform: scale(1);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.btn-press.is-pressed {
+  transform: scale(0.94);
+  transition: transform 0.08s ease-out;
 }
 /* Dark mode: redupkan gradient agar tidak silau */
 :global(html[data-mode="dark"]) .menu-row:not(.menu-row--muted) {
@@ -433,5 +452,13 @@ onMounted(async () => {
 /* Light mode: kontras di atas bg putih */
 :global(html:not([data-mode="dark"])) .menu-row:not(.menu-row--muted) {
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-row,
+  .menu-row.is-pressed,
+  .btn-press,
+  .btn-press.is-pressed {
+    transition: none;
+  }
 }
 </style>
