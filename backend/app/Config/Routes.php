@@ -118,11 +118,17 @@ $routes->get('program/(:num)', 'KontenController::detailProgram/$1', ['filter' =
 $routes->post('program', 'KontenController::buatProgram', ['filter' => 'auth']);
 $routes->put('program/(:num)', 'KontenController::ubahProgram/$1', ['filter' => 'auth']);
 $routes->delete('program/(:num)', 'KontenController::hapusProgram/$1', ['filter' => 'auth']);
+// kader-konten API — force sync 2026-10-18
 $routes->get('kader-konten', 'KontenController::listKaderKonten', ['filter' => 'auth']);
 $routes->get('kader-konten/(:num)', 'KontenController::detailKaderKonten/$1', ['filter' => 'auth']);
 $routes->post('kader-konten', 'KontenController::buatKaderKonten', ['filter' => 'auth']);
 $routes->put('kader-konten/(:num)', 'KontenController::ubahKaderKonten/$1', ['filter' => 'auth']);
 $routes->delete('kader-konten/(:num)', 'KontenController::hapusKaderKonten/$1', ['filter' => 'auth']);
+$routes->get('kader_konten', 'KontenController::listKaderKonten', ['filter' => 'auth']);
+$routes->get('kader_konten/(:num)', 'KontenController::detailKaderKonten/$1', ['filter' => 'auth']);
+$routes->post('kader_konten', 'KontenController::buatKaderKonten', ['filter' => 'auth']);
+$routes->put('kader_konten/(:num)', 'KontenController::ubahKaderKonten/$1', ['filter' => 'auth']);
+$routes->delete('kader_konten/(:num)', 'KontenController::hapusKaderKonten/$1', ['filter' => 'auth']);
 $routes->get('galeri', 'KontenController::listAlbum', ['filter' => 'auth']);
 $routes->get('galeri/(:num)', 'KontenController::detailAlbum/$1', ['filter' => 'auth']);
 $routes->post('galeri', 'KontenController::buatAlbum', ['filter' => 'auth']);
