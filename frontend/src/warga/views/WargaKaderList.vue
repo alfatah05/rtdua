@@ -48,7 +48,7 @@
 
 <script setup>
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { ClipboardList, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listKaderKonten } from '@shared/services/konten.js'
@@ -96,20 +96,26 @@ function cardStyle(p) {
   return { background: grads[props.kategori] || grads.posyandu }
 }
 
-onMounted(async () => {
+async function load() {
   loading.value = true
-  const res = await listKaderKonten(props.kategori)
+  err.value = ''
+  daftar.value = []
+  const kat = props.kategori
+  const res = await listKaderKonten(kat)
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
     loading.value = false
     return
   }
-  daftar.value = res.data || []
+  const rows = (res.data || []).filter((r) => String(r.kategori || '') === kat)
+  daftar.value = rows
   const urls = []
-  for (const row of daftar.value) {
+  for (const row of rows) {
     if (row.banner) urls.push(mediaUrl(row.banner))
   }
   await waitImages(takeImageUrls(urls, 8))
   loading.value = false
-})
+}
+
+watch(() => props.kategori, () => { load() }, { immediate: true })
 </script>

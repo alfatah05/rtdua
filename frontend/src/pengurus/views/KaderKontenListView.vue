@@ -31,7 +31,7 @@
 </template>
 <script setup>
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { listKaderKonten } from '@shared/services/konten.js'
@@ -50,6 +50,7 @@ const basePath = computed(() => '/konten/' + kategori.value)
 const daftar = ref([])
 const loading = ref(true)
 const err = ref('')
+
 function labelStatus(s) {
   if (s === 'berjalan') return 'Berjalan'
   if (s === 'selesai') return 'Selesai'
@@ -60,20 +61,29 @@ function statusClass(s) {
   if (s === 'selesai') return 'bg-[var(--card2)] text-[var(--mut)]'
   return 'bg-amber-500/15 text-amber-700'
 }
-onMounted(async () => {
+
+async function load() {
   loading.value = true
-  const res = await listKaderKonten(kategori.value)
+  err.value = ''
+  daftar.value = []
+  const kat = kategori.value
+  const res = await listKaderKonten(kat)
   if (!res.ok) {
     err.value = res.error || 'Gagal'
     loading.value = false
     return
   }
-  daftar.value = res.data || []
+  // filter ketat di client — hanya kategori halaman ini
+  const rows = (res.data || []).filter((r) => String(r.kategori || '') === kat)
+  daftar.value = rows
   const urls = []
-  for (const row of daftar.value) {
+  for (const row of rows) {
     if (row.banner) urls.push(mediaUrl(row.banner))
   }
   await waitImages(takeImageUrls(urls, 8))
   loading.value = false
-})
+}
+
+// komponen list dipakai bersama 3 route — harus reload tiap ganti kategori
+watch(kategori, () => { load() }, { immediate: true })
 </script>

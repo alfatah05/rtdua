@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-/** sync 2026-10-18 force */
+/** sync 2026-10-18 kategori filter */
 class KaderKontenService
 {
     private const KATEGORI = ['posyandu', 'pengajian', 'lingkungan'];
@@ -33,11 +33,20 @@ class KaderKontenService
         $this->ensureTable();
         $db = \Config\Database::connect();
         $b = $db->table('kader_konten')->orderBy('id', 'DESC');
-        if ($kategori && in_array($kategori, self::KATEGORI, true)) {
-            $b->where('kategori', $kategori);
+        $kat = $kategori !== null ? trim((string) $kategori) : '';
+        if ($kat !== '' && in_array($kat, self::KATEGORI, true)) {
+            $b->where('kategori', $kat);
         }
         $rows = $b->get()->getResultArray();
-        return array_map([$this, 'map'], $rows);
+        $mapped = array_map([$this, 'map'], $rows);
+        // filter ulang di PHP — jaga-jaga query builder tidak memfilter
+        if ($kat !== '' && in_array($kat, self::KATEGORI, true)) {
+            $mapped = array_values(array_filter(
+                $mapped,
+                static fn (array $r): bool => ($r['kategori'] ?? '') === $kat
+            ));
+        }
+        return $mapped;
     }
 
     public function detail(int $id): ?array
@@ -55,7 +64,7 @@ class KaderKontenService
         if ($judul === '') {
             return ['ok' => false, 'message' => 'Judul wajib.'];
         }
-        $kategori = (string) ($data['kategori'] ?? '');
+        $kategori = trim((string) ($data['kategori'] ?? ''));
         if (!in_array($kategori, self::KATEGORI, true)) {
             return ['ok' => false, 'message' => 'Kategori tidak valid.'];
         }
