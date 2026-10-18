@@ -196,7 +196,7 @@ class KontenController extends Controller
         return $res['ok'] ? ApiResponse::ok($res['data']) : ApiResponse::fail($res['message'], 422);
     }
 
-    // ---- Kader konten (posyandu / pengajian / lingkungan) ----
+    // ---- Kader konten (posyandu / pengajian / lingkungan) — force sync ----
     public function listKaderKonten()
     {
         if (!$this->requireLogin()) {
@@ -246,5 +246,4 @@ class KontenController extends Controller
         $res = (new KaderKontenService())->hapus((int) $id, (int) $user['id']);
         return $res['ok'] ? ApiResponse::ok(null, 'Dihapus') : ApiResponse::fail($res['message'], 422);
     }
-
 }
