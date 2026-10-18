@@ -8,6 +8,7 @@ use App\Services\AuthService;
 use App\Services\GaleriService;
 use App\Services\PengumumanService;
 use App\Services\ProgramService;
+use App\Services\KaderKontenService;
 use CodeIgniter\Controller;
 
 class KontenController extends Controller
@@ -194,4 +195,56 @@ class KontenController extends Controller
         $res = (new GaleriService())->hapusFoto(is_array($ids) ? $ids : [], (int) $user['id']);
         return $res['ok'] ? ApiResponse::ok($res['data']) : ApiResponse::fail($res['message'], 422);
     }
+
+    // ---- Kader konten (posyandu / pengajian / lingkungan) ----
+    public function listKaderKonten()
+    {
+        if (!$this->requireLogin()) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $kategori = $this->request->getGet('kategori');
+        return ApiResponse::ok((new KaderKontenService())->list($kategori));
+    }
+
+    public function detailKaderKonten($id)
+    {
+        if (!$this->requireLogin()) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $d = (new KaderKontenService())->detail((int) $id);
+        return $d ? ApiResponse::ok($d) : ApiResponse::fail('Tidak ditemukan', 404);
+    }
+
+    public function buatKaderKonten()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new KaderKontenService())->buat($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data']) : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function ubahKaderKonten($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new KaderKontenService())->ubah((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data']) : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function hapusKaderKonten($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $res = (new KaderKontenService())->hapus((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Dihapus') : ApiResponse::fail($res['message'], 422);
+    }
+
 }
