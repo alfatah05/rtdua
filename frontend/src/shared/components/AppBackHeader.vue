@@ -86,7 +86,11 @@ const PARENT_BY_ROUTE = {
   'galeri': '/',
   'galeri-detail': '/galeri',
   'posyandu': '/',
+  'posyandu-detail': '/posyandu',
+  'posyandu-pengajian': '/posyandu',
+  'posyandu-lingkungan': '/posyandu',
   'talim': '/',
+  'talim-jadwal': '/talim',
   // pengurus (nama route yang umum)
   'warga-edit': '/warga',
   'warga-tambah': '/warga',
