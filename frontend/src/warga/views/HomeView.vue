@@ -89,82 +89,64 @@
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
 
-        <!-- Iuran: animasi klik + delay navigasi -->
+        <!-- Iuran + menu: pill style (tinggi sama, gradient, ikon kiri) -->
         <button
           type="button"
-          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] transition-transform duration-150 ease-out touch-manipulation will-change-transform"
+          class="menu-pill w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
           :class="[
-            iuranStatus === 'loading' ? 'border border-[var(--line)]' : '',
-            pressedKey === 'iuran' ? 'scale-[0.96]' : 'scale-100',
+            iuranStatus === 'loading' ? 'menu-pill--muted' : '',
+            pressedKey === 'iuran' ? 'scale-[0.97]' : 'scale-100',
           ]"
-          :style="iuranCardStyle"
+          :style="iuranStatus === 'loading' ? undefined : iuranCardStyle"
           @click="goTo('/rincian-iuran', 'iuran')"
         >
-          <div class="relative z-10 flex items-center gap-3">
+          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
             <div
-              class="w-11 h-11 rounded-full grid place-items-center shrink-0"
-              :class="iuranStatus === 'loading' ? 'bg-[var(--card)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+              class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0"
+              :class="iuranStatus === 'loading' ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
             >
-              <Wallet :size="20" />
+              <Wallet :size="22" />
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 py-2.5">
               <p
-                class="text-[13px] font-semibold m-0"
-                :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/90'"
-              >
-                {{ iuranTitle }}
-              </p>
-              <p
-                class="text-[26px] font-extrabold tracking-tight m-0 mt-1 leading-none"
+                class="text-[15px] font-bold m-0 leading-tight truncate"
                 :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
-              >
-                {{ iuranNominal }}
-              </p>
+              >{{ iuranTitle }}</p>
               <p
-                class="text-[13px] m-0 mt-1.5 flex items-center gap-1"
+                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight tabular-nums"
                 :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
-              >
-                <span>{{ iuranHint }}</span>
-                <ChevronRight :size="16" class="opacity-80 shrink-0" />
-              </p>
+              >{{ iuranNominal }}</p>
             </div>
+            <ChevronRight
+              :size="18"
+              class="shrink-0 opacity-70"
+              :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white'"
+            />
           </div>
-          <div
-            v-if="iuranStatus !== 'loading'"
-            class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
-          ></div>
         </button>
 
-        <!-- Menu cards: animasi klik + delay navigasi -->
         <button
           v-for="m in menus"
           :key="m.to"
           type="button"
-          class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)] transition-transform duration-150 ease-out touch-manipulation will-change-transform"
-          :class="pressedKey === m.to ? 'scale-[0.96]' : 'scale-100'"
+          class="menu-pill w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
+          :class="pressedKey === m.to ? 'scale-[0.97]' : 'scale-100'"
           :style="{ background: m.cardBg }"
           @click="goTo(m.to, m.to)"
         >
-          <div class="relative z-10 flex items-center gap-3">
-            <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
-              <component :is="m.icon" :size="20" />
+          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
+            <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-white/20 text-white">
+              <component :is="m.icon" :size="22" />
             </div>
-            <div class="flex-1 min-w-0">
-              <p
-                class="m-0 text-white leading-tight"
-                :class="m.headline ? 'text-[13px] font-semibold text-white/90' : 'text-[15px] font-bold'"
-              >{{ m.label }}</p>
+            <div class="flex-1 min-w-0 py-2.5">
+              <p class="text-[15px] font-bold m-0 leading-tight text-white truncate">{{ m.label }}</p>
               <p
                 v-if="m.headline"
-                class="text-[26px] font-extrabold tracking-tight m-0 mt-1 leading-none text-white"
+                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-white/85 tabular-nums truncate"
               >{{ m.headline }}</p>
-              <p class="text-[13px] m-0 mt-1.5 flex items-center gap-1 text-white/85 leading-snug">
-                <span>{{ m.desc }}</span>
-                <ChevronRight :size="16" class="opacity-80 shrink-0" />
-              </p>
             </div>
+            <ChevronRight :size="18" class="shrink-0 text-white/70" />
           </div>
-          <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
         </button>
 
       </div>
@@ -240,16 +222,13 @@ const iuranNominal = ref('…')
 const iuranHint = ref('Ketuk untuk melihat rincian')
 
 const styleTagihan = {
-  background:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F59E0B, #D97706 55%, #B45309)',
+  background: 'linear-gradient(105deg, #F59E0B 0%, #B45309 100%)',
 }
 const styleLunas = {
-  background:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
+  background: 'linear-gradient(105deg, #22B863 0%, #0B8442 100%)',
 }
 const styleLebih = {
-  background:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)',
+  background: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
 }
 const styleLoading = {
   background: 'var(--card2)',
@@ -317,7 +296,7 @@ const menus = computed(() => [
     headline: rondaHeadline.value,
     desc: rondaDesc.value,
     icon: ShieldCheck,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #60A5FA, #3B82F6 55%, #2563EB)',
+    cardBg: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
   },
   {
     to: '/keuangan',
@@ -325,35 +304,35 @@ const menus = computed(() => [
     headline: kasHeadline.value,
     desc: 'Ketuk untuk riwayat kas',
     icon: Wallet,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #C084FC, #A855F7 55%, #7C3AED)',
+    cardBg: 'linear-gradient(105deg, #A855F7 0%, #6D28D9 100%)',
   },
   {
     to: '/galeri',
     label: 'Galeri RT',
     desc: 'Foto kegiatan warga',
     icon: Images,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F472B6, #EC4899 55%, #DB2777)',
+    cardBg: 'linear-gradient(105deg, #EC4899 0%, #BE185D 100%)',
   },
   {
     to: '/warga',
     label: 'Warga',
     desc: 'Daftar warga RT 002',
     icon: Users,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F87171, #EF4444 55%, #DC2626)',
+    cardBg: 'linear-gradient(105deg, #F87171 0%, #DC2626 100%)',
   },
   {
     to: '/posyandu',
     label: 'Kader RT 002',
     desc: 'Kegiatan pengurus ibu-ibu',
     icon: HeartHandshake,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FB923C, #F97316 55%, #EA580C)',
+    cardBg: 'linear-gradient(105deg, #F97316 0%, #C2410C 100%)',
   },
   {
     to: '/talim',
     label: 'DKM',
     desc: 'Kegiatan & informasi DKM',
     icon: BookOpen,
-    cardBg: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #38BDF8, #0EA5E9 55%, #0284C7)',
+    cardBg: 'linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)',
   },
 ])
 
@@ -433,3 +412,25 @@ onMounted(async () => {
   loading.value = false
 })
 </script>
+
+<style scoped>
+.menu-pill {
+  border-radius: 9999px;
+  min-height: 64px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+.menu-pill--muted {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+/* Dark mode: redupkan gradient agar tidak silau */
+:global(html[data-mode="dark"]) .menu-pill:not(.menu-pill--muted) {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  filter: brightness(0.82) saturate(0.9);
+}
+/* Light mode: sedikit lebih dalam biar kontras di atas bg putih */
+:global(html:not([data-mode="dark"])) .menu-pill:not(.menu-pill--muted) {
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+}
+</style>
