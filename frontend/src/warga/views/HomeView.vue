@@ -13,8 +13,8 @@
       <div class="h-px bg-[var(--line)] my-4" />
       <div class="flex flex-col gap-2.5">
         <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
-        <div class="rounded-[20px] h-[96px] bg-[var(--card2)]" />
-        <div v-for="n in 6" :key="n" class="rounded-[20px] h-[96px] bg-[var(--card2)]" />
+        <div class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
+        <div v-for="n in 6" :key="n" class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
       </div>
     </div>
 
@@ -89,12 +89,12 @@
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
 
-        <!-- Iuran + menu: pill style (tinggi sama, gradient, ikon kiri) -->
+        <!-- Iuran + menu: rounded rectangle style -->
         <button
           type="button"
-          class="menu-pill w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
+          class="menu-row w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
           :class="[
-            iuranStatus === 'loading' ? 'menu-pill--muted' : '',
+            iuranStatus === 'loading' ? 'menu-row--muted' : '',
             pressedKey === 'iuran' ? 'scale-[0.97]' : 'scale-100',
           ]"
           :style="iuranStatus === 'loading' ? undefined : iuranCardStyle"
@@ -129,7 +129,7 @@
           v-for="m in menus"
           :key="m.to"
           type="button"
-          class="menu-pill w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
+          class="menu-row w-full text-left relative overflow-hidden transition-transform duration-150 ease-out touch-manipulation will-change-transform"
           :class="pressedKey === m.to ? 'scale-[0.97]' : 'scale-100'"
           :style="{ background: m.cardBg }"
           @click="goTo(m.to, m.to)"
@@ -414,23 +414,24 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.menu-pill {
-  border-radius: 9999px;
+/* Rounded rectangle — mirip list Apple Arcade, bukan capsule */
+.menu-row {
+  border-radius: 18px;
   min-height: 64px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
-.menu-pill--muted {
+.menu-row--muted {
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: none;
 }
 /* Dark mode: redupkan gradient agar tidak silau */
-:global(html[data-mode="dark"]) .menu-pill:not(.menu-pill--muted) {
+:global(html[data-mode="dark"]) .menu-row:not(.menu-row--muted) {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
   filter: brightness(0.82) saturate(0.9);
 }
-/* Light mode: sedikit lebih dalam biar kontras di atas bg putih */
-:global(html:not([data-mode="dark"])) .menu-pill:not(.menu-pill--muted) {
+/* Light mode: kontras di atas bg putih */
+:global(html:not([data-mode="dark"])) .menu-row:not(.menu-row--muted) {
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
 }
 </style>
