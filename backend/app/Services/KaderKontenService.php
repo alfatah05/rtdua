@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+/** sync 2026-10-18 force */
 class KaderKontenService
 {
     private const KATEGORI = ['posyandu', 'pengajian', 'lingkungan'];
