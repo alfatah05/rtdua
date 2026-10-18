@@ -9,6 +9,7 @@ use App\Services\GaleriService;
 use App\Services\PengumumanService;
 use App\Services\ProgramService;
 use App\Services\KaderKontenService;
+use App\Services\BazisService;
 use CodeIgniter\Controller;
 
 class KontenController extends Controller
@@ -196,7 +197,7 @@ class KontenController extends Controller
         return $res['ok'] ? ApiResponse::ok($res['data']) : ApiResponse::fail($res['message'], 422);
     }
 
-    // ---- Kader konten (posyandu / pengajian / lingkungan) — force sync ----
+    // ---- Kader konten ----
     public function listKaderKonten()
     {
         if (!$this->requireLogin()) {
@@ -245,5 +246,25 @@ class KontenController extends Controller
         }
         $res = (new KaderKontenService())->hapus((int) $id, (int) $user['id']);
         return $res['ok'] ? ApiResponse::ok(null, 'Dihapus') : ApiResponse::fail($res['message'], 422);
+    }
+
+    // ---- Bazis (info nominal per RT) ----
+    public function getBazis()
+    {
+        if (!$this->requireLogin()) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        return ApiResponse::ok((new BazisService())->get());
+    }
+
+    public function simpanBazis()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new BazisService())->simpan($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Disimpan') : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
     }
 }
