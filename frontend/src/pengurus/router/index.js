@@ -46,6 +46,8 @@ import RondaTemplateCardView from '../views/RondaTemplateCardView.vue'
 import RondaDendaView from '../views/RondaDendaView.vue'
 import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
 import ProgramFormView from '../views/ProgramFormView.vue'
+import KaderKontenListView from '../views/KaderKontenListView.vue'
+import KaderKontenFormView from '../views/KaderKontenFormView.vue'
 import GaleriAlbumFormView from '../views/GaleriAlbumFormView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
 import FilterKasView from '../views/FilterKasView.vue'
@@ -108,6 +110,15 @@ const routes = [
       { path: 'konten/program', component: ProgramListView },
       { path: 'konten/program/tambah', component: ProgramFormView },
       { path: 'konten/program/:id', component: ProgramFormView },
+      { path: 'konten/posyandu', component: KaderKontenListView, meta: { kategori: 'posyandu' } },
+      { path: 'konten/posyandu/tambah', component: KaderKontenFormView, meta: { kategori: 'posyandu' } },
+      { path: 'konten/posyandu/:id', component: KaderKontenFormView, meta: { kategori: 'posyandu' } },
+      { path: 'konten/pengajian', component: KaderKontenListView, meta: { kategori: 'pengajian' } },
+      { path: 'konten/pengajian/tambah', component: KaderKontenFormView, meta: { kategori: 'pengajian' } },
+      { path: 'konten/pengajian/:id', component: KaderKontenFormView, meta: { kategori: 'pengajian' } },
+      { path: 'konten/lingkungan', component: KaderKontenListView, meta: { kategori: 'lingkungan' } },
+      { path: 'konten/lingkungan/tambah', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
+      { path: 'konten/lingkungan/:id', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
       { path: 'konten/galeri', component: GaleriListView },
       { path: 'konten/galeri/tambah', component: GaleriAlbumFormView },
       { path: 'konten/galeri/:id', component: GaleriDetailView },
