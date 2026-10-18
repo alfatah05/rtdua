@@ -1,15 +1,6 @@
 <template>
-  <div>
-    <AppBackHeader title="Lingkungan" />
-    <div class="px-1 py-8 text-center">
-      <p class="text-[15px] font-semibold text-[var(--text)] m-0">Lingkungan</p>
-      <p class="text-[13px] text-[var(--mut)] m-0 mt-2 leading-relaxed">
-        Konten segera hadir. Kegiatan lingkungan RT akan ditampilkan di sini.
-      </p>
-    </div>
-  </div>
+  <WargaKaderList kategori="lingkungan" />
 </template>
-
 <script setup>
-import AppBackHeader from '@shared/components/AppBackHeader.vue'
+import WargaKaderList from './WargaKaderList.vue'
 </script>
