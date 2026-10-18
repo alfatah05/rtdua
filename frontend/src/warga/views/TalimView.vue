@@ -3,43 +3,46 @@
     <AppBackHeader title="DKM" />
 
     <div class="flex flex-col gap-2.5">
-      <!-- Ta'lim -->
-      <div
-        class="w-full min-h-[96px] rounded-[20px] p-5 text-left relative overflow-hidden shadow-[var(--sh)]"
-        style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #38BDF8, #0EA5E9 55%, #0284C7)"
+      <!-- Ta'lim → halaman ta'lim -->
+      <button
+        type="button"
+        class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
+        :class="pressedKey === 'talim' ? 'is-pressed' : ''"
+        style="background: linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)"
+        @click="goTo('/talim/jadwal', 'talim')"
       >
-        <div class="relative z-10 flex items-center gap-3">
-          <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
-            <BookOpen :size="20" />
+        <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
+          <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-white/20 text-white">
+            <BookOpen :size="22" />
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="m-0 text-[15px] font-bold text-white leading-tight">Ta'lim</p>
-            <p class="text-[13px] m-0 mt-1.5 text-white/85 leading-snug">
-              Jadwal kajian & kegiatan ta'lim
+          <div class="flex-1 min-w-0 py-2.5">
+            <p class="text-[15px] font-bold m-0 leading-tight text-white truncate">Ta'lim</p>
+            <p class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-white/85 truncate">
+              Jadwal kajian &amp; kegiatan
             </p>
           </div>
+          <ChevronRight :size="18" class="shrink-0 text-white/70" />
         </div>
-        <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
-      </div>
+      </button>
 
-      <!-- Bazis: expand dropdown -->
+      <!-- Bazis: expand -->
       <div
-        class="rounded-[20px] overflow-hidden shadow-[var(--sh)]"
-        style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #34D399, #059669 55%, #047857)"
+        class="menu-row overflow-hidden"
+        style="background: linear-gradient(105deg, #059669 0%, #047857 100%)"
       >
         <button
           type="button"
-          class="w-full min-h-[96px] p-5 text-left relative overflow-hidden"
+          class="w-full min-h-[64px] p-0 text-left relative overflow-hidden touch-manipulation"
           :aria-expanded="bazisOpen"
           @click="bazisOpen = !bazisOpen"
         >
-          <div class="relative z-10 flex items-center gap-3">
-            <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
-              <HandCoins :size="20" />
+          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
+            <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-white/20 text-white">
+              <HandCoins :size="22" />
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 py-2.5">
               <p class="m-0 text-[15px] font-bold text-white leading-tight">Bazis</p>
-              <p class="text-[13px] m-0 mt-1.5 flex items-center gap-1 text-white/85 leading-snug">
+              <p class="text-[13px] m-0 mt-0.5 flex items-center gap-1 text-white/85 leading-snug">
                 <span>{{ bazisLabelBulan }} · total per RT</span>
                 <ChevronDown
                   :size="16"
@@ -49,11 +52,10 @@
               </p>
             </div>
           </div>
-          <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
         </button>
 
-        <div v-if="bazisOpen" class="px-4 pb-4 relative z-10">
-          <div class="rounded-[16px] bg-white/15 backdrop-blur-sm border border-white/20 overflow-hidden">
+        <div v-if="bazisOpen" class="px-3.5 pb-3.5 relative z-10">
+          <div class="rounded-[14px] bg-white/15 backdrop-blur-sm border border-white/20 overflow-hidden">
             <p class="text-[12px] font-bold text-white/90 m-0 px-3.5 pt-3 pb-1.5">
               {{ bazisLabelBulan }} (data contoh)
             </p>
@@ -79,10 +81,28 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { BookOpen, HandCoins, ChevronDown } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { BookOpen, HandCoins, ChevronDown, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 
+const router = useRouter()
 const bazisOpen = ref(false)
+const pressedKey = ref('')
+let navLock = false
+
+async function goTo(to, key) {
+  if (navLock) return
+  navLock = true
+  pressedKey.value = key
+  await new Promise((r) => setTimeout(r, 90))
+  pressedKey.value = ''
+  await new Promise((r) => setTimeout(r, 160))
+  try {
+    await router.push(to)
+  } finally {
+    navLock = false
+  }
+}
 
 const bazisDummy = [
   { rt: 'RT 001', total: 1250000 },
@@ -104,3 +124,24 @@ function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 }
 </script>
+
+<style scoped>
+.menu-row {
+  border-radius: 18px;
+  min-height: 64px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transform: scale(1);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.menu-row.is-pressed {
+  transform: scale(0.96);
+  transition: transform 0.08s ease-out;
+}
+:global(html[data-mode="dark"]) .menu-row {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  filter: brightness(0.82) saturate(0.9);
+}
+:global(html:not([data-mode="dark"])) .menu-row {
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+}
+</style>
