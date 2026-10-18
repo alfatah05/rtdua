@@ -48,6 +48,7 @@ import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
 import ProgramFormView from '../views/ProgramFormView.vue'
 import KaderKontenListView from '../views/KaderKontenListView.vue'
 import KaderKontenFormView from '../views/KaderKontenFormView.vue'
+import BazisFormView from '../views/BazisFormView.vue'
 import GaleriAlbumFormView from '../views/GaleriAlbumFormView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
 import FilterKasView from '../views/FilterKasView.vue'
@@ -119,6 +120,7 @@ const routes = [
       { path: 'konten/lingkungan', component: KaderKontenListView, meta: { kategori: 'lingkungan' } },
       { path: 'konten/lingkungan/tambah', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
       { path: 'konten/lingkungan/:id', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
+      { path: 'konten/bazis', component: BazisFormView },
       { path: 'konten/galeri', component: GaleriListView },
       { path: 'konten/galeri/tambah', component: GaleriAlbumFormView },
       { path: 'konten/galeri/:id', component: GaleriDetailView },

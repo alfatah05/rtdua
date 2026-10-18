@@ -27,7 +27,7 @@
 import { computed } from 'vue'
 import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
-  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf,
+  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf, HandCoins,
 } from 'lucide-vue-next'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
@@ -71,6 +71,7 @@ const groups = [
       { label: 'Posyandu', icon: Baby, to: '/konten/posyandu', bg: 'rgba(249,115,22,.18)', color: '#EA580C' },
       { label: 'Pengajian', icon: BookOpen, to: '/konten/pengajian', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
       { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: 'rgba(34,184,99,.18)', color: '#0B8442' },
+      { label: 'Bazis', icon: HandCoins, to: '/konten/bazis', bg: 'rgba(5,150,105,.18)', color: '#047857' },
       { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
       { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
     ],
