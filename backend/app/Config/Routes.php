@@ -129,6 +129,9 @@ $routes->get('kader_konten/(:num)', 'KontenController::detailKaderKonten/$1', ['
 $routes->post('kader_konten', 'KontenController::buatKaderKonten', ['filter' => 'auth']);
 $routes->put('kader_konten/(:num)', 'KontenController::ubahKaderKonten/$1', ['filter' => 'auth']);
 $routes->delete('kader_konten/(:num)', 'KontenController::hapusKaderKonten/$1', ['filter' => 'auth']);
+$routes->get('bazis', 'KontenController::getBazis', ['filter' => 'auth']);
+$routes->put('bazis', 'KontenController::simpanBazis', ['filter' => 'auth']);
+$routes->post('bazis', 'KontenController::simpanBazis', ['filter' => 'auth']);
 $routes->get('galeri', 'KontenController::listAlbum', ['filter' => 'auth']);
 $routes->get('galeri/(:num)', 'KontenController::detailAlbum/$1', ['filter' => 'auth']);
 $routes->post('galeri', 'KontenController::buatAlbum', ['filter' => 'auth']);
