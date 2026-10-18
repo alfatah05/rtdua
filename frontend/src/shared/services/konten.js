@@ -1,17 +1,18 @@
-import { api } from '../api/http.js'
-import { USE_MOCK } from '../config/dataSource.js'
+import { api, USE_MOCK } from './api.js'
 
-export async function listPengumuman({ beranda = false } = {}) {
+export async function listPengumuman(params = {}) {
   if (USE_MOCK.konten) return { ok: true, data: [] }
   try {
-    const res = await api('/pengumuman' + (beranda ? '?beranda=1' : ''))
+    const q = new URLSearchParams()
+    if (params.beranda) q.set('beranda', '1')
+    const qs = q.toString()
+    const res = await api('/pengumuman' + (qs ? '?' + qs : ''))
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 export async function detailPengumuman(id) {
-  if (USE_MOCK.konten) return { ok: false, error: 'mock' }
   try {
     const res = await api('/pengumuman/' + id)
     return { ok: true, data: res.data }
@@ -131,6 +132,50 @@ export async function hapusFoto(ids) {
   try {
     const res = await api('/galeri/foto/hapus', { method: 'POST', body: { ids } })
     return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+// ---- Kader konten (posyandu / pengajian / lingkungan) ----
+export async function listKaderKonten(kategori) {
+  if (USE_MOCK.konten) return { ok: true, data: [] }
+  try {
+    const q = kategori ? ('?kategori=' + encodeURIComponent(kategori)) : ''
+    const res = await api('/kader-konten' + q)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function detailKaderKonten(id) {
+  try {
+    const res = await api('/kader-konten/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function buatKaderKonten(payload) {
+  try {
+    const res = await api('/kader-konten', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function ubahKaderKonten(id, payload) {
+  try {
+    const res = await api('/kader-konten/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+export async function hapusKaderKonten(id) {
+  try {
+    await api('/kader-konten/' + id, { method: 'DELETE' })
+    return { ok: true }
   } catch (e) {
     return { ok: false, error: e.message }
   }
