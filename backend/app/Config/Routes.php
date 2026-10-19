@@ -82,16 +82,16 @@ $routes->post('keuangan/tagihan-khusus/(:num)/batal', 'KeuanganController::hapus
 $routes->put('keuangan/iuran-khusus/(:num)', 'KeuanganController::ubahIuranKhusus/$1', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-khusus/(:num)/batal', 'KeuanganController::batalkanIuranKhusus/$1', ['filter' => 'auth']);
 $routes->get('keuangan/laporan', 'KeuanganController::laporan', ['filter' => 'auth']);
-$routes->get('keuangan/rekening', 'KeuanganController::listRekening', ['filter' => 'auth']);
-$routes->post('keuangan/rekening', 'KeuanganController::createRekening', ['filter' => 'auth']);
-$routes->put('keuangan/rekening/(:num)', 'KeuanganController::updateRekening/$1', ['filter' => 'auth']);
-$routes->delete('keuangan/rekening/(:num)', 'KeuanganController::deleteRekening/$1', ['filter' => 'auth']);
+$routes->get('keuangan/rekening', 'RekeningPembayaranController::index', ['filter' => 'auth']);
+$routes->post('keuangan/rekening', 'RekeningPembayaranController::create', ['filter' => 'auth']);
+$routes->put('keuangan/rekening/(:num)', 'RekeningPembayaranController::update/$1', ['filter' => 'auth']);
+$routes->delete('keuangan/rekening/(:num)', 'RekeningPembayaranController::delete/$1', ['filter' => 'auth']);
 
 $routes->get('portal/keuangan', 'PortalKeuanganController::ringkasanSaya', ['filter' => 'auth']);
 $routes->post('portal/keuangan/transfer', 'PortalKeuanganController::ajukanTransfer', ['filter' => 'auth']);
 $routes->get('portal/keuangan/permintaan', 'PortalKeuanganController::statusPermintaan', ['filter' => 'auth']);
 $routes->get('portal/keuangan/kas', 'PortalKeuanganController::kas', ['filter' => 'auth']);
-$routes->get('portal/keuangan/rekening', 'PortalKeuanganController::listRekening', ['filter' => 'auth']);
+$routes->get('portal/keuangan/rekening', 'RekeningPembayaranController::portalList', ['filter' => 'auth']);
 
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
 $routes->get('notifikasi/badge', 'NotifikasiController::badge', ['filter' => 'auth']);
