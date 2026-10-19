@@ -4,7 +4,8 @@ import { USE_MOCK } from '../config/dataSource.js'
 export async function kalenderRonda(bulan) {
   if (USE_MOCK.ronda) return { ok: true, data: [] }
   try {
-    const res = await api('/ronda/kalender?bulan=' + encodeURIComponent(bulan || ''))
+    const q = bulan ? ('?bulan=' + encodeURIComponent(bulan)) : ''
+    const res = await api('/ronda/kalender' + q)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -12,7 +13,6 @@ export async function kalenderRonda(bulan) {
 }
 
 export async function malamIni() {
-  if (USE_MOCK.ronda) return { ok: true, data: null }
   try {
     const res = await api('/ronda/malam-ini')
     return { ok: true, data: res.data }
@@ -22,7 +22,6 @@ export async function malamIni() {
 }
 
 export async function malamTerdekat() {
-  if (USE_MOCK.ronda) return { ok: true, data: null }
   try {
     const res = await api('/ronda/terdekat')
     return { ok: true, data: res.data }
@@ -32,18 +31,17 @@ export async function malamTerdekat() {
 }
 
 export async function detailMalam(tanggal) {
-  if (USE_MOCK.ronda) return { ok: false, error: 'mock' }
   try {
-    const res = await api('/ronda/malam/' + tanggal)
+    const res = await api('/ronda/malam/' + encodeURIComponent(tanggal))
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 
-export async function listJadwalTetap(opts = {}) {
+export async function listJadwalTetap() {
   try {
-    const res = await api('/ronda/jadwal-tetap', opts)
+    const res = await api('/ronda/jadwal-tetap')
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -59,9 +57,9 @@ export async function simpanJadwalTetap(payload) {
   }
 }
 
-export async function listJadwalKhusus(opts = {}) {
+export async function listJadwalKhusus() {
   try {
-    const res = await api('/ronda/jadwal-khusus', opts)
+    const res = await api('/ronda/jadwal-khusus')
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -77,90 +75,54 @@ export async function simpanJadwalKhusus(payload) {
   }
 }
 
-export async function generateRonda(periode) {
+export async function generateBulan(payload) {
   try {
-    const res = await api('/ronda/generate', { method: 'POST', body: { periode } })
+    const res = await api('/ronda/generate', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 
-export async function buatSlotKosong(payload = {}) {
+export async function absenManual(payload) {
   try {
-    const res = await api('/ronda/buat-slot', { method: 'POST', body: payload })
+    const res = await api('/ronda/absen-manual', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 
-export async function isiOtomatisRonda(payload = {}) {
+export async function absenWarga(payload) {
   try {
-    const res = await api('/ronda/isi-otomatis', { method: 'POST', body: payload })
+    const res = await api('/ronda/absen', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 
-export async function absenManual(malamId, keluargaId) {
+export async function gantiKeluargaMalam(malamId, payload) {
   try {
-    const res = await api('/ronda/absen-manual', {
-      method: 'POST',
-      body: { malam_id: malamId, keluarga_id: keluargaId },
-    })
+    const res = await api('/ronda/malam/' + malamId + '/ganti-keluarga', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 
-export async function absenWarga(malamId, fotoPath) {
+export async function batalkanAbsen(id) {
   try {
-    const res = await api('/ronda/absen', {
-      method: 'POST',
-      body: { malam_id: malamId, foto: fotoPath },
-    })
+    const res = await api('/ronda/absen/' + id + '/batal', { method: 'POST' })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
 
-export async function gantiKeluargaMalam(malamId, keluargaIds) {
-  try {
-    const res = await api('/ronda/malam/' + malamId + '/ganti-keluarga', {
-      method: 'POST',
-      body: { keluarga_ids: keluargaIds },
-    })
-    return { ok: true, data: res.data }
-  } catch (e) {
-    return { ok: false, error: e.message }
-  }
-}
-
-export async function batalkanAbsen(absenId) {
-  try {
-    const res = await api('/ronda/absen/' + absenId + '/batal', { method: 'POST', body: {} })
-    return { ok: true, data: res.data }
-  } catch (e) {
-    return { ok: false, error: e.message }
-  }
-}
-
-export async function terbitkanDendaRonda(payload = {}) {
+export async function terbitkanDenda(payload) {
   try {
     const res = await api('/ronda/terbitkan-denda', { method: 'POST', body: payload })
-    return { ok: true, data: res.data }
-  } catch (e) {
-    return { ok: false, error: e.message }
-  }
-}
-
-export async function hapusJadwalRonda(payload = {}) {
-  try {
-    const res = await api('/ronda/hapus-jadwal', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -178,7 +140,7 @@ export async function listTemplateCards(opts = {}) {
 }
 
 /** Buat/update card template dari hari + periode. */
-export async function buatTemplateCards(payload = {}) {
+export async function buatTemplateCards(payload) {
   try {
     const res = await api('/ronda/template', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
@@ -193,6 +155,19 @@ export async function simpanTemplateKeluarga(cardId, keluargaIds) {
     const res = await api('/ronda/template/' + cardId + '/keluarga', {
       method: 'POST',
       body: { keluarga_ids: keluargaIds },
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+/** Ubah nama group card template (tidak mengubah daftar keluarga). */
+export async function ubahNamaGroupCard(cardId, namaGroup) {
+  try {
+    const res = await api('/ronda/template/' + cardId + '/nama', {
+      method: 'PUT',
+      body: { nama_group: namaGroup },
     })
     return { ok: true, data: res.data }
   } catch (e) {
