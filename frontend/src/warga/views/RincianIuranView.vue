@@ -117,6 +117,7 @@
               </span>
             </button>
 
+            <!-- Child: parent–child tetap rapat (parent pb-0.5); antar child py-1 seperti sebelumnya -->
             <div
               v-if="bisaExpandKas(t) && isKasOpen(t.id)"
               class="pb-1"
@@ -131,58 +132,64 @@
                   class="w-9 shrink-0 opacity-0 pointer-events-none"
                   aria-hidden="true"
                 ></div>
-                <p class="flex-1 min-w-0 text-[13px] font-medium m-0 text-[var(--text)] truncate">
+                <p class="flex-1 min-w-0 text-[13px] font-medium m-0 truncate text-[var(--mut)] leading-snug">
                   {{ c.nama }}
                 </p>
-                <span class="text-[13px] font-semibold tabular-nums shrink-0 text-[var(--text)]">
+                <span class="text-[13px] font-semibold tabular-nums shrink-0 whitespace-nowrap text-[var(--mut)] leading-snug">
                   {{ rp(c.nominal) }}
                 </span>
               </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end" style="padding: 2px 0 4px">
+            <div
+              class="inline-flex items-center justify-between gap-4 px-3 min-w-[48%]"
+              style="height: 30px; border-radius: 15px; background: rgba(245, 158, 11, 0.16)"
+            >
+              <span class="text-[12px] font-bold" style="color: #B45309">Total</span>
+              <span class="text-[13px] font-extrabold tabular-nums" style="color: #D97706">
+                {{ rp(totalTerbuka) }}
+              </span>
             </div>
           </div>
         </template>
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-6 m-0">Tidak ada tagihan terbuka</p>
       </div>
 
-      <h2 class="text-[15px] font-bold m-0 mb-2">Riwayat</h2>
+      <h2 class="text-[15px] font-bold m-0 mb-2 mt-1">Riwayat pembayaran</h2>
       <div
+        v-if="riwayat.length"
         class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-6"
         style="padding: 5px"
       >
         <div
-          class="flex items-center justify-between px-3"
-          style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
+          v-for="r in riwayat"
+          :key="'rw-' + (r.pembayaran_id || r.id || r.tanggal) + '-' + (r.tagihan_id || '')"
+          class="flex items-center gap-3 py-2.5"
+          style="padding-left: 10px; padding-right: 10px"
         >
-          <span class="text-[12px] font-semibold text-[var(--gm)]">Keterangan</span>
-          <span class="text-[12px] font-semibold text-[var(--gm)]">Nominal</span>
-        </div>
-        <template v-if="riwayat.length">
           <div
-            v-for="r in riwayat"
-            :key="'rw-' + r.id"
-            class="flex items-center gap-3 py-2.5"
-            style="padding-left: 10px; padding-right: 10px"
+            class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+            :style="{ background: iconMeta(r.jenis).bg, color: iconMeta(r.jenis).color }"
           >
-            <div
-              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
-              :style="{ background: iconMeta(r.jenis).bg, color: iconMeta(r.jenis).color }"
-            >
-              <component :is="iconMeta(r.jenis).icon" :size="16" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-[14px] font-semibold m-0 truncate">{{ labelRiwayat(r) }}</p>
-              <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">{{ formatTgl(r.tanggal || r.created_at) }}</p>
-            </div>
-            <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
-              {{ rp(r.nominal) }}
-            </span>
+            <component :is="iconMeta(r.jenis).icon" :size="16" />
           </div>
-        </template>
-        <p v-else class="text-[13px] text-[var(--mut)] text-center py-6 m-0">Belum ada riwayat</p>
+          <div class="flex-1 min-w-0">
+            <p class="text-[14px] font-semibold m-0 truncate">{{ labelRiwayat(r) }}</p>
+            <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
+              {{ formatTgl(r.tanggal) }}<template v-if="r.metode"> · {{ labelMetode(r.metode) }}</template>
+            </p>
+          </div>
+          <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
+            {{ rp(r.jumlah ?? r.nominal) }}
+          </span>
+        </div>
       </div>
+      <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 m-0 mb-6">Belum ada riwayat</p>
 
       <button
-        v-if="tagihanTerbuka.length"
+        v-if="totalTerbuka > 0"
         type="button"
         class="w-full h-12 rounded-2xl bg-[var(--gm)] text-white text-[15px] font-bold active:opacity-90"
         @click="goBayar"
@@ -194,61 +201,70 @@
 </template>
 
 <script setup>
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { Wallet, Home, ShieldAlert, Sparkles, Clock, ChevronDown } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { portalRingkasan, portalStatusPermintaan } from '@shared/services/keuangan.js'
-import { rp } from '@shared/utils/format.js'
 
-const router = useRouter()
 const loading = ref(true)
 const err = ref('')
-const ringkasan = ref(null)
+const total = ref(0)
+const tagihan = ref([])
+const riwayat = ref([])
 const permintaan = ref([])
+const komponenKas = ref([])
+const totalKasBulanan = ref(0)
 const kasOpen = ref({})
 
 function bisaExpandKas(t) {
-  return t?.jenis === 'kas' && Array.isArray(komponenKas.value) && komponenKas.value.length > 0
+  return t?.jenis === 'kas' && (komponenKas.value || []).length > 0
 }
-
 function isKasOpen(id) {
   return !!kasOpen.value[id]
 }
-
 function toggleKas(id) {
   kasOpen.value = { ...kasOpen.value, [id]: !kasOpen.value[id] }
 }
 
-function iconMeta(jenis) {
-  if (jenis === 'kas') return { icon: Wallet, bg: 'rgba(34,184,99,0.14)', color: 'var(--gm)' }
-  if (jenis === 'sosial') return { icon: Home, bg: 'rgba(59,130,246,0.14)', color: '#3b82f6' }
-  if (jenis === 'denda') return { icon: ShieldAlert, bg: 'rgba(239,68,68,0.14)', color: '#ef4444' }
-  if (jenis === 'khusus') return { icon: Sparkles, bg: 'rgba(236,72,153,0.14)', color: '#ec4899' }
-  return { icon: Wallet, bg: 'rgba(34,184,99,0.14)', color: 'var(--gm)' }
+const BULAN = [
+  '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+]
+
+function rp(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
+}
+
+function bulanDariPeriode(periode) {
+  if (!periode || String(periode).length < 7) return ''
+  const m = Number(String(periode).slice(5, 7))
+  return BULAN[m] || String(periode)
 }
 
 function labelJenisDasar(jenis) {
   if (jenis === 'kas') return 'Kas'
-  if (jenis === 'sosial') return 'Sosial'
-  if (jenis === 'denda') return 'Denda'
-  if (jenis === 'khusus') return 'Khusus'
+  if (jenis === 'denda_ronda') return 'Denda ronda'
+  if (jenis === 'khusus') return 'Iuran khusus'
+  if (jenis === 'kelebihan') return 'Kelebihan bayar'
   return jenis || 'Tagihan'
 }
 
-function bulanDariPeriode(periode) {
-  if (!periode) return ''
-  const s = String(periode)
-  // periode bisa YYYY-MM atau YYYY-MM-DD atau label
-  const m = s.match(/(\d{4})-(\d{2})/)
-  if (!m) return s
-  const bln = [
-    '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-  ]
-  const idx = parseInt(m[2], 10)
-  return bln[idx] || s
+function iconMeta(jenis) {
+  if (jenis === 'kas') {
+    return { icon: Home, bg: 'rgba(59,130,246,.16)', color: '#2563EB' }
+  }
+  if (jenis === 'denda_ronda') {
+    return { icon: ShieldAlert, bg: 'rgba(168,85,247,.16)', color: '#7C3AED' }
+  }
+  if (jenis === 'khusus') {
+    return { icon: Sparkles, bg: 'rgba(236,72,153,.16)', color: '#DB2777' }
+  }
+  if (jenis === 'kelebihan') {
+    return { icon: Wallet, bg: 'rgba(6,182,212,.16)', color: '#0891B2' }
+  }
+  return { icon: Wallet, bg: 'rgba(99,102,241,.14)', color: '#4F46E5' }
 }
 
 function labelTagihan(t) {
@@ -264,60 +280,71 @@ function labelTagihan(t) {
 function labelRiwayat(r) {
   if (r.jenis === 'kelebihan') return 'Kelebihan bayar'
   if (r.jenis === 'pembayaran') return 'Pembayaran'
-  if (r.nama) return r.nama
-  return labelJenisDasar(r.jenis)
+  return labelTagihan(r)
 }
 
-function formatTgl(v) {
-  if (!v) return ''
-  const d = new Date(v)
-  if (Number.isNaN(d.getTime())) return String(v)
+function labelMetode(m) {
+  if (m === 'transfer') return 'Transfer'
+  if (m === 'tunai') return 'Tunai'
+  return m || ''
+}
+
+function formatTgl(s) {
+  if (!s) return '—'
+  const raw = String(s).replace(' ', 'T')
+  const d = new Date(raw.length === 10 ? raw + 'T00:00:00' : raw)
+  if (Number.isNaN(d.getTime())) return String(s).slice(0, 10)
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-const tagihanTerbuka = computed(() => {
-  const items = ringkasan.value?.tagihan || ringkasan.value?.items || []
-  return (items || []).filter((t) => (t.status || '') !== 'lunas' && (t.status || '') !== 'dibatalkan')
-})
-
-const riwayat = computed(() => ringkasan.value?.riwayat || ringkasan.value?.pembayaran || [])
-
-const komponenKas = computed(() => ringkasan.value?.komponen_kas || ringkasan.value?.komponenKas || [])
-
-const totalTunggakan = computed(() => {
-  return tagihanTerbuka.value.reduce((s, t) => s + Number(t.sisa ?? t.nominal ?? 0), 0)
-})
+const tagihanTerbuka = computed(() =>
+  (tagihan.value || []).filter((t) => Number(t.sisa ?? t.nominal ?? 0) > 0)
+)
+const totalTerbuka = computed(() =>
+  tagihanTerbuka.value.reduce((s, t) => s + Number(t.sisa ?? t.nominal ?? 0), 0)
+)
 
 const heroStatus = computed(() => {
   if (loading.value) return 'loading'
-  if (totalTunggakan.value > 0) return 'tunggakan'
+  if (total.value > 0) return 'pending'
+  if (total.value < 0) return 'lebih'
   return 'lunas'
 })
-
-const heroStyle = computed(() => {
-  if (heroStatus.value === 'loading') return { background: 'var(--card)' }
-  if (heroStatus.value === 'tunggakan') {
-    return { background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' }
-  }
-  return { background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }
-})
-
 const heroTitle = computed(() => {
-  if (heroStatus.value === 'loading') return 'Memuat...'
-  if (heroStatus.value === 'tunggakan') return 'Total tunggakan'
-  return 'Status iuran'
+  if (heroStatus.value === 'lebih') return 'Kelebihan bayar'
+  return 'Jumlah tagihan anda'
 })
-
 const heroNominal = computed(() => {
-  if (heroStatus.value === 'loading') return '—'
-  if (heroStatus.value === 'tunggakan') return rp(totalTunggakan.value)
+  if (total.value > 0) return rp(total.value)
+  if (total.value < 0) return rp(-total.value)
   return 'Lunas'
 })
-
 const heroHint = computed(() => {
-  if (heroStatus.value === 'loading') return 'Mengambil data tagihan'
-  if (heroStatus.value === 'tunggakan') return `${tagihanTerbuka.value.length} tagihan belum lunas`
-  return 'Tidak ada tagihan terbuka'
+  if (heroStatus.value === 'pending') return 'Segera lunasi agar data RT tetap akurat'
+  if (heroStatus.value === 'lunas') return 'Tidak ada tagihan terbuka'
+  if (heroStatus.value === 'lebih') return 'Saldo lebih akan dipotong tagihan berikutnya'
+  return 'Memuat data...'
+})
+
+const styleTagihan = {
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F97316, #EA580C 55%, #C2410C)',
+}
+const styleLunas = {
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
+}
+const styleLebih = {
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)',
+}
+const styleLoading = { background: 'var(--card2)' }
+
+const heroStyle = computed(() => {
+  if (heroStatus.value === 'pending') return styleTagihan
+  if (heroStatus.value === 'lunas') return styleLunas
+  if (heroStatus.value === 'lebih') return styleLebih
+  return styleLoading
 })
 
 const permintaanMenunggu = computed(() =>
@@ -325,28 +352,41 @@ const permintaanMenunggu = computed(() =>
 )
 
 const stylePermintaan = {
-  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+  background:
+    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FBBF24, #F59E0B 55%, #D97706)',
 }
 
 function goBayar() {
-  router.replace({ name: 'pre-bayar' }).catch(() => router.push('/pre-bayar'))
+  // pakai location agar pasti full navigation di shared hosting
+  window.location.href = '/pre-bayar'
 }
 
 onMounted(async () => {
-  loading.value = true
-  err.value = ''
-  try {
-    const [res, pm] = await Promise.all([portalRingkasan(), portalStatusPermintaan()])
-    if (res?.error) {
-      err.value = res.error || res.message || 'Gagal memuat'
-    } else {
-      ringkasan.value = res?.data || res
-    }
+  const [res, pm] = await Promise.all([portalRingkasan(), portalStatusPermintaan()])
+  loading.value = false
+  if (!res.ok) {
+    err.value = res.error || 'Gagal memuat rincian'
+    return
+  }
+  total.value = Number(res.data?.total ?? 0)
+  tagihan.value = res.data?.tagihan || []
+  komponenKas.value = Array.isArray(res.data?.komponen_kas) ? res.data.komponen_kas : []
+  totalKasBulanan.value = Number(res.data?.total_kas_bulanan ?? 0)
+  if (Array.isArray(res.data?.riwayat) && res.data.riwayat.length) {
+    riwayat.value = res.data.riwayat
+  } else {
+    riwayat.value = (res.data?.pembayaran || []).map((b) => ({
+      pembayaran_id: b.id,
+      tagihan_id: null,
+      tanggal: b.tanggal_bayar,
+      jenis: 'pembayaran',
+      periode: '',
+      jumlah: b.nominal,
+      metode: b.metode,
+    }))
+  }
+  if (pm.ok) {
     permintaan.value = Array.isArray(pm.data) ? pm.data : (pm.data?.items || [])
-  } catch (e) {
-    err.value = e?.message || 'Gagal memuat data'
-  } finally {
-    loading.value = false
   }
 })
 </script>
