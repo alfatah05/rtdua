@@ -95,6 +95,13 @@
         </button>
         <button
           type="button"
+          class="w-full flex items-center gap-3 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4 text-left"
+          @click="$router.push('/warga/' + id + '/tagihan-khusus')"
+        >
+          <span class="font-semibold text-[15px]">Tagihan khusus</span>
+        </button>
+        <button
+          type="button"
           class="w-full flex items-center gap-3 bg-red-50 border border-red-100 rounded-[16px] p-4 text-left"
           @click="$router.push('/warga/' + id + '/pindah')"
         >
