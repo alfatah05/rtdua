@@ -58,4 +58,29 @@ body,
   user-select: text;
   -webkit-touch-callout: default;
 }
+
+/* Sembunyikan scrollbar, scroll tetap bisa */
+html,
+body,
+#app {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge lama */
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#app::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+  width: 0;
+  height: 0;
+}
+#app,
+#app * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+#app *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
 </style>
