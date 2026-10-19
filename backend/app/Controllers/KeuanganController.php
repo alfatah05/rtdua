@@ -113,7 +113,7 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $status = $this->request->getGet('status');
+        $status = $this->request->getGet('status') ?? 'menunggu';
         return ApiResponse::ok((new PembayaranService())->listPermintaan($status));
     }
 
@@ -157,13 +157,16 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $filter = [
-            'bulan'     => $this->request->getGet('bulan'),
-            'tipe'      => $this->request->getGet('tipe'),
-            'kas_pos_id'=> $this->request->getGet('kas_pos_id'),
+            'bulan'      => $this->request->getGet('bulan'),
+            'tipe'       => $this->request->getGet('tipe'),
+            'kategori'   => $this->request->getGet('kategori'),
+            'kas_pos_id' => $this->request->getGet('kas_pos_id'),
         ];
+        $svc = new KasService();
         return ApiResponse::ok([
-            'items' => (new KasService())->list($filter),
+            'saldo' => $svc->saldo(),
             'pos'   => (new KasPosService())->list(false),
+            'items' => $svc->list($filter),
         ]);
     }
 
