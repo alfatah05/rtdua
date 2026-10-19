@@ -206,9 +206,7 @@ async function goTo(to, key) {
   if (navLock) return
   navLock = true
   pressedKey.value = key
-  // tekan ke bawah
   await new Promise((r) => setTimeout(r, 90))
-  // lepas + biarkan spring bounce naik
   pressedKey.value = ''
   await new Promise((r) => setTimeout(r, 160))
   try {
@@ -217,7 +215,6 @@ async function goTo(to, key) {
     navLock = false
   }
 }
-
 
 const iuranStatus = ref('loading')
 const iuranTitle = ref('Iuran yang belum di bayar')
@@ -258,6 +255,7 @@ function rp(n) {
 
 const rondaHeadline = ref('…')
 const rondaDesc = ref('Ketuk untuk detail jadwal')
+const rondaGroupName = ref('')
 const kasHeadline = ref('…')
 
 function weekIndex(d) {
@@ -295,7 +293,7 @@ function formatHariPendek(s) {
 const menus = computed(() => [
   {
     to: '/ronda',
-    label: 'Jadwal Ronda',
+    label: rondaGroupName.value ? ('Jadwal Ronda (' + rondaGroupName.value + ')') : 'Jadwal Ronda',
     headline: rondaHeadline.value,
     desc: rondaDesc.value,
     icon: ShieldCheck,
@@ -399,10 +397,13 @@ onMounted(async () => {
 
   if (rn.ok && rn.data?.tanggal) {
     rondaHeadline.value = labelKapanTgl(rn.data.tanggal)
-    rondaDesc.value = formatHariPendek(rn.data.tanggal) + ' · Ketuk untuk detail'
+    const ng = String(rn.data.nama_group || '').trim()
+    rondaGroupName.value = ng
+    rondaDesc.value = formatHariPendek(rn.data.tanggal) + (ng ? ' · ' + ng : '') + ' · Ketuk untuk detail'
   } else {
     rondaHeadline.value = 'Belum ada jadwal'
     rondaDesc.value = 'Ketuk untuk melihat jadwal ronda'
+    rondaGroupName.value = ''
   }
 
   if (kas.ok && kas.data) {
