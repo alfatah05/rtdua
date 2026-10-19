@@ -384,6 +384,53 @@ class KeuanganController extends Controller
         ]);
     }
 
+    public function buatTagihanKhususKeluarga($keluargaId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new IuranKhususService())->buatPerKeluarga(
+            (int) $keluargaId,
+            $json,
+            (int) $user['id']
+        );
+        return $res['ok']
+            ? ApiResponse::ok($res['data'], 'Tagihan khusus dibuat')
+            : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function ubahTagihanKhusus($tagihanId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new IuranKhususService())->ubahByTagihan((int) $tagihanId, $json, (int) $user['id']);
+        return $res['ok']
+            ? ApiResponse::ok($res['data'] ?? null, 'Tagihan khusus diubah')
+            : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function hapusTagihanKhusus($tagihanId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new IuranKhususService())->hapusByTagihan(
+            (int) $tagihanId,
+            (string) ($json['alasan'] ?? ''),
+            (int) $user['id']
+        );
+        return $res['ok']
+            ? ApiResponse::ok($res['data'] ?? null, 'Tagihan khusus dihapus')
+            : ApiResponse::fail($res['message'], 422);
+    }
+
     private function requirePengurus(): ?array
     {
         $side = SideContext::fromRequest();

@@ -83,6 +83,9 @@ $routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['f
 $routes->post('keuangan/iuran-khusus', 'KeuanganController::buatIuranKhusus', ['filter' => 'auth']);
 $routes->put('keuangan/iuran-khusus/(:num)', 'KeuanganController::ubahIuranKhusus/$1', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-khusus/(:num)/batal', 'KeuanganController::batalkanIuranKhusus/$1', ['filter' => 'auth']);
+$routes->post('keuangan/keluarga/(:num)/tagihan-khusus', 'KeuanganController::buatTagihanKhususKeluarga/$1', ['filter' => 'auth']);
+$routes->put('keuangan/tagihan-khusus/(:num)', 'KeuanganController::ubahTagihanKhusus/$1', ['filter' => 'auth']);
+$routes->post('keuangan/tagihan-khusus/(:num)/batal', 'KeuanganController::hapusTagihanKhusus/$1', ['filter' => 'auth']);
 $routes->get('keuangan/laporan', 'KeuanganController::laporan', ['filter' => 'auth']);
 $routes->get('keuangan/rekening', 'RekeningPembayaranController::index', ['filter' => 'auth']);
 $routes->post('keuangan/rekening', 'RekeningPembayaranController::create', ['filter' => 'auth']);
