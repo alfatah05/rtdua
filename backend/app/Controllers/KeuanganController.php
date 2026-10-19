@@ -2,16 +2,18 @@
 
 namespace App\Controllers;
 
-use App\Libraries\ApiResponse;
-use App\Libraries\SideContext;
 use App\Services\AuthService;
 use App\Services\IuranKhususService;
+use App\Services\IuranKomponenService;
+use App\Services\KasPosService;
 use App\Services\KasService;
 use App\Services\PembayaranService;
 use App\Services\TagihanService;
-use CodeIgniter\Controller;
+use App\Support\ApiResponse;
+use App\Support\SideContext;
+use CodeIgniter\RESTful\ResourceController;
 
-class KeuanganController extends Controller
+class KeuanganController extends ResourceController
 {
     public function ringkasanKeluarga($keluargaId)
     {
@@ -19,7 +21,8 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        return ApiResponse::ok((new TagihanService())->ringkasanKeluarga((int) $keluargaId));
+        $data = (new TagihanService())->ringkasanKeluarga((int) $keluargaId);
+        return ApiResponse::ok($data);
     }
 
     public function pratinjauAlokasi($keluargaId)
@@ -28,9 +31,9 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $json = $this->request->getJSON(true) ?? [];
-        $nominal = (int) ($json['nominal'] ?? $this->request->getGet('nominal') ?? 0);
-        return ApiResponse::ok((new TagihanService())->pratinjauAlokasi((int) $keluargaId, $nominal));
+        $nominal = (int) ($this->request->getGet('nominal') ?? 0);
+        $data = (new TagihanService())->pratinjauAlokasi((int) $keluargaId, $nominal);
+        return ApiResponse::ok($data);
     }
 
     public function daftarIuran()
@@ -39,22 +42,22 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $filter = [
-            'status'  => $this->request->getGet('status'),
-            'blok_id' => $this->request->getGet('blok_id'),
+        $filters = [
+            'q' => $this->request->getGet('q'),
+            'status' => $this->request->getGet('status'),
         ];
-        return ApiResponse::ok((new TagihanService())->daftarIuran($filter));
+        return ApiResponse::ok((new TagihanService())->daftarIuran($filters));
     }
 
-    public function ubahNominal()
+    public function ubahNominal($tagihanId)
     {
         $user = $this->requirePengurus();
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new TagihanService())->ubahNominal($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'OK') : ApiResponse::fail($res['message'], 422);
+        $res = (new TagihanService())->ubahNominal((int) $tagihanId, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Nominal diubah') : ApiResponse::fail($res['message'], 422);
     }
 
     public function pastikanTagihanKas()
@@ -64,9 +67,9 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $periode = $json['periode'] ?? date('Y-m');
-        $n = (new TagihanService())->pastikanTagihanKasBulan($periode);
-        return ApiResponse::ok(['dibuat' => $n, 'periode' => $periode]);
+        $periode = (string) ($json['periode'] ?? date('Y-m'));
+        $res = (new TagihanService())->pastikanTagihanKasBulan($periode, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Tagihan kas dipastikan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function catatPembayaran()
@@ -77,7 +80,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new PembayaranService())->catat($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Pembayaran dicatat') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Pembayaran dicatat') : ApiResponse::fail($res['message'], 422);
     }
 
     public function batalkanPembayaran($id)
@@ -87,8 +90,8 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new PembayaranService())->batalkanPembayaran((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Pembayaran dibatalkan') : ApiResponse::fail($res['message'], 422);
+        $res = (new PembayaranService())->batalkan((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Pembayaran dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function batalkanDenda($tagihanId)
@@ -98,7 +101,7 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new PembayaranService())->batalkanDenda((int) $tagihanId, (string) ($json['alasan'] ?? ''), (int) $user['id']);
+        $res = (new TagihanService())->ubahNominal((int) $tagihanId, ['nominal' => 0, 'alasan' => $json['alasan'] ?? 'Batalkan denda'], (int) $user['id']);
         return $res['ok'] ? ApiResponse::ok(null, 'Denda dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
@@ -108,8 +111,7 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $status = $this->request->getGet('status') ?? 'menunggu';
-        return ApiResponse::ok((new PembayaranService())->listPermintaan($status));
+        return ApiResponse::ok((new PembayaranService())->listPermintaan($this->request->getGet() ?? []));
     }
 
     public function konfirmasiPermintaan($id)
@@ -118,9 +120,8 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $json = $this->request->getJSON(true) ?? [];
-        $res = (new PembayaranService())->konfirmasiPermintaan((int) $id, $json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Dikonfirmasi') : ApiResponse::fail($res['message'], 422);
+        $res = (new PembayaranService())->konfirmasiPermintaan((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Permintaan dikonfirmasi') : ApiResponse::fail($res['message'], 422);
     }
 
     public function tolakPermintaan($id)
@@ -131,7 +132,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new PembayaranService())->tolakPermintaan((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Ditolak') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok(null, 'Permintaan ditolak') : ApiResponse::fail($res['message'], 422);
     }
 
     public function saldoKas()
@@ -140,7 +141,7 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        return ApiResponse::ok(['saldo' => (new KasService())->saldo()]);
+        return ApiResponse::ok((new KasService())->saldo());
     }
 
     public function listKas()
@@ -149,16 +150,7 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $filter = [
-            'bulan'    => $this->request->getGet('bulan'),
-            'tipe'     => $this->request->getGet('tipe'),
-            'kategori' => $this->request->getGet('kategori'),
-        ];
-        $svc = new KasService();
-        return ApiResponse::ok([
-            'saldo' => $svc->saldo(),
-            'items' => $svc->list($filter),
-        ]);
+        return ApiResponse::ok((new KasService())->list($this->request->getGet() ?? []));
     }
 
     public function tambahKas()
@@ -169,7 +161,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new KasService())->tambah($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Kas dicatat') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Kas dicatat') : ApiResponse::fail($res['message'], 422);
     }
 
     public function batalkanKas($id)
@@ -180,7 +172,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new KasService())->batalkan((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Kas dibatalkan') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok(null, 'Kas dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function listKasPos()
@@ -189,7 +181,7 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        return ApiResponse::ok((new KasService())->listPos());
+        return ApiResponse::ok((new KasPosService())->list());
     }
 
     public function buatKasPos()
@@ -199,8 +191,8 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new KasService())->buatPos($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Pos dibuat') : ApiResponse::fail($res['message'], 422);
+        $res = (new KasPosService())->buat($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Pos kas dibuat') : ApiResponse::fail($res['message'], 422);
     }
 
     public function ubahKasPos($id)
@@ -210,8 +202,8 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new KasService())->ubahPos((int) $id, $json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Pos diubah') : ApiResponse::fail($res['message'], 422);
+        $res = (new KasPosService())->ubah((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Pos kas diubah') : ApiResponse::fail($res['message'], 422);
     }
 
     public function nonaktifKasPos($id)
@@ -220,8 +212,8 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $res = (new KasService())->nonaktifPos((int) $id, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Pos nonaktif') : ApiResponse::fail($res['message'], 422);
+        $res = (new KasPosService())->nonaktif((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Pos kas dinonaktifkan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function alokasiKasPos()
@@ -232,7 +224,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new KasService())->alokasiAntarPos($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Alokasi berhasil') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Alokasi berhasil') : ApiResponse::fail($res['message'], 422);
     }
 
     public function listIuranKomponen()
@@ -241,7 +233,7 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        return ApiResponse::ok((new TagihanService())->listIuranKomponen());
+        return ApiResponse::ok((new IuranKomponenService())->list());
     }
 
     public function buatIuranKomponen()
@@ -251,8 +243,8 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new TagihanService())->buatIuranKomponen($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Komponen dibuat') : ApiResponse::fail($res['message'], 422);
+        $res = (new IuranKomponenService())->buat($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Komponen dibuat') : ApiResponse::fail($res['message'], 422);
     }
 
     public function ubahIuranKomponen($id)
@@ -262,8 +254,8 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new TagihanService())->ubahIuranKomponen((int) $id, $json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Disimpan') : ApiResponse::fail($res['message'], 422);
+        $res = (new IuranKomponenService())->ubah((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Komponen diubah') : ApiResponse::fail($res['message'], 422);
     }
 
     public function hapusIuranKomponen($id)
@@ -272,8 +264,8 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $res = (new TagihanService())->hapusIuranKomponen((int) $id, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Dihapus') : ApiResponse::fail($res['message'], 422);
+        $res = (new IuranKomponenService())->hapus((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Komponen dihapus') : ApiResponse::fail($res['message'], 422);
     }
 
     public function terapkanKomponenBulanIni()
@@ -282,8 +274,9 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $res = (new TagihanService())->terapkanKomponenBulanIni((int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Diterapkan') : ApiResponse::fail($res['message'], 422);
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new IuranKomponenService())->terapkanBulanIni($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Komponen diterapkan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function listIuranKhusus()
@@ -292,7 +285,7 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        return ApiResponse::ok((new IuranKhususService())->list());
+        return ApiResponse::ok((new IuranKhususService())->list($this->request->getGet() ?? []));
     }
 
     public function buatIuranKhusus()
@@ -303,7 +296,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new IuranKhususService())->buat($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Iuran khusus dibuat') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Iuran khusus dibuat') : ApiResponse::fail($res['message'], 422);
     }
 
     public function ubahIuranKhusus($id)
@@ -313,8 +306,8 @@ class KeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $json = $this->request->getJSON(true) ?? [];
-        $res = (new IuranKhususService())->ubahNominal((int) $id, (int) ($json['nominal'] ?? 0), (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Disimpan') : ApiResponse::fail($res['message'], 422);
+        $res = (new IuranKhususService())->ubahNominal((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Iuran khusus diubah') : ApiResponse::fail($res['message'], 422);
     }
 
     public function batalkanIuranKhusus($id)
@@ -325,7 +318,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new IuranKhususService())->batalkan((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Dibatalkan') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok(null, 'Iuran khusus dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function buatTagihanKhususKeluarga($keluargaId)
@@ -373,74 +366,11 @@ class KeuanganController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $bulan = $this->request->getGet('bulan') ?? date('Y-m');
-        $kas = new KasService();
-        $items = $kas->list(['bulan' => $bulan]);
-        $masuk = 0;
-        $keluar = 0;
-        $perKat = [];
-        foreach ($items as $it) {
-            if ($it['tipe'] === 'masuk') {
-                $masuk += $it['nominal'];
-            } else {
-                $keluar += $it['nominal'];
-            }
-            $k = $it['kategori'];
-            if (!isset($perKat[$k])) {
-                $perKat[$k] = ['masuk' => 0, 'keluar' => 0];
-            }
-            $perKat[$k][$it['tipe']] += $it['nominal'];
-        }
+        $mk = (new KasService())->totalMasukKeluarTanpaAlokasi($this->request->getGet() ?? []);
         return ApiResponse::ok([
-            'bulan'            => $bulan,
-            'saldo_keseluruhan'=> $kas->saldo(),
-            'total_masuk'      => $masuk,
-            'total_keluar'     => $keluar,
-            'per_kategori'     => $perKat,
-            'transaksi'        => $items,
-            'rekap_iuran'      => (new TagihanService())->daftarIuran([]),
+            'kas' => $mk,
+            'iuran' => (new TagihanService())->daftarIuran([]),
         ]);
-    }
-
-    public function listRekening()
-    {
-        $user = $this->requirePengurus();
-        if (!$user) {
-            return ApiResponse::fail('Unauthorized', 401);
-        }
-        return ApiResponse::ok((new KasService())->listRekening());
-    }
-
-    public function createRekening()
-    {
-        $user = $this->requirePengurus();
-        if (!$user) {
-            return ApiResponse::fail('Unauthorized', 401);
-        }
-        $json = $this->request->getJSON(true) ?? [];
-        $res = (new KasService())->createRekening($json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Rekening ditambah') : ApiResponse::fail($res['message'], 422);
-    }
-
-    public function updateRekening($id)
-    {
-        $user = $this->requirePengurus();
-        if (!$user) {
-            return ApiResponse::fail('Unauthorized', 401);
-        }
-        $json = $this->request->getJSON(true) ?? [];
-        $res = (new KasService())->updateRekening((int) $id, $json, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Disimpan') : ApiResponse::fail($res['message'], 422);
-    }
-
-    public function deleteRekening($id)
-    {
-        $user = $this->requirePengurus();
-        if (!$user) {
-            return ApiResponse::fail('Unauthorized', 401);
-        }
-        $res = (new KasService())->deleteRekening((int) $id, (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Dihapus') : ApiResponse::fail($res['message'], 422);
     }
 
     private function requirePengurus(): ?array
