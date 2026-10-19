@@ -46,16 +46,35 @@
           :key="card.id"
           class="rounded-[20px] border border-[var(--line)] overflow-hidden bg-[var(--card)]"
         >
-          <div class="px-4 py-3 flex items-center justify-between" style="background: linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)">
-            <div class="min-w-0">
-              <p class="text-[14px] font-bold m-0 text-white">{{ card.label }}</p>
-              <p class="text-[12px] m-0 mt-0.5 text-white/90">{{ jamLabel(card.jam_mulai) }}–{{ jamLabel(card.jam_selesai) }}</p>
+          <div class="px-4 py-3" style="background: linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-[14px] font-bold m-0 text-white">{{ card.label }}</p>
+                <p class="text-[12px] m-0 mt-0.5 text-white/90">{{ jamLabel(card.jam_mulai) }}–{{ jamLabel(card.jam_selesai) }}</p>
+              </div>
+              <button
+                type="button"
+                class="min-h-[32px] px-3 rounded-full text-[12px] font-bold bg-white/20 text-white active:scale-95 shrink-0"
+                @click="$router.push('/ronda/jadwal-tetap/card/' + card.id)"
+              >Ubah warga</button>
             </div>
-            <button
-              type="button"
-              class="min-h-[32px] px-3 rounded-full text-[12px] font-bold bg-white/20 text-white active:scale-95"
-              @click="$router.push('/ronda/jadwal-tetap/card/' + card.id)"
-            >Ubah warga</button>
+            <div class="mt-2 flex items-center gap-2">
+              <input
+                v-model="namaDraft[card.id]"
+                type="text"
+                maxlength="64"
+                placeholder="Nama group (opsional)"
+                class="flex-1 min-h-[36px] px-3 rounded-full bg-white/15 text-white text-[13px] font-semibold outline-none placeholder:text-white/60 border border-white/25"
+                @keydown.enter.prevent="simpanNama(card)"
+              />
+              <button
+                type="button"
+                class="min-h-[36px] px-3 rounded-full text-[12px] font-bold bg-white text-[var(--g)] active:scale-95 shrink-0 disabled:opacity-60"
+                :disabled="namaBusy === card.id"
+                @click="simpanNama(card)"
+              >{{ namaBusy === card.id ? '…' : 'Simpan' }}</button>
+            </div>
+            <p v-if="card.nama_group" class="text-[11px] m-0 mt-1.5 text-white/85">Group: {{ card.nama_group }}</p>
           </div>
           <div class="px-4 py-3 space-y-1">
             <template v-if="card.keluarga?.length">
@@ -83,11 +102,10 @@
 </template>
 
 <script setup>
-import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { listJadwalTetap, listTemplateCards, buatTemplateCards } from '@shared/services/ronda.js'
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+import { listJadwalTetap, listTemplateCards, buatTemplateCards, ubahNamaGroupCard } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { useToast } from '@shared/composables/useToast.js'
 
@@ -101,6 +119,8 @@ const jamSelesai = ref('00:00')
 const durasi = ref('1')
 const busy = ref(false)
 const cards = ref([])
+const namaDraft = ref({})
+const namaBusy = ref(0)
 const adaHari = computed(() => selected.value.some(Boolean))
 
 function jamLabel(j) {
@@ -112,6 +132,14 @@ function inisial(nama) {
   if (!nama) return '?'
   const p = String(nama).trim().split(/\s+/)
   return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || '?'
+}
+
+function syncNamaDraft(list) {
+  const draft = { ...namaDraft.value }
+  for (const card of list || []) {
+    draft[card.id] = card.nama_group || ''
+  }
+  namaDraft.value = draft
 }
 
 async function load() {
@@ -137,7 +165,10 @@ async function load() {
     }
   }
   selected.value = next
-  if (c.ok) cards.value = c.data || []
+  if (c.ok) {
+    cards.value = c.data || []
+    syncNamaDraft(cards.value)
+  }
 }
 
 function toggleHari(h) {
@@ -169,9 +200,26 @@ async function jalankanBuat() {
       const c = await listTemplateCards()
       if (c.ok) cards.value = c.data || []
     }
+    syncNamaDraft(cards.value)
   } else {
     toast.error(res.error || 'Gagal buat jadwal')
   }
+}
+
+async function simpanNama(card) {
+  const id = Number(card.id)
+  if (!id) return
+  namaBusy.value = id
+  const nama = String(namaDraft.value[id] ?? '').trim()
+  const res = await ubahNamaGroupCard(id, nama)
+  namaBusy.value = 0
+  if (!res.ok) {
+    toast.error(res.error || 'Gagal simpan nama')
+    return
+  }
+  card.nama_group = res.data?.nama_group || null
+  namaDraft.value = { ...namaDraft.value, [id]: card.nama_group || '' }
+  toast.success('Nama group disimpan')
 }
 
 onMounted(load)
