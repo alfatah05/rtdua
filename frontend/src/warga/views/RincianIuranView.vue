@@ -154,10 +154,19 @@
             </div>
           </div>
         </template>
-        <p v-else class="text-[13px] text-[var(--mut)] text-center py-6 m-0">Tidak ada tagihan terbuka</p>
+        <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">Tidak ada tagihan terbuka</p>
       </div>
 
-      <h2 class="text-[15px] font-bold m-0 mb-2 mt-1">Riwayat pembayaran</h2>
+      <button
+        type="button"
+        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition mb-6"
+        @click="$router.push('/bayar')"
+      >
+        Bayar tagihan
+      </button>
+
+      <h2 class="text-[15px] font-bold m-0 mb-1">Riwayat pembayaran</h2>
+
       <div
         v-if="riwayat.length"
         class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-6"
@@ -187,15 +196,6 @@
         </div>
       </div>
       <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 m-0 mb-6">Belum ada riwayat</p>
-
-      <button
-        v-if="totalTerbuka > 0"
-        type="button"
-        class="w-full h-12 rounded-2xl bg-[var(--gm)] text-white text-[15px] font-bold active:opacity-90"
-        @click="goBayar"
-      >
-        Bayar sekarang
-      </button>
     </template>
   </div>
 </template>
@@ -354,11 +354,6 @@ const permintaanMenunggu = computed(() =>
 const stylePermintaan = {
   background:
     'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FBBF24, #F59E0B 55%, #D97706)',
-}
-
-function goBayar() {
-  // pakai location agar pasti full navigation di shared hosting
-  window.location.href = '/pre-bayar'
 }
 
 onMounted(async () => {
