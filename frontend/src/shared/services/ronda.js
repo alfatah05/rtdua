@@ -130,6 +130,11 @@ export async function terbitkanDenda(payload) {
   }
 }
 
+/** Alias untuk RondaDendaView */
+export async function terbitkanDendaRonda(payload) {
+  return terbitkanDenda(payload)
+}
+
 /** List card template (minggu × hari). */
 export async function listTemplateCards(opts = {}) {
   try {
