@@ -351,6 +351,24 @@ class KeuanganController extends Controller
         return $res['ok'] ? ApiResponse::ok(null, 'Dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
+    /** Tagihan khusus untuk satu keluarga saja. */
+    public function buatTagihanKhususKeluarga($keluargaId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new IuranKhususService())->buatPerKeluarga(
+            (int) $keluargaId,
+            $json,
+            (int) $user['id']
+        );
+        return $res['ok']
+            ? ApiResponse::ok($res['data'], 'Tagihan khusus dibuat')
+            : ApiResponse::fail($res['message'] ?? 'Gagal', 422);
+    }
+
     // ---- Laporan ringkas ----
 
     public function laporan()
@@ -365,7 +383,6 @@ class KeuanganController extends Controller
         $totals = $kas->totalMasukKeluarTanpaAlokasi($bulan);
         $perKat = [];
         foreach ($items as $it) {
-            // Alokasi tidak masuk rekap masuk/keluar per kategori sebagai pengeluaran
             if (!empty($it['is_alokasi'])) {
                 if (!isset($perKat[KasService::KAT_ALOKASI])) {
                     $perKat[KasService::KAT_ALOKASI] = ['masuk' => 0, 'keluar' => 0, 'alokasi' => 0];
