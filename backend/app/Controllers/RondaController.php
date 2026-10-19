@@ -76,7 +76,6 @@ class RondaController extends Controller
 
     public function listJadwalTetap()
     {
-        // Baca: warga & pengurus (untuk highlight kalender warga)
         if (!$this->requireLogin()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
@@ -96,7 +95,6 @@ class RondaController extends Controller
 
     public function listJadwalKhusus()
     {
-        // Baca: warga & pengurus (overlay khusus di kalender warga)
         if (!$this->requireLogin()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
@@ -232,7 +230,6 @@ class RondaController extends Controller
 
     public function listTemplate()
     {
-        // Baca: warga & pengurus (proyeksi giliran di kalender warga)
         if (!$this->requireLogin()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
@@ -263,5 +260,17 @@ class RondaController extends Controller
             (int) $user['id']
         );
         return $res['ok'] ? ApiResponse::ok($res['data'], 'Daftar keluarga diperbarui') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function ubahNamaGroup($cardId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $nama = (string) ($json['nama_group'] ?? $json['nama'] ?? '');
+        $res = (new RondaService())->ubahNamaGroup((int) $cardId, $nama, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Nama group disimpan') : ApiResponse::fail($res['message'], 422);
     }
 }
