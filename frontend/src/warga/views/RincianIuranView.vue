@@ -327,18 +327,17 @@ const heroHint = computed(() => {
 })
 
 const styleTagihan = {
-  background:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F97316, #EA580C 55%, #C2410C)',
+  background: 'linear-gradient(105deg, #F59E0B 0%, #B45309 100%)',
 }
 const styleLunas = {
-  background:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
+  background: 'linear-gradient(105deg, #22B863 0%, #0B8442 100%)',
 }
 const styleLebih = {
-  background:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)',
+  background: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
 }
-const styleLoading = { background: 'var(--card2)' }
+const styleLoading = {
+  background: 'var(--card2)',
+}
 
 const heroStyle = computed(() => {
   if (heroStatus.value === 'pending') return styleTagihan
