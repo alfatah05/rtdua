@@ -29,3 +29,33 @@ onUnmounted(() => {
   window.removeEventListener('rtdua:unauthorized', onUnauthorized)
 })
 </script>
+
+<style>
+/* Aplikasi warga: cegah zoom & seleksi teks di semua halaman */
+html,
+body,
+#app {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#app,
+#app * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Input form tetap bisa diedit & diseleksi */
+#app input,
+#app textarea,
+#app [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+</style>
