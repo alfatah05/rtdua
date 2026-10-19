@@ -12,6 +12,7 @@ import WargaEditView from '../views/WargaEditView.vue'
 import WargaPindahView from '../views/WargaPindahView.vue'
 import WargaTambahAnggotaView from '../views/WargaTambahAnggotaView.vue'
 import WargaStatusAnggotaView from '../views/WargaStatusAnggotaView.vue'
+import WargaTagihanKhususView from '../views/WargaTagihanKhususView.vue'
 import KeuanganView from '../views/KeuanganView.vue'
 import IuranView from '../views/IuranView.vue'
 import TagihanDetailView from '../views/TagihanDetailView.vue'
@@ -78,6 +79,7 @@ const routes = [
       { path: 'warga/:id/meninggal', redirect: to => ({ path: '/warga/' + to.params.id + '/status-anggota', query: { status: 'meninggal' } }) },
       { path: 'warga/:id/pindah', component: WargaPindahView },
       { path: 'warga/:id/reset-pin', redirect: to => '/warga/' + to.params.id },
+      { path: 'warga/:id/tagihan-khusus', component: WargaTagihanKhususView },
 
       { path: 'keuangan', name: 'keuangan', component: KeuanganView },
       { path: 'keuangan/iuran', component: IuranView },
