@@ -4,11 +4,11 @@ import { api } from '../api/http.js'
 
 export async function daftarIuran(params = {}) {
   try {
-    const qs = new URLSearchParams()
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v))
-    })
-    const res = await api('/keuangan/iuran' + (qs.toString() ? '?' + qs : ''))
+    const q = new URLSearchParams()
+    if (params.status) q.set('status', params.status)
+    if (params.blok_id) q.set('blok_id', params.blok_id)
+    const qs = q.toString()
+    const res = await api('/keuangan/iuran' + (qs ? '?' + qs : ''))
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -80,11 +80,11 @@ export async function konfirmasiPermintaan(id, payload = {}) {
 
 export async function tolakPermintaan(id, alasan) {
   try {
-    await api('/keuangan/permintaan/' + id + '/tolak', {
+    const res = await api('/keuangan/permintaan/' + id + '/tolak', {
       method: 'POST',
       body: { alasan },
     })
-    return { ok: true }
+    return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
@@ -101,11 +101,13 @@ export async function saldoKas() {
 
 export async function listKas(params = {}) {
   try {
-    const qs = new URLSearchParams()
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v))
-    })
-    const res = await api('/keuangan/kas' + (qs.toString() ? '?' + qs : ''))
+    const q = new URLSearchParams()
+    if (params.bulan) q.set('bulan', params.bulan)
+    if (params.tipe) q.set('tipe', params.tipe)
+    if (params.kategori) q.set('kategori', params.kategori)
+    if (params.kas_pos_id) q.set('kas_pos_id', params.kas_pos_id)
+    const qs = q.toString()
+    const res = await api('/keuangan/kas' + (qs ? '?' + qs : ''))
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -133,7 +135,6 @@ export async function batalkanKas(id, alasan) {
   }
 }
 
-// ---- Pos kas ----
 export async function listKasPos() {
   try {
     const res = await api('/keuangan/kas-pos')
@@ -142,6 +143,7 @@ export async function listKasPos() {
     return { ok: false, error: e.message }
   }
 }
+
 export async function buatKasPos(payload) {
   try {
     const res = await api('/keuangan/kas-pos', { method: 'POST', body: payload })
@@ -150,6 +152,7 @@ export async function buatKasPos(payload) {
     return { ok: false, error: e.message }
   }
 }
+
 export async function ubahKasPos(id, payload) {
   try {
     const res = await api('/keuangan/kas-pos/' + id, { method: 'PUT', body: payload })
@@ -158,18 +161,19 @@ export async function ubahKasPos(id, payload) {
     return { ok: false, error: e.message }
   }
 }
+
 export async function nonaktifKasPos(id) {
   try {
-    await api('/keuangan/kas-pos/' + id + '/nonaktif', { method: 'POST', body: {} })
-    return { ok: true }
+    const res = await api('/keuangan/kas-pos/' + id + '/nonaktif', { method: 'POST' })
+    return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
+
 export async function alokasiKasPos(payload) {
   try {
-    // Path tegas (hindari 404 route lama di server)
-    const res = await api('/keuangan/alokasi-pos', { method: 'POST', body: payload })
+    const res = await api('/keuangan/kas-pos/alokasi', { method: 'POST', body: payload })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -194,9 +198,43 @@ export async function buatIuranKhusus(payload) {
   }
 }
 
+export async function ubahIuranKhusus(id, payload) {
+  try {
+    const res = await api('/keuangan/iuran-khusus/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function batalkanIuranKhusus(id, alasan) {
+  try {
+    const res = await api('/keuangan/iuran-khusus/' + id + '/batal', {
+      method: 'POST',
+      body: { alasan },
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function buatTagihanKhususKeluarga(keluargaId, payload) {
+  try {
+    const res = await api('/keuangan/keluarga/' + keluargaId + '/tagihan-khusus', {
+      method: 'POST',
+      body: payload,
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function laporan(bulan) {
   try {
-    const res = await api('/keuangan/laporan?bulan=' + encodeURIComponent(bulan || ''))
+    const q = bulan ? ('?bulan=' + encodeURIComponent(bulan)) : ''
+    const res = await api('/keuangan/laporan' + q)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -224,7 +262,6 @@ export async function pastikanTagihanKas(periode) {
   }
 }
 
-// ---- Komponen iuran tetap ----
 export async function listIuranKomponen() {
   try {
     const res = await api('/keuangan/iuran-komponen')
@@ -263,14 +300,12 @@ export async function hapusIuranKomponen(id) {
 
 export async function terapkanKomponenBulanIni() {
   try {
-    const res = await api('/keuangan/iuran-komponen/terapkan-bulan-ini', { method: 'POST', body: {} })
+    const res = await api('/keuangan/iuran-komponen/terapkan-bulan-ini', { method: 'POST' })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
   }
 }
-
-// ---- Portal warga ----
 
 export async function portalRingkasan() {
   try {
@@ -309,7 +344,6 @@ export async function portalKas(bulan) {
   }
 }
 
-// ---- Rekening pembayaran ----
 export async function listRekening() {
   try {
     const res = await api('/keuangan/rekening')
