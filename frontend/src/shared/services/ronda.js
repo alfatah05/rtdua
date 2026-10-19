@@ -21,9 +21,10 @@ export async function malamIni() {
   }
 }
 
-export async function malamTerdekat() {
+export async function malamTerdekat(keluargaId) {
   try {
-    const res = await api('/ronda/terdekat')
+    const q = keluargaId ? ('?keluargaId=' + encodeURIComponent(keluargaId)) : ''
+    const res = await api('/ronda/terdekat' + q)
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
