@@ -16,6 +16,7 @@ $routes->post('auth/logout', 'AuthController::logout');
 $routes->get('auth/me', 'AuthController::me', ['filter' => 'auth']);
 $routes->post('auth/change-credential', 'AuthController::changeCredential', ['filter' => 'auth']);
 $routes->post('auth/update-foto', 'AuthController::updateFoto', ['filter' => 'auth']);
+$routes->put('auth/profil', 'AuthController::updateProfil', ['filter' => 'auth']);
 $routes->get('auth/blok-login', 'PengaturanController::listBlokLogin');
 
 $routes->get('pengaturan', 'PengaturanController::index', ['filter' => 'auth']);
@@ -48,6 +49,9 @@ $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
 $routes->get('portal/keluarga', 'PortalController::keluargaSaya', ['filter' => 'auth']);
+$routes->get('portal/warga/(:num)', 'PortalController::detailKeluarga/$1', ['filter' => 'auth']);
+$routes->post('portal/keluarga/anggota', 'PortalController::tambahAnggotaSaya', ['filter' => 'auth']);
+$routes->put('portal/keluarga/anggota/(:num)', 'PortalController::updateAnggotaSaya/$1', ['filter' => 'auth']);
 
 $routes->get('keuangan/iuran', 'KeuanganController::daftarIuran', ['filter' => 'auth']);
 $routes->get('keuangan/keluarga/(:num)', 'KeuanganController::ringkasanKeluarga/$1', ['filter' => 'auth']);
@@ -68,11 +72,13 @@ $routes->get('keuangan/kas-pos', 'KeuanganController::listKasPos', ['filter' => 
 $routes->post('keuangan/kas-pos', 'KeuanganController::buatKasPos', ['filter' => 'auth']);
 $routes->put('keuangan/kas-pos/(:num)', 'KeuanganController::ubahKasPos/$1', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos/(:num)/nonaktif', 'KeuanganController::nonaktifKasPos/$1', ['filter' => 'auth']);
+$routes->post('keuangan/alokasi-pos', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos/alokasi', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
 $routes->get('keuangan/iuran-komponen', 'KeuanganController::listIuranKomponen', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-komponen', 'KeuanganController::buatIuranKomponen', ['filter' => 'auth']);
 $routes->put('keuangan/iuran-komponen/(:num)', 'KeuanganController::ubahIuranKomponen/$1', ['filter' => 'auth']);
 $routes->delete('keuangan/iuran-komponen/(:num)', 'KeuanganController::hapusIuranKomponen/$1', ['filter' => 'auth']);
+$routes->post('keuangan/iuran-komponen/terapkan-bulan-ini', 'KeuanganController::terapkanKomponenBulanIni', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-komponen/terapkan', 'KeuanganController::terapkanKomponenBulanIni', ['filter' => 'auth']);
 $routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-khusus', 'KeuanganController::buatIuranKhusus', ['filter' => 'auth']);
@@ -94,6 +100,7 @@ $routes->get('portal/keuangan/kas', 'PortalKeuanganController::kas', ['filter' =
 $routes->get('portal/keuangan/rekening', 'RekeningPembayaranController::portalList', ['filter' => 'auth']);
 
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
+$routes->get('notifikasi/(:num)', 'NotifikasiController::show/$1', ['filter' => 'auth']);
 $routes->get('notifikasi/badge', 'NotifikasiController::badge', ['filter' => 'auth']);
 $routes->post('notifikasi/(:num)/baca', 'NotifikasiController::baca/$1', ['filter' => 'auth']);
 $routes->post('notifikasi/baca-semua', 'NotifikasiController::bacaSemua', ['filter' => 'auth']);
@@ -131,6 +138,9 @@ $routes->post('galeri', 'KontenController::buatAlbum', ['filter' => 'auth']);
 $routes->delete('galeri/(:num)', 'KontenController::hapusAlbum/$1', ['filter' => 'auth']);
 $routes->post('galeri/(:num)/foto', 'KontenController::tambahFoto/$1', ['filter' => 'auth']);
 $routes->post('galeri/foto/hapus', 'KontenController::hapusFoto', ['filter' => 'auth']);
+$routes->get('bazis', 'KontenController::getBazis', ['filter' => 'auth']);
+$routes->put('bazis', 'KontenController::simpanBazis', ['filter' => 'auth']);
+$routes->post('bazis', 'KontenController::simpanBazis', ['filter' => 'auth']);
 $routes->get('konten/bazis', 'KontenController::getBazis', ['filter' => 'auth']);
 $routes->put('konten/bazis', 'KontenController::simpanBazis', ['filter' => 'auth']);
 
