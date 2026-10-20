@@ -44,6 +44,7 @@ const pageTitle = computed(() => {
   if (kategori.value === 'pengajian') return 'Pengajian'
   if (kategori.value === 'lingkungan') return 'Lingkungan'
   if (kategori.value === 'bulutangkis') return 'Bulutangkis'
+  if (kategori.value === 'talim') return "Ta'lim"
   return 'Posyandu'
 })
 const basePath = computed(() => '/konten/' + kategori.value)
