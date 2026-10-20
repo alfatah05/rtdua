@@ -59,21 +59,21 @@ const menus = [
     label: 'Posyandu',
     desc: 'Jadwal & informasi posyandu',
     icon: Baby,
-    cardBg: 'linear-gradient(105deg, #F97316 0%, #C2410C 100%)',
+    cardBg: '#F97316',
   },
   {
     to: '/posyandu/pengajian',
     label: 'Pengajian',
     desc: 'Jadwal pengajian ibu-ibu',
     icon: BookOpen,
-    cardBg: 'linear-gradient(105deg, #A855F7 0%, #6D28D9 100%)',
+    cardBg: '#A855F7',
   },
   {
     to: '/posyandu/lingkungan',
     label: 'Lingkungan',
     desc: 'Kegiatan lingkungan RT',
     icon: Leaf,
-    cardBg: 'linear-gradient(105deg, #22B863 0%, #0B8442 100%)',
+    cardBg: '#22B863',
   },
 ]
 </script>
