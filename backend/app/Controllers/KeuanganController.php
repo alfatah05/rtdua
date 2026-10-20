@@ -382,6 +382,7 @@ class KeuanganController extends Controller
             'per_kategori'      => $perKat,
             'transaksi'         => $items,
             'rekap_iuran'       => (new TagihanService())->daftarIuran([]),
+            'rekap_sub_pos'     => (new SubPosService())->rekapBulan($bulan),
         ]);
     }
 
@@ -432,7 +433,7 @@ class KeuanganController extends Controller
             : ApiResponse::fail($res['message'], 422);
     }
 
-    // ---- Sub pos (T1 read + T3 operasi) ----
+    // ---- Sub pos ----
 
     public function listSubPos()
     {
