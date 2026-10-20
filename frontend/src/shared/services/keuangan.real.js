@@ -368,6 +368,15 @@ export async function portalKas(bulan) {
   }
 }
 
+export async function portalStatusIuranWarga() {
+  try {
+    const res = await api('/portal/keuangan/status-iuran')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function listRekening() {
   try {
     const res = await api('/keuangan/rekening')
