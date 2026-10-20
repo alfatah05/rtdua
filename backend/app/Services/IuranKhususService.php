@@ -297,6 +297,13 @@ class IuranKhususService
             $userId
         );
 
+        // T6: judul sub pos ikut master (identitas via ref_id), tidak buat sub pos baru
+        try {
+            (new SubPosService())->sinkronJudulKhusus($iid, $nama);
+        } catch (\Throwable $e) {
+            // non-fatal
+        }
+
         return [
             'ok'   => true,
             'data' => [
