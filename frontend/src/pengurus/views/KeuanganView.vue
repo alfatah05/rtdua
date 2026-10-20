@@ -3,15 +3,36 @@
     <AppMainHeader show-profil />
 
     <div
-      class="rounded-[20px] p-5 text-white mb-4 relative overflow-hidden"
+      class="rounded-[20px] p-5 text-white mb-3 relative overflow-hidden"
       style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)"
     >
       <p class="text-[13px] font-semibold text-white/90">Saldo kas</p>
       <p class="text-[32px] font-extrabold mt-1 tracking-tight">
         {{ loadingSaldo ? '…' : formatRp(saldo) }}
       </p>
+      <p class="text-[11px] text-white/75 m-0 mt-1">Uang yang sudah di pos kas (tidak termasuk sub pos)</p>
       <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
     </div>
+
+    <!-- Sub pos: terkumpul belum disetor (terpisah dari saldo kas) -->
+    <button
+      type="button"
+      class="w-full text-left rounded-[16px] border border-[var(--line)] bg-[var(--card)] p-4 mb-4 active:scale-[0.99] transition-transform"
+      @click="$router.push('/keuangan/sub-pos')"
+    >
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[13px] text-[var(--mut)] m-0">Sub pos (belum disetor)</p>
+          <p class="text-[20px] font-extrabold m-0 mt-0.5" :class="totalSubPos > 0 ? 'text-[var(--g)]' : ''">
+            {{ loadingSubPos ? '…' : formatRp(totalSubPos) }}
+          </p>
+          <p class="text-[11px] text-[var(--mut)] m-0 mt-1">
+            Hasil iuran/denda di buku sub pos — setor lewat alokasi
+          </p>
+        </div>
+        <span class="text-[13px] font-semibold text-[var(--g)] shrink-0">Kelola →</span>
+      </div>
+    </button>
 
     <div class="grid grid-cols-5 gap-2 text-center mb-5">
       <button
@@ -89,11 +110,13 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ClipboardList, FileText, Landmark } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
-import { listKas, listPermintaan } from '@shared/services/keuangan.js'
+import { listKas, listPermintaan, listSubPos } from '@shared/services/keuangan.js'
 
 const saldo = ref(0)
+const totalSubPos = ref(0)
 const transaksi = ref([])
 const loadingSaldo = ref(true)
+const loadingSubPos = ref(true)
 const loadingList = ref(true)
 const loadErr = ref('')
 const badgePermintaan = ref(0)
@@ -124,14 +147,17 @@ function formatTanggal(t) {
 
 async function load() {
   loadingSaldo.value = true
+  loadingSubPos.value = true
   loadingList.value = true
   loadErr.value = ''
-  const [kas, perm] = await Promise.all([
+  const [kas, perm, sub] = await Promise.all([
     listKas({}),
     listPermintaan('menunggu'),
+    listSubPos(),
   ])
   loadingSaldo.value = false
   loadingList.value = false
+  loadingSubPos.value = false
   if (!kas.ok) {
     loadErr.value = kas.error || 'Gagal memuat kas.'
     return
@@ -140,6 +166,12 @@ async function load() {
   transaksi.value = kas.data?.items || []
   if (perm.ok) {
     badgePermintaan.value = (perm.data || []).length
+  }
+  if (sub.ok) {
+    const items = Array.isArray(sub.data) ? sub.data : (sub.data?.items || [])
+    totalSubPos.value = items.reduce((s, p) => s + (Number(p.saldo) || 0), 0)
+  } else {
+    totalSubPos.value = 0
   }
 }
 
