@@ -50,6 +50,8 @@ const TITLE = {
   senam: 'Senam',
   talim: "Ta'lim",
   phbi: 'PHBI',
+  rw: 'RW',
+  ambulance: 'Ambulance',
   posyandu: 'Posyandu',
 }
 const pageTitle = computed(() => TITLE[kategori.value] || 'Posyandu')
