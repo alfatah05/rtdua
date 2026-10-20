@@ -238,7 +238,7 @@ function bulanDariPeriode(periode) {
 }
 
 function labelJenisDasar(jenis) {
-  if (jenis === 'kas') return 'Kas'
+  if (jenis === 'kas') return 'Iuran'
   if (jenis === 'denda_ronda') return 'Denda ronda'
   if (jenis === 'khusus') return 'Iuran khusus'
   if (jenis === 'kelebihan') return 'Kelebihan bayar'
