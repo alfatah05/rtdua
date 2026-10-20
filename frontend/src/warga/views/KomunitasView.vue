@@ -32,7 +32,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trophy, ChevronRight } from 'lucide-vue-next'
+import { Trophy, Bike, Fish, Swords, PersonStanding, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 
 const router = useRouter()
@@ -60,6 +60,34 @@ const menus = [
     desc: 'Jadwal & info klub bulutangkis',
     icon: Trophy,
     cardBg: 'linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)',
+  },
+  {
+    to: '/komunitas/gowes',
+    label: 'Gowes',
+    desc: 'Komunitas sepeda warga',
+    icon: Bike,
+    cardBg: 'linear-gradient(105deg, #22C55E 0%, #15803D 100%)',
+  },
+  {
+    to: '/komunitas/mancing',
+    label: 'Mancing',
+    desc: 'Komunitas pancing RT',
+    icon: Fish,
+    cardBg: 'linear-gradient(105deg, #06B6D4 0%, #0E7490 100%)',
+  },
+  {
+    to: '/komunitas/silat',
+    label: 'Pencak silat',
+    desc: 'Latihan & kegiatan silat',
+    icon: Swords,
+    cardBg: 'linear-gradient(105deg, #EF4444 0%, #B91C1C 100%)',
+  },
+  {
+    to: '/komunitas/senam',
+    label: 'Senam',
+    desc: 'Jadwal senam warga',
+    icon: PersonStanding,
+    cardBg: 'linear-gradient(105deg, #F59E0B 0%, #B45309 100%)',
   },
 ]
 </script>
