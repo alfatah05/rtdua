@@ -28,6 +28,7 @@ import { computed } from 'vue'
 import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
   UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf, HandCoins, Trophy, Layers, CalendarDays,
+  Bike, Fish, Swords, Activity,
 } from 'lucide-vue-next'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
@@ -73,6 +74,10 @@ const groups = [
       { label: 'Pengajian', icon: BookOpen, to: '/konten/pengajian', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
       { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: 'rgba(34,184,99,.18)', color: '#0B8442' },
       { label: 'Bulutangkis', icon: Trophy, to: '/konten/bulutangkis', bg: 'rgba(14,165,233,.18)', color: '#0369A1' },
+      { label: 'Gowes', icon: Bike, to: '/konten/gowes', bg: 'rgba(34,197,94,.18)', color: '#15803D' },
+      { label: 'Mancing', icon: Fish, to: '/konten/mancing', bg: 'rgba(6,182,212,.18)', color: '#0E7490' },
+      { label: 'Pencak silat', icon: Swords, to: '/konten/silat', bg: 'rgba(239,68,68,.18)', color: '#B91C1C' },
+      { label: 'Senam', icon: Activity, to: '/konten/senam', bg: 'rgba(245,158,11,.18)', color: '#B45309' },
       { label: "Ta'lim", icon: BookOpen, to: '/konten/talim', bg: 'rgba(14,165,233,.18)', color: '#0369A1' },
       { label: 'PHBI', icon: CalendarDays, to: '/konten/phbi', bg: 'rgba(139,92,246,.18)', color: '#6D28D9' },
       { label: 'Bazis', icon: HandCoins, to: '/konten/bazis', bg: 'rgba(5,150,105,.18)', color: '#047857' },
