@@ -65,6 +65,7 @@ const pageTitle = computed(() => {
   if (props.kategori === 'lingkungan') return 'Lingkungan'
   if (props.kategori === 'bulutangkis') return 'Bulutangkis'
   if (props.kategori === 'talim') return "Ta'lim"
+  if (props.kategori === 'phbi') return 'PHBI'
   return 'Posyandu'
 })
 const detailBase = computed(() => {
@@ -72,6 +73,7 @@ const detailBase = computed(() => {
   if (props.kategori === 'lingkungan') return '/posyandu/lingkungan'
   if (props.kategori === 'bulutangkis') return '/komunitas/bulutangkis'
   if (props.kategori === 'talim') return '/talim/jadwal'
+  if (props.kategori === 'phbi') return '/talim/phbi'
   return '/posyandu/detail'
 })
 
@@ -98,6 +100,7 @@ function cardStyle(p) {
     lingkungan: 'linear-gradient(145deg, #22B863, #0B8442)',
     bulutangkis: 'linear-gradient(145deg, #0EA5E9, #0369A1)',
     talim: 'linear-gradient(145deg, #0EA5E9, #0369A1)',
+    phbi: 'linear-gradient(145deg, #8B5CF6, #6D28D9)',
   }
   return { background: grads[props.kategori] || grads.posyandu }
 }
