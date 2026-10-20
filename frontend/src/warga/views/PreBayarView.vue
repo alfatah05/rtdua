@@ -171,9 +171,9 @@ function labelJenisDasar(jenis) {
   return jenis || 'Tagihan'
 }
 function labelTagihan(t) {
+  // Tagihan khusus (termasuk per keluarga): judul saja, tanpa suffix bulan
   if (t.jenis === 'khusus' && t.nama) {
-    const bln = bulanDariPeriode(t.periode)
-    return bln ? `${t.nama} (${bln})` : t.nama
+    return t.nama
   }
   const jenis = labelJenisDasar(t.jenis)
   const bln = bulanDariPeriode(t.periode)
