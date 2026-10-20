@@ -30,6 +30,8 @@ import PosyanduView from '../views/PosyanduView.vue'
 import TalimView from '../views/TalimView.vue'
 import TalimJadwalView from '../views/TalimJadwalView.vue'
 import TalimItemDetailView from '../views/TalimItemDetailView.vue'
+import PhbiView from '../views/PhbiView.vue'
+import PhbiItemDetailView from '../views/PhbiItemDetailView.vue'
 import PosyanduDetailView from '../views/PosyanduDetailView.vue'
 import PengajianView from '../views/PengajianView.vue'
 import LingkunganView from '../views/LingkunganView.vue'
@@ -84,6 +86,8 @@ const routes = [
       { path: 'talim', name: 'talim', component: TalimView },
       { path: 'talim/jadwal', name: 'talim-jadwal', component: TalimJadwalView },
       { path: 'talim/jadwal/:id', name: 'talim-item', component: TalimItemDetailView },
+      { path: 'talim/phbi', name: 'phbi', component: PhbiView },
+      { path: 'talim/phbi/:id', name: 'phbi-item', component: PhbiItemDetailView },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
