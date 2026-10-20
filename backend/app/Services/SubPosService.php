@@ -104,7 +104,6 @@ class SubPosService
         $db = \Config\Database::connect();
         $now = date('Y-m-d H:i:s');
         $row = null;
-        // Identitas stabil: utamakan ref_id (master iuran_khusus), lalu judul (repost periode)
         if ($refIuranKhususId && $refIuranKhususId > 0) {
             $row = $db->table('sub_pos')->where('jenis', self::JENIS_KHUSUS)->where('ref_id', $refIuranKhususId)->get()->getRowArray();
         }
@@ -119,7 +118,6 @@ class SubPosService
                     $row['ref_id'] = $refIuranKhususId;
                 }
             }
-            // Rename hati-hati: hanya jika ref_id cocok — judul tampilan mengikuti master
             if ($judul !== '' && (string) ($row['judul'] ?? '') !== $judul) {
                 if ($refIuranKhususId && (int) ($row['ref_id'] ?? 0) === $refIuranKhususId) {
                     $upd['judul'] = mb_substr($judul, 0, 255);
@@ -417,3 +415,204 @@ class SubPosService
             'saldo' => $this->saldo($subPosId),
         ]];
     }
+
+    public function listMutasi(int $subPosId, array $filter = []): array
+    {
+        $this->ensureTable();
+        $db = \Config\Database::connect();
+        $q = $db->table('sub_pos_mutasi')->where('sub_pos_id', $subPosId)->where('dibatalkan', 0)
+            ->orderBy('tanggal', 'DESC')->orderBy('id', 'DESC');
+        if (!empty($filter['tipe']) && in_array($filter['tipe'], ['masuk', 'keluar', 'alokasi'], true)) {
+            $q->where('tipe', $filter['tipe']);
+        }
+        if (!empty($filter['bulan'])) {
+            $q->like('tanggal', (string) $filter['bulan'], 'after');
+        }
+        $limit = (int) ($filter['limit'] ?? 100);
+        if ($limit > 0) {
+            $q->limit(min($limit, 500));
+        }
+        $rows = $q->get()->getResultArray();
+        $out = [];
+        foreach ($rows as $r) {
+            $out[] = [
+                'id' => (int) $r['id'],
+                'sub_pos_id' => (int) $r['sub_pos_id'],
+                'tipe' => (string) $r['tipe'],
+                'nominal' => (int) $r['nominal'],
+                'tanggal' => $r['tanggal'],
+                'keterangan' => $r['keterangan'],
+                'pembayaran_id' => !empty($r['pembayaran_id']) ? (int) $r['pembayaran_id'] : null,
+                'kas_transaksi_id' => !empty($r['kas_transaksi_id']) ? (int) $r['kas_transaksi_id'] : null,
+                'pos_kas_id' => !empty($r['pos_kas_id']) ? (int) $r['pos_kas_id'] : null,
+                'created_at' => $r['created_at'] ?? null,
+            ];
+        }
+        return $out;
+    }
+
+    public function batalkanMutasi(int $mutasiId, string $alasan, int $userId): array
+    {
+        $alasan = trim($alasan);
+        if ($alasan === '') {
+            return ['ok' => false, 'message' => 'Alasan wajib.'];
+        }
+        $this->ensureTable();
+        $db = \Config\Database::connect();
+        $row = $db->table('sub_pos_mutasi')->where('id', $mutasiId)->get()->getRowArray();
+        if (!$row || (int) ($row['dibatalkan'] ?? 0) === 1) {
+            return ['ok' => false, 'message' => 'Mutasi tidak ditemukan.'];
+        }
+        if (!empty($row['pembayaran_id'])) {
+            return ['ok' => false, 'message' => 'Mutasi dari pembayaran hanya batal bersama pembatalan pembayaran.'];
+        }
+        $db->transStart();
+        $db->table('sub_pos_mutasi')->where('id', $mutasiId)->update([
+            'dibatalkan' => 1, 'dibatalkan_oleh' => $userId,
+            'dibatalkan_pada' => date('Y-m-d H:i:s'), 'alasan_batal' => $alasan,
+        ]);
+        if (($row['tipe'] ?? '') === 'alokasi' && !empty($row['kas_transaksi_id'])) {
+            $db->table('kas_transaksi')->where('id', (int) $row['kas_transaksi_id'])->where('dibatalkan', 0)->update([
+                'dibatalkan' => 1, 'dibatalkan_oleh' => $userId,
+                'dibatalkan_pada' => date('Y-m-d H:i:s'), 'alasan_batal' => $alasan,
+            ]);
+        }
+        $db->transComplete();
+        if (!$db->transStatus()) {
+            return ['ok' => false, 'message' => 'Gagal membatalkan mutasi.'];
+        }
+        (new AuditService())->log('sub_pos_batal_mutasi', 'sub_pos_mutasi', $mutasiId, null, [
+            'alasan' => $alasan, 'tipe' => $row['tipe'] ?? null, 'nominal' => (int) ($row['nominal'] ?? 0),
+        ], 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => ['sub_pos_id' => (int) $row['sub_pos_id'], 'saldo' => $this->saldo((int) $row['sub_pos_id'])]];
+    }
+
+    private function splitKasKeKomponen(int $nominal): array
+    {
+        if ($nominal < 1) {
+            return [];
+        }
+        $svc = new IuranKomponenService();
+        $svc->ensureTable();
+        $komp = $svc->list(true);
+        if (!$komp) {
+            $sp = $this->ensureKomponen(0, 'Kas umum', true);
+            $id = (int) ($sp['id'] ?? 0);
+            return $id > 0 ? [$id => $nominal] : [];
+        }
+        $weights = [];
+        $totalW = 0;
+        foreach ($komp as $k) {
+            $w = (int) ($k['nominal'] ?? 0);
+            if ($w < 1) {
+                $w = 1;
+            }
+            $sp = $this->ensureKomponen((int) $k['id'], (string) $k['nama'], true);
+            $spId = (int) ($sp['id'] ?? 0);
+            if ($spId < 1) {
+                continue;
+            }
+            $weights[$spId] = $w;
+            $totalW += $w;
+        }
+        if ($totalW < 1 || !$weights) {
+            return [];
+        }
+        $out = [];
+        $assigned = 0;
+        $ids = array_keys($weights);
+        foreach ($ids as $i => $spId) {
+            if ($i === count($ids) - 1) {
+                $out[$spId] = $nominal - $assigned;
+            } else {
+                $part = (int) floor($nominal * $weights[$spId] / $totalW);
+                $out[$spId] = $part;
+                $assigned += $part;
+            }
+        }
+        return $out;
+    }
+
+    private function infoKhususDariTagihan(int $tagihanId): array
+    {
+        $db = \Config\Database::connect();
+        $out = ['judul' => '', 'iuran_khusus_id' => 0];
+        if ($tagihanId < 1) {
+            return $out;
+        }
+        try {
+            $t = $db->table('iuran_tagihan')->where('id', $tagihanId)->get()->getRowArray();
+            if (!$t) {
+                return $out;
+            }
+            $judul = trim((string) ($t['nama'] ?? $t['judul'] ?? ''));
+            $ref = (int) ($t['ref_id'] ?? $t['iuran_khusus_id'] ?? 0);
+            if ($judul === '' && $ref > 0) {
+                $k = $db->table('iuran_khusus')->where('id', $ref)->get()->getRowArray();
+                if ($k) {
+                    $judul = (string) ($k['nama'] ?? '');
+                }
+            }
+            $out['judul'] = $judul;
+            $out['iuran_khusus_id'] = $ref;
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        return $out;
+    }
+
+    public function rekapBulan(string $bulan): array
+    {
+        $this->ensureTable();
+        if (!preg_match('/^\d{4}-\d{2}$/', $bulan)) {
+            $bulan = date('Y-m');
+        }
+        $db = \Config\Database::connect();
+        $rows = $db->table('sub_pos')->orderBy('jenis', 'ASC')->orderBy('judul', 'ASC')->get()->getResultArray();
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (int) $r['id'];
+            $masuk = (int) ($db->table('sub_pos_mutasi')->selectSum('nominal', 'total')->where('sub_pos_id', $id)->where('dibatalkan', 0)->where('tipe', 'masuk')->like('tanggal', $bulan, 'after')->get()->getRowArray()['total'] ?? 0);
+            $keluar = (int) ($db->table('sub_pos_mutasi')->selectSum('nominal', 'total')->where('sub_pos_id', $id)->where('dibatalkan', 0)->whereIn('tipe', ['keluar', 'alokasi'])->like('tanggal', $bulan, 'after')->get()->getRowArray()['total'] ?? 0);
+            $out[] = [
+                'id' => $id,
+                'jenis' => (string) $r['jenis'],
+                'judul' => (string) $r['judul'],
+                'aktif' => (int) ($r['aktif'] ?? 1) === 1,
+                'masuk' => $masuk,
+                'keluar' => $keluar,
+                'netto' => $masuk - $keluar,
+                'saldo' => $this->saldo($id),
+            ];
+        }
+        return $out;
+    }
+
+    private function hasKasPosColumn(): bool
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+        try {
+            $db = \Config\Database::connect();
+            $cache = $db->fieldExists('kas_pos_id', 'kas_transaksi');
+        } catch (\Throwable $e) {
+            $cache = false;
+        }
+        return $cache;
+    }
+
+    private function map(array $r): array
+    {
+        return [
+            'id' => (int) $r['id'],
+            'jenis' => (string) ($r['jenis'] ?? ''),
+            'ref_id' => isset($r['ref_id']) && $r['ref_id'] !== null && $r['ref_id'] !== '' ? (int) $r['ref_id'] : null,
+            'judul' => (string) ($r['judul'] ?? ''),
+            'aktif' => (int) ($r['aktif'] ?? 1) === 1,
+            'created_at' => $r['created_at'] ?? null,
+            'updated_at' => $r['updated_at'] ?? null,
+        ];
+    }
+}
