@@ -1,0 +1,175 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuth } from '@shared/composables/useAuth.js'
+import MainLayout from '../layouts/MainLayout.vue'
+import LoginView from '../views/LoginView.vue'
+import HomeView from '../views/HomeView.vue'
+import WargaView from '../views/WargaView.vue'
+import WargaFilterView from '../views/WargaFilterView.vue'
+import WargaDetailView from '../views/WargaDetailView.vue'
+import WargaTambahView from '../views/WargaTambahView.vue'
+import WargaEksporView from '../views/WargaEksporView.vue'
+import WargaEditView from '../views/WargaEditView.vue'
+import WargaPindahView from '../views/WargaPindahView.vue'
+import WargaTambahAnggotaView from '../views/WargaTambahAnggotaView.vue'
+import WargaStatusAnggotaView from '../views/WargaStatusAnggotaView.vue'
+import WargaTagihanKhususView from '../views/WargaTagihanKhususView.vue'
+import TagihanKhususEditView from '../views/TagihanKhususEditView.vue'
+import KeuanganView from '../views/KeuanganView.vue'
+import IuranView from '../views/IuranView.vue'
+import TagihanDetailView from '../views/TagihanDetailView.vue'
+import CatatBayarView from '../views/CatatBayarView.vue'
+import CatatIuranPilihView from '../views/CatatIuranPilihView.vue'
+import PermintaanDetailView from '../views/PermintaanDetailView.vue'
+import KasFormView from '../views/KasFormView.vue'
+import LaporanView from '../views/LaporanView.vue'
+import AktivitasView from '../views/AktivitasView.vue'
+import AktivitasDetailView from '../views/AktivitasDetailView.vue'
+import ProfilView from '../views/ProfilView.vue'
+import LainnyaView from '../views/LainnyaView.vue'
+import RekeningPembayaranView from '../views/RekeningPembayaranView.vue'
+import NotifikasiView from '../views/NotifikasiView.vue'
+import PengumumanListView from '../views/PengumumanListView.vue'
+import PengumumanFormView from '../views/PengumumanFormView.vue'
+import ProgramListView from '../views/ProgramListView.vue'
+import GaleriListView from '../views/GaleriListView.vue'
+import StrukturView from '../views/StrukturView.vue'
+import RondaView from '../views/RondaView.vue'
+import RondaMalamView from '../views/RondaMalamView.vue'
+import PengaturanWargaView from '../views/PengaturanWargaView.vue'
+import PengaturanAplikasiView from '../views/PengaturanAplikasiView.vue'
+import KelolaPengurusView from '../views/KelolaPengurusView.vue'
+import KonfirmasiTransferView from '../views/KonfirmasiTransferView.vue'
+import TolakPermintaanView from '../views/TolakPermintaanView.vue'
+import IuranKhususView from '../views/IuranKhususView.vue'
+import DetailKasView from '../views/DetailKasView.vue'
+import PlaceholderView from '../views/PlaceholderView.vue'
+import RondaJadwalTetapView from '../views/RondaJadwalTetapView.vue'
+import RondaTemplateCardView from '../views/RondaTemplateCardView.vue'
+import RondaDendaView from '../views/RondaDendaView.vue'
+import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
+import ProgramFormView from '../views/ProgramFormView.vue'
+import KaderKontenListView from '../views/KaderKontenListView.vue'
+import KaderKontenFormView from '../views/KaderKontenFormView.vue'
+import BazisFormView from '../views/BazisFormView.vue'
+import GaleriAlbumFormView from '../views/GaleriAlbumFormView.vue'
+import GaleriDetailView from '../views/GaleriDetailView.vue'
+import FilterKasView from '../views/FilterKasView.vue'
+import FilterIuranView from '../views/FilterIuranView.vue'
+import AngkatPengurusView from '../views/AngkatPengurusView.vue'
+import KelolaPengurusDetailView from '../views/KelolaPengurusDetailView.vue'
+import EksporIuranView from '../views/EksporIuranView.vue'
+import BatalDendaView from '../views/BatalDendaView.vue'
+import PosKasView from '../views/PosKasView.vue'
+
+const routes = [
+  { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
+  {
+    path: '/',
+    component: MainLayout,
+    children: [
+      { path: '', name: 'home', component: HomeView },
+      { path: 'warga', name: 'warga', component: WargaView },
+      { path: 'warga/filter', component: WargaFilterView },
+      { path: 'warga/tambah', component: WargaTambahView },
+      { path: 'warga/ekspor', component: WargaEksporView },
+      { path: 'warga/scan-kk', component: PlaceholderView, meta: { title: 'Scan KK' } },
+      { path: 'warga/:id', component: WargaDetailView },
+      { path: 'warga/:id/edit', component: WargaEditView },
+      { path: 'warga/:id/tambah-anggota', component: WargaTambahAnggotaView },
+      { path: 'warga/:id/status-anggota', component: WargaStatusAnggotaView },
+      { path: 'warga/:id/meninggal', redirect: to => ({ path: '/warga/' + to.params.id + '/status-anggota', query: { status: 'meninggal' } }) },
+      { path: 'warga/:id/pindah', component: WargaPindahView },
+      { path: 'warga/:id/reset-pin', redirect: to => '/warga/' + to.params.id },
+      { path: 'warga/:id/tagihan-khusus', component: WargaTagihanKhususView },
+
+      { path: 'keuangan', name: 'keuangan', component: KeuanganView },
+      { path: 'keuangan/iuran', component: IuranView },
+      { path: 'keuangan/tagihan/:id', component: TagihanDetailView },
+      { path: 'keuangan/tagihan/:id/khusus/:tagihanId', component: TagihanKhususEditView },
+      { path: 'keuangan/tagihan/:id/bayar', component: CatatBayarView },
+      { path: 'keuangan/tagihan/:id/batal-denda', component: BatalDendaView },
+      { path: 'keuangan/permintaan/:id', component: PermintaanDetailView },
+      { path: 'keuangan/permintaan/:id/konfirmasi', component: KonfirmasiTransferView },
+      { path: 'keuangan/permintaan/:id/tolak', component: TolakPermintaanView },
+      { path: 'keuangan/kas-masuk', component: KasFormView },
+      { path: 'keuangan/kas-keluar', component: KasFormView },
+      { path: 'keuangan/kas/:id', component: DetailKasView },
+      { path: 'keuangan/filter-kas', component: FilterKasView },
+      { path: 'keuangan/filter-iuran', component: FilterIuranView },
+      { path: 'keuangan/ekspor-iuran', component: EksporIuranView },
+      { path: 'keuangan/laporan', component: LaporanView },
+      { path: 'keuangan/iuran-khusus', component: IuranKhususView },
+      { path: 'keuangan/catat', component: CatatIuranPilihView },
+      { path: 'keuangan/pos-kas', component: PosKasView },
+
+      { path: 'aktivitas', name: 'aktivitas', component: AktivitasView },
+      { path: 'aktivitas/:id', component: AktivitasDetailView },
+      { path: 'profil', name: 'profil', component: ProfilView },
+      { path: 'lainnya', name: 'lainnya', component: LainnyaView },
+      { path: 'rekening-pembayaran', name: 'rekening-pembayaran', component: RekeningPembayaranView },
+      { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
+
+      { path: 'konten/pengumuman', component: PengumumanListView },
+      { path: 'konten/pengumuman/tambah', component: PengumumanFormView },
+      { path: 'konten/pengumuman/:id', component: PengumumanFormView },
+      { path: 'konten/program', component: ProgramListView },
+      { path: 'konten/program/tambah', component: ProgramFormView },
+      { path: 'konten/program/:id', component: ProgramFormView },
+      { path: 'konten/posyandu', component: KaderKontenListView, meta: { kategori: 'posyandu' } },
+      { path: 'konten/posyandu/tambah', component: KaderKontenFormView, meta: { kategori: 'posyandu' } },
+      { path: 'konten/posyandu/:id', component: KaderKontenFormView, meta: { kategori: 'posyandu' } },
+      { path: 'konten/pengajian', component: KaderKontenListView, meta: { kategori: 'pengajian' } },
+      { path: 'konten/pengajian/tambah', component: KaderKontenFormView, meta: { kategori: 'pengajian' } },
+      { path: 'konten/pengajian/:id', component: KaderKontenFormView, meta: { kategori: 'pengajian' } },
+      { path: 'konten/lingkungan', component: KaderKontenListView, meta: { kategori: 'lingkungan' } },
+      { path: 'konten/lingkungan/tambah', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
+      { path: 'konten/lingkungan/:id', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
+      { path: 'konten/bulutangkis', component: KaderKontenListView, meta: { kategori: 'bulutangkis' } },
+      { path: 'konten/bulutangkis/tambah', component: KaderKontenFormView, meta: { kategori: 'bulutangkis' } },
+      { path: 'konten/bulutangkis/:id', component: KaderKontenFormView, meta: { kategori: 'bulutangkis' } },
+      { path: 'konten/bazis', component: BazisFormView },
+      { path: 'konten/galeri', component: GaleriListView },
+      { path: 'konten/galeri/tambah', component: GaleriAlbumFormView },
+      { path: 'konten/galeri/:id', component: GaleriDetailView },
+      { path: 'konten/struktur', component: StrukturView },
+
+      { path: 'ronda', component: RondaView },
+      { path: 'ronda/malam/:date', component: RondaMalamView },
+      { path: 'ronda/malam/edit', component: PlaceholderView, meta: { title: 'Ganti keluarga' } },
+      { path: 'ronda/jadwal-tetap', component: RondaJadwalTetapView },
+      { path: 'ronda/jadwal-tetap/card/:id', component: RondaTemplateCardView },
+      { path: 'ronda/jadwal-khusus', component: RondaJadwalKhususView },
+      { path: 'ronda/denda', component: RondaDendaView },
+
+      { path: 'pengaturan-warga', component: PengaturanWargaView },
+      { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
+      { path: 'kelola-pengurus', component: KelolaPengurusView },
+      { path: 'kelola-pengurus/angkat', component: AngkatPengurusView },
+      { path: 'kelola-pengurus/:id', component: KelolaPengurusDetailView },
+    ],
+  },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+  scrollBehavior() { return { top: 0 } },
+})
+
+router.beforeEach(async (to) => {
+  const { isLoggedIn, ensureSession, isKetua } = useAuth()
+  await ensureSession('pengurus')
+
+  if (!to.meta.public && !isLoggedIn.value) {
+    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
+  }
+  if (to.name === 'login' && isLoggedIn.value) {
+    return { name: 'home' }
+  }
+  if ((to.path.startsWith('/pengaturan-aplikasi') || to.path.startsWith('/kelola-pengurus')) && !isKetua.value) {
+    return { name: 'home' }
+  }
+})
+
+export default router
