@@ -92,7 +92,6 @@ const menus = [
 }
 :global(html[data-mode="dark"]) .menu-row {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  filter: brightness(0.82) saturate(0.9);
 }
 :global(html:not([data-mode="dark"])) .menu-row {
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
