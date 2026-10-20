@@ -41,6 +41,7 @@ const pageTitle = computed(() => {
   if (k === 'lingkungan') return 'Lingkungan'
   if (k === 'bulutangkis') return 'Bulutangkis'
   if (k === 'talim') return "Ta'lim"
+  if (k === 'phbi') return 'PHBI'
   return 'Posyandu'
 })
 const rendered = computed(() => renderMarkdown(item.value?.isi_html || ''))
