@@ -60,6 +60,8 @@ import KelolaPengurusDetailView from '../views/KelolaPengurusDetailView.vue'
 import EksporIuranView from '../views/EksporIuranView.vue'
 import BatalDendaView from '../views/BatalDendaView.vue'
 import PosKasView from '../views/PosKasView.vue'
+import SubPosView from '../views/SubPosView.vue'
+import SubPosDetailView from '../views/SubPosDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -101,6 +103,8 @@ const routes = [
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
       { path: 'keuangan/catat', component: CatatIuranPilihView },
       { path: 'keuangan/pos-kas', component: PosKasView },
+      { path: 'keuangan/sub-pos', component: SubPosView },
+      { path: 'keuangan/sub-pos/:id', component: SubPosDetailView },
 
       { path: 'aktivitas', name: 'aktivitas', component: AktivitasView },
       { path: 'aktivitas/:id', component: AktivitasDetailView },
