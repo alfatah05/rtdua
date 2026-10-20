@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-/** sync 2026-10-20 kategori filter + talim */
+/** sync 2026-10-20 kategori filter + talim + phbi */
 class KaderKontenService
 {
-    private const KATEGORI = ['posyandu', 'pengajian', 'lingkungan', 'bulutangkis', 'talim'];
+    private const KATEGORI = ['posyandu', 'pengajian', 'lingkungan', 'bulutangkis', 'talim', 'phbi'];
     private const STATUS = ['direncanakan', 'berjalan', 'selesai'];
 
     public function ensureTable(): void
@@ -39,7 +39,6 @@ class KaderKontenService
         }
         $rows = $b->get()->getResultArray();
         $mapped = array_map([$this, 'map'], $rows);
-        // filter ulang di PHP — jaga-jaga query builder tidak memfilter
         if ($kat !== '' && in_array($kat, self::KATEGORI, true)) {
             $mapped = array_values(array_filter(
                 $mapped,
