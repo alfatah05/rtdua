@@ -14,7 +14,7 @@
       <div class="flex flex-col gap-2.5">
         <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
         <div class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
-        <div v-for="n in 6" :key="n" class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
+        <div v-for="n in 8" :key="n" class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
       </div>
     </div>
 
@@ -164,7 +164,8 @@ import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { waitImages } from '@shared/utils/waitImages.js'
 import {
   Landmark, Handshake, Megaphone, ChevronRight, Wallet,
-  ShieldCheck, Images, Users, HeartHandshake, BookOpen, Trophy
+  ShieldCheck, Images, Users, HeartHandshake, BookOpen, Trophy,
+  Building2, Ambulance,
 } from 'lucide-vue-next'
 
 const styleAktif = {
@@ -249,7 +250,6 @@ function ringkas(isi) {
 function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 }
-
 const rondaHeadline = ref('…')
 const rondaDesc = ref('Ketuk untuk detail jadwal')
 const rondaGroupName = ref('')
@@ -338,6 +338,20 @@ const menus = computed(() => [
     desc: 'Kegiatan & informasi DKM',
     icon: BookOpen,
     cardBg: 'linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)',
+  },
+  {
+    to: '/rw',
+    label: 'RW',
+    desc: 'Informasi & kegiatan RW',
+    icon: Building2,
+    cardBg: 'linear-gradient(105deg, #64748B 0%, #334155 100%)',
+  },
+  {
+    to: '/ambulance',
+    label: 'Ambulance',
+    desc: 'Info & kontak ambulance',
+    icon: Ambulance,
+    cardBg: 'linear-gradient(105deg, #DC2626 0%, #991B1B 100%)',
   },
 ])
 
