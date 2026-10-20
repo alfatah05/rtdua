@@ -49,14 +49,19 @@ const route = useRoute()
 const router = useRouter()
 const isEdit = computed(() => !!route.params.id && route.params.id !== 'tambah')
 const kategori = computed(() => String(route.meta.kategori || 'posyandu'))
-const pageTitle = computed(() => {
-  if (kategori.value === 'pengajian') return 'Pengajian'
-  if (kategori.value === 'lingkungan') return 'Lingkungan'
-  if (kategori.value === 'bulutangkis') return 'Bulutangkis'
-  if (kategori.value === 'talim') return "Ta'lim"
-  if (kategori.value === 'phbi') return 'PHBI'
-  return 'Posyandu'
-})
+const TITLE = {
+  pengajian: 'Pengajian',
+  lingkungan: 'Lingkungan',
+  bulutangkis: 'Bulutangkis',
+  gowes: 'Gowes',
+  mancing: 'Mancing',
+  silat: 'Pencak silat',
+  senam: 'Senam',
+  talim: "Ta'lim",
+  phbi: 'PHBI',
+  posyandu: 'Posyandu',
+}
+const pageTitle = computed(() => TITLE[kategori.value] || 'Posyandu')
 const basePath = computed(() => '/konten/' + kategori.value)
 const judul = ref('')
 const isi = ref('')
