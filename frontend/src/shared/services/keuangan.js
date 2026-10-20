@@ -133,6 +133,11 @@ export function portalKas(bulan) {
     ? Promise.resolve({ ok: true, data: { saldo: mockKasSaldo, items: [] } })
     : real.portalKas(bulan)
 }
+export function portalStatusIuranWarga() {
+  return USE_MOCK.keuangan
+    ? Promise.resolve({ ok: true, data: [] })
+    : real.portalStatusIuranWarga()
+}
 
 export function listRekening() {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listRekening()
