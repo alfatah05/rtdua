@@ -41,6 +41,14 @@ import LingkunganItemDetailView from '../views/LingkunganItemDetailView.vue'
 import KomunitasView from '../views/KomunitasView.vue'
 import BulutangkisView from '../views/BulutangkisView.vue'
 import BulutangkisItemDetailView from '../views/BulutangkisItemDetailView.vue'
+import GowesView from '../views/GowesView.vue'
+import GowesItemDetailView from '../views/GowesItemDetailView.vue'
+import MancingView from '../views/MancingView.vue'
+import MancingItemDetailView from '../views/MancingItemDetailView.vue'
+import SilatView from '../views/SilatView.vue'
+import SilatItemDetailView from '../views/SilatItemDetailView.vue'
+import SenamView from '../views/SenamView.vue'
+import SenamItemDetailView from '../views/SenamItemDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -83,6 +91,14 @@ const routes = [
       { path: 'komunitas', name: 'komunitas', component: KomunitasView },
       { path: 'komunitas/bulutangkis', name: 'komunitas-bulutangkis', component: BulutangkisView },
       { path: 'komunitas/bulutangkis/:id', name: 'komunitas-bulutangkis-item', component: BulutangkisItemDetailView },
+      { path: 'komunitas/gowes', name: 'komunitas-gowes', component: GowesView },
+      { path: 'komunitas/gowes/:id', name: 'komunitas-gowes-item', component: GowesItemDetailView },
+      { path: 'komunitas/mancing', name: 'komunitas-mancing', component: MancingView },
+      { path: 'komunitas/mancing/:id', name: 'komunitas-mancing-item', component: MancingItemDetailView },
+      { path: 'komunitas/silat', name: 'komunitas-silat', component: SilatView },
+      { path: 'komunitas/silat/:id', name: 'komunitas-silat-item', component: SilatItemDetailView },
+      { path: 'komunitas/senam', name: 'komunitas-senam', component: SenamView },
+      { path: 'komunitas/senam/:id', name: 'komunitas-senam-item', component: SenamItemDetailView },
       { path: 'talim', name: 'talim', component: TalimView },
       { path: 'talim/jadwal', name: 'talim-jadwal', component: TalimJadwalView },
       { path: 'talim/jadwal/:id', name: 'talim-item', component: TalimItemDetailView },
