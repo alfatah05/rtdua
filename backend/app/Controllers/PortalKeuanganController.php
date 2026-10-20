@@ -69,16 +69,35 @@ class PortalKeuanganController extends Controller
         if (!$ctx) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $json = $this->request->getJSON(true) ?? [];
-        if (!empty($json['bukti_base64']) && empty($json['bukti_file'])) {
-            $path = $this->simpanBuktiBase64((string) $json['bukti_base64'], $ctx['keluarga_id']);
-            if ($path === null) {
-                return ApiResponse::fail('Gagal menyimpan bukti.', 422);
-            }
-            $json['bukti_file'] = $path;
+        $body = $this->request->getJSON(true) ?? [];
+        $nominal = (int) ($body['nominal'] ?? 0);
+        if ($nominal < 1) {
+            return ApiResponse::fail('Nominal wajib.', 422);
         }
-        $res = (new PembayaranService())->ajukanPermintaan($json, $ctx['user_id'], $ctx['keluarga_id']);
-        return $res['ok'] ? ApiResponse::ok($res['data'], 'Permintaan dikirim') : ApiResponse::fail($res['message'], 422);
+        $buktiPath = null;
+        if (!empty($body['bukti_base64'])) {
+            $buktiPath = $this->simpanBuktiBase64((string) $body['bukti_base64'], $ctx['keluarga_id']);
+            if ($buktiPath === null) {
+                return ApiResponse::fail('Bukti transfer tidak valid.', 422);
+            }
+        } elseif (!empty($body['bukti_path'])) {
+            $buktiPath = (string) $body['bukti_path'];
+        }
+        $res = (new PembayaranService())->ajukanTransferWarga(
+            $ctx['keluarga_id'],
+            $ctx['user_id'],
+            [
+                'nominal'       => $nominal,
+                'nama_pengirim' => $body['nama_pengirim'] ?? '',
+                'bank_pengirim' => $body['bank_pengirim'] ?? '',
+                'bukti_path'    => $buktiPath,
+                'catatan'       => $body['catatan'] ?? '',
+            ]
+        );
+        if (empty($res['ok'])) {
+            return ApiResponse::fail($res['message'] ?? 'Gagal mengajukan', 422);
+        }
+        return ApiResponse::ok($res['data'] ?? ['id' => $res['id'] ?? null]);
     }
 
     public function statusPermintaan()
@@ -88,9 +107,10 @@ class PortalKeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $db = \Config\Database::connect();
-        $rows = $db->table('pembayaran_permintaan')
+        $rows = $db->table('permintaan_transfer')
             ->where('keluarga_id', $ctx['keluarga_id'])
-            ->orderBy('diajukan_pada', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->limit(20)
             ->get()
             ->getResultArray();
         $data = array_map(static function ($r) {
@@ -120,6 +140,50 @@ class PortalKeuanganController extends Controller
             return ApiResponse::ok($data);
         } catch (\Throwable $e) {
             return ApiResponse::fail('Gagal memuat kas: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Status iuran seluruh keluarga aktif (untuk tab Status Iuran Warga).
+     * Data publik antar warga: nama, alamat, foto, status lunas/belum.
+     */
+    public function statusIuranWarga()
+    {
+        $ctx = $this->requireWarga();
+        if (!$ctx) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        try {
+            $list = (new TagihanService())->daftarIuran([]);
+            $db = \Config\Database::connect();
+            $out = [];
+            foreach ($list as $row) {
+                $kid = (int) ($row['keluarga_id'] ?? 0);
+                $foto = null;
+                if ($kid > 0) {
+                    $kepala = $db->table('warga')
+                        ->select('foto')
+                        ->where('keluarga_id', $kid)
+                        ->where('hubungan', 'Kepala keluarga')
+                        ->where('status', 'aktif')
+                        ->get()
+                        ->getRowArray();
+                    $foto = $kepala['foto'] ?? null;
+                }
+                $st = (string) ($row['status'] ?? '');
+                $lunas = $st === 'lunas';
+                $out[] = [
+                    'id'     => $kid,
+                    'nama'   => $row['nama'] ?? '—',
+                    'alamat' => $row['alamat'] ?? '',
+                    'foto'   => $foto,
+                    'status' => $lunas ? 'lunas' : 'belum_lunas',
+                    'total'  => (int) ($row['total'] ?? 0),
+                ];
+            }
+            return ApiResponse::ok($out);
+        } catch (\Throwable $e) {
+            return ApiResponse::fail('Gagal memuat status iuran: ' . $e->getMessage(), 500);
         }
     }
 
