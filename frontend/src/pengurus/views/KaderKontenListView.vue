@@ -45,6 +45,7 @@ const pageTitle = computed(() => {
   if (kategori.value === 'lingkungan') return 'Lingkungan'
   if (kategori.value === 'bulutangkis') return 'Bulutangkis'
   if (kategori.value === 'talim') return "Ta'lim"
+  if (kategori.value === 'phbi') return 'PHBI'
   return 'Posyandu'
 })
 const basePath = computed(() => '/konten/' + kategori.value)
@@ -75,7 +76,6 @@ async function load() {
     loading.value = false
     return
   }
-  // filter ketat di client — hanya kategori halaman ini
   const rows = (res.data || []).filter((r) => String(r.kategori || '') === kat)
   daftar.value = rows
   const urls = []
@@ -86,6 +86,5 @@ async function load() {
   loading.value = false
 }
 
-// komponen list dipakai bersama route — harus reload tiap ganti kategori
 watch(kategori, () => { load() }, { immediate: true })
 </script>
