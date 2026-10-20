@@ -69,35 +69,16 @@ class PortalKeuanganController extends Controller
         if (!$ctx) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $body = $this->request->getJSON(true) ?? [];
-        $nominal = (int) ($body['nominal'] ?? 0);
-        if ($nominal < 1) {
-            return ApiResponse::fail('Nominal wajib.', 422);
-        }
-        $buktiPath = null;
-        if (!empty($body['bukti_base64'])) {
-            $buktiPath = $this->simpanBuktiBase64((string) $body['bukti_base64'], $ctx['keluarga_id']);
-            if ($buktiPath === null) {
-                return ApiResponse::fail('Bukti transfer tidak valid.', 422);
+        $json = $this->request->getJSON(true) ?? [];
+        if (!empty($json['bukti_base64']) && empty($json['bukti_file'])) {
+            $path = $this->simpanBuktiBase64((string) $json['bukti_base64'], $ctx['keluarga_id']);
+            if ($path === null) {
+                return ApiResponse::fail('Gagal menyimpan bukti.', 422);
             }
-        } elseif (!empty($body['bukti_path'])) {
-            $buktiPath = (string) $body['bukti_path'];
+            $json['bukti_file'] = $path;
         }
-        $res = (new PembayaranService())->ajukanTransferWarga(
-            $ctx['keluarga_id'],
-            $ctx['user_id'],
-            [
-                'nominal'       => $nominal,
-                'nama_pengirim' => $body['nama_pengirim'] ?? '',
-                'bank_pengirim' => $body['bank_pengirim'] ?? '',
-                'bukti_path'    => $buktiPath,
-                'catatan'       => $body['catatan'] ?? '',
-            ]
-        );
-        if (empty($res['ok'])) {
-            return ApiResponse::fail($res['message'] ?? 'Gagal mengajukan', 422);
-        }
-        return ApiResponse::ok($res['data'] ?? ['id' => $res['id'] ?? null]);
+        $res = (new PembayaranService())->ajukanPermintaan($json, $ctx['user_id'], $ctx['keluarga_id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Permintaan dikirim') : ApiResponse::fail($res['message'], 422);
     }
 
     public function statusPermintaan()
@@ -107,10 +88,9 @@ class PortalKeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $db = \Config\Database::connect();
-        $rows = $db->table('permintaan_transfer')
+        $rows = $db->table('pembayaran_permintaan')
             ->where('keluarga_id', $ctx['keluarga_id'])
-            ->orderBy('id', 'DESC')
-            ->limit(20)
+            ->orderBy('diajukan_pada', 'DESC')
             ->get()
             ->getResultArray();
         $data = array_map(static function ($r) {
