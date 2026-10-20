@@ -156,32 +156,109 @@
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">Tidak ada tagihan terbuka</p>
       </div>
 
-      <h2 class="text-[15px] font-bold m-0 mb-1">Riwayat pembayaran</h2>
-
-      <div v-if="riwayat.length" class="mb-2">
-        <div
-          v-for="r in riwayat"
-          :key="'rw-' + (r.pembayaran_id || r.id || r.tanggal) + '-' + (r.tagihan_id || '')"
-          class="flex items-center gap-3 py-2.5"
+      <!-- Tabs: Riwayat Pembayaran | Status Iuran Warga -->
+      <div
+        class="flex p-1 rounded-full bg-[var(--card2)] mb-3"
+        role="tablist"
+        aria-label="Riwayat dan status iuran"
+      >
+        <button
+          type="button"
+          role="tab"
+          class="flex-1 min-h-[40px] rounded-full text-[13px] font-semibold transition"
+          :class="tab === 'riwayat'
+            ? 'bg-[var(--card)] text-[var(--text)] shadow-[var(--sh)]'
+            : 'text-[var(--mut)]'"
+          :aria-selected="tab === 'riwayat'"
+          @click="tab = 'riwayat'"
         >
-          <div
-            class="w-9 h-9 rounded-full grid place-items-center shrink-0"
-            :style="{ background: iconMeta(r.jenis).bg, color: iconMeta(r.jenis).color }"
-          >
-            <component :is="iconMeta(r.jenis).icon" :size="16" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-[14px] font-semibold m-0 truncate">{{ labelRiwayat(r) }}</p>
-            <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
-              {{ formatTgl(r.tanggal) }}<template v-if="r.metode"> · {{ labelMetode(r.metode) }}</template>
-            </p>
-          </div>
-          <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
-            {{ rp(r.jumlah ?? r.nominal) }}
-          </span>
-        </div>
+          Riwayat Pembayaran
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="flex-1 min-h-[40px] rounded-full text-[13px] font-semibold transition"
+          :class="tab === 'status'
+            ? 'bg-[var(--card)] text-[var(--text)] shadow-[var(--sh)]'
+            : 'text-[var(--mut)]'"
+          :aria-selected="tab === 'status'"
+          @click="onTabStatus"
+        >
+          Status Iuran Warga
+        </button>
       </div>
-      <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 m-0">Belum ada riwayat</p>
+
+      <template v-if="tab === 'riwayat'">
+        <div v-if="riwayat.length" class="mb-2 px-1">
+          <div
+            v-for="r in riwayat"
+            :key="'rw-' + (r.pembayaran_id || r.id || r.tanggal) + '-' + (r.tagihan_id || '')"
+            class="flex items-center gap-3 py-2.5"
+          >
+            <div
+              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+              :style="{ background: iconMeta(r.jenis).bg, color: iconMeta(r.jenis).color }"
+            >
+              <component :is="iconMeta(r.jenis).icon" :size="16" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[14px] font-semibold m-0 truncate">{{ labelRiwayat(r) }}</p>
+              <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
+                {{ formatTgl(r.tanggal) }}<template v-if="r.metode"> · {{ labelMetode(r.metode) }}</template>
+              </p>
+            </div>
+            <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
+              {{ rp(r.jumlah ?? r.nominal) }}
+            </span>
+          </div>
+        </div>
+        <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 m-0">Belum ada riwayat</p>
+      </template>
+
+      <template v-else>
+        <div v-if="statusLoading" class="px-1 animate-pulse" aria-hidden="true">
+          <div v-for="n in 6" :key="n" class="flex items-center gap-3 py-3">
+            <div class="w-11 h-11 rounded-full bg-[var(--card2)] shrink-0" />
+            <div class="flex-1 min-w-0 space-y-2">
+              <div class="h-3.5 rounded-full bg-[var(--card2)] w-[55%]" />
+              <div class="h-3 rounded-full bg-[var(--card2)] w-[30%]" />
+            </div>
+            <div class="h-6 w-16 rounded-full bg-[var(--card2)] shrink-0" />
+          </div>
+        </div>
+        <p v-else-if="statusErr" class="text-[13px] text-red-600 text-center py-4">{{ statusErr }}</p>
+        <div v-else class="px-1">
+          <div
+            v-for="k in statusList"
+            :key="k.id"
+            class="w-full flex items-center gap-3 py-3"
+          >
+            <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0 overflow-hidden">
+              <img
+                v-if="k.fotoUrl"
+                :src="k.fotoUrl"
+                alt=""
+                class="w-full h-full object-cover"
+                @error="k.fotoUrl = ''"
+              />
+              <template v-else>{{ k.inisial }}</template>
+            </div>
+            <div class="min-w-0 flex-1 text-left">
+              <p class="font-bold m-0 text-[15px]">{{ k.nama }}</p>
+              <p class="text-[13px] text-[var(--mut)] m-0">{{ k.alamat }}</p>
+            </div>
+            <span
+              class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full"
+              :class="k.status === 'lunas'
+                ? 'bg-[var(--ok)] text-[var(--g)]'
+                : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'"
+            >
+              {{ k.status === 'lunas' ? 'Lunas' : 'Belum Lunas' }}
+            </span>
+          </div>
+          <p v-if="!statusList.length" class="text-[13px] text-[var(--mut)] text-center py-4">Tidak ada data</p>
+        </div>
+      </template>
     </template>
 
     <!-- Sticky bottom: tanpa background bar, hanya button -->
@@ -208,7 +285,9 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, computed, onMounted } from 'vue'
 import { Wallet, Home, ShieldAlert, Sparkles, Clock, ChevronDown } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { portalRingkasan, portalStatusPermintaan } from '@shared/services/keuangan.js'
+import { portalRingkasan, portalStatusPermintaan, portalStatusIuranWarga } from '@shared/services/keuangan.js'
+import { mediaUrl } from '@shared/services/upload.js'
+import { waitImages } from '@shared/utils/waitImages.js'
 
 const loading = ref(true)
 const err = ref('')
@@ -219,6 +298,12 @@ const permintaan = ref([])
 const komponenKas = ref([])
 const totalKasBulanan = ref(0)
 const kasOpen = ref({})
+const tab = ref('riwayat')
+
+const statusLoading = ref(false)
+const statusErr = ref('')
+const statusList = ref([])
+const statusLoaded = ref(false)
 
 function bisaExpandKas(t) {
   return t?.jenis === 'kas' && (komponenKas.value || []).length > 0
@@ -228,6 +313,35 @@ function isKasOpen(id) {
 }
 function toggleKas(id) {
   kasOpen.value = { ...kasOpen.value, [id]: !kasOpen.value[id] }
+}
+
+function inisial(nama) {
+  return String(nama || '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+async function onTabStatus() {
+  tab.value = 'status'
+  if (statusLoaded.value || statusLoading.value) return
+  statusLoading.value = true
+  statusErr.value = ''
+  const res = await portalStatusIuranWarga()
+  if (!res.ok) {
+    statusErr.value = res.error || 'Gagal memuat status'
+    statusLoading.value = false
+    return
+  }
+  const rows = (res.data || []).map((k) => ({
+    id: k.id,
+    nama: k.nama || '—',
+    alamat: k.alamat || '',
+    status: k.status === 'lunas' ? 'lunas' : 'belum_lunas',
+    inisial: inisial(k.nama),
+    fotoUrl: k.foto ? mediaUrl(k.foto) : '',
+  }))
+  statusList.value = rows
+  statusLoaded.value = true
+  await waitImages(rows.map((r) => r.fotoUrl).filter(Boolean))
+  statusLoading.value = false
 }
 
 const BULAN = [
@@ -270,7 +384,6 @@ function iconMeta(jenis) {
 }
 
 function labelTagihan(t) {
-  // Tagihan khusus: tampilkan judul saja (tanpa suffix periode)
   if (t.jenis === 'khusus' && t.nama) {
     return t.nama
   }
@@ -333,18 +446,10 @@ const heroHint = computed(() => {
   return 'Memuat data...'
 })
 
-const styleTagihan = {
-  background: '#F59E0B',
-}
-const styleLunas = {
-  background: '#22B863',
-}
-const styleLebih = {
-  background: '#3B82F6',
-}
-const styleLoading = {
-  background: 'var(--card2)',
-}
+const styleTagihan = { background: '#F59E0B' }
+const styleLunas = { background: '#22B863' }
+const styleLebih = { background: '#3B82F6' }
+const styleLoading = { background: 'var(--card2)' }
 
 const heroStyle = computed(() => {
   if (heroStatus.value === 'pending') return styleTagihan
@@ -357,9 +462,7 @@ const permintaanMenunggu = computed(() =>
   (permintaan.value || []).filter((p) => p.status === 'menunggu')
 )
 
-const stylePermintaan = {
-  background: '#F59E0B',
-}
+const stylePermintaan = { background: '#F59E0B' }
 
 onMounted(async () => {
   const [res, pm] = await Promise.all([portalRingkasan(), portalStatusPermintaan()])
