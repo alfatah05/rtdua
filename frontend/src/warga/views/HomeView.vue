@@ -168,12 +168,8 @@ import {
   Building2, Ambulance,
 } from 'lucide-vue-next'
 
-const styleAktif = {
-  background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
-}
-const styleSelesai = {
-  background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(145deg, #9CA3AF, #6B7280 55%, #4B5563)',
-}
+const styleAktif = { background: '#22B863' }
+const styleSelesai = { background: '#6B7280' }
 function cardStyle(aktif) {
   return aktif ? styleAktif : styleSelesai
 }
@@ -219,18 +215,10 @@ const iuranTitle = ref('Iuran yang belum di bayar')
 const iuranNominal = ref('…')
 const iuranHint = ref('Ketuk untuk melihat rincian')
 
-const styleTagihan = {
-  background: 'linear-gradient(105deg, #F59E0B 0%, #B45309 100%)',
-}
-const styleLunas = {
-  background: 'linear-gradient(105deg, #22B863 0%, #0B8442 100%)',
-}
-const styleLebih = {
-  background: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
-}
-const styleLoading = {
-  background: 'var(--card2)',
-}
+const styleTagihan = { background: '#F59E0B' }
+const styleLunas = { background: '#22B863' }
+const styleLebih = { background: '#3B82F6' }
+const styleLoading = { background: 'var(--card2)' }
 
 const iuranCardStyle = computed(() => {
   if (iuranStatus.value === 'pending') return styleTagihan
@@ -294,7 +282,7 @@ const menus = computed(() => [
     headline: rondaHeadline.value,
     desc: rondaDesc.value,
     icon: ShieldCheck,
-    cardBg: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
+    cardBg: '#3B82F6',
   },
   {
     to: '/keuangan',
@@ -302,56 +290,56 @@ const menus = computed(() => [
     headline: kasHeadline.value,
     desc: 'Ketuk untuk riwayat kas',
     icon: Wallet,
-    cardBg: 'linear-gradient(105deg, #A855F7 0%, #6D28D9 100%)',
+    cardBg: '#A855F7',
   },
   {
     to: '/galeri',
     label: 'Galeri RT',
     desc: 'Foto kegiatan warga',
     icon: Images,
-    cardBg: 'linear-gradient(105deg, #EC4899 0%, #BE185D 100%)',
+    cardBg: '#EC4899',
   },
   {
     to: '/warga',
     label: 'Warga',
     desc: 'Daftar warga RT 002',
     icon: Users,
-    cardBg: 'linear-gradient(105deg, #F87171 0%, #DC2626 100%)',
+    cardBg: '#EF4444',
   },
   {
     to: '/komunitas',
     label: 'Komunitas',
     desc: 'Kegiatan komunitas warga',
     icon: Trophy,
-    cardBg: 'linear-gradient(105deg, #14B8A6 0%, #0F766E 100%)',
+    cardBg: '#14B8A6',
   },
   {
     to: '/posyandu',
     label: 'Kader RT 002',
     desc: 'Kegiatan pengurus ibu-ibu',
     icon: HeartHandshake,
-    cardBg: 'linear-gradient(105deg, #F97316 0%, #C2410C 100%)',
+    cardBg: '#F97316',
   },
   {
     to: '/talim',
     label: 'DKM',
     desc: 'Kegiatan & informasi DKM',
     icon: BookOpen,
-    cardBg: 'linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)',
+    cardBg: '#0EA5E9',
   },
   {
     to: '/rw',
     label: 'RW',
     desc: 'Informasi & kegiatan RW',
     icon: Building2,
-    cardBg: 'linear-gradient(105deg, #64748B 0%, #334155 100%)',
+    cardBg: '#64748B',
   },
   {
     to: '/ambulance',
     label: 'Ambulance',
     desc: 'Info & kontak ambulance',
     icon: Ambulance,
-    cardBg: 'linear-gradient(105deg, #DC2626 0%, #991B1B 100%)',
+    cardBg: '#DC2626',
   },
 ])
 
