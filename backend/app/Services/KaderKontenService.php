@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
-/** sync 2026-10-20 kategori filter + talim + phbi */
+/** sync 2026-10-20 kategori komunitas lengkap */
 class KaderKontenService
 {
-    private const KATEGORI = ['posyandu', 'pengajian', 'lingkungan', 'bulutangkis', 'talim', 'phbi'];
+    private const KATEGORI = [
+        'posyandu', 'pengajian', 'lingkungan',
+        'bulutangkis', 'gowes', 'mancing', 'silat', 'senam',
+        'talim', 'phbi',
+    ];
     private const STATUS = ['direncanakan', 'berjalan', 'selesai'];
 
     public function ensureTable(): void
