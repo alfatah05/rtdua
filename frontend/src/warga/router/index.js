@@ -49,6 +49,10 @@ import SilatView from '../views/SilatView.vue'
 import SilatItemDetailView from '../views/SilatItemDetailView.vue'
 import SenamView from '../views/SenamView.vue'
 import SenamItemDetailView from '../views/SenamItemDetailView.vue'
+import RwView from '../views/RwView.vue'
+import RwItemDetailView from '../views/RwItemDetailView.vue'
+import AmbulanceView from '../views/AmbulanceView.vue'
+import AmbulanceItemDetailView from '../views/AmbulanceItemDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -104,6 +108,10 @@ const routes = [
       { path: 'talim/jadwal/:id', name: 'talim-item', component: TalimItemDetailView },
       { path: 'talim/phbi', name: 'phbi', component: PhbiView },
       { path: 'talim/phbi/:id', name: 'phbi-item', component: PhbiItemDetailView },
+      { path: 'rw', name: 'rw', component: RwView },
+      { path: 'rw/:id', name: 'rw-item', component: RwItemDetailView },
+      { path: 'ambulance', name: 'ambulance', component: AmbulanceView },
+      { path: 'ambulance/:id', name: 'ambulance-item', component: AmbulanceItemDetailView },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
