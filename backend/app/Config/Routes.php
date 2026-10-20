@@ -103,6 +103,7 @@ $routes->get('portal/keuangan', 'PortalKeuanganController::ringkasanSaya', ['fil
 $routes->post('portal/keuangan/transfer', 'PortalKeuanganController::ajukanTransfer', ['filter' => 'auth']);
 $routes->get('portal/keuangan/permintaan', 'PortalKeuanganController::statusPermintaan', ['filter' => 'auth']);
 $routes->get('portal/keuangan/kas', 'PortalKeuanganController::kas', ['filter' => 'auth']);
+$routes->get('portal/keuangan/status-iuran', 'PortalKeuanganController::statusIuranWarga', ['filter' => 'auth']);
 $routes->get('portal/keuangan/rekening', 'RekeningPembayaranController::portalList', ['filter' => 'auth']);
 
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
