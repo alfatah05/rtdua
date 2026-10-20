@@ -29,6 +29,7 @@ import GaleriDetailView from '../views/GaleriDetailView.vue'
 import PosyanduView from '../views/PosyanduView.vue'
 import TalimView from '../views/TalimView.vue'
 import TalimJadwalView from '../views/TalimJadwalView.vue'
+import TalimItemDetailView from '../views/TalimItemDetailView.vue'
 import PosyanduDetailView from '../views/PosyanduDetailView.vue'
 import PengajianView from '../views/PengajianView.vue'
 import LingkunganView from '../views/LingkunganView.vue'
@@ -82,6 +83,7 @@ const routes = [
       { path: 'komunitas/bulutangkis/:id', name: 'komunitas-bulutangkis-item', component: BulutangkisItemDetailView },
       { path: 'talim', name: 'talim', component: TalimView },
       { path: 'talim/jadwal', name: 'talim-jadwal', component: TalimJadwalView },
+      { path: 'talim/jadwal/:id', name: 'talim-item', component: TalimItemDetailView },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
