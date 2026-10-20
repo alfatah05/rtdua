@@ -106,21 +106,21 @@ function bannerUrl(b) {
 }
 function cardStyle(p) {
   if (p.banner) return {}
-  const grads = {
-    posyandu: 'linear-gradient(145deg, #F97316, #C2410C)',
-    pengajian: 'linear-gradient(145deg, #A855F7, #6D28D9)',
-    lingkungan: 'linear-gradient(145deg, #22B863, #0B8442)',
-    bulutangkis: 'linear-gradient(145deg, #0EA5E9, #0369A1)',
-    gowes: 'linear-gradient(145deg, #22C55E, #15803D)',
-    mancing: 'linear-gradient(145deg, #06B6D4, #0E7490)',
-    silat: 'linear-gradient(145deg, #EF4444, #B91C1C)',
-    senam: 'linear-gradient(145deg, #F59E0B, #B45309)',
-    talim: 'linear-gradient(145deg, #0EA5E9, #0369A1)',
-    phbi: 'linear-gradient(145deg, #8B5CF6, #6D28D9)',
-    rw: 'linear-gradient(145deg, #64748B, #334155)',
-    ambulance: 'linear-gradient(145deg, #DC2626, #991B1B)',
+  const colors = {
+    posyandu: '#F97316',
+    pengajian: '#A855F7',
+    lingkungan: '#22B863',
+    bulutangkis: '#0EA5E9',
+    gowes: '#22C55E',
+    mancing: '#06B6D4',
+    silat: '#EF4444',
+    senam: '#F59E0B',
+    talim: '#0EA5E9',
+    phbi: '#8B5CF6',
+    rw: '#64748B',
+    ambulance: '#DC2626',
   }
-  return { background: grads[props.kategori] || grads.posyandu }
+  return { background: colors[props.kategori] || colors.posyandu }
 }
 
 async function load() {
