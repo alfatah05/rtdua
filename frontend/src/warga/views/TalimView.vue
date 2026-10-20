@@ -7,7 +7,7 @@
         type="button"
         class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
         :class="pressedKey === 'talim' ? 'is-pressed' : ''"
-        style="background: linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)"
+        style="background: #0EA5E9"
         @click="goTo('/talim/jadwal', 'talim')"
       >
         <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
@@ -28,7 +28,7 @@
         type="button"
         class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
         :class="pressedKey === 'phbi' ? 'is-pressed' : ''"
-        style="background: linear-gradient(105deg, #8B5CF6 0%, #6D28D9 100%)"
+        style="background: #8B5CF6"
         @click="goTo('/talim/phbi', 'phbi')"
       >
         <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
@@ -48,7 +48,7 @@
       <div
         class="menu-row overflow-hidden"
         :class="pressedKey === 'bazis' ? 'is-pressed' : ''"
-        style="background: linear-gradient(105deg, #059669 0%, #047857 100%)"
+        style="background: #059669"
       >
         <button
           type="button"
