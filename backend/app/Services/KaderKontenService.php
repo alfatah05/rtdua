@@ -5,7 +5,7 @@ namespace App\Services;
 /** sync 2026-10-18 kategori filter */
 class KaderKontenService
 {
-    private const KATEGORI = ['posyandu', 'pengajian', 'lingkungan'];
+    private const KATEGORI = ['posyandu', 'pengajian', 'lingkungan', 'bulutangkis'];
     private const STATUS = ['direncanakan', 'berjalan', 'selesai'];
 
     public function ensureTable(): void
