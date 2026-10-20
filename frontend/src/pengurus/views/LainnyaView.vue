@@ -27,7 +27,7 @@
 import { computed } from 'vue'
 import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
-  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf, HandCoins, Trophy, Layers,
+  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf, HandCoins, Trophy, Layers, CalendarDays,
 } from 'lucide-vue-next'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
@@ -74,6 +74,7 @@ const groups = [
       { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: 'rgba(34,184,99,.18)', color: '#0B8442' },
       { label: 'Bulutangkis', icon: Trophy, to: '/konten/bulutangkis', bg: 'rgba(14,165,233,.18)', color: '#0369A1' },
       { label: "Ta'lim", icon: BookOpen, to: '/konten/talim', bg: 'rgba(14,165,233,.18)', color: '#0369A1' },
+      { label: 'PHBI', icon: CalendarDays, to: '/konten/phbi', bg: 'rgba(139,92,246,.18)', color: '#6D28D9' },
       { label: 'Bazis', icon: HandCoins, to: '/konten/bazis', bg: 'rgba(5,150,105,.18)', color: '#047857' },
       { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
       { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
