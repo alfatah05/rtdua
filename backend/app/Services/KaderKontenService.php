@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-/** sync 2026-10-20 kategori komunitas lengkap */
+/** sync 2026-10-20 kategori + rw + ambulance */
 class KaderKontenService
 {
     private const KATEGORI = [
         'posyandu', 'pengajian', 'lingkungan',
         'bulutangkis', 'gowes', 'mancing', 'silat', 'senam',
-        'talim', 'phbi',
+        'talim', 'phbi', 'rw', 'ambulance',
     ];
     private const STATUS = ['direncanakan', 'berjalan', 'selesai'];
 
