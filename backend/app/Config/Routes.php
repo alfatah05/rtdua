@@ -81,6 +81,11 @@ $routes->put('keuangan/kas-pos/(:num)', 'KeuanganController::ubahKasPos/$1', ['f
 $routes->post('keuangan/kas-pos/(:num)/nonaktif', 'KeuanganController::nonaktifKasPos/$1', ['filter' => 'auth']);
 $routes->get('keuangan/sub-pos', 'KeuanganController::listSubPos', ['filter' => 'auth']);
 $routes->get('keuangan/sub-pos/(:num)', 'KeuanganController::detailSubPos/$1', ['filter' => 'auth']);
+$routes->get('keuangan/sub-pos/(:num)/mutasi', 'KeuanganController::listSubPosMutasi/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/(:num)/masuk', 'KeuanganController::subPosMasuk/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/(:num)/keluar', 'KeuanganController::subPosKeluar/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/(:num)/alokasi', 'KeuanganController::subPosAlokasi/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/mutasi/(:num)/batal', 'KeuanganController::subPosBatalMutasi/$1', ['filter' => 'auth']);
 $routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-khusus', 'KeuanganController::buatIuranKhusus', ['filter' => 'auth']);
 $routes->put('keuangan/iuran-khusus/(:num)', 'KeuanganController::ubahIuranKhusus/$1', ['filter' => 'auth']);
