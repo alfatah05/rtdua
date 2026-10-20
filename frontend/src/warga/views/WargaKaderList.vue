@@ -60,18 +60,26 @@ const props = defineProps({
   kategori: { type: String, required: true },
 })
 
-const pageTitle = computed(() => {
-  if (props.kategori === 'pengajian') return 'Pengajian'
-  if (props.kategori === 'lingkungan') return 'Lingkungan'
-  if (props.kategori === 'bulutangkis') return 'Bulutangkis'
-  if (props.kategori === 'talim') return "Ta'lim"
-  if (props.kategori === 'phbi') return 'PHBI'
-  return 'Posyandu'
-})
+const TITLE = {
+  pengajian: 'Pengajian',
+  lingkungan: 'Lingkungan',
+  bulutangkis: 'Bulutangkis',
+  gowes: 'Gowes',
+  mancing: 'Mancing',
+  silat: 'Pencak silat',
+  senam: 'Senam',
+  talim: "Ta'lim",
+  phbi: 'PHBI',
+  posyandu: 'Posyandu',
+}
+
+const pageTitle = computed(() => TITLE[props.kategori] || 'Posyandu')
 const detailBase = computed(() => {
   if (props.kategori === 'pengajian') return '/posyandu/pengajian'
   if (props.kategori === 'lingkungan') return '/posyandu/lingkungan'
-  if (props.kategori === 'bulutangkis') return '/komunitas/bulutangkis'
+  if (['bulutangkis', 'gowes', 'mancing', 'silat', 'senam'].includes(props.kategori)) {
+    return '/komunitas/' + props.kategori
+  }
   if (props.kategori === 'talim') return '/talim/jadwal'
   if (props.kategori === 'phbi') return '/talim/phbi'
   return '/posyandu/detail'
@@ -99,6 +107,10 @@ function cardStyle(p) {
     pengajian: 'linear-gradient(145deg, #A855F7, #6D28D9)',
     lingkungan: 'linear-gradient(145deg, #22B863, #0B8442)',
     bulutangkis: 'linear-gradient(145deg, #0EA5E9, #0369A1)',
+    gowes: 'linear-gradient(145deg, #22C55E, #15803D)',
+    mancing: 'linear-gradient(145deg, #06B6D4, #0E7490)',
+    silat: 'linear-gradient(145deg, #EF4444, #B91C1C)',
+    senam: 'linear-gradient(145deg, #F59E0B, #B45309)',
     talim: 'linear-gradient(145deg, #0EA5E9, #0369A1)',
     phbi: 'linear-gradient(145deg, #8B5CF6, #6D28D9)',
   }
