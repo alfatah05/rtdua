@@ -70,6 +70,8 @@ const TITLE = {
   senam: 'Senam',
   talim: "Ta'lim",
   phbi: 'PHBI',
+  rw: 'RW',
+  ambulance: 'Ambulance',
   posyandu: 'Posyandu',
 }
 
@@ -82,6 +84,8 @@ const detailBase = computed(() => {
   }
   if (props.kategori === 'talim') return '/talim/jadwal'
   if (props.kategori === 'phbi') return '/talim/phbi'
+  if (props.kategori === 'rw') return '/rw'
+  if (props.kategori === 'ambulance') return '/ambulance'
   return '/posyandu/detail'
 })
 
@@ -113,6 +117,8 @@ function cardStyle(p) {
     senam: 'linear-gradient(145deg, #F59E0B, #B45309)',
     talim: 'linear-gradient(145deg, #0EA5E9, #0369A1)',
     phbi: 'linear-gradient(145deg, #8B5CF6, #6D28D9)',
+    rw: 'linear-gradient(145deg, #64748B, #334155)',
+    ambulance: 'linear-gradient(145deg, #DC2626, #991B1B)',
   }
   return { background: grads[props.kategori] || grads.posyandu }
 }
