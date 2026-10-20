@@ -19,6 +19,9 @@
   --rs: 12px;
   --r: 20px;
   --rm: 9999px;
+  /* Button primary: hijau di light */
+  --btn: #0A8F44;
+  --btn-fg: #FFFFFF;
   color-scheme: light;
 }
 
@@ -36,6 +39,9 @@
   --gd: #12392A;
   --gm: #D5F7E1;
   --sh: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  /* Button primary: putih di dark */
+  --btn: #FFFFFF;
+  --btn-fg: #111314;
   color-scheme: dark;
 }
 
@@ -72,6 +78,13 @@ body {
 :focus-visible {
   outline: 2px solid var(--gh);
   outline-offset: 2px;
+}
+
+/* Primary buttons yang masih pakai bg-[var(--g)] text-white → ikut --btn di dark */
+:root[data-mode="dark"] button.bg-\[var\(--g\)\],
+:root[data-mode="dark"] a.bg-\[var\(--g\)\] {
+  background-color: var(--btn) !important;
+  color: var(--btn-fg) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
