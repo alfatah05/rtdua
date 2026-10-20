@@ -32,7 +32,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trophy, Bike, Fish, Swords, PersonStanding, ChevronRight } from 'lucide-vue-next'
+import { Trophy, Bike, Fish, Swords, Activity, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 
 const router = useRouter()
@@ -86,7 +86,7 @@ const menus = [
     to: '/komunitas/senam',
     label: 'Senam',
     desc: 'Jadwal senam warga',
-    icon: PersonStanding,
+    icon: Activity,
     cardBg: 'linear-gradient(105deg, #F59E0B 0%, #B45309 100%)',
   },
 ]
