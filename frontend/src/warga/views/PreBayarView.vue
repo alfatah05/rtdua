@@ -165,7 +165,7 @@ function bulanDariPeriode(periode) {
   return BULAN[m] || String(periode)
 }
 function labelJenisDasar(jenis) {
-  if (jenis === 'kas') return 'Kas'
+  if (jenis === 'kas') return 'Iuran'
   if (jenis === 'denda_ronda') return 'Denda ronda'
   if (jenis === 'khusus') return 'Iuran khusus'
   return jenis || 'Tagihan'
