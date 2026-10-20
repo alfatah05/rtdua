@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="pb-[calc(72px+env(safe-area-inset-bottom,0px))]">
     <AppBackHeader title="Rincian iuran" />
 
     <AppPageSpinner v-if="loading" />
@@ -156,17 +156,9 @@
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">Tidak ada tagihan terbuka</p>
       </div>
 
-      <button
-        type="button"
-        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition mb-6"
-        @click="$router.push('/bayar')"
-      >
-        Bayar tagihan
-      </button>
-
       <h2 class="text-[15px] font-bold m-0 mb-1">Riwayat pembayaran</h2>
 
-      <div v-if="riwayat.length" class="mb-6">
+      <div v-if="riwayat.length" class="mb-2">
         <div
           v-for="r in riwayat"
           :key="'rw-' + (r.pembayaran_id || r.id || r.tanggal) + '-' + (r.tagihan_id || '')"
@@ -189,8 +181,24 @@
           </span>
         </div>
       </div>
-      <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 m-0 mb-6">Belum ada riwayat</p>
+      <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 m-0">Belum ada riwayat</p>
     </template>
+
+    <!-- Sticky bottom: tanpa background bar, hanya button -->
+    <div
+      v-if="!loading && !err"
+      class="fixed bottom-0 left-0 right-0 z-30 pointer-events-none"
+    >
+      <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
+        <button
+          type="button"
+          class="pointer-events-auto w-full min-h-[48px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] font-bold active:scale-[0.98] transition shadow-lg"
+          @click="$router.push('/bayar')"
+        >
+          Bayar iuran
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -326,13 +334,13 @@ const heroHint = computed(() => {
 })
 
 const styleTagihan = {
-  background: 'linear-gradient(105deg, #F59E0B 0%, #B45309 100%)',
+  background: '#F59E0B',
 }
 const styleLunas = {
-  background: 'linear-gradient(105deg, #22B863 0%, #0B8442 100%)',
+  background: '#22B863',
 }
 const styleLebih = {
-  background: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
+  background: '#3B82F6',
 }
 const styleLoading = {
   background: 'var(--card2)',
@@ -350,8 +358,7 @@ const permintaanMenunggu = computed(() =>
 )
 
 const stylePermintaan = {
-  background:
-    'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #FBBF24, #F59E0B 55%, #D97706)',
+  background: '#F59E0B',
 }
 
 onMounted(async () => {
