@@ -3,6 +3,25 @@
     <AppBackHeader title="Bayar tagihan" />
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
+    <template v-else-if="sedangMenunggu">
+      <div class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] p-5 shadow-[var(--sh)] mb-4 text-center">
+        <div class="w-12 h-12 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 grid place-items-center mx-auto mb-3">
+          <Clock :size="22" />
+        </div>
+        <p class="text-[16px] font-extrabold m-0">Menunggu konfirmasi pengurus</p>
+        <p class="text-[13px] text-[var(--mut)] m-0 mt-2 leading-relaxed">
+          Masih ada permintaan pembayaran yang menunggu konfirmasi.
+          Selesaikan dulu sebelum mengajukan pembayaran baru.
+        </p>
+        <button
+          type="button"
+          class="mt-5 w-full min-h-[48px] rounded-full bg-[var(--card2)] font-bold active:scale-[0.98] transition"
+          @click="$router.replace('/rincian-iuran')"
+        >
+          Kembali ke rincian iuran
+        </button>
+      </div>
+    </template>
     <template v-else>
       <h2 class="text-[15px] font-bold m-0 mb-2">Pilih tagihan</h2>
       <div
@@ -139,9 +158,9 @@
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Wallet, Home, ShieldAlert, Sparkles, QrCode, Building2, ChevronDown } from 'lucide-vue-next'
+import { Wallet, Home, ShieldAlert, Sparkles, QrCode, Building2, ChevronDown, Clock } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { portalRingkasan, portalListRekening } from '@shared/services/keuangan.js'
+import { portalRingkasan, portalListRekening, portalStatusPermintaan } from '@shared/services/keuangan.js'
 
 const DRAFT_KEY = 'rtdua_bayar_draft'
 const router = useRouter()
@@ -153,6 +172,7 @@ const checked = ref([])
 const selectedId = ref(null)
 const openEw = ref(false)
 const openBank = ref(false)
+const sedangMenunggu = ref(false)
 
 const BULAN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
@@ -200,6 +220,7 @@ const grupBank = computed(() => rekening.value.filter((r) => r.jenis === 'bank')
 const canBayar = computed(() => checked.value.length > 0 && selectedId.value && totalChecked.value > 0)
 
 function lanjut() {
+  if (sedangMenunggu.value) return
   const metode = rekening.value.find((r) => r.id === selectedId.value)
   if (!metode) return
   const items = tagihanTerbuka.value.filter((t) => checked.value.includes(t.id))
@@ -214,7 +235,11 @@ function lanjut() {
 }
 
 onMounted(async () => {
-  const [res, rek] = await Promise.all([portalRingkasan(), portalListRekening()])
+  const [res, rek, pm] = await Promise.all([
+    portalRingkasan(),
+    portalListRekening(),
+    portalStatusPermintaan(),
+  ])
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
@@ -226,6 +251,10 @@ onMounted(async () => {
     const q = rekening.value.find((r) => r.jenis === 'qris')
     if (q) selectedId.value = q.id
     else if (rekening.value[0]) selectedId.value = rekening.value[0].id
+  }
+  if (pm.ok) {
+    const list = Array.isArray(pm.data) ? pm.data : (pm.data?.items || [])
+    sedangMenunggu.value = list.some((p) => p.status === 'menunggu')
   }
 })
 </script>
