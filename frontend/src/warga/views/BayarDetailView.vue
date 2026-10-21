@@ -86,35 +86,19 @@
         <p v-if="msg" class="text-[13px] text-center text-red-600">{{ msg }}</p>
       </form>
     </template>
-
-    <!-- Overlay sukses -->
-    <div
-      v-if="showOverlay"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-6"
-    >
-      <div class="w-full max-w-[340px] rounded-[24px] bg-[var(--bg)] p-6 text-center shadow-xl">
-        <div class="w-14 h-14 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center mx-auto mb-3">
-          <Clock :size="28" />
-        </div>
-        <p class="text-[17px] font-extrabold m-0">Pembayaran sedang dikonfirmasi</p>
-        <p class="text-[13px] text-[var(--mut)] m-0 mt-2">
-          Pengurus akan memeriksa bukti transfer Anda. Status bisa dilihat di rincian iuran.
-        </p>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Clock } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalAjukanTransfer } from '@shared/services/keuangan.js'
 import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
 import { useToast } from '@shared/composables/useToast.js'
 
 const DRAFT_KEY = 'rtdua_bayar_draft'
+const RECEIPT_KEY = 'rtdua_bayar_bukti'
 const router = useRouter()
 const { show } = useToast()
 
@@ -125,7 +109,6 @@ const preview = ref('')
 const uploading = ref(false)
 const saving = ref(false)
 const msg = ref('')
-const showOverlay = ref(false)
 
 const heroStyle = {
   background:
@@ -172,7 +155,7 @@ async function submit() {
   saving.value = true
   msg.value = ''
   const r = draft.value.rekening
-  const res = await portalAjukanTransfer({
+  const payload = {
     nominal: draft.value.total,
     nominal_diajukan: draft.value.total,
     nama_pengirim: namaPengirim.value.trim(),
@@ -181,17 +164,28 @@ async function submit() {
     metode_rekening: r ? `${r.jenis}:${r.nama}` : null,
     rekening_id: r?.id || null,
     tagihan_ids: draft.value.tagihanIds || [],
-  })
+  }
+  const res = await portalAjukanTransfer(payload)
   saving.value = false
   if (!res.ok) {
     msg.value = res.error || 'Gagal mengirim'
     return
   }
+
+  const apiData = res.data || {}
+  const receipt = {
+    id: apiData.id || null,
+    nominal: draft.value.total,
+    nama_pengirim: namaPengirim.value.trim(),
+    rekening: draft.value.rekening || null,
+    items: draft.value.items || [],
+    diajukan_pada: apiData.diajukan_pada || new Date().toISOString(),
+  }
+  try {
+    sessionStorage.setItem(RECEIPT_KEY, JSON.stringify(receipt))
+  } catch (e) {}
   sessionStorage.removeItem(DRAFT_KEY)
-  showOverlay.value = true
-  setTimeout(() => {
-    router.replace('/rincian-iuran')
-  }, 1800)
+  router.replace('/bayar/bukti')
 }
 
 onMounted(() => {
