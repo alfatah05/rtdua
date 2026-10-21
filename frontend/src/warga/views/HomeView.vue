@@ -105,19 +105,28 @@
             @click="goTo(tile.to, tile.key)"
           >
             <div class="relative z-10 flex flex-col h-full min-h-[108px] p-3.5">
-              <div
-                class="w-10 h-10 rounded-[12px] grid place-items-center shrink-0 mb-2.5"
-                :class="tile.muted ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
-              >
-                <component :is="tile.icon" :size="20" />
+              <div class="flex items-start gap-2.5">
+                <div
+                  class="w-10 h-10 rounded-[12px] grid place-items-center shrink-0"
+                  :class="tile.muted ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+                >
+                  <component :is="tile.icon" :size="20" />
+                </div>
+                <div class="flex-1 min-w-0 pt-0.5">
+                  <p
+                    class="text-[13px] font-bold m-0 leading-snug line-clamp-2"
+                    :class="tile.muted ? 'text-[var(--text)]' : 'text-white'"
+                  >{{ tile.label }}</p>
+                </div>
+                <ChevronRight
+                  :size="18"
+                  class="shrink-0 mt-1 opacity-80"
+                  :class="tile.muted ? 'text-[var(--mut)]' : 'text-white'"
+                />
               </div>
               <p
-                class="text-[12px] font-semibold m-0 leading-snug line-clamp-2"
-                :class="tile.muted ? 'text-[var(--mut)]' : 'text-white/90'"
-              >{{ tile.label }}</p>
-              <p
-                class="text-[15px] font-extrabold m-0 mt-1 leading-tight tabular-nums truncate"
-                :class="tile.muted ? 'text-[var(--text)]' : 'text-white'"
+                class="text-[16px] font-extrabold m-0 mt-auto pt-3 leading-tight tabular-nums truncate"
+                :class="tile.muted ? 'text-[var(--mut)]' : 'text-white'"
               >{{ tile.value }}</p>
             </div>
             <div
@@ -215,7 +224,7 @@ async function goTo(to, key) {
 }
 
 const iuranStatus = ref('loading')
-const iuranTitle = ref('Iuran belum bayar')
+const iuranTitle = ref('Iuran yang belum di bayar')
 const iuranNominal = ref('…')
 
 const styleTagihan = '#F59E0B'
@@ -278,46 +287,49 @@ function formatHariPendek(s) {
 }
 
 /** 4 card utama — grid 2x2 */
-const quickTiles = computed(() => [
-  {
-    key: 'iuran',
-    to: '/rincian-iuran',
-    label: iuranTitle.value,
-    value: iuranNominal.value,
-    icon: Wallet,
-    bg: iuranBg.value || '#F59E0B',
-    muted: iuranStatus.value === 'loading',
-  },
-  {
-    key: 'kas',
-    to: '/keuangan',
-    label: 'Kas ' + (namaRt.value || 'RT'),
-    value: kasHeadline.value,
-    icon: Wallet,
-    bg: '#A855F7',
-    muted: false,
-  },
-  {
-    key: 'ronda',
-    to: '/ronda',
-    label: rondaGroupName.value
-      ? 'Ronda (' + rondaGroupName.value + ')'
-      : 'Jadwal Ronda',
-    value: rondaHeadline.value,
-    icon: ShieldCheck,
-    bg: '#3B82F6',
-    muted: false,
-  },
-  {
-    key: 'warga',
-    to: '/warga',
-    label: 'Warga',
-    value: 'Daftar warga',
-    icon: Users,
-    bg: '#EF4444',
-    muted: false,
-  },
-])
+const quickTiles = computed(() => {
+  const rt = namaRt.value || 'RT'
+  return [
+    {
+      key: 'iuran',
+      to: '/rincian-iuran',
+      label: iuranTitle.value,
+      value: iuranNominal.value,
+      icon: Wallet,
+      bg: iuranBg.value || '#F59E0B',
+      muted: iuranStatus.value === 'loading',
+    },
+    {
+      key: 'kas',
+      to: '/keuangan',
+      label: 'Total Kas ' + rt,
+      value: kasHeadline.value,
+      icon: Wallet,
+      bg: '#A855F7',
+      muted: false,
+    },
+    {
+      key: 'ronda',
+      to: '/ronda',
+      label: rondaGroupName.value
+        ? 'Jadwal Ronda (' + rondaGroupName.value + ')'
+        : 'Jadwal Ronda',
+      value: rondaHeadline.value,
+      icon: ShieldCheck,
+      bg: '#3B82F6',
+      muted: false,
+    },
+    {
+      key: 'warga',
+      to: '/warga',
+      label: 'Daftar warga ' + rt,
+      value: 'Lihat daftar',
+      icon: Users,
+      bg: '#06B6D4',
+      muted: false,
+    },
+  ]
+})
 
 /** Menu list di bawah grid (tanpa 4 yang sudah di grid) */
 const menus = computed(() => [
@@ -402,7 +414,7 @@ onMounted(async () => {
     const total = Number(iu.data.total ?? iu.data.total_tagihan ?? 0)
     if (total > 0) {
       iuranStatus.value = 'pending'
-      iuranTitle.value = 'Iuran belum bayar'
+      iuranTitle.value = 'Iuran yang belum di bayar'
       iuranNominal.value = rp(total)
     } else if (total < 0) {
       iuranStatus.value = 'lebih'
@@ -410,12 +422,12 @@ onMounted(async () => {
       iuranNominal.value = rp(-total)
     } else {
       iuranStatus.value = 'lunas'
-      iuranTitle.value = 'Iuran'
+      iuranTitle.value = 'Iuran yang belum di bayar'
       iuranNominal.value = 'Lunas'
     }
   } else {
     iuranStatus.value = 'loading'
-    iuranTitle.value = 'Iuran belum bayar'
+    iuranTitle.value = 'Iuran yang belum di bayar'
     iuranNominal.value = '—'
   }
 
