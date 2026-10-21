@@ -1,14 +1,18 @@
 <template>
-  <div :style="{ paddingTop: 'max(8px, env(safe-area-inset-top, 0px))' }">
+  <div :style="{ paddingTop: 'max(16px, calc(env(safe-area-inset-top, 0px) + 12px))' }">
     <!-- Skeleton beranda -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
-      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
+      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-3">
         <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
         <div class="min-w-0 space-y-2">
           <div class="h-5 rounded-full bg-[var(--card2)] w-[70%] mx-auto" />
           <div class="h-3 rounded-full bg-[var(--card2)] w-[55%] mx-auto" />
         </div>
         <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
+      </div>
+      <div class="mb-2">
+        <div class="h-[3px] bg-[var(--card2)]" />
+        <div class="h-px bg-[var(--card2)] mt-[2px]" />
       </div>
       <div class="flex items-center justify-between gap-3 py-2 mb-1">
         <div class="h-4 rounded-full bg-[var(--card2)] w-[55%]" />
@@ -17,8 +21,7 @@
           <div class="w-10 h-10 rounded-full bg-[var(--card2)]" />
         </div>
       </div>
-      <div class="h-px bg-[var(--line)] my-3" />
-      <div class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-2.5 mt-2">
         <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
         <div class="grid grid-cols-2 gap-2.5">
           <div v-for="n in 4" :key="n" class="rounded-[18px] h-[108px] bg-[var(--card2)]" />
@@ -29,7 +32,7 @@
 
     <template v-else>
       <!-- Kop RT -->
-      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-1">
+      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-3">
         <div
           class="w-[60px] h-[60px] grid place-items-center shrink-0"
           :class="logoRtUrl
@@ -66,7 +69,13 @@
         </div>
       </div>
 
-      <!-- Bar selamat datang + ikon (menggantikan header atas) -->
+      <!-- Garis ganda kop: tebal di atas, tipis di bawah -->
+      <div class="kop-divider mb-2" aria-hidden="true">
+        <div class="h-[3px] bg-[var(--text)]"></div>
+        <div class="h-px bg-[var(--text)] mt-[2px]"></div>
+      </div>
+
+      <!-- Bar selamat datang + ikon -->
       <div class="flex items-center justify-between gap-2 min-h-[44px] py-1">
         <p class="text-[13px] m-0 leading-snug text-[var(--mut)] min-w-0 flex-1 truncate text-left">
           Selamat datang,
@@ -94,9 +103,7 @@
         </div>
       </div>
 
-      <div class="h-px bg-[var(--line)] my-3"></div>
-
-      <div class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-2.5 mt-2">
         <div
           v-for="p in pengumuman"
           :key="p.id"
