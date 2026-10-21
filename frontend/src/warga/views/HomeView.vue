@@ -60,34 +60,37 @@
       <div class="h-px bg-[var(--line)] my-4"></div>
 
       <div class="flex flex-col gap-2.5">
+        <!-- Pengumuman: solid, tanpa gradien, teks gelap -->
         <div
-          v-for="p in pengumuman"
+          v-for="(p, pi) in pengumuman"
           :key="p.id"
-          class="rounded-[20px] overflow-hidden relative text-white shadow-[var(--sh)]"
-          :style="cardStyle(true)"
+          class="rounded-[20px] overflow-hidden relative shadow-[var(--sh)]"
+          :style="{ background: palette[pi % palette.length] }"
         >
           <div class="p-5 relative z-10">
             <div class="flex items-center justify-between gap-2 flex-wrap">
-              <span class="flex items-center gap-2 text-[13px] font-semibold text-white/90">
+              <span class="flex items-center gap-2 text-[13px] font-semibold text-[#1F2937]/opacity-80">
                 <Megaphone :size="16" /> Pengumuman
-                <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
+                <span
+                  v-if="p.hasLampiran"
+                  class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-black/10 text-[#1F2937]"
+                >📎</span>
               </span>
-              <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">
+              <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-black/10 text-[#1F2937]">
                 {{ p.tanggal }}
               </span>
             </div>
-            <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
-            <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
+            <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1 text-[#111827]">{{ p.judul }}</h2>
+            <p class="text-[13px] m-0 text-[#1F2937]/opacity-80">{{ p.ringkas }}</p>
             <button
               type="button"
-              class="btn-press inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] touch-manipulation"
+              class="btn-press inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-[#111827] text-white touch-manipulation"
               :class="pressedKey === 'peng-' + p.id ? 'is-pressed' : ''"
               @click="goTo('/pengumuman/' + p.id, 'peng-' + p.id)"
             >
               Lihat detail <ChevronRight :size="18" />
             </button>
           </div>
-          <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
 
         <!-- Grid 2x2: Iuran · Kas · Ronda · Warga -->
@@ -107,23 +110,19 @@
             <div class="relative z-10 flex flex-col h-full min-h-[108px] p-3.5">
               <div
                 class="w-10 h-10 rounded-[12px] grid place-items-center shrink-0 mb-2.5"
-                :class="tile.muted ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+                :class="tile.muted ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-black/10 text-[#111827]'"
               >
                 <component :is="tile.icon" :size="20" />
               </div>
               <p
                 class="text-[12px] font-semibold m-0 leading-snug line-clamp-2"
-                :class="tile.muted ? 'text-[var(--mut)]' : 'text-white/90'"
+                :class="tile.muted ? 'text-[var(--mut)]' : 'text-[#1F2937]/opacity-80'"
               >{{ tile.label }}</p>
               <p
                 class="text-[15px] font-extrabold m-0 mt-1 leading-tight tabular-nums truncate"
-                :class="tile.muted ? 'text-[var(--text)]' : 'text-white'"
+                :class="tile.muted ? 'text-[var(--text)]' : 'text-[#111827]'"
               >{{ tile.value }}</p>
             </div>
-            <div
-              v-if="!tile.muted"
-              class="absolute -right-6 -bottom-8 w-24 h-24 rounded-full bg-white/10 pointer-events-none"
-            ></div>
           </button>
         </div>
 
@@ -138,17 +137,17 @@
           @click="goTo(m.to, m.to)"
         >
           <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
-            <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-white/20 text-white">
+            <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-black/10 text-[#111827]">
               <component :is="m.icon" :size="22" />
             </div>
             <div class="flex-1 min-w-0 py-2.5">
-              <p class="text-[15px] font-bold m-0 leading-tight text-white truncate">{{ m.label }}</p>
+              <p class="text-[15px] font-bold m-0 leading-tight text-[#111827] truncate">{{ m.label }}</p>
               <p
                 v-if="m.headline"
-                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-white/85 tabular-nums truncate"
+                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-[#1F2937]/opacity-75 tabular-nums truncate"
               >{{ m.headline }}</p>
             </div>
-            <ChevronRight :size="18" class="shrink-0 text-white/70" />
+            <ChevronRight :size="18" class="shrink-0 text-[#111827]/opacity-50" />
           </div>
         </button>
       </div>
@@ -172,11 +171,11 @@ import {
   Building2, Ambulance,
 } from 'lucide-vue-next'
 
-const styleAktif = { background: '#22B863' }
-const styleSelesai = { background: '#6B7280' }
-function cardStyle(aktif) {
-  return aktif ? styleAktif : styleSelesai
-}
+/** Palet pastel solid (tanpa gradien) */
+const palette = ['#FEA0FF', '#B4A0FF', '#AACBFF', '#FFBE5A']
+/** Ekstensi se-gaya untuk menu tambahan */
+const paletteExtra = ['#FFB4D0', '#C8B8FF', '#9ED8FF', '#FFD080', '#B8E8D0', '#FFC9A8']
+
 function isAktifTampil(p) {
   const now = Date.now()
   const selesai = p.tampil_selesai
@@ -218,14 +217,11 @@ const iuranStatus = ref('loading')
 const iuranTitle = ref('Iuran belum bayar')
 const iuranNominal = ref('…')
 
-const styleTagihan = '#F59E0B'
-const styleLunas = '#22B863'
-const styleLebih = '#3B82F6'
-
+/** Iuran: tetap pakai palet (oranye / ungu / biru) */
 const iuranBg = computed(() => {
-  if (iuranStatus.value === 'pending') return styleTagihan
-  if (iuranStatus.value === 'lunas') return styleLunas
-  if (iuranStatus.value === 'lebih') return styleLebih
+  if (iuranStatus.value === 'pending') return '#FFBE5A'
+  if (iuranStatus.value === 'lunas') return '#B4A0FF'
+  if (iuranStatus.value === 'lebih') return '#AACBFF'
   return null
 })
 
@@ -285,7 +281,7 @@ const quickTiles = computed(() => [
     label: iuranTitle.value,
     value: iuranNominal.value,
     icon: Wallet,
-    bg: iuranBg.value || '#F59E0B',
+    bg: iuranBg.value || '#FFBE5A',
     muted: iuranStatus.value === 'loading',
   },
   {
@@ -294,7 +290,7 @@ const quickTiles = computed(() => [
     label: 'Kas ' + (namaRt.value || 'RT'),
     value: kasHeadline.value,
     icon: Wallet,
-    bg: '#A855F7',
+    bg: '#FEA0FF',
     muted: false,
   },
   {
@@ -305,7 +301,7 @@ const quickTiles = computed(() => [
       : 'Jadwal Ronda',
     value: rondaHeadline.value,
     icon: ShieldCheck,
-    bg: '#3B82F6',
+    bg: '#B4A0FF',
     muted: false,
   },
   {
@@ -314,56 +310,26 @@ const quickTiles = computed(() => [
     label: 'Warga',
     value: 'Daftar warga',
     icon: Users,
-    bg: '#EF4444',
+    bg: '#AACBFF',
     muted: false,
   },
 ])
 
-/** Menu list di bawah grid (tanpa 4 yang sudah di grid) */
-const menus = computed(() => [
-  {
-    to: '/galeri',
-    label: 'Galeri RT',
-    desc: 'Foto kegiatan warga',
-    icon: Images,
-    cardBg: '#EC4899',
-  },
-  {
-    to: '/komunitas',
-    label: 'Komunitas',
-    desc: 'Kegiatan komunitas warga',
-    icon: Trophy,
-    cardBg: '#14B8A6',
-  },
-  {
-    to: '/posyandu',
-    label: 'Kader RT 002',
-    desc: 'Kegiatan pengurus ibu-ibu',
-    icon: HeartHandshake,
-    cardBg: '#F97316',
-  },
-  {
-    to: '/talim',
-    label: 'DKM',
-    desc: 'Kegiatan & informasi DKM',
-    icon: BookOpen,
-    cardBg: '#0EA5E9',
-  },
-  {
-    to: '/rw',
-    label: 'RW',
-    desc: 'Informasi & kegiatan RW',
-    icon: Building2,
-    cardBg: '#64748B',
-  },
-  {
-    to: '/ambulance',
-    label: 'Ambulance',
-    desc: 'Info & kontak ambulance',
-    icon: Ambulance,
-    cardBg: '#DC2626',
-  },
-])
+/** Menu list di bawah grid */
+const menus = computed(() => {
+  const items = [
+    { to: '/galeri', label: 'Galeri RT', icon: Images },
+    { to: '/komunitas', label: 'Komunitas', icon: Trophy },
+    { to: '/posyandu', label: 'Kader RT 002', icon: HeartHandshake },
+    { to: '/talim', label: 'DKM', icon: BookOpen },
+    { to: '/rw', label: 'RW', icon: Building2 },
+    { to: '/ambulance', label: 'Ambulance', icon: Ambulance },
+  ]
+  return items.map((m, i) => ({
+    ...m,
+    cardBg: paletteExtra[i % paletteExtra.length],
+  }))
+})
 
 onMounted(async () => {
   loading.value = true
