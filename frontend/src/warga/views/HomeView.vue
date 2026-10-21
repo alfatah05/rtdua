@@ -14,11 +14,17 @@
         <div class="h-[3px] bg-[var(--card2)]" />
         <div class="h-px bg-[var(--card2)] mt-[2px]" />
       </div>
-      <div class="flex items-center justify-between gap-3 py-2 mb-1">
-        <div class="h-4 rounded-full bg-[var(--card2)] w-[55%]" />
-        <div class="flex gap-1">
-          <div class="w-10 h-10 rounded-full bg-[var(--card2)]" />
-          <div class="w-10 h-10 rounded-full bg-[var(--card2)]" />
+      <div class="flex items-center justify-between gap-3 py-3.5 mb-1">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-11 h-11 rounded-full bg-[var(--card2)] shrink-0" />
+          <div class="space-y-1.5 flex-1 min-w-0">
+            <div class="h-3 rounded-full bg-[var(--card2)] w-[40%]" />
+            <div class="h-3.5 rounded-full bg-[var(--card2)] w-[55%]" />
+          </div>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <div class="w-12 h-12 rounded-full bg-[var(--card2)]" />
+          <div class="w-12 h-12 rounded-full bg-[var(--card2)]" />
         </div>
       </div>
       <div class="flex flex-col gap-2.5 mt-2">
@@ -75,35 +81,55 @@
         <div class="h-px bg-[var(--text)] mt-[2px]"></div>
       </div>
 
-      <!-- Bar selamat datang + ikon -->
-      <div class="flex items-center justify-between gap-2 min-h-[44px] py-1">
-        <p class="text-[13px] m-0 leading-snug text-[var(--mut)] min-w-0 flex-1 truncate text-left">
-          Selamat datang,
-          <span class="font-bold text-[var(--text)]">{{ namaWarga }}</span>
-        </p>
-        <div class="flex items-center shrink-0" style="margin-right: -6px">
+      <!-- Bar selamat datang + foto + ikon berlabel -->
+      <div class="flex items-center justify-between gap-3 py-3.5">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div
+            class="w-11 h-11 rounded-full shrink-0 overflow-hidden bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-[13px] font-bold"
+          >
+            <img
+              v-if="fotoUrl"
+              :src="fotoUrl"
+              alt="Foto profil"
+              class="w-full h-full object-cover"
+              @error="fotoBroken = true"
+            />
+            <span v-else>{{ inisial }}</span>
+          </div>
+          <div class="min-w-0 flex-1 text-left">
+            <p class="text-[12px] m-0 leading-snug text-[var(--mut)]">Selamat datang,</p>
+            <p class="text-[14px] font-bold m-0 leading-snug text-[var(--text)] truncate">{{ namaWarga }}</p>
+          </div>
+        </div>
+        <div class="flex items-end gap-1 shrink-0">
           <router-link
             to="/pengumuman"
-            class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+            class="flex flex-col items-center justify-center w-[52px] text-[var(--text)] touch-manipulation"
             aria-label="Pengumuman"
           >
-            <Megaphone :size="20" />
+            <span class="w-9 h-9 grid place-items-center">
+              <Megaphone :size="20" />
+            </span>
+            <span class="text-[10px] font-medium leading-none text-[var(--mut)] mt-0.5">Pengumuman</span>
           </router-link>
           <router-link
             to="/notifikasi"
-            class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] relative"
+            class="flex flex-col items-center justify-center w-[52px] text-[var(--text)] relative touch-manipulation"
             aria-label="Notifikasi"
           >
-            <Bell :size="20" />
-            <span
-              v-if="badge > 0"
-              class="absolute top-1 right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center"
-            >{{ badge > 9 ? '9+' : badge }}</span>
+            <span class="w-9 h-9 grid place-items-center relative">
+              <Bell :size="20" />
+              <span
+                v-if="badge > 0"
+                class="absolute top-0 right-0 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center"
+              >{{ badge > 9 ? '9+' : badge }}</span>
+            </span>
+            <span class="text-[10px] font-medium leading-none text-[var(--mut)] mt-0.5">Notifikasi</span>
           </router-link>
         </div>
       </div>
 
-      <div class="flex flex-col gap-2.5 mt-2">
+      <div class="flex flex-col gap-2.5 mt-1">
         <div
           v-for="p in pengumuman"
           :key="p.id"
@@ -231,6 +257,16 @@ const { user } = useAuth()
 const { badge, ensure } = useNotifBadge()
 
 const namaWarga = computed(() => user.value?.nama || 'Warga')
+const fotoBroken = ref(false)
+const fotoUrl = computed(() => {
+  if (fotoBroken.value) return ''
+  const f = user.value?.foto
+  return f ? mediaUrl(f) : ''
+})
+const inisial = computed(() => {
+  const n = namaWarga.value || 'W'
+  return n.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+})
 
 const styleAktif = { background: '#22B863' }
 const styleSelesai = { background: '#6B7280' }
@@ -499,6 +535,9 @@ onMounted(async () => {
   } else {
     kasHeadline.value = '—'
   }
+
+  const foto = user.value?.foto ? mediaUrl(user.value.foto) : ''
+  if (foto) imgs.push(foto)
 
   await waitImages(imgs)
   loading.value = false
