@@ -175,6 +175,7 @@ async function submit() {
   const apiData = res.data || {}
   const receipt = {
     id: apiData.id || null,
+    status: 'menunggu',
     nominal: draft.value.total,
     nama_pengirim: namaPengirim.value.trim(),
     rekening: draft.value.rekening || null,
