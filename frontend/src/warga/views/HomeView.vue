@@ -1,14 +1,14 @@
 <template>
-  <div :style="{ paddingTop: 'max(21px, calc(env(safe-area-inset-top, 0px) + 17px))' }">
+  <div :style="{ paddingTop: 'max(1.3125rem, calc(env(safe-area-inset-top, 0px) + 1.0625rem))' }">
     <!-- Skeleton beranda -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
       <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-3">
-        <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
+        <div class="w-14 h-14 rounded-xl bg-[var(--card2)]" />
         <div class="min-w-0 space-y-2">
           <div class="h-5 rounded-full bg-[var(--card2)] w-[70%] mx-auto" />
           <div class="h-3 rounded-full bg-[var(--card2)] w-[55%] mx-auto" />
         </div>
-        <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
+        <div class="w-14 h-14 rounded-xl bg-[var(--card2)]" />
       </div>
       <div class="h-px bg-[var(--line)] mb-2" />
       <div class="flex items-center justify-between gap-3 py-3.5 mb-1">
@@ -25,11 +25,11 @@
         </div>
       </div>
       <div class="flex flex-col gap-2.5 mt-2">
-        <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
+        <div class="rounded-2xl h-36 bg-[var(--card2)]" />
         <div class="grid grid-cols-2 gap-2.5">
-          <div v-for="n in 4" :key="n" class="rounded-[18px] h-[108px] bg-[var(--card2)]" />
+          <div v-for="n in 4" :key="n" class="rounded-[1.125rem] h-[6.75rem] bg-[var(--card2)]" />
         </div>
-        <div v-for="n in 6" :key="'m' + n" class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
+        <div v-for="n in 6" :key="'m' + n" class="rounded-[1.125rem] h-16 bg-[var(--card2)]" />
       </div>
     </div>
 
@@ -37,9 +37,9 @@
       <!-- Kop RT -->
       <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-3">
         <div
-          class="w-[60px] h-[60px] grid place-items-center shrink-0"
+          class="w-14 h-14 grid place-items-center shrink-0"
           :class="logoRtUrl
-            ? 'rounded-[12px] bg-transparent'
+            ? 'rounded-xl bg-transparent'
             : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
         >
           <img
@@ -49,16 +49,16 @@
             class="max-w-full max-h-full w-auto h-auto object-contain"
             @error="logoRtUrl = ''"
           />
-          <Landmark v-else :size="26" class="text-[var(--mut)]" />
+          <Landmark v-else :size="22" class="text-[var(--mut)]" />
         </div>
         <div class="min-w-0">
-          <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
-          <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
+          <p class="text-xl font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
+          <small class="block text-xs font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
         </div>
         <div
-          class="w-[60px] h-[60px] grid place-items-center shrink-0"
+          class="w-14 h-14 grid place-items-center shrink-0"
           :class="logoDesaUrl
-            ? 'rounded-[12px] bg-transparent'
+            ? 'rounded-xl bg-transparent'
             : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
         >
           <img
@@ -68,7 +68,7 @@
             class="max-w-full max-h-full w-auto h-auto object-contain"
             @error="logoDesaUrl = ''"
           />
-          <Handshake v-else :size="26" class="text-[var(--mut)]" />
+          <Handshake v-else :size="22" class="text-[var(--mut)]" />
         </div>
       </div>
 
@@ -79,7 +79,7 @@
       <div class="flex items-center justify-between gap-3 py-3.5">
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div
-            class="w-11 h-11 rounded-full shrink-0 overflow-hidden bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-[13px] font-bold"
+            class="w-11 h-11 rounded-full shrink-0 overflow-hidden bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-xs font-bold"
           >
             <img
               v-if="fotoUrl"
@@ -91,8 +91,8 @@
             <span v-else>{{ inisial }}</span>
           </div>
           <div class="min-w-0 flex-1 text-left">
-            <p class="text-[12px] m-0 leading-snug text-[var(--mut)]">Selamat datang,</p>
-            <p class="text-[14px] font-bold m-0 leading-snug text-[var(--text)] truncate">{{ namaWarga }}</p>
+            <p class="text-xs m-0 leading-snug text-[var(--mut)]">Selamat datang,</p>
+            <p class="text-sm font-bold m-0 leading-snug text-[var(--text)] truncate">{{ namaWarga }}</p>
           </div>
         </div>
         <div class="flex items-center shrink-0" style="margin-right: -6px">
@@ -101,17 +101,17 @@
             class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] touch-manipulation"
             aria-label="Pengumuman"
           >
-            <Megaphone :size="20" />
+            <Megaphone :size="18" />
           </router-link>
           <router-link
             to="/notifikasi"
             class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] relative touch-manipulation"
             aria-label="Notifikasi"
           >
-            <Bell :size="20" />
+            <Bell :size="18" />
             <span
               v-if="badge > 0"
-              class="absolute top-1 right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center"
+              class="absolute top-1 right-1 min-w-4 h-4 px-0.5 rounded-full bg-[var(--g)] text-white text-[0.625rem] font-bold grid place-items-center"
             >{{ badge > 9 ? '9+' : badge }}</span>
           </router-link>
         </div>
@@ -121,28 +121,28 @@
         <div
           v-for="p in pengumuman"
           :key="p.id"
-          class="rounded-[20px] overflow-hidden relative text-white shadow-[var(--sh)]"
+          class="rounded-2xl overflow-hidden relative text-white shadow-[var(--sh)]"
           :style="cardStyle(true)"
         >
           <div class="p-5 relative z-10">
             <div class="flex items-center justify-between gap-2 flex-wrap">
-              <span class="flex items-center gap-2 text-[13px] font-semibold text-white/90">
-                <Megaphone :size="16" /> Pengumuman
-                <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
+              <span class="flex items-center gap-2 text-xs font-semibold text-white/90">
+                <Megaphone :size="15" /> Pengumuman
+                <span v-if="p.hasLampiran" class="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
               </span>
-              <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">
+              <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white/20">
                 {{ p.tanggal }}
               </span>
             </div>
-            <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
-            <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
+            <h2 class="text-base font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
+            <p class="text-xs m-0 text-white/90">{{ p.ringkas }}</p>
             <button
               type="button"
-              class="btn-press inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] touch-manipulation"
+              class="btn-press inline-flex items-center gap-1 mt-3.5 min-h-11 px-4 rounded-full font-bold text-sm bg-white text-[#0B6B34] touch-manipulation"
               :class="pressedKey === 'peng-' + p.id ? 'is-pressed' : ''"
               @click="goTo('/pengumuman/' + p.id, 'peng-' + p.id)"
             >
-              Lihat detail <ChevronRight :size="18" />
+              Lihat detail <ChevronRight :size="16" />
             </button>
           </div>
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
@@ -162,28 +162,28 @@
             :style="tile.muted ? undefined : { background: tile.bg }"
             @click="goTo(tile.to, tile.key)"
           >
-            <div class="relative z-10 flex flex-col h-full min-h-[108px] p-3.5">
+            <div class="relative z-10 flex flex-col h-full min-h-[6.75rem] p-3.5">
               <div class="flex items-start gap-2.5">
                 <div
-                  class="w-10 h-10 rounded-[12px] grid place-items-center shrink-0"
+                  class="w-10 h-10 rounded-xl grid place-items-center shrink-0"
                   :class="tile.muted ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
                 >
-                  <component :is="tile.icon" :size="20" />
+                  <component :is="tile.icon" :size="18" />
                 </div>
                 <div class="flex-1 min-w-0 pt-0.5">
                   <p
-                    class="text-[13px] font-bold m-0 leading-snug line-clamp-2"
+                    class="text-xs font-bold m-0 leading-snug line-clamp-2"
                     :class="tile.muted ? 'text-[var(--text)]' : 'text-white'"
                   >{{ tile.label }}</p>
                 </div>
                 <ChevronRight
-                  :size="18"
+                  :size="16"
                   class="shrink-0 mt-1 opacity-80"
                   :class="tile.muted ? 'text-[var(--mut)]' : 'text-white'"
                 />
               </div>
               <p
-                class="text-[16px] font-extrabold m-0 mt-auto pt-3 leading-tight tabular-nums truncate"
+                class="text-base font-extrabold m-0 mt-auto pt-3 leading-tight tabular-nums truncate"
                 :class="tile.muted ? 'text-[var(--mut)]' : 'text-white'"
               >{{ tile.value }}</p>
             </div>
@@ -204,18 +204,18 @@
           :style="{ background: m.cardBg }"
           @click="goTo(m.to, m.to)"
         >
-          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
-            <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-white/20 text-white">
-              <component :is="m.icon" :size="22" />
+          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-16">
+            <div class="w-11 h-11 rounded-[0.875rem] grid place-items-center shrink-0 bg-white/20 text-white">
+              <component :is="m.icon" :size="20" />
             </div>
             <div class="flex-1 min-w-0 py-2.5">
-              <p class="text-[15px] font-bold m-0 leading-tight text-white truncate">{{ m.label }}</p>
+              <p class="text-sm font-bold m-0 leading-tight text-white truncate">{{ m.label }}</p>
               <p
                 v-if="m.headline"
-                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-white/85 tabular-nums truncate"
+                class="text-xs font-semibold m-0 mt-0.5 leading-tight text-white/85 tabular-nums truncate"
               >{{ m.headline }}</p>
             </div>
-            <ChevronRight :size="18" class="shrink-0 text-white/70" />
+            <ChevronRight :size="16" class="shrink-0 text-white/70" />
           </div>
         </button>
       </div>
@@ -534,7 +534,7 @@ onMounted(async () => {
 
 <style scoped>
 .quick-tile {
-  border-radius: 18px;
+  border-radius: 1.125rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   transform: scale(1);
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -549,8 +549,8 @@ onMounted(async () => {
   box-shadow: none;
 }
 .menu-row {
-  border-radius: 18px;
-  min-height: 64px;
+  border-radius: 1.125rem;
+  min-height: 4rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   transform: scale(1);
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
