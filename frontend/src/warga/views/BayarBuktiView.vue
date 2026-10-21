@@ -27,7 +27,7 @@
         </p>
       </div>
 
-      <!-- Detail struk flat (garis tipis saja, tanpa card/border luar) -->
+      <!-- Detail struk flat — hanya baris yang ada isinya -->
       <div class="px-1 mb-6">
         <div
           v-for="(row, i) in rows"
@@ -106,7 +106,13 @@ function labelJenisRekening(jenis) {
   if (jenis === 'qris') return 'QRIS'
   if (jenis === 'ewallet') return 'E-wallet'
   if (jenis === 'bank') return 'Transfer bank'
-  return jenis || '—'
+  return jenis || ''
+}
+
+function isEmptyVal(v) {
+  if (v == null) return true
+  const s = String(v).trim()
+  return s === '' || s === '—' || s === '-'
 }
 
 const isConfirmed = computed(() => {
@@ -146,28 +152,31 @@ const rows = computed(() => {
   const metode =
     metodeFromRek ||
     d.metode_label ||
-    d.metode ||
+    (d.metode === 'transfer' ? 'Transfer' : d.metode === 'tunai' ? 'Tunai' : d.metode) ||
     d.bank_pengirim ||
-    '—'
+    ''
 
-  const list = [
+  const namaPenerima = r.atas_nama || r.nama || d.nama_penerima || ''
+  const rekTujuan =
+    r.nomor ||
+    (r.jenis === 'qris' ? 'QRIS' : '') ||
+    d.rekening_tujuan ||
+    ''
+  const pengirim = d.nama_pengirim || ''
+
+  const candidates = [
     { label: 'Status', value: statusLabel },
-    {
-      label: 'Nama penerima',
-      value: r.atas_nama || r.nama || d.nama_penerima || '—',
-    },
-    {
-      label: 'Rekening tujuan',
-      value: r.nomor || (r.jenis === 'qris' ? 'QRIS' : d.rekening_tujuan) || '—',
-    },
+    { label: 'Nama penerima', value: namaPenerima },
+    { label: 'Rekening tujuan', value: rekTujuan },
     { label: 'Metode', value: metode },
-    { label: 'Pengirim', value: d.nama_pengirim || '—' },
+    { label: 'Pengirim', value: pengirim },
     { label: 'Nominal', value: rp(d.nominal) },
   ]
   if (d.id) {
-    list.push({ label: 'No. referensi', value: String(d.id) })
+    candidates.push({ label: 'No. referensi', value: String(d.id) })
   }
-  return list
+  // Jangan tampilkan baris kosong / strip
+  return candidates.filter((row) => !isEmptyVal(row.value))
 })
 
 onMounted(() => {
