@@ -46,11 +46,13 @@
 
       <div v-if="permintaanMenunggu.length" class="mb-5 space-y-2.5">
         <h2 class="text-[15px] font-bold m-0 mb-1">Status permintaan</h2>
-        <div
+        <button
           v-for="p in permintaanMenunggu"
           :key="'pm-' + p.id"
-          class="w-full rounded-[20px] p-5 relative overflow-hidden shadow-[var(--sh)]"
+          type="button"
+          class="w-full rounded-[20px] p-5 relative overflow-hidden shadow-[var(--sh)] text-left active:scale-[0.99] transition-transform"
           :style="stylePermintaan"
+          @click="bukaBuktiPermintaan(p)"
         >
           <div class="relative z-10 flex items-start gap-3">
             <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
@@ -65,9 +67,10 @@
                 {{ rp(p.nominal_diajukan ?? p.nominal) }} · {{ formatTgl(p.diajukan_pada) }}
               </p>
             </div>
+            <ChevronRight :size="20" class="text-white/80 shrink-0 mt-1" />
           </div>
           <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
-        </div>
+        </button>
       </div>
 
       <h2 class="text-[15px] font-bold m-0 mb-2">Rincian tagihan</h2>
@@ -190,10 +193,12 @@
 
       <template v-if="tab === 'riwayat'">
         <div v-if="riwayat.length" class="mb-2 px-1">
-          <div
+          <button
             v-for="r in riwayat"
             :key="'rw-' + (r.pembayaran_id || r.id || r.tanggal) + '-' + (r.tagihan_id || '')"
-            class="flex items-center gap-3 py-2.5"
+            type="button"
+            class="w-full flex items-center gap-3 py-2.5 text-left active:opacity-80 transition-opacity"
+            @click="bukaBuktiRiwayat(r)"
           >
             <div
               class="w-9 h-9 rounded-full grid place-items-center shrink-0"
@@ -210,7 +215,8 @@
             <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
               {{ rp(r.jumlah ?? r.nominal) }}
             </span>
-          </div>
+            <ChevronRight :size="16" class="text-[var(--mut)] shrink-0 opacity-60" />
+          </button>
         </div>
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-4 m-0">Belum ada riwayat</p>
       </template>
@@ -288,13 +294,14 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Wallet, Home, ShieldAlert, Sparkles, Clock, ChevronDown } from 'lucide-vue-next'
+import { Wallet, Home, ShieldAlert, Sparkles, Clock, ChevronDown, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalRingkasan, portalStatusPermintaan, portalStatusIuranWarga } from '@shared/services/keuangan.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { waitImages } from '@shared/utils/waitImages.js'
 import { useToast } from '@shared/composables/useToast.js'
 
+const RECEIPT_KEY = 'rtdua_bayar_bukti'
 const router = useRouter()
 const { show } = useToast()
 
@@ -424,6 +431,47 @@ function formatTgl(s) {
   const d = new Date(raw.length === 10 ? raw + 'T00:00:00' : raw)
   if (Number.isNaN(d.getTime())) return String(s).slice(0, 10)
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function bukaBukti(payload) {
+  try {
+    sessionStorage.setItem(RECEIPT_KEY, JSON.stringify(payload))
+  } catch (e) {}
+  router.push('/bayar/bukti')
+}
+
+function bukaBuktiPermintaan(p) {
+  bukaBukti({
+    id: p.id,
+    status: 'menunggu',
+    nominal: Number(p.nominal_diajukan ?? p.nominal ?? 0),
+    nama_pengirim: p.nama_pengirim || '',
+    bank_pengirim: p.bank_pengirim || '',
+    diajukan_pada: p.diajukan_pada || null,
+    metode: p.bank_pengirim || 'Transfer',
+    metode_label: p.bank_pengirim || 'Transfer',
+    rekening: p.bank_pengirim
+      ? { nama: p.bank_pengirim, jenis: 'bank', nomor: '', atas_nama: '' }
+      : null,
+    items: [],
+  })
+}
+
+function bukaBuktiRiwayat(r) {
+  const label = labelRiwayat(r)
+  const nominal = Number(r.jumlah ?? r.nominal ?? 0)
+  bukaBukti({
+    id: r.pembayaran_id || r.id || null,
+    status: 'dikonfirmasi',
+    nominal,
+    nama_pengirim: '',
+    diajukan_pada: r.tanggal || null,
+    tanggal: r.tanggal || null,
+    metode: r.metode || '',
+    metode_label: labelMetode(r.metode) || '—',
+    rekening: null,
+    items: [{ id: r.tagihan_id || null, label, sisa: nominal, jumlah: nominal }],
+  })
 }
 
 const tagihanTerbuka = computed(() =>
