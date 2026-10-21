@@ -269,10 +269,14 @@
       <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
         <button
           type="button"
-          class="pointer-events-auto w-full min-h-[48px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] font-bold active:scale-[0.98] transition shadow-lg"
-          @click="$router.push('/bayar')"
+          class="pointer-events-auto w-full min-h-[48px] rounded-full font-bold transition shadow-lg"
+          :class="sedangMenunggu
+            ? 'bg-[var(--card2)] text-[var(--mut)] cursor-not-allowed'
+            : 'bg-[var(--btn)] text-[var(--btn-fg)] active:scale-[0.98]'"
+          :disabled="sedangMenunggu"
+          @click="onBayarClick"
         >
-          Bayar iuran
+          {{ sedangMenunggu ? 'Menunggu konfirmasi' : 'Bayar iuran' }}
         </button>
       </div>
     </div>
@@ -283,11 +287,16 @@
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Wallet, Home, ShieldAlert, Sparkles, Clock, ChevronDown } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalRingkasan, portalStatusPermintaan, portalStatusIuranWarga } from '@shared/services/keuangan.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { waitImages } from '@shared/utils/waitImages.js'
+import { useToast } from '@shared/composables/useToast.js'
+
+const router = useRouter()
+const { show } = useToast()
 
 const loading = ref(true)
 const err = ref('')
@@ -423,6 +432,19 @@ const tagihanTerbuka = computed(() =>
 const totalTerbuka = computed(() =>
   tagihanTerbuka.value.reduce((s, t) => s + Number(t.sisa ?? t.nominal ?? 0), 0)
 )
+const permintaanMenunggu = computed(() =>
+  (permintaan.value || []).filter((p) => p.status === 'menunggu')
+)
+
+const sedangMenunggu = computed(() => permintaanMenunggu.value.length > 0)
+
+function onBayarClick() {
+  if (sedangMenunggu.value) {
+    show('Masih menunggu konfirmasi pengurus. Tidak bisa bayar dulu.')
+    return
+  }
+  router.push('/bayar')
+}
 
 const heroStatus = computed(() => {
   if (loading.value) return 'loading'
@@ -440,6 +462,7 @@ const heroNominal = computed(() => {
   return 'Lunas'
 })
 const heroHint = computed(() => {
+  if (sedangMenunggu.value) return 'Menunggu konfirmasi pengurus — tidak bisa bayar dulu'
   if (heroStatus.value === 'pending') return 'Segera lunasi agar data RT tetap akurat'
   if (heroStatus.value === 'lunas') return 'Tidak ada tagihan terbuka'
   if (heroStatus.value === 'lebih') return 'Saldo lebih akan dipotong tagihan berikutnya'
@@ -457,10 +480,6 @@ const heroStyle = computed(() => {
   if (heroStatus.value === 'lebih') return styleLebih
   return styleLoading
 })
-
-const permintaanMenunggu = computed(() =>
-  (permintaan.value || []).filter((p) => p.status === 'menunggu')
-)
 
 const stylePermintaan = { background: '#F59E0B' }
 
