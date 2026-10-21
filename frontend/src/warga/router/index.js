@@ -13,6 +13,7 @@ import RincianIuranView from '../views/RincianIuranView.vue'
 import TransferView from '../views/TransferView.vue'
 import PreBayarView from '../views/PreBayarView.vue'
 import BayarDetailView from '../views/BayarDetailView.vue'
+import BayarBuktiView from '../views/BayarBuktiView.vue'
 import RondaView from '../views/RondaView.vue'
 import BantuanView from '../views/BantuanView.vue'
 import StrukturView from '../views/StrukturView.vue'
@@ -75,6 +76,7 @@ const routes = [
       { path: 'transfer', name: 'transfer', component: PreBayarView },
       { path: 'bayar', name: 'bayar', component: PreBayarView },
       { path: 'bayar/detail', name: 'bayar-detail', component: BayarDetailView },
+      { path: 'bayar/bukti', name: 'bayar-bukti', component: BayarBuktiView },
       { path: 'ronda', name: 'ronda', component: RondaView },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
       { path: 'struktur', name: 'struktur', component: StrukturView, meta: { mainTab: true } },
