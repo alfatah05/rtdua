@@ -11,19 +11,19 @@
       <div class="flex flex-col items-center text-center pt-2 mb-5">
         <div
           class="w-16 h-16 rounded-full grid place-items-center mb-3"
-          style="background: rgba(245, 158, 11, 0.16); color: #D97706"
+          :style="statusMeta.iconStyle"
         >
-          <Clock :size="32" stroke-width="2" />
+          <component :is="statusMeta.icon" :size="32" stroke-width="2" />
         </div>
-        <p class="text-[17px] font-extrabold m-0 text-[var(--text)]">Menunggu konfirmasi</p>
+        <p class="text-[17px] font-extrabold m-0 text-[var(--text)]">{{ statusMeta.title }}</p>
         <p class="text-[13px] text-[var(--mut)] m-0 mt-1">
-          {{ formatTglJam(data.diajukan_pada) }}
+          {{ formatTglJam(data.diajukan_pada || data.tanggal) }}
         </p>
         <p class="text-[28px] font-extrabold tracking-tight m-0 mt-3 tabular-nums text-[var(--text)]">
           {{ rp(data.nominal) }}
         </p>
         <p class="text-[13px] text-[var(--mut)] m-0 mt-1.5 px-4 leading-snug">
-          Pengurus akan memeriksa bukti transfer Anda.
+          {{ statusMeta.hint }}
         </p>
       </div>
 
@@ -31,7 +31,7 @@
       <div class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] overflow-hidden mb-4">
         <div
           v-for="(row, i) in rows"
-          :key="row.label"
+          :key="row.label + '-' + i"
           class="flex items-start justify-between gap-4 px-4 py-3.5"
           :class="i < rows.length - 1 ? 'border-b border-[var(--line)]' : ''"
         >
@@ -53,7 +53,7 @@
             :class="i < data.items.length - 1 ? 'border-b border-[var(--line)]' : ''"
           >
             <p class="text-[14px] font-medium m-0 min-w-0 truncate">{{ it.label }}</p>
-            <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(it.sisa) }}</span>
+            <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(it.sisa ?? it.jumlah) }}</span>
           </div>
           <div class="flex items-center justify-between gap-3 px-4 py-3 bg-[var(--card2)]">
             <span class="text-[13px] font-bold">Total</span>
@@ -80,7 +80,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Clock } from 'lucide-vue-next'
+import { Clock, CheckCircle2 } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 
 const RECEIPT_KEY = 'rtdua_bayar_bukti'
@@ -111,15 +111,58 @@ function labelJenisRekening(jenis) {
   return jenis || '—'
 }
 
+const isConfirmed = computed(() => {
+  const s = String(data.value?.status || 'menunggu').toLowerCase()
+  return s === 'dikonfirmasi' || s === 'confirmed' || s === 'lunas'
+})
+
+const statusMeta = computed(() => {
+  if (isConfirmed.value) {
+    return {
+      icon: CheckCircle2,
+      title: 'Telah dikonfirmasi',
+      hint: 'Pembayaran sudah dikonfirmasi pengurus.',
+      iconStyle: { background: 'rgba(34, 184, 99, 0.16)', color: '#0A8F44' },
+    }
+  }
+  return {
+    icon: Clock,
+    title: 'Menunggu konfirmasi',
+    hint: 'Pengurus akan memeriksa bukti transfer Anda.',
+    iconStyle: { background: 'rgba(245, 158, 11, 0.16)', color: '#D97706' },
+  }
+})
+
 const rows = computed(() => {
   const d = data.value
   if (!d) return []
   const r = d.rekening || {}
+  const statusLabel = isConfirmed.value
+    ? 'Telah dikonfirmasi pengurus'
+    : 'Menunggu konfirmasi pengurus'
+
+  const metodeFromRek =
+    r.jenis || r.nama
+      ? labelJenisRekening(r.jenis) + (r.nama ? ` · ${r.nama}` : '')
+      : ''
+  const metode =
+    metodeFromRek ||
+    d.metode_label ||
+    d.metode ||
+    d.bank_pengirim ||
+    '—'
+
   const list = [
-    { label: 'Status', value: 'Menunggu konfirmasi pengurus' },
-    { label: 'Nama penerima', value: r.atas_nama || r.nama || '—' },
-    { label: 'Rekening tujuan', value: r.nomor || (r.jenis === 'qris' ? 'QRIS' : '—') },
-    { label: 'Metode', value: labelJenisRekening(r.jenis) + (r.nama ? ` · ${r.nama}` : '') },
+    { label: 'Status', value: statusLabel },
+    {
+      label: 'Nama penerima',
+      value: r.atas_nama || r.nama || d.nama_penerima || '—',
+    },
+    {
+      label: 'Rekening tujuan',
+      value: r.nomor || (r.jenis === 'qris' ? 'QRIS' : d.rekening_tujuan) || '—',
+    },
+    { label: 'Metode', value: metode },
     { label: 'Pengirim', value: d.nama_pengirim || '—' },
     { label: 'Nominal', value: rp(d.nominal) },
   ]
