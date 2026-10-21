@@ -6,8 +6,8 @@
         ? 'pb-[calc(96px+env(safe-area-inset-bottom,0px))]'
         : 'pb-[calc(24px+env(safe-area-inset-bottom,0px))]'"
     >
-      <!-- Header utama stabil (tidak remount saat ganti tab) -->
-      <AppMainHeader v-if="showNav" show-pengumuman />
+      <!-- Header utama stabil — disembunyikan di beranda (diganti bar di HomeView) -->
+      <AppMainHeader v-if="showNav && !isHome" show-pengumuman />
       <router-view />
     </main>
     <AppBottomNav v-if="showNav" side="warga" />
@@ -22,4 +22,5 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 
 const route = useRoute()
 const showNav = computed(() => !!route.meta.mainTab)
+const isHome = computed(() => route.name === 'home')
 </script>
