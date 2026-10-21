@@ -54,8 +54,9 @@ class TagihanService
             ->get()
             ->getResultArray();
 
-        // Map permintaan (transfer warga) → pengirim / bank / metode rekening
+        // Map permintaan (transfer warga) + rekening tujuan
         $permMap = [];
+        $rekMap = [];
         $permIds = [];
         foreach ($pembayaran as $p) {
             if (!empty($p['permintaan_id'])) {
@@ -69,8 +70,34 @@ class TagihanService
                     ->whereIn('id', $permIds)
                     ->get()
                     ->getResultArray();
+                $rekIds = [];
                 foreach ($prows as $pr) {
                     $permMap[(int) $pr['id']] = $pr;
+                    if (!empty($pr['rekening_id'])) {
+                        $rekIds[] = (int) $pr['rekening_id'];
+                    }
+                }
+                $rekIds = array_values(array_unique(array_filter($rekIds)));
+                if ($rekIds) {
+                    try {
+                        (new RekeningPembayaranService())->ensureTable();
+                        $rrows = $db->table('rekening_pembayaran')
+                            ->whereIn('id', $rekIds)
+                            ->get()
+                            ->getResultArray();
+                        foreach ($rrows as $rr) {
+                            $rekMap[(int) $rr['id']] = [
+                                'id'        => (int) $rr['id'],
+                                'jenis'     => $rr['jenis'] ?? null,
+                                'nama'      => $rr['nama'] ?? null,
+                                'nomor'     => $rr['nomor'] ?? null,
+                                'atas_nama' => $rr['atas_nama'] ?? null,
+                                'qris_file' => $rr['qris_file'] ?? null,
+                            ];
+                        }
+                    } catch (\Throwable $e) {
+                        // tabel rekening opsional
+                    }
                 }
             } catch (\Throwable $e) {
                 // kolom opsional — jangan gagalkan ringkasan
@@ -101,6 +128,8 @@ class TagihanService
             $namaPengirim = $perm['nama_pengirim'] ?? null;
             $bankPengirim = $perm['bank_pengirim'] ?? null;
             $metodeRek = $perm['metode_rekening'] ?? null;
+            $rekId = $perm && !empty($perm['rekening_id']) ? (int) $perm['rekening_id'] : 0;
+            $rekening = $rekId && isset($rekMap[$rekId]) ? $rekMap[$rekId] : null;
 
             $hanyaIds = AlokasiPembayaran::parseIds($p['tagihan_ids'] ?? null);
             $alok = AlokasiPembayaran::alokasi($items, $nominal, $hanyaIds);
@@ -120,33 +149,37 @@ class TagihanService
                     }
                 }
                 $riwayat[] = [
-                    'pembayaran_id'  => (int) $p['id'],
-                    'tagihan_id'     => (int) $pot['tagihan_id'],
-                    'tanggal'        => $p['tanggal_bayar'],
-                    'jenis'          => $pot['jenis'],
-                    'periode'        => $pot['periode'],
-                    'nama'           => $nama,
-                    'jumlah'         => (int) $pot['jumlah'],
-                    'metode'         => $p['metode'] ?? null,
-                    'nama_pengirim'  => $namaPengirim,
-                    'bank_pengirim'  => $bankPengirim,
-                    'metode_rekening'=> $metodeRek,
-                    'permintaan_id'  => $pidPerm ?: null,
+                    'pembayaran_id'   => (int) $p['id'],
+                    'tagihan_id'      => (int) $pot['tagihan_id'],
+                    'tanggal'         => $p['tanggal_bayar'],
+                    'jenis'           => $pot['jenis'],
+                    'periode'         => $pot['periode'],
+                    'nama'            => $nama,
+                    'jumlah'          => (int) $pot['jumlah'],
+                    'metode'          => $p['metode'] ?? null,
+                    'nama_pengirim'   => $namaPengirim,
+                    'bank_pengirim'   => $bankPengirim,
+                    'metode_rekening' => $metodeRek,
+                    'permintaan_id'   => $pidPerm ?: null,
+                    'rekening'        => $rekening,
+                    'nominal_bayar'   => $nominal,
                 ];
             }
             if (!empty($alok['sisaBayar']) && (int) $alok['sisaBayar'] > 0) {
                 $riwayat[] = [
-                    'pembayaran_id'  => (int) $p['id'],
-                    'tagihan_id'     => null,
-                    'tanggal'        => $p['tanggal_bayar'],
-                    'jenis'          => 'kelebihan',
-                    'periode'        => '',
-                    'jumlah'         => (int) $alok['sisaBayar'],
-                    'metode'         => $p['metode'] ?? null,
-                    'nama_pengirim'  => $namaPengirim,
-                    'bank_pengirim'  => $bankPengirim,
-                    'metode_rekening'=> $metodeRek,
-                    'permintaan_id'  => $pidPerm ?: null,
+                    'pembayaran_id'   => (int) $p['id'],
+                    'tagihan_id'      => null,
+                    'tanggal'         => $p['tanggal_bayar'],
+                    'jenis'           => 'kelebihan',
+                    'periode'         => '',
+                    'jumlah'          => (int) $alok['sisaBayar'],
+                    'metode'          => $p['metode'] ?? null,
+                    'nama_pengirim'   => $namaPengirim,
+                    'bank_pengirim'   => $bankPengirim,
+                    'metode_rekening' => $metodeRek,
+                    'permintaan_id'   => $pidPerm ?: null,
+                    'rekening'        => $rekening,
+                    'nominal_bayar'   => $nominal,
                 ];
             }
         }
@@ -178,17 +211,20 @@ class TagihanService
         foreach ($pembayaran as $p) {
             $pidPerm = !empty($p['permintaan_id']) ? (int) $p['permintaan_id'] : 0;
             $perm = $pidPerm && isset($permMap[$pidPerm]) ? $permMap[$pidPerm] : null;
+            $rekId = $perm && !empty($perm['rekening_id']) ? (int) $perm['rekening_id'] : 0;
+            $rekening = $rekId && isset($rekMap[$rekId]) ? $rekMap[$rekId] : null;
             $bayarList[] = [
-                'id'             => (int) $p['id'],
-                'tanggal_bayar'  => $p['tanggal_bayar'],
-                'metode'         => $p['metode'],
-                'nominal'        => (int) $p['nominal'],
-                'catatan'        => $p['catatan'],
-                'dicatat_oleh'   => $p['dicatat_oleh'] ? (int) $p['dicatat_oleh'] : null,
-                'permintaan_id'  => $pidPerm ?: null,
-                'nama_pengirim'  => $perm['nama_pengirim'] ?? null,
-                'bank_pengirim'  => $perm['bank_pengirim'] ?? null,
-                'metode_rekening'=> $perm['metode_rekening'] ?? null,
+                'id'              => (int) $p['id'],
+                'tanggal_bayar'   => $p['tanggal_bayar'],
+                'metode'          => $p['metode'],
+                'nominal'         => (int) $p['nominal'],
+                'catatan'         => $p['catatan'],
+                'dicatat_oleh'    => $p['dicatat_oleh'] ? (int) $p['dicatat_oleh'] : null,
+                'permintaan_id'   => $pidPerm ?: null,
+                'nama_pengirim'   => $perm['nama_pengirim'] ?? null,
+                'bank_pengirim'   => $perm['bank_pengirim'] ?? null,
+                'metode_rekening' => $perm['metode_rekening'] ?? null,
+                'rekening'        => $rekening,
             ];
         }
 
