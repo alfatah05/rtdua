@@ -13,8 +13,10 @@
       <div class="h-px bg-[var(--line)] my-4" />
       <div class="flex flex-col gap-2.5">
         <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
-        <div class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
-        <div v-for="n in 8" :key="n" class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
+        <div class="grid grid-cols-2 gap-2.5">
+          <div v-for="n in 4" :key="n" class="rounded-[18px] h-[108px] bg-[var(--card2)]" />
+        </div>
+        <div v-for="n in 6" :key="'m' + n" class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
       </div>
     </div>
 
@@ -88,41 +90,44 @@
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
 
-        <button
-          type="button"
-          class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
-          :class="[
-            iuranStatus === 'loading' ? 'menu-row--muted' : '',
-            pressedKey === 'iuran' ? 'is-pressed' : '',
-          ]"
-          :style="iuranStatus === 'loading' ? undefined : iuranCardStyle"
-          @click="goTo('/rincian-iuran', 'iuran')"
-        >
-          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
+        <!-- Grid 2x2: Iuran · Kas · Ronda · Warga -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <button
+            v-for="tile in quickTiles"
+            :key="tile.key"
+            type="button"
+            class="quick-tile text-left relative overflow-hidden touch-manipulation will-change-transform"
+            :class="[
+              tile.muted ? 'quick-tile--muted' : '',
+              pressedKey === tile.key ? 'is-pressed' : '',
+            ]"
+            :style="tile.muted ? undefined : { background: tile.bg }"
+            @click="goTo(tile.to, tile.key)"
+          >
+            <div class="relative z-10 flex flex-col h-full min-h-[108px] p-3.5">
+              <div
+                class="w-10 h-10 rounded-[12px] grid place-items-center shrink-0 mb-2.5"
+                :class="tile.muted ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+              >
+                <component :is="tile.icon" :size="20" />
+              </div>
+              <p
+                class="text-[12px] font-semibold m-0 leading-snug line-clamp-2"
+                :class="tile.muted ? 'text-[var(--mut)]' : 'text-white/90'"
+              >{{ tile.label }}</p>
+              <p
+                class="text-[15px] font-extrabold m-0 mt-1 leading-tight tabular-nums truncate"
+                :class="tile.muted ? 'text-[var(--text)]' : 'text-white'"
+              >{{ tile.value }}</p>
+            </div>
             <div
-              class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0"
-              :class="iuranStatus === 'loading' ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
-            >
-              <Wallet :size="22" />
-            </div>
-            <div class="flex-1 min-w-0 py-2.5">
-              <p
-                class="text-[15px] font-bold m-0 leading-tight truncate"
-                :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
-              >{{ iuranTitle }}</p>
-              <p
-                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight tabular-nums"
-                :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
-              >{{ iuranNominal }}</p>
-            </div>
-            <ChevronRight
-              :size="18"
-              class="shrink-0 opacity-70"
-              :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white'"
-            />
-          </div>
-        </button>
+              v-if="!tile.muted"
+              class="absolute -right-6 -bottom-8 w-24 h-24 rounded-full bg-white/10 pointer-events-none"
+            ></div>
+          </button>
+        </div>
 
+        <!-- Menu list lainnya -->
         <button
           v-for="m in menus"
           :key="m.to"
@@ -146,7 +151,6 @@
             <ChevronRight :size="18" class="shrink-0 text-white/70" />
           </div>
         </button>
-
       </div>
     </template>
   </div>
@@ -211,20 +215,18 @@ async function goTo(to, key) {
 }
 
 const iuranStatus = ref('loading')
-const iuranTitle = ref('Iuran yang belum di bayar')
+const iuranTitle = ref('Iuran belum bayar')
 const iuranNominal = ref('…')
-const iuranHint = ref('Ketuk untuk melihat rincian')
 
-const styleTagihan = { background: '#F59E0B' }
-const styleLunas = { background: '#22B863' }
-const styleLebih = { background: '#3B82F6' }
-const styleLoading = { background: 'var(--card2)' }
+const styleTagihan = '#F59E0B'
+const styleLunas = '#22B863'
+const styleLebih = '#3B82F6'
 
-const iuranCardStyle = computed(() => {
+const iuranBg = computed(() => {
   if (iuranStatus.value === 'pending') return styleTagihan
   if (iuranStatus.value === 'lunas') return styleLunas
   if (iuranStatus.value === 'lebih') return styleLebih
-  return styleLoading
+  return null
 })
 
 function formatTgl(s) {
@@ -252,11 +254,11 @@ function weekIndex(d) {
 }
 
 function labelKapanTgl(tanggal) {
-  if (!tanggal) return 'Belum ada jadwal'
+  if (!tanggal) return 'Belum ada'
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const tgl = new Date(String(tanggal).slice(0, 10) + 'T00:00:00')
-  if (Number.isNaN(tgl.getTime())) return 'Belum ada jadwal'
+  if (Number.isNaN(tgl.getTime())) return 'Belum ada'
   if (tgl.getTime() === today.getTime()) return 'Malam ini'
   const wToday = weekIndex(today)
   const wTgl = weekIndex(tgl)
@@ -275,36 +277,56 @@ function formatHariPendek(s) {
   return d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
-const menus = computed(() => [
+/** 4 card utama — grid 2x2 */
+const quickTiles = computed(() => [
   {
-    to: '/ronda',
-    label: rondaGroupName.value ? ('Jadwal Ronda (' + rondaGroupName.value + ')') : 'Jadwal Ronda',
-    headline: rondaHeadline.value,
-    desc: rondaDesc.value,
-    icon: ShieldCheck,
-    cardBg: '#3B82F6',
-  },
-  {
-    to: '/keuangan',
-    label: 'Jumlah kas ' + (namaRt.value || 'RT'),
-    headline: kasHeadline.value,
-    desc: 'Ketuk untuk riwayat kas',
+    key: 'iuran',
+    to: '/rincian-iuran',
+    label: iuranTitle.value,
+    value: iuranNominal.value,
     icon: Wallet,
-    cardBg: '#A855F7',
+    bg: iuranBg.value || '#F59E0B',
+    muted: iuranStatus.value === 'loading',
   },
+  {
+    key: 'kas',
+    to: '/keuangan',
+    label: 'Kas ' + (namaRt.value || 'RT'),
+    value: kasHeadline.value,
+    icon: Wallet,
+    bg: '#A855F7',
+    muted: false,
+  },
+  {
+    key: 'ronda',
+    to: '/ronda',
+    label: rondaGroupName.value
+      ? 'Ronda (' + rondaGroupName.value + ')'
+      : 'Jadwal Ronda',
+    value: rondaHeadline.value,
+    icon: ShieldCheck,
+    bg: '#3B82F6',
+    muted: false,
+  },
+  {
+    key: 'warga',
+    to: '/warga',
+    label: 'Warga',
+    value: 'Daftar warga',
+    icon: Users,
+    bg: '#EF4444',
+    muted: false,
+  },
+])
+
+/** Menu list di bawah grid (tanpa 4 yang sudah di grid) */
+const menus = computed(() => [
   {
     to: '/galeri',
     label: 'Galeri RT',
     desc: 'Foto kegiatan warga',
     icon: Images,
     cardBg: '#EC4899',
-  },
-  {
-    to: '/warga',
-    label: 'Warga',
-    desc: 'Daftar warga RT 002',
-    icon: Users,
-    cardBg: '#EF4444',
   },
   {
     to: '/komunitas',
@@ -380,25 +402,21 @@ onMounted(async () => {
     const total = Number(iu.data.total ?? iu.data.total_tagihan ?? 0)
     if (total > 0) {
       iuranStatus.value = 'pending'
-      iuranTitle.value = 'Iuran yang belum di bayar'
+      iuranTitle.value = 'Iuran belum bayar'
       iuranNominal.value = rp(total)
-      iuranHint.value = 'Belum lunas · Ketuk untuk rincian'
     } else if (total < 0) {
       iuranStatus.value = 'lebih'
       iuranTitle.value = 'Kelebihan bayar'
       iuranNominal.value = rp(-total)
-      iuranHint.value = 'Saldo menguntungkan · Ketuk untuk rincian'
     } else {
       iuranStatus.value = 'lunas'
-      iuranTitle.value = 'Iuran yang belum di bayar'
+      iuranTitle.value = 'Iuran'
       iuranNominal.value = 'Lunas'
-      iuranHint.value = 'Semua tagihan sudah dibayar'
     }
   } else {
     iuranStatus.value = 'loading'
-    iuranTitle.value = 'Iuran yang belum di bayar'
+    iuranTitle.value = 'Iuran belum bayar'
     iuranNominal.value = '—'
-    iuranHint.value = 'Ketuk untuk melihat rincian'
   }
 
   if (rn.ok && rn.data?.tanggal) {
@@ -407,7 +425,7 @@ onMounted(async () => {
     rondaGroupName.value = ng
     rondaDesc.value = formatHariPendek(rn.data.tanggal) + (ng ? ' · ' + ng : '') + ' · Ketuk untuk detail'
   } else {
-    rondaHeadline.value = 'Belum ada jadwal'
+    rondaHeadline.value = 'Belum ada'
     rondaDesc.value = 'Ketuk untuk melihat jadwal ronda'
     rondaGroupName.value = ''
   }
@@ -424,6 +442,21 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.quick-tile {
+  border-radius: 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transform: scale(1);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.quick-tile.is-pressed {
+  transform: scale(0.96);
+  transition: transform 0.08s ease-out;
+}
+.quick-tile--muted {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
 .menu-row {
   border-radius: 18px;
   min-height: 64px;
@@ -435,11 +468,6 @@ onMounted(async () => {
   transform: scale(0.96);
   transition: transform 0.08s ease-out;
 }
-.menu-row--muted {
-  background: var(--card);
-  border: 1px solid var(--line);
-  box-shadow: none;
-}
 .btn-press {
   transform: scale(1);
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -448,13 +476,17 @@ onMounted(async () => {
   transform: scale(0.94);
   transition: transform 0.08s ease-out;
 }
-:global(html[data-mode="dark"]) .menu-row:not(.menu-row--muted) {
+:global(html[data-mode="dark"]) .quick-tile:not(.quick-tile--muted),
+:global(html[data-mode="dark"]) .menu-row {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
-:global(html:not([data-mode="dark"])) .menu-row:not(.menu-row--muted) {
+:global(html:not([data-mode="dark"])) .quick-tile:not(.quick-tile--muted),
+:global(html:not([data-mode="dark"])) .menu-row {
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
 }
 @media (prefers-reduced-motion: reduce) {
+  .quick-tile,
+  .quick-tile.is-pressed,
   .menu-row,
   .menu-row.is-pressed,
   .btn-press,
