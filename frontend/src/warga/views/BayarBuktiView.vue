@@ -7,8 +7,8 @@
     </template>
 
     <template v-else>
-      <!-- Status + nominal -->
-      <div class="flex flex-col items-center text-center pt-2 mb-5">
+      <!-- Status + nominal (tanpa card) -->
+      <div class="flex flex-col items-center text-center pt-2 mb-6">
         <div
           class="w-16 h-16 rounded-full grid place-items-center mb-3"
           :style="statusMeta.iconStyle"
@@ -27,12 +27,12 @@
         </p>
       </div>
 
-      <!-- Detail seperti struk -->
-      <div class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] overflow-hidden mb-4">
+      <!-- Detail struk flat (garis tipis saja, tanpa card/border luar) -->
+      <div class="px-1 mb-6">
         <div
           v-for="(row, i) in rows"
           :key="row.label + '-' + i"
-          class="flex items-start justify-between gap-4 px-4 py-3.5"
+          class="flex items-start justify-between gap-4 py-3"
           :class="i < rows.length - 1 ? 'border-b border-[var(--line)]' : ''"
         >
           <span class="text-[13px] text-[var(--mut)] shrink-0 leading-snug">{{ row.label }}</span>
@@ -42,33 +42,31 @@
         </div>
       </div>
 
-      <!-- Rincian tagihan -->
-      <div v-if="data.items?.length" class="mb-2">
-        <h2 class="text-[15px] font-bold m-0 mb-2">Rincian pembayaran</h2>
-        <div class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] overflow-hidden">
-          <div
-            v-for="(it, i) in data.items"
-            :key="it.id || i"
-            class="flex items-center justify-between gap-3 px-4 py-3"
-            :class="i < data.items.length - 1 ? 'border-b border-[var(--line)]' : ''"
-          >
-            <p class="text-[14px] font-medium m-0 min-w-0 truncate">{{ it.label }}</p>
-            <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(it.sisa ?? it.jumlah) }}</span>
-          </div>
-          <div class="flex items-center justify-between gap-3 px-4 py-3 bg-[var(--card2)]">
-            <span class="text-[13px] font-bold">Total</span>
-            <span class="text-[14px] font-extrabold tabular-nums">{{ rp(data.nominal) }}</span>
-          </div>
+      <!-- Rincian tagihan flat -->
+      <div v-if="data.items?.length" class="px-1 mb-2">
+        <p class="text-[13px] font-bold text-[var(--mut)] m-0 mb-1">Rincian pembayaran</p>
+        <div
+          v-for="(it, i) in data.items"
+          :key="it.id || i"
+          class="flex items-center justify-between gap-3 py-3"
+          :class="i < data.items.length - 1 ? 'border-b border-[var(--line)]' : ''"
+        >
+          <p class="text-[14px] font-medium m-0 min-w-0 truncate">{{ it.label }}</p>
+          <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(it.sisa ?? it.jumlah) }}</span>
+        </div>
+        <div class="flex items-center justify-between gap-3 py-3 border-t border-[var(--line)]">
+          <span class="text-[13px] font-bold">Total</span>
+          <span class="text-[14px] font-extrabold tabular-nums">{{ rp(data.nominal) }}</span>
         </div>
       </div>
     </template>
 
-    <!-- Sticky bottom: kembali -->
+    <!-- Sticky bottom: kembali, tanpa shadow -->
     <div class="fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
       <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
         <button
           type="button"
-          class="pointer-events-auto w-full min-h-[48px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] font-bold active:scale-[0.98] transition shadow-lg"
+          class="pointer-events-auto w-full min-h-[48px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] font-bold active:scale-[0.98] transition"
           @click="$router.replace('/rincian-iuran')"
         >
           Kembali ke rincian iuran
