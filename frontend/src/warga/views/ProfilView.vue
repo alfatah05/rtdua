@@ -9,7 +9,7 @@
       </div>
       <div class="px-1 space-y-1">
         <div v-for="n in 6" :key="n" class="flex items-center gap-3 px-2 py-3.5">
-          <div class="w-10 h-10 rounded-full bg-[var(--card2)] shrink-0" />
+          <div class="w-6 h-6 rounded bg-[var(--card2)] shrink-0" />
           <div class="flex-1 space-y-2">
             <div class="h-3.5 rounded-full bg-[var(--card2)] w-[45%]" />
             <div class="h-3 rounded-full bg-[var(--card2)] w-[60%]" />
@@ -47,23 +47,24 @@
         <p v-if="uploadingFoto" class="text-[12px] text-[var(--mut)] m-0 mt-1">Mengunggah foto…</p>
       </div>
 
-      <div class="px-1 space-y-0.5">
+      <!-- Menu aksi: style simpel seperti WhatsApp settings -->
+      <div class="px-1">
         <button
           v-for="m in menus"
           :key="m.label"
           type="button"
-          class="w-full flex flex-row items-center gap-3 px-2 py-3.5 text-left active:scale-[0.99] transition-transform"
+          class="w-full flex flex-row items-center gap-4 px-2 py-3.5 text-left active:opacity-70 transition-opacity"
           @click="m.action ? m.action() : $router.push(m.to)"
         >
-          <span class="w-10 h-10 rounded-full grid place-items-center shrink-0" :style="{ background: m.bg, color: m.color }">
-            <component :is="m.icon" :size="18" />
+          <span class="w-6 shrink-0 grid place-items-center text-[var(--mut)]">
+            <component :is="m.icon" :size="22" stroke-width="1.75" />
           </span>
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-[15px] m-0">{{ m.label }}</p>
-            <p v-if="m.desc" class="text-[12px] text-[var(--mut)] m-0">{{ m.desc }}</p>
+            <p class="font-medium text-[16px] m-0 text-[var(--text)] leading-snug">{{ m.label }}</p>
+            <p v-if="m.desc" class="text-[13px] text-[var(--mut)] m-0 mt-0.5 leading-snug">{{ m.desc }}</p>
           </div>
           <span v-if="m.right" class="text-[13px] text-[var(--mut)] shrink-0">{{ m.right }}</span>
-          <ChevronRight v-else :size="18" class="text-[var(--mut)] shrink-0" />
+          <ChevronRight v-else :size="18" class="text-[var(--mut)] shrink-0 opacity-60" />
         </button>
       </div>
 
@@ -122,16 +123,12 @@ const menus = computed(() => [
     desc: 'Anggota di rumah Anda',
     icon: User,
     to: '/data-keluarga',
-    bg: 'rgba(6,182,212,.18)',
-    color: '#0891B2',
   },
   {
     label: 'Ganti PIN',
     desc: 'Ubah PIN masuk aplikasi',
     icon: KeyRound,
     to: '/ganti-pin',
-    bg: 'rgba(16,185,129,.18)',
-    color: '#059669',
   },
   {
     label: 'Mode gelap',
@@ -139,32 +136,24 @@ const menus = computed(() => [
     icon: Moon,
     action: () => toggle(),
     right: mode.value === 'dark' ? 'Aktif' : 'Off',
-    bg: 'rgba(107,114,128,.18)',
-    color: '#4B5563',
   },
   {
     label: 'Alamat rumah',
     desc: alamatLabel.value,
     icon: Home,
     action: () => show(alamatLabel.value),
-    bg: 'rgba(59,130,246,.18)',
-    color: '#2563EB',
   },
   {
     label: 'Bantuan',
     desc: 'Hubungi pengurus',
     icon: HelpCircle,
     to: '/bantuan',
-    bg: 'rgba(34,197,94,.18)',
-    color: '#16A34A',
   },
   {
     label: 'Tentang aplikasi',
     desc: 'rtdua untuk warga RT',
     icon: Info,
     action: () => show('rtdua v0.1.0'),
-    bg: 'rgba(168,85,247,.18)',
-    color: '#7C3AED',
   },
 ])
 
