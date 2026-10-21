@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <!-- Skeleton beranda (header/nav tidak ikut) -->
+  <div :style="{ paddingTop: 'max(8px, env(safe-area-inset-top, 0px))' }">
+    <!-- Skeleton beranda -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
       <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
         <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
@@ -10,7 +10,14 @@
         </div>
         <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
       </div>
-      <div class="h-px bg-[var(--line)] my-4" />
+      <div class="flex items-center justify-between gap-3 py-2 mb-1">
+        <div class="h-4 rounded-full bg-[var(--card2)] w-[55%]" />
+        <div class="flex gap-1">
+          <div class="w-10 h-10 rounded-full bg-[var(--card2)]" />
+          <div class="w-10 h-10 rounded-full bg-[var(--card2)]" />
+        </div>
+      </div>
+      <div class="h-px bg-[var(--line)] my-3" />
       <div class="flex flex-col gap-2.5">
         <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
         <div class="grid grid-cols-2 gap-2.5">
@@ -21,7 +28,8 @@
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
+      <!-- Kop RT -->
+      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-1">
         <div
           class="w-[60px] h-[60px] grid place-items-center shrink-0"
           :class="logoRtUrl
@@ -57,7 +65,36 @@
           <Handshake v-else :size="26" class="text-[var(--mut)]" />
         </div>
       </div>
-      <div class="h-px bg-[var(--line)] my-4"></div>
+
+      <!-- Bar selamat datang + ikon (menggantikan header atas) -->
+      <div class="flex items-center justify-between gap-2 min-h-[44px] py-1">
+        <p class="text-[13px] m-0 leading-snug text-[var(--mut)] min-w-0 flex-1 truncate text-left">
+          Selamat datang,
+          <span class="font-bold text-[var(--text)]">{{ namaWarga }}</span>
+        </p>
+        <div class="flex items-center shrink-0" style="margin-right: -6px">
+          <router-link
+            to="/pengumuman"
+            class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+            aria-label="Pengumuman"
+          >
+            <Megaphone :size="20" />
+          </router-link>
+          <router-link
+            to="/notifikasi"
+            class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] relative"
+            aria-label="Notifikasi"
+          >
+            <Bell :size="20" />
+            <span
+              v-if="badge > 0"
+              class="absolute top-1 right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center"
+            >{{ badge > 9 ? '9+' : badge }}</span>
+          </router-link>
+        </div>
+      </div>
+
+      <div class="h-px bg-[var(--line)] my-3"></div>
 
       <div class="flex flex-col gap-2.5">
         <div
@@ -175,11 +212,18 @@ import { malamTerdekat } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { waitImages } from '@shared/utils/waitImages.js'
+import { useAuth } from '@shared/composables/useAuth.js'
+import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 import {
-  Landmark, Handshake, Megaphone, ChevronRight, Wallet,
+  Landmark, Handshake, Megaphone, Bell, ChevronRight, Wallet,
   ShieldCheck, Images, Users, HeartHandshake, BookOpen, Trophy,
   Building2, Ambulance,
 } from 'lucide-vue-next'
+
+const { user } = useAuth()
+const { badge, ensure } = useNotifBadge()
+
+const namaWarga = computed(() => user.value?.nama || 'Warga')
 
 const styleAktif = { background: '#22B863' }
 const styleSelesai = { background: '#6B7280' }
@@ -378,6 +422,7 @@ const menus = computed(() => [
 ])
 
 onMounted(async () => {
+  ensure()
   loading.value = true
   const [pg, pn, iu, rn, kas] = await Promise.all([
     getPengaturan(),
