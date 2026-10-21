@@ -41,23 +41,29 @@ class PortalKeuanganController extends Controller
             }, $ring['tagihan']),
             'pembayaran' => array_map(static function ($p) {
                 return [
-                    'id'            => $p['id'],
-                    'tanggal_bayar' => $p['tanggal_bayar'],
-                    'metode'        => $p['metode'],
-                    'nominal'       => $p['nominal'],
-                    'catatan'       => $p['catatan'],
+                    'id'             => $p['id'],
+                    'tanggal_bayar'  => $p['tanggal_bayar'],
+                    'metode'         => $p['metode'],
+                    'nominal'        => $p['nominal'],
+                    'catatan'        => $p['catatan'],
+                    'nama_pengirim'  => $p['nama_pengirim'] ?? null,
+                    'bank_pengirim'  => $p['bank_pengirim'] ?? null,
+                    'metode_rekening'=> $p['metode_rekening'] ?? null,
                 ];
             }, $ring['pembayaran']),
             'riwayat' => array_map(static function ($r) {
                 return [
-                    'pembayaran_id' => $r['pembayaran_id'] ?? null,
-                    'tagihan_id'    => $r['tagihan_id'] ?? null,
-                    'tanggal'       => $r['tanggal'] ?? null,
-                    'jenis'         => $r['jenis'] ?? '',
-                    'periode'       => $r['periode'] ?? '',
-                    'nama'          => $r['nama'] ?? null,
-                    'jumlah'        => (int) ($r['jumlah'] ?? 0),
-                    'metode'        => $r['metode'] ?? null,
+                    'pembayaran_id'  => $r['pembayaran_id'] ?? null,
+                    'tagihan_id'     => $r['tagihan_id'] ?? null,
+                    'tanggal'        => $r['tanggal'] ?? null,
+                    'jenis'          => $r['jenis'] ?? '',
+                    'periode'        => $r['periode'] ?? '',
+                    'nama'           => $r['nama'] ?? null,
+                    'jumlah'         => (int) ($r['jumlah'] ?? 0),
+                    'metode'         => $r['metode'] ?? null,
+                    'nama_pengirim'  => $r['nama_pengirim'] ?? null,
+                    'bank_pengirim'  => $r['bank_pengirim'] ?? null,
+                    'metode_rekening'=> $r['metode_rekening'] ?? null,
                 ];
             }, $ring['riwayat'] ?? []),
         ]);
@@ -102,6 +108,7 @@ class PortalKeuanganController extends Controller
                 'nominal_dikonfirmasi' => $r['nominal_dikonfirmasi'] ? (int) $r['nominal_dikonfirmasi'] : null,
                 'nama_pengirim'    => $r['nama_pengirim'],
                 'bank_pengirim'    => $r['bank_pengirim'],
+                'metode_rekening'  => $r['metode_rekening'] ?? null,
                 'diajukan_pada'    => $r['diajukan_pada'],
                 'alasan_tolak'     => $r['alasan_tolak'],
             ];
