@@ -1,5 +1,5 @@
 <template>
-  <div :style="{ paddingTop: 'max(16px, calc(env(safe-area-inset-top, 0px) + 12px))' }">
+  <div :style="{ paddingTop: 'max(21px, calc(env(safe-area-inset-top, 0px) + 17px))' }">
     <!-- Skeleton beranda -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
       <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-3">
@@ -10,10 +10,7 @@
         </div>
         <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
       </div>
-      <div class="mb-2">
-        <div class="h-[3px] bg-[var(--card2)]" />
-        <div class="h-px bg-[var(--card2)] mt-[2px]" />
-      </div>
+      <div class="h-px bg-[var(--line)] mb-2" />
       <div class="flex items-center justify-between gap-3 py-3.5 mb-1">
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div class="w-11 h-11 rounded-full bg-[var(--card2)] shrink-0" />
@@ -75,13 +72,10 @@
         </div>
       </div>
 
-      <!-- Garis ganda kop: tebal di atas, tipis di bawah -->
-      <div class="kop-divider mb-2" aria-hidden="true">
-        <div class="h-[3px] bg-[var(--text)]"></div>
-        <div class="h-px bg-[var(--text)] mt-[2px]"></div>
-      </div>
+      <!-- Garis kop -->
+      <div class="h-px bg-[var(--line)] mb-2" aria-hidden="true"></div>
 
-      <!-- Bar selamat datang + foto + ikon berlabel -->
+      <!-- Bar selamat datang + foto + ikon -->
       <div class="flex items-center justify-between gap-3 py-3.5">
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div
@@ -101,30 +95,24 @@
             <p class="text-[14px] font-bold m-0 leading-snug text-[var(--text)] truncate">{{ namaWarga }}</p>
           </div>
         </div>
-        <div class="flex items-end gap-1 shrink-0">
+        <div class="flex items-center shrink-0" style="margin-right: -6px">
           <router-link
             to="/pengumuman"
-            class="flex flex-col items-center justify-center w-[52px] text-[var(--text)] touch-manipulation"
+            class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] touch-manipulation"
             aria-label="Pengumuman"
           >
-            <span class="w-9 h-9 grid place-items-center">
-              <Megaphone :size="20" />
-            </span>
-            <span class="text-[10px] font-medium leading-none text-[var(--mut)] mt-0.5">Pengumuman</span>
+            <Megaphone :size="20" />
           </router-link>
           <router-link
             to="/notifikasi"
-            class="flex flex-col items-center justify-center w-[52px] text-[var(--text)] relative touch-manipulation"
+            class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] relative touch-manipulation"
             aria-label="Notifikasi"
           >
-            <span class="w-9 h-9 grid place-items-center relative">
-              <Bell :size="20" />
-              <span
-                v-if="badge > 0"
-                class="absolute top-0 right-0 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center"
-              >{{ badge > 9 ? '9+' : badge }}</span>
-            </span>
-            <span class="text-[10px] font-medium leading-none text-[var(--mut)] mt-0.5">Notifikasi</span>
+            <Bell :size="20" />
+            <span
+              v-if="badge > 0"
+              class="absolute top-1 right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center"
+            >{{ badge > 9 ? '9+' : badge }}</span>
           </router-link>
         </div>
       </div>
