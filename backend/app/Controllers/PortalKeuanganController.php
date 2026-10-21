@@ -41,29 +41,32 @@ class PortalKeuanganController extends Controller
             }, $ring['tagihan']),
             'pembayaran' => array_map(static function ($p) {
                 return [
-                    'id'             => $p['id'],
-                    'tanggal_bayar'  => $p['tanggal_bayar'],
-                    'metode'         => $p['metode'],
-                    'nominal'        => $p['nominal'],
-                    'catatan'        => $p['catatan'],
-                    'nama_pengirim'  => $p['nama_pengirim'] ?? null,
-                    'bank_pengirim'  => $p['bank_pengirim'] ?? null,
-                    'metode_rekening'=> $p['metode_rekening'] ?? null,
+                    'id'              => $p['id'],
+                    'tanggal_bayar'   => $p['tanggal_bayar'],
+                    'metode'          => $p['metode'],
+                    'nominal'         => $p['nominal'],
+                    'catatan'         => $p['catatan'],
+                    'nama_pengirim'   => $p['nama_pengirim'] ?? null,
+                    'bank_pengirim'   => $p['bank_pengirim'] ?? null,
+                    'metode_rekening' => $p['metode_rekening'] ?? null,
+                    'rekening'        => $p['rekening'] ?? null,
                 ];
             }, $ring['pembayaran']),
             'riwayat' => array_map(static function ($r) {
                 return [
-                    'pembayaran_id'  => $r['pembayaran_id'] ?? null,
-                    'tagihan_id'     => $r['tagihan_id'] ?? null,
-                    'tanggal'        => $r['tanggal'] ?? null,
-                    'jenis'          => $r['jenis'] ?? '',
-                    'periode'        => $r['periode'] ?? '',
-                    'nama'           => $r['nama'] ?? null,
-                    'jumlah'         => (int) ($r['jumlah'] ?? 0),
-                    'metode'         => $r['metode'] ?? null,
-                    'nama_pengirim'  => $r['nama_pengirim'] ?? null,
-                    'bank_pengirim'  => $r['bank_pengirim'] ?? null,
-                    'metode_rekening'=> $r['metode_rekening'] ?? null,
+                    'pembayaran_id'   => $r['pembayaran_id'] ?? null,
+                    'tagihan_id'      => $r['tagihan_id'] ?? null,
+                    'tanggal'         => $r['tanggal'] ?? null,
+                    'jenis'           => $r['jenis'] ?? '',
+                    'periode'         => $r['periode'] ?? '',
+                    'nama'            => $r['nama'] ?? null,
+                    'jumlah'          => (int) ($r['jumlah'] ?? 0),
+                    'metode'          => $r['metode'] ?? null,
+                    'nama_pengirim'   => $r['nama_pengirim'] ?? null,
+                    'bank_pengirim'   => $r['bank_pengirim'] ?? null,
+                    'metode_rekening' => $r['metode_rekening'] ?? null,
+                    'rekening'        => $r['rekening'] ?? null,
+                    'nominal_bayar'   => isset($r['nominal_bayar']) ? (int) $r['nominal_bayar'] : null,
                 ];
             }, $ring['riwayat'] ?? []),
         ]);
@@ -99,18 +102,48 @@ class PortalKeuanganController extends Controller
             ->orderBy('diajukan_pada', 'DESC')
             ->get()
             ->getResultArray();
-        $data = array_map(static function ($r) {
+
+        $rekMap = [];
+        $rekIds = [];
+        foreach ($rows as $r) {
+            if (!empty($r['rekening_id'])) {
+                $rekIds[] = (int) $r['rekening_id'];
+            }
+        }
+        $rekIds = array_values(array_unique(array_filter($rekIds)));
+        if ($rekIds) {
+            try {
+                (new \App\Services\RekeningPembayaranService())->ensureTable();
+                $rrows = $db->table('rekening_pembayaran')->whereIn('id', $rekIds)->get()->getResultArray();
+                foreach ($rrows as $rr) {
+                    $rekMap[(int) $rr['id']] = [
+                        'id'        => (int) $rr['id'],
+                        'jenis'     => $rr['jenis'] ?? null,
+                        'nama'      => $rr['nama'] ?? null,
+                        'nomor'     => $rr['nomor'] ?? null,
+                        'atas_nama' => $rr['atas_nama'] ?? null,
+                        'qris_file' => $rr['qris_file'] ?? null,
+                    ];
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        $data = array_map(static function ($r) use ($rekMap) {
+            $rid = !empty($r['rekening_id']) ? (int) $r['rekening_id'] : 0;
             return [
-                'id'               => (int) $r['id'],
-                'status'           => $r['status'],
-                'nominal_diajukan' => (int) $r['nominal_diajukan'],
-                'nominal'          => (int) $r['nominal_diajukan'],
+                'id'                   => (int) $r['id'],
+                'status'               => $r['status'],
+                'nominal_diajukan'     => (int) $r['nominal_diajukan'],
+                'nominal'              => (int) $r['nominal_diajukan'],
                 'nominal_dikonfirmasi' => $r['nominal_dikonfirmasi'] ? (int) $r['nominal_dikonfirmasi'] : null,
-                'nama_pengirim'    => $r['nama_pengirim'],
-                'bank_pengirim'    => $r['bank_pengirim'],
-                'metode_rekening'  => $r['metode_rekening'] ?? null,
-                'diajukan_pada'    => $r['diajukan_pada'],
-                'alasan_tolak'     => $r['alasan_tolak'],
+                'nama_pengirim'        => $r['nama_pengirim'],
+                'bank_pengirim'        => $r['bank_pengirim'],
+                'metode_rekening'      => $r['metode_rekening'] ?? null,
+                'rekening_id'          => $rid ?: null,
+                'rekening'             => $rid && isset($rekMap[$rid]) ? $rekMap[$rid] : null,
+                'diajukan_pada'        => $r['diajukan_pada'],
+                'alasan_tolak'         => $r['alasan_tolak'],
             ];
         }, $rows);
         return ApiResponse::ok($data);
