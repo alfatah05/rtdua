@@ -46,8 +46,9 @@
 }
 
 /*
- * Scale UI per lebar viewport (Opsi A).
- * Tailwind rem + body ikut mengecil di layar sempit.
+ * Scale UI per lebar viewport — lebih agresif agar beda
+ * "ukuran tampilan" Android (kecil vs default) terasa proporsional.
+ * Tailwind rem + body ikut.
  */
 html {
   font-size: 16px;
@@ -58,15 +59,27 @@ html {
   min-height: 100dvh;
 }
 
-@media (max-width: 399px) {
+@media (max-width: 430px) {
   html {
     font-size: 15px;
   }
 }
 
-@media (max-width: 359px) {
+@media (max-width: 400px) {
   html {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 370px) {
+  html {
+    font-size: 13.5px;
+  }
+}
+
+@media (max-width: 340px) {
+  html {
+    font-size: 13px;
   }
 }
 
