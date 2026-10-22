@@ -26,6 +26,7 @@ $routes->get('blok', 'PengaturanController::listBlok', ['filter' => 'auth']);
 $routes->post('blok', 'PengaturanController::tambahBlok', ['filter' => 'auth']);
 
 $routes->get('warga', 'KeluargaController::index', ['filter' => 'auth']);
+$routes->get('warga/cari-anggota', 'KeluargaController::cariAnggota', ['filter' => 'auth']);
 $routes->get('warga/(:num)', 'KeluargaController::show/$1', ['filter' => 'auth']);
 $routes->post('warga', 'KeluargaController::create', ['filter' => 'auth']);
 $routes->put('warga/(:num)', 'KeluargaController::update/$1', ['filter' => 'auth']);

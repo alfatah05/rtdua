@@ -1,85 +1,45 @@
-# rtdua — Aplikasi Manajemen Warga RT
+# Patch: Angkat Pengurus — search floating + restore KeluargaService
 
-Dua PWA: **warga** (`warga-dev.rtdua.my.id`) dan **pengurus** (`pengurus-dev.rtdua.my.id`).  
-Stack: CodeIgniter 4 + Vue 3/Vite. Deploy dev lewat GitHub Actions **manual** (`workflow_dispatch`).
+Branch: `redesain-ui-warga`
 
-## Status umum
+## File yang WAJIB diganti (rusak di repo)
 
-| Area | Status |
-|------|--------|
-| Stage 0–8 (UI kerangka) | Selesai |
-| Stage 9 (auth, session, audit) | Selesai |
-| Stage 10–13 (backend + hubung UI) | **Sebagian** — lihat backlog |
-| Stage 14 (Scan KK) | Belum |
-| Stage 15 (hardening / prod) | Belum |
-| `USE_MOCK` | Semua modul **`false`** |
+1. `backend/app/Services/KeluargaService.php`  
+   - Restore full dari commit sehat 360de7c  
+   - + method `cariAnggotaAktif`  
+   - + filter `q` by nama anggota (EXISTS subquery)
 
-**Backlog:** hapus baris setelah fitur diuji OK di dev.
+2. `backend/app/Config/Routes.php`  
+   - Tambah: `GET warga/cari-anggota` (sebelum `warga/(:num)`)
 
----
+## File yang sudah OK di repo (ikut di zip untuk referensi)
 
-## Backlog — belum ada / belum lengkap
+- `backend/app/Controllers/KeluargaController.php` — method `cariAnggota`
+- `frontend/src/pengurus/views/AngkatPengurusView.vue` — floating search
+- `frontend/src/shared/services/warga.js`
+- `frontend/src/shared/services/warga.real.js`
 
-### Placeholder
+## Cara push
 
-- [ ] `/warga/scan-kk` — Scan KK (**Stage 14**)
+### Opsi A — GitHub Web
+1. Buka file di branch `redesain-ui-warga`
+2. Ganti isi dengan file dari zip ini
+3. Commit message: `Restore KeluargaService + route cari-anggota (angkat pengurus)`
 
-### Stage 10
+### Opsi B — Local git
+```bash
+# dari root repo, branch redesain-ui-warga
+cp path/ke/zip-extracted/backend/app/Services/KeluargaService.php backend/app/Services/
+cp path/ke/zip-extracted/backend/app/Config/Routes.php backend/app/Config/
+php -l backend/app/Services/KeluargaService.php
+php -l backend/app/Config/Routes.php
+git add backend/app/Services/KeluargaService.php backend/app/Config/Routes.php
+git commit -m "Restore KeluargaService + route cari-anggota (angkat pengurus)"
+git push origin redesain-ui-warga
+```
 
-- [ ] Alur keluarga **"mulai bulan depan"** — uji end-to-end di dev
-
-### Stage 11 — Keuangan
-
-- [ ] Card iuran 3 kondisi / batalkan bayar / denda — **kode sudah**; uji data nyata
-- [ ] Ubah nominal + terapkan bulan ini + pratinjau — **kode sudah**; uji di pengaturan warga
-- [ ] Kategori kas manual — **kode sudah** (Saldo awal, Sumbangan, Pengembalian kelebihan, Operasional, …)
-- [ ] Unit test alokasi di CI
-
-### Stage 12 — Notifikasi, push, cron
-
-- [ ] Pasang **3 job** di cron-job.org (lihat bagian Cron di bawah)
-- [ ] Uji **push** di Android / iPhone (A2HS)
-- [ ] Kelengkapan jenis notifikasi (dokumen 02)
-- [ ] Badge lonceng konsisten (header sudah ada; uji setelah baca)
-
-### Stage 13 — Konten & ronda
-
-- [ ] Absen warga + foto / ganti keluarga / detail program-galeri — **kode sudah**; uji setelah deploy
-- [ ] **Isi otomatis** ronda — **kode sudah**; uji di pengurus (bagi KK ke jadwal tetap + generate malam)
-- [ ] Penguncian absensi + denda lewat cron — uji siklus penuh
-- [ ] Keputusan produk: hapus pengumuman / album
-
-### Stage 14–15
-
-- [ ] Scan KK
-- [ ] Hardening production
-- [ ] Deploy: opsi **skip backend** sudah ada di workflow (input `deploy_backend`)
-
----
-
-## Deploy (dev)
-
-1. Actions → **Deploy Dev** → Run workflow
-2. Input:
-   - `deploy_frontend` (default true)
-   - `deploy_backend` (default true) — **matikan** jika hanya ubah UI agar FTP tidak 30 menit
-
-## Cron (cron-job.org)
-
-Pasang 3 job, method GET, header `X-Cron-Token: <token dari backend/.env>`:
-
-| Jadwal | URL |
-|--------|-----|
-| Harian ~00:10 | `https://warga-dev.rtdua.my.id/api/tugas/harian` |
-| Sore 17:00 | `https://warga-dev.rtdua.my.id/api/tugas/sore` |
-| Tiap 5 menit | `https://warga-dev.rtdua.my.id/api/tugas/5menit` |
-
-(Token harus sama dengan filter CronToken di backend.)
-
-## Env penting
-
-- `backend/.env`: DB, `encryption.key`, VAPID, token cron
-
-## Dokumen
-
-- `docs/01` … `docs/04`
+## Cek setelah push
+- `php -l` tidak error
+- Size KeluargaService.php ~26 KB (bukan 24 byte / stub)
+- Tidak ada kata PLACEHOLDER / SEE_ARTIFACTS / file://
+- Coba search di halaman Angkat Pengurus (ketik nama, floating list muncul)

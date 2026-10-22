@@ -66,6 +66,11 @@ class KeluargaService
         return $out;
     }
 
+
+    /**
+     * Cari anggota aktif by nama (primary) atau alamat/blok/nomor.
+     * Dipakai UI angkat pengurus (floating search).
+     */
     public function cariAnggotaAktif(string $q, int $limit = 40): array
     {
         $q = trim($q);
@@ -188,6 +193,419 @@ class KeluargaService
 
     public function create(array $data, int $userId): array
     {
-        return ['ok' => false, 'message' => 'Service partial - restore incomplete. Contact admin.'];
+        $db = \Config\Database::connect();
+        $blokId = (int) ($data['blok_id'] ?? 0);
+        $nomor = trim((string) ($data['nomor'] ?? ''));
+        $akhiran = trim((string) ($data['akhiran'] ?? ''));
+        if ($blokId < 1 || $nomor === '') {
+            return ['ok' => false, 'message' => 'Blok dan nomor rumah wajib.'];
+        }
+        $blok = $db->table('blok')->where('id', $blokId)->where('aktif', 1)->get()->getRowArray();
+        if (!$blok) {
+            return ['ok' => false, 'message' => 'Blok tidak valid.'];
+        }
+        if ($this->alamatDuplikat($blokId, $nomor, $akhiran)) {
+            return ['ok' => false, 'message' => 'Alamat rumah sudah dipakai keluarga aktif.'];
+        }
+
+        $anggotaIn = $data['anggota'] ?? [];
+        if (!is_array($anggotaIn) || count($anggotaIn) < 1) {
+            return ['ok' => false, 'message' => 'Minimal satu anggota (kepala keluarga).'];
+        }
+
+        $db->transStart();
+        $db->table('keluarga')->insert([
+            'blok_id'       => $blokId,
+            'nomor'         => $nomor,
+            'akhiran'       => $akhiran,
+            'alamat'        => $data['alamat'] ?? null,
+            'telepon'       => $data['telepon'] ?? null,
+            'status'        => 'aktif',
+            'mulai_periode' => date('Y-m'),
+            'created_at'    => date('Y-m-d H:i:s'),
+        ]);
+        $keluargaId = (int) $db->insertID();
+
+        $kepalaCount = 0;
+        foreach ($anggotaIn as $a) {
+            $hubungan = trim((string) ($a['hubungan'] ?? 'Anggota'));
+            if (strcasecmp($hubungan, 'Kepala keluarga') === 0) {
+                $kepalaCount++;
+            }
+            $nik = $a['nik'] ?? null;
+            $hash = NikCrypto::hash($nik);
+            if ($hash && $this->nikDuplikat($hash)) {
+                $db->transRollback();
+                return ['ok' => false, 'message' => 'NIK sudah terdaftar pada anggota lain.'];
+            }
+            $db->table('warga')->insert([
+                'keluarga_id'   => $keluargaId,
+                'nama'          => trim((string) ($a['nama'] ?? '')),
+                'hubungan'      => $hubungan,
+                'no_kk'         => $a['no_kk'] ?? null,
+                'nik_enc'       => NikCrypto::encrypt($nik),
+                'nik_hash'      => $hash,
+                'jenis_kelamin' => $a['jenis_kelamin'] ?? null,
+                'tempat_lahir'  => $a['tempat_lahir'] ?? null,
+                'tanggal_lahir' => $a['tanggal_lahir'] ?? null,
+                'agama'         => $a['agama'] ?? null,
+                'pekerjaan'     => $a['pekerjaan'] ?? null,
+                'status'        => 'aktif',
+                'created_at'    => date('Y-m-d H:i:s'),
+            ]);
+        }
+        if ($kepalaCount !== 1) {
+            $db->transRollback();
+            return ['ok' => false, 'message' => 'Harus ada tepat satu Kepala keluarga.'];
+        }
+
+        $username = $this->buatUsername($blok['nama'], $nomor, $akhiran);
+        $db->table('users')->insert([
+            'role'                    => 'warga',
+            'username'                => $username,
+            'password_hash'           => password_hash('123456', PASSWORD_DEFAULT),
+            'keluarga_id'             => $keluargaId,
+            'aktif'                   => 1,
+            'harus_ganti_kredensial'  => 1,
+            'created_at'              => date('Y-m-d H:i:s'),
+        ]);
+
+        $db->transComplete();
+        if (!$db->transStatus()) {
+            return ['ok' => false, 'message' => 'Gagal menyimpan keluarga.'];
+        }
+
+        (new AuditService())->log('tambah_keluarga', 'keluarga', $keluargaId, null, [
+            'username' => $username,
+            'blok'     => $blok['nama'],
+            'nomor'    => $nomor,
+            'akhiran'  => $akhiran,
+        ], 'pengguna', true, $userId);
+
+        try {
+            (new TagihanService())->pastikanTagihanKasBulan(date('Y-m'));
+        } catch (\Throwable $e) {
+            log_message('error', 'pastikanTagihan setelah tambah keluarga: ' . $e->getMessage());
+        }
+
+        return [
+            'ok'   => true,
+            'data' => [
+                'id'       => $keluargaId,
+                'username' => $username,
+                'pin_awal' => '123456',
+                'catatan'  => 'Akun siap. Tagihan iuran berlaku mulai bulan ini.',
+            ],
+        ];
+    }
+
+    public function updateKeluarga(int $id, array $data, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $before = $db->table('keluarga')->where('id', $id)->get()->getRowArray();
+        if (!$before || $before['status'] !== 'aktif') {
+            return ['ok' => false, 'message' => 'Keluarga tidak ditemukan atau tidak aktif.'];
+        }
+        $update = [];
+        foreach (['alamat', 'telepon'] as $k) {
+            if (array_key_exists($k, $data)) {
+                $update[$k] = $data[$k];
+            }
+        }
+        if (isset($data['blok_id'], $data['nomor'])) {
+            $blokId = (int) $data['blok_id'];
+            $nomor = trim((string) $data['nomor']);
+            $akhiran = trim((string) ($data['akhiran'] ?? ''));
+            if ($this->alamatDuplikat($blokId, $nomor, $akhiran, $id)) {
+                return ['ok' => false, 'message' => 'Alamat rumah sudah dipakai.'];
+            }
+            $update['blok_id'] = $blokId;
+            $update['nomor'] = $nomor;
+            $update['akhiran'] = $akhiran;
+        }
+        if ($update === []) {
+            return ['ok' => false, 'message' => 'Tidak ada perubahan.'];
+        }
+        $update['updated_at'] = date('Y-m-d H:i:s');
+        $db->table('keluarga')->where('id', $id)->update($update);
+
+        // Username hanya diubah jika alamat (blok/nomor/akhiran) benar-benar berubah.
+        // Exclude user sendiri agar tidak jadi ab12-19x1 karena bentrok dengan username-nya sendiri.
+        if (isset($update['blok_id'])) {
+            $alamatBerubah =
+                (int) $before['blok_id'] !== (int) $update['blok_id']
+                || (string) $before['nomor'] !== (string) $update['nomor']
+                || (string) ($before['akhiran'] ?? '') !== (string) ($update['akhiran'] ?? '');
+            if ($alamatBerubah) {
+                $userWarga = $db->table('users')->where('keluarga_id', $id)->where('role', 'warga')->get()->getRowArray();
+                $blok = $db->table('blok')->where('id', $update['blok_id'])->get()->getRowArray();
+                if ($blok) {
+                    $kecualiId = $userWarga ? (int) $userWarga['id'] : null;
+                    $uname = $this->buatUsername($blok['nama'], $update['nomor'], $update['akhiran'] ?? '', $kecualiId);
+                    if (!$userWarga || strcasecmp((string) $userWarga['username'], $uname) !== 0) {
+                        $db->table('users')->where('keluarga_id', $id)->where('role', 'warga')->update([
+                            'username'   => $uname,
+                            'updated_at' => date('Y-m-d H:i:s'),
+                        ]);
+                    }
+                }
+            }
+        }
+
+        (new AuditService())->log('ubah_keluarga', 'keluarga', $id, $before, $update, 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => $this->detail($id)];
+    }
+
+    public function tambahAnggota(int $keluargaId, array $a, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $k = $db->table('keluarga')->where('id', $keluargaId)->where('status', 'aktif')->get()->getRowArray();
+        if (!$k) {
+            return ['ok' => false, 'message' => 'Keluarga tidak ditemukan.'];
+        }
+        $nama = trim((string) ($a['nama'] ?? ''));
+        if ($nama === '') {
+            return ['ok' => false, 'message' => 'Nama wajib.'];
+        }
+        $hubungan = trim((string) ($a['hubungan'] ?? 'Anggota'));
+        if (strcasecmp($hubungan, 'Kepala keluarga') === 0) {
+            $ada = $db->table('warga')->where('keluarga_id', $keluargaId)->where('hubungan', 'Kepala keluarga')->where('status', 'aktif')->countAllResults();
+            if ($ada > 0) {
+                return ['ok' => false, 'message' => 'Sudah ada Kepala keluarga.'];
+            }
+        }
+        $nik = $a['nik'] ?? null;
+        $hash = NikCrypto::hash($nik);
+        if ($hash && $this->nikDuplikat($hash)) {
+            return ['ok' => false, 'message' => 'NIK sudah terdaftar.'];
+        }
+        $db->table('warga')->insert([
+            'keluarga_id'   => $keluargaId,
+            'nama'          => $nama,
+            'hubungan'      => $hubungan,
+            'no_kk'         => $a['no_kk'] ?? null,
+            'nik_enc'       => NikCrypto::encrypt($nik),
+            'nik_hash'      => $hash,
+            'jenis_kelamin' => $a['jenis_kelamin'] ?? null,
+            'tempat_lahir'  => $a['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $a['tanggal_lahir'] ?? null,
+            'agama'         => $a['agama'] ?? null,
+            'pekerjaan'     => $a['pekerjaan'] ?? null,
+            'status'        => 'aktif',
+            'created_at'    => date('Y-m-d H:i:s'),
+        ]);
+        $wid = (int) $db->insertID();
+        (new AuditService())->log('tambah_anggota', 'warga', $wid, null, ['nama' => $nama, 'keluarga_id' => $keluargaId], 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => ['id' => $wid]];
+    }
+
+    public function updateAnggota(int $anggotaId, array $a, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $before = $db->table('warga')->where('id', $anggotaId)->get()->getRowArray();
+        if (!$before) {
+            return ['ok' => false, 'message' => 'Anggota tidak ditemukan.'];
+        }
+        $update = [];
+        foreach (['nama', 'hubungan', 'no_kk', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'pekerjaan'] as $k) {
+            if (array_key_exists($k, $a)) {
+                if ($k === 'nama') {
+                    $nama = trim((string) $a['nama']);
+                    if ($nama === '') {
+                        return ['ok' => false, 'message' => 'Nama tidak boleh kosong.'];
+                    }
+                    $update['nama'] = $nama;
+                } else {
+                    $update[$k] = $a[$k];
+                }
+            }
+        }
+        if (array_key_exists('nik', $a)) {
+            $hash = NikCrypto::hash($a['nik']);
+            if ($hash && $this->nikDuplikat($hash, $anggotaId)) {
+                return ['ok' => false, 'message' => 'NIK sudah terdaftar.'];
+            }
+            $update['nik_enc'] = NikCrypto::encrypt($a['nik']);
+            $update['nik_hash'] = $hash;
+        }
+        if ($update === []) {
+            return ['ok' => false, 'message' => 'Tidak ada perubahan.'];
+        }
+        $update['updated_at'] = date('Y-m-d H:i:s');
+        $db->table('warga')->where('id', $anggotaId)->update($update);
+        (new AuditService())->log('ubah_anggota', 'warga', $anggotaId, ['nama' => $before['nama']], $update, 'pengguna', true, $userId);
+        return ['ok' => true];
+    }
+
+    public function hapusAnggota(int $anggotaId, ?string $alasan, int $userId, ?int $kepalaBaruId = null): array
+    {
+        $db = \Config\Database::connect();
+        $a = $db->table('warga')->where('id', $anggotaId)->get()->getRowArray();
+        if (!$a) {
+            return ['ok' => false, 'message' => 'Anggota tidak ditemukan.'];
+        }
+        if (($a['status'] ?? '') !== 'aktif') {
+            return ['ok' => false, 'message' => 'Anggota sudah tidak aktif.'];
+        }
+        $keluargaId = (int) $a['keluarga_id'];
+        $isKepala = strcasecmp((string) $a['hubungan'], 'Kepala keluarga') === 0;
+
+        if ($isKepala) {
+            $lain = $db->table('warga')
+                ->where('keluarga_id', $keluargaId)
+                ->where('status', 'aktif')
+                ->where('id !=', $anggotaId)
+                ->countAllResults();
+            if ($lain > 0) {
+                if (!$kepalaBaruId) {
+                    return ['ok' => false, 'message' => 'Pilih kepala keluarga baru sebelum menghapus kepala.'];
+                }
+                $ganti = $this->gantiKepala($keluargaId, (int) $kepalaBaruId, $userId);
+                if (!$ganti['ok']) {
+                    return $ganti;
+                }
+            }
+        }
+
+        return $this->setStatusAnggota(
+            $anggotaId,
+            'keluar',
+            $alasan !== null && $alasan !== '' ? $alasan : 'Dihapus pengurus',
+            $userId
+        );
+    }
+
+    public function setStatusAnggota(int $anggotaId, string $status, ?string $alasan, int $userId): array
+    {
+        if (!in_array($status, ['meninggal', 'keluar', 'aktif'], true)) {
+            return ['ok' => false, 'message' => 'Status tidak valid.'];
+        }
+        $db = \Config\Database::connect();
+        $a = $db->table('warga')->where('id', $anggotaId)->get()->getRowArray();
+        if (!$a) {
+            return ['ok' => false, 'message' => 'Anggota tidak ditemukan.'];
+        }
+        $db->table('warga')->where('id', $anggotaId)->update([
+            'status'         => $status,
+            'tanggal_status' => date('Y-m-d'),
+            'alasan'         => $alasan,
+            'updated_at'     => date('Y-m-d H:i:s'),
+        ]);
+        if ($status !== 'aktif') {
+            $this->nonaktifkanPengurusDariWarga((int) $anggotaId, $userId);
+        }
+        (new AuditService())->log('status_anggota_' . $status, 'warga', $anggotaId, ['status' => $a['status']], ['status' => $status, 'alasan' => $alasan], 'pengguna', true, $userId);
+        return ['ok' => true];
+    }
+
+    public function pindah(int $keluargaId, ?string $tanggal, ?string $catatan, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $k = $db->table('keluarga')->where('id', $keluargaId)->get()->getRowArray();
+        if (!$k || $k['status'] !== 'aktif') {
+            return ['ok' => false, 'message' => 'Keluarga tidak ditemukan.'];
+        }
+        $db->transStart();
+        $db->table('keluarga')->where('id', $keluargaId)->update([
+            'status'         => 'pindah',
+            'tanggal_pindah' => $tanggal ?: date('Y-m-d'),
+            'catatan_pindah' => $catatan,
+            'updated_at'     => date('Y-m-d H:i:s'),
+        ]);
+        $anggota = $db->table('warga')->where('keluarga_id', $keluargaId)->where('status', 'aktif')->get()->getResultArray();
+        foreach ($anggota as $a) {
+            $db->table('warga')->where('id', $a['id'])->update([
+                'status'         => 'keluar',
+                'tanggal_status' => date('Y-m-d'),
+                'alasan'         => 'Keluarga pindah',
+            ]);
+            $this->nonaktifkanPengurusDariWarga((int) $a['id'], $userId);
+        }
+        $db->table('users')->where('keluarga_id', $keluargaId)->where('role', 'warga')->update([
+            'aktif'      => 0,
+            'username'   => 'pindah_' . $keluargaId . '_' . time(),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $db->transComplete();
+        (new AuditService())->log('pindah_keluarga', 'keluarga', $keluargaId, null, ['tanggal' => $tanggal, 'catatan' => $catatan], 'pengguna', true, $userId);
+        return ['ok' => true];
+    }
+
+    public function hapusKeluarga(int $keluargaId, ?string $alasan, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $k = $db->table('keluarga')->where('id', $keluargaId)->get()->getRowArray();
+        if (!$k) {
+            return ['ok' => false, 'message' => 'Keluarga tidak ditemukan.'];
+        }
+        if (($k['status'] ?? '') === 'hapus') {
+            return ['ok' => false, 'message' => 'Keluarga sudah dihapus.'];
+        }
+        $db->transStart();
+        $db->table('keluarga')->where('id', $keluargaId)->update([
+            'status'         => 'hapus',
+            'catatan_pindah' => $alasan ?: 'Dihapus pengurus',
+            'updated_at'     => date('Y-m-d H:i:s'),
+        ]);
+        $anggota = $db->table('warga')->where('keluarga_id', $keluargaId)->where('status', 'aktif')->get()->getResultArray();
+        foreach ($anggota as $a) {
+            $db->table('warga')->where('id', $a['id'])->update([
+                'status'         => 'keluar',
+                'tanggal_status' => date('Y-m-d'),
+                'alasan'         => $alasan ?: 'Keluarga dihapus',
+            ]);
+            $this->nonaktifkanPengurusDariWarga((int) $a['id'], $userId);
+        }
+        $db->table('users')->where('keluarga_id', $keluargaId)->where('role', 'warga')->update([
+            'aktif'      => 0,
+            'username'   => 'hapus_' . $keluargaId . '_' . time(),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $db->transComplete();
+        (new AuditService())->log('hapus_keluarga', 'keluarga', $keluargaId, null, ['alasan' => $alasan], 'pengguna', true, $userId);
+        return ['ok' => true];
+    }
+
+    public function resetPin(int $keluargaId, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $u = $db->table('users')->where('keluarga_id', $keluargaId)->where('role', 'warga')->get()->getRowArray();
+        if (!$u) {
+            return ['ok' => false, 'message' => 'Akun warga tidak ditemukan.'];
+        }
+        $db->table('users')->where('id', $u['id'])->update([
+            'password_hash'          => password_hash('123456', PASSWORD_DEFAULT),
+            'harus_ganti_kredensial' => 1,
+            'updated_at'             => date('Y-m-d H:i:s'),
+        ]);
+        (new AuditService())->log('reset_pin_warga', 'users', (int) $u['id'], null, ['keluarga_id' => $keluargaId], 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => ['pin_awal' => '123456']];
+    }
+
+    public function gantiKepala(int $keluargaId, int $anggotaBaruId, int $userId): array
+    {
+        $db = \Config\Database::connect();
+        $baru = $db->table('warga')->where('id', $anggotaBaruId)->where('keluarga_id', $keluargaId)->where('status', 'aktif')->get()->getRowArray();
+        if (!$baru) {
+            return ['ok' => false, 'message' => 'Anggota baru tidak valid.'];
+        }
+        $db->transStart();
+        $lama = $db->table('warga')->where('keluarga_id', $keluargaId)->where('hubungan', 'Kepala keluarga')->where('status', 'aktif')->get()->getResultArray();
+        foreach ($lama as $l) {
+            if ((int) $l['id'] === $anggotaBaruId) {
+                continue;
+            }
+            $db->table('warga')->where('id', $l['id'])->update([
+                'hubungan'   => 'Anggota',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+        $db->table('warga')->where('id', $anggotaBaruId)->update([
+            'hubungan'   => 'Kepala keluarga',
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $db->transComplete();
+        (new AuditService())->log('ganti_kepala', 'keluarga', $keluargaId, null, ['anggota_baru_id' => $anggotaBaruId], 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => $this->detail($keluargaId)];
     }
 }
