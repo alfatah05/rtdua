@@ -29,6 +29,17 @@ class KeluargaController extends Controller
         return ApiResponse::ok((new KeluargaService())->list($filter));
     }
 
+    public function cariAnggota()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $q = trim((string) ($this->request->getGet('q') ?? ''));
+        $limit = (int) ($this->request->getGet('limit') ?? 40);
+        return ApiResponse::ok((new KeluargaService())->cariAnggotaAktif($q, $limit));
+    }
+
     public function show($id)
     {
         $user = $this->requirePengurus();
