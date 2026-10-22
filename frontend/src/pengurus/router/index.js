@@ -56,6 +56,7 @@ import GaleriDetailView from '../views/GaleriDetailView.vue'
 import FilterKasView from '../views/FilterKasView.vue'
 import FilterIuranView from '../views/FilterIuranView.vue'
 import AngkatPengurusView from '../views/AngkatPengurusView.vue'
+import AngkatPengurusFormView from '../views/AngkatPengurusFormView.vue'
 import KelolaPengurusDetailView from '../views/KelolaPengurusDetailView.vue'
 import EksporIuranView from '../views/EksporIuranView.vue'
 import BatalDendaView from '../views/BatalDendaView.vue'
@@ -173,6 +174,7 @@ const routes = [
       { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
       { path: 'kelola-pengurus', component: KelolaPengurusView },
       { path: 'kelola-pengurus/angkat', component: AngkatPengurusView },
+      { path: 'kelola-pengurus/angkat/form', component: AngkatPengurusFormView },
       { path: 'kelola-pengurus/:id', component: KelolaPengurusDetailView },
     ],
   },

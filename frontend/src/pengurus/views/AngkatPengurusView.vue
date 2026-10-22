@@ -1,87 +1,89 @@
 <template>
-  <div>
-    <AppBackHeader title="Angkat pengurus" />
-    <form class="space-y-4" @submit.prevent="onSave">
-      <div class="relative">
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Cari anggota (nama / alamat)</label>
+  <div class="pb-24">
+    <AppBackHeader title="Pilih warga" />
+
+    <div class="mb-3">
+      <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12">
+        <Search :size="18" class="text-[var(--mut)] shrink-0" />
         <input
           v-model="cari"
           type="search"
           autocomplete="off"
-          placeholder="Ketik nama (utama) atau alamat…"
-          class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
+          placeholder="Cari nama atau alamat…"
+          class="flex-1 bg-transparent outline-none text-[15px] min-w-0"
           @input="onCariInput"
-          @focus="showDrop = hasil.length > 0"
         />
-        <p v-if="cariLoading" class="text-[12px] text-[var(--mut)] mt-1 m-0">Mencari…</p>
-        <p v-else-if="cariErr" class="text-[12px] text-red-600 mt-1 m-0">{{ cariErr }}</p>
+        <button
+          v-if="cari"
+          type="button"
+          class="text-[var(--mut)] text-[13px] font-semibold shrink-0"
+          @click="clearCari"
+        >✕</button>
+      </div>
+    </div>
 
+    <p v-if="cariLoading" class="text-[13px] text-[var(--mut)] text-center py-4 m-0">Mencari…</p>
+    <p v-else-if="cariErr" class="text-[13px] text-red-600 text-center py-4 m-0">{{ cariErr }}</p>
+    <p
+      v-else-if="cari.trim().length >= 2 && !hasil.length"
+      class="text-[13px] text-[var(--mut)] text-center py-6 m-0"
+    >Tidak ada anggota cocok</p>
+    <p
+      v-else-if="cari.trim().length < 2"
+      class="text-[13px] text-[var(--mut)] text-center py-6 m-0"
+    >Ketik minimal 2 huruf untuk mencari anggota</p>
+
+    <div v-else class="space-y-0.5">
+      <button
+        v-for="a in hasil"
+        :key="a.id"
+        type="button"
+        class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left rounded-[14px] transition-colors"
+        :class="selected?.id === a.id ? 'bg-[var(--gd)]' : 'active:bg-[var(--search)]'"
+        @click="pilih(a)"
+      >
         <div
-          v-if="showDrop && hasil.length && !selected"
-          class="absolute left-0 right-0 top-[calc(100%-2px)] z-30 max-h-[240px] overflow-y-auto rounded-[12px] border border-[var(--line)] bg-[var(--card)] shadow-lg"
-        >
-          <button
-            v-for="a in hasil"
-            :key="a.id"
-            type="button"
-            class="w-full text-left px-3 py-2.5 border-b border-[var(--line)] last:border-0 active:bg-[var(--search)]"
-            @mousedown.prevent="pilihAnggota(a)"
-          >
-            <p class="font-bold text-[14px] m-0 leading-tight">{{ a.nama }}</p>
-            <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">{{ a.alamat }} · {{ a.hubungan || 'Anggota' }}</p>
-          </button>
+          class="w-11 h-11 rounded-full grid place-items-center font-bold text-sm shrink-0"
+          :class="selected?.id === a.id ? 'bg-[var(--g)] text-white' : 'bg-[var(--gd)] text-[var(--gm)]'"
+        >{{ inisial(a.nama) }}</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ a.nama }}</p>
+          <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5 leading-tight">
+            {{ a.alamat || '—' }} · {{ a.hubungan || 'Anggota' }}
+          </p>
         </div>
-        <p
-          v-else-if="showDrop && !cariLoading && cari.trim().length >= 2 && !hasil.length && !selected"
-          class="absolute left-0 right-0 top-[calc(100%-2px)] z-30 px-3 py-2.5 rounded-[12px] border border-[var(--line)] bg-[var(--card)] shadow-lg text-[13px] text-[var(--mut)] m-0"
+        <div
+          v-if="selected?.id === a.id"
+          class="w-5 h-5 rounded-full bg-[var(--g)] grid place-items-center shrink-0"
         >
-          Tidak ada anggota cocok
-        </p>
-      </div>
-
-      <div v-if="selected" class="bg-[var(--gd)] rounded-[14px] px-4 py-3 flex items-start justify-between gap-2">
-        <div class="min-w-0">
-          <p class="text-[12px] text-[var(--mut)] m-0">Anggota terpilih</p>
-          <p class="font-bold text-[15px] m-0 leading-tight">{{ selected.nama }}</p>
-          <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">{{ selected.alamat }} · {{ selected.hubungan || 'Anggota' }}</p>
+          <span class="text-white text-[11px] font-bold">✓</span>
         </div>
-        <button type="button" class="text-[13px] font-semibold text-[var(--g)] shrink-0" @click="batalSemua">Ganti</button>
-      </div>
-
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Username</label>
-        <input v-model="username" type="text" autocomplete="off" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
-      </div>
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Password (min 8)</label>
-        <input v-model="password" type="text" autocomplete="new-password" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
-      </div>
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Jabatan</label>
-        <input v-model="jabatan" type="text" placeholder="Bendahara / Sekretaris / …" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
-      </div>
-      <div>
-        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Nomor HP (opsional)</label>
-        <input v-model="nomorHp" type="tel" class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none" />
-      </div>
-      <label class="flex items-center gap-3 min-h-[44px]">
-        <input v-model="tampilBantuan" type="checkbox" class="w-5 h-5 accent-[var(--g)]" />
-        <span class="text-[15px] font-semibold">Tampil di menu Bantuan</span>
-      </label>
-      <button type="submit" class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-60" :disabled="saving">
-        {{ saving ? 'Menyimpan…' : 'Angkat pengurus' }}
       </button>
-      <p v-if="msg" class="text-[13px] text-center" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
-      <p class="text-[12px] text-[var(--mut)] text-center m-0">Hanya akun <b>ketua</b> yang bisa mengangkat pengurus.</p>
-    </form>
+    </div>
+
+    <!-- sticky bottom action -->
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-[var(--card)] border-t border-[var(--line)] safe-bottom z-20">
+      <div class="max-w-lg mx-auto">
+        <p v-if="selected" class="text-[12px] text-[var(--mut)] text-center m-0 mb-2">
+          Terpilih: <b class="text-[var(--ink)]">{{ selected.nama }}</b>
+        </p>
+        <button
+          type="button"
+          class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-40 active:scale-[0.98] transition-transform"
+          :disabled="!selected"
+          @click="lanjut"
+        >Jadikan pengurus</button>
+      </div>
+    </div>
   </div>
 </template>
+
 <script setup>
 import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { Search } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { cariAnggota, listKeluarga, getKeluarga } from '@shared/services/warga.js'
-import { angkatPengurus } from '@shared/services/pengurus.js'
 
 const router = useRouter()
 
@@ -89,20 +91,24 @@ const cari = ref('')
 const cariLoading = ref(false)
 const cariErr = ref('')
 const hasil = ref([])
-const showDrop = ref(false)
 const selected = ref(null)
-
-const username = ref('')
-const password = ref('')
-const jabatan = ref('Pengurus')
-const nomorHp = ref('')
-const tampilBantuan = ref(true)
-const saving = ref(false)
-const msg = ref('')
-const msgOk = ref(true)
 
 let debounceTimer = null
 let cariSeq = 0
+
+function inisial(nama) {
+  const p = String(nama || '').trim().split(/\s+/)
+  if (!p[0]) return '?'
+  if (p.length === 1) return p[0].slice(0, 2).toUpperCase()
+  return (p[0][0] + p[p.length - 1][0]).toUpperCase()
+}
+
+function clearCari() {
+  cari.value = ''
+  hasil.value = []
+  selected.value = null
+  cariErr.value = ''
+}
 
 function onCariInput() {
   selected.value = null
@@ -110,7 +116,6 @@ function onCariInput() {
   const q = cari.value.trim()
   if (q.length < 2) {
     hasil.value = []
-    showDrop.value = false
     cariErr.value = ''
     cariLoading.value = false
     return
@@ -130,16 +135,13 @@ async function doCari(q) {
   cariErr.value = ''
   let list = []
 
-  // 1) endpoint khusus anggota
-  const res = await cariAnggota(q, 40)
+  const res = await cariAnggota(q, 50)
   if (seq !== cariSeq) return
   if (res.ok) {
     list = normalizeList(res.data)
-  } else {
-    cariErr.value = res.error || 'Gagal mencari'
   }
 
-  // 2) fallback: list keluarga (sudah support q by nama) → ambil anggota
+  // Fallback: list keluarga → anggota
   if (!list.length) {
     const lk = await listKeluarga({ q, status: 'aktif' })
     if (seq !== cariSeq) return
@@ -147,7 +149,7 @@ async function doCari(q) {
       const qLower = q.toLowerCase()
       const flat = []
       const seen = new Set()
-      for (const k of lk.data.slice(0, 20)) {
+      for (const k of lk.data.slice(0, 25)) {
         const d = await getKeluarga(k.id)
         if (seq !== cariSeq) return
         if (!d.ok || !d.data?.anggota) continue
@@ -155,79 +157,46 @@ async function doCari(q) {
         for (const a of d.data.anggota) {
           if ((a.status || 'aktif') !== 'aktif') continue
           if (seen.has(a.id)) continue
-          const nama = String(a.nama || '')
-          const matchNama = nama.toLowerCase().includes(qLower)
           seen.add(a.id)
+          const nama = String(a.nama || '')
           flat.push({
             id: a.id,
             nama,
             hubungan: a.hubungan,
             keluarga_id: k.id,
             alamat,
-            _prio: matchNama ? 0 : 1,
+            _prio: nama.toLowerCase().includes(qLower) ? 0 : 1,
           })
         }
       }
       flat.sort((a, b) => a._prio - b._prio || String(a.nama).localeCompare(String(b.nama)))
       list = flat.map(({ _prio, ...rest }) => rest)
-      if (list.length) cariErr.value = ''
+    } else if (!res.ok) {
+      cariErr.value = res.error || 'Gagal mencari'
     }
   }
 
   if (seq !== cariSeq) return
   cariLoading.value = false
   hasil.value = list
-  showDrop.value = true
 }
 
-function pilihAnggota(a) {
+function pilih(a) {
   selected.value = a
-  hasil.value = []
-  showDrop.value = false
-  cari.value = a.nama || ''
-  if (!username.value) {
-    const base = String(a.nama || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '')
-      .slice(0, 16)
-    if (base) username.value = base
-  }
 }
 
-function batalSemua() {
-  selected.value = null
-  hasil.value = []
-  showDrop.value = false
-  cari.value = ''
-  cariErr.value = ''
-}
-
-async function onSave() {
-  msg.value = ''
-  if (!selected.value?.id) {
-    msgOk.value = false
-    msg.value = 'Pilih anggota dulu (cari nama/alamat)'
-    return
-  }
-  if (!username.value.trim() || password.value.length < 8) {
-    msgOk.value = false
-    msg.value = 'Username dan password (min 8) wajib'
-    return
-  }
-  saving.value = true
-  const res = await angkatPengurus({
-    warga_id: Number(selected.value.id),
-    username: username.value.trim().toLowerCase(),
-    password: password.value,
-    jabatan: jabatan.value || 'Pengurus',
-    nomor_hp: nomorHp.value || null,
-    tampil_di_bantuan: tampilBantuan.value,
-    role: 'pengurus',
+function lanjut() {
+  if (!selected.value?.id) return
+  const a = selected.value
+  router.push({
+    path: '/kelola-pengurus/angkat/form',
+    query: {
+      warga_id: String(a.id),
+      nama: a.nama || '',
+      alamat: a.alamat || '',
+      hubungan: a.hubungan || '',
+    },
   })
-  saving.value = false
-  msgOk.value = !!res.ok
-  msg.value = res.ok ? 'Pengurus diangkat' : (res.error || 'Gagal')
-  if (res.ok) setTimeout(() => router.replace('/kelola-pengurus'), 700)
 }
 
 onBeforeUnmount(() => clearTimeout(debounceTimer))

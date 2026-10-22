@@ -1,14 +1,16 @@
-# Patch: fix search angkat pengurus (hasil kosong)
+# Patch: Alur angkat pengurus 2 langkah
 
-## Perubahan
-1. **KeluargaService::cariAnggotaAktif** — query raw SQL (lebih stabil), LEFT JOIN blok, fallback Query Builder jika SQL gagal.
-2. **AngkatPengurusView** — jika endpoint anggota kosong, fallback lewat `listKeluarga` + `getKeluarga` (endpoint yang sudah terbukti jalan).
-3. **warga.real.js** — normalisasi `res.data` selalu array.
+## Alur baru
+1. Kelola pengurus → **+ Angkat pengurus**
+2. Halaman **Pilih warga** (search + list, pilih satu)
+3. Tombol **Jadikan pengurus** → halaman **Buat akun pengurus** (username, password, jabatan, HP)
+4. Simpan → kembali ke daftar pengurus
 
-## File yang diganti
-- `backend/app/Services/KeluargaService.php`
-- `frontend/src/pengurus/views/AngkatPengurusView.vue`
-- `frontend/src/shared/services/warga.real.js`
+## File
+- `frontend/src/pengurus/views/AngkatPengurusView.vue` — list pilih warga
+- `frontend/src/pengurus/views/AngkatPengurusFormView.vue` — **baru** form akun
+- `frontend/src/pengurus/router/index.js` — route `/kelola-pengurus/angkat/form`
+- `frontend/src/shared/services/warga.real.js` / `warga.js` — cariAnggota
 
 ## Setelah push
-Jalankan **Deploy Dev** (workflow_dispatch) agar frontend ikut rebuild.
+Jalankan **Deploy Dev** agar frontend rebuild.
