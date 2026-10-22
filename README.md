@@ -1,17 +1,10 @@
-# Patch: Pilih warga = pola halaman Warga (cepat)
+# Patch: kecilkan teks menu profil warga
 
-## Perubahan
-Halaman `/kelola-pengurus/angkat` sekarang:
-1. **Load semua keluarga sekali** (`listKeluarga`) — sama seperti halaman Warga
-2. **Search client-side** (instant, filter nama/alamat)
-3. Pilih keluarga → tampil anggota aktif keluarga itu
-4. Pilih anggota → **Jadikan pengurus** → form akun
-
-Tidak lagi search API per ketikan (lambat / kosong).
-
-## File
-- `frontend/src/pengurus/views/AngkatPengurusView.vue` (utama)
-- `AngkatPengurusFormView.vue` + `router/index.js` (ikut, bila belum ter-deploy)
+## Perubahan (ProfilView.vue)
+- Judul menu: 16px → **14px**
+- Deskripsi: 13px → **11px**
+- Icon: 22 → 18, chevron 18 → 16
+- Padding/gap sedikit dipadat
 
 ## Setelah push
 Jalankan **Deploy Dev**.

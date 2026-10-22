@@ -53,18 +53,18 @@
           v-for="m in menus"
           :key="m.label"
           type="button"
-          class="w-full flex flex-row items-center gap-4 px-2 py-3.5 text-left active:opacity-70 transition-opacity"
+          class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:opacity-70 transition-opacity"
           @click="m.action ? m.action() : $router.push(m.to)"
         >
-          <span class="w-6 shrink-0 grid place-items-center text-[var(--mut)]">
-            <component :is="m.icon" :size="22" stroke-width="1.75" />
+          <span class="w-5 shrink-0 grid place-items-center text-[var(--mut)]">
+            <component :is="m.icon" :size="18" stroke-width="1.75" />
           </span>
           <div class="flex-1 min-w-0">
-            <p class="font-medium text-[16px] m-0 text-[var(--text)] leading-snug">{{ m.label }}</p>
-            <p v-if="m.desc" class="text-[13px] text-[var(--mut)] m-0 mt-0.5 leading-snug">{{ m.desc }}</p>
+            <p class="font-medium text-[14px] m-0 text-[var(--text)] leading-snug">{{ m.label }}</p>
+            <p v-if="m.desc" class="text-[11px] text-[var(--mut)] m-0 mt-0.5 leading-snug">{{ m.desc }}</p>
           </div>
-          <span v-if="m.right" class="text-[13px] text-[var(--mut)] shrink-0">{{ m.right }}</span>
-          <ChevronRight v-else :size="18" class="text-[var(--mut)] shrink-0 opacity-60" />
+          <span v-if="m.right" class="text-[11px] text-[var(--mut)] shrink-0">{{ m.right }}</span>
+          <ChevronRight v-else :size="16" class="text-[var(--mut)] shrink-0 opacity-60" />
         </button>
       </div>
 
