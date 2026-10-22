@@ -80,7 +80,7 @@
 import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { cariAnggota } from '@shared/services/warga.js'
+import { cariAnggota, listKeluarga, getKeluarga } from '@shared/services/warga.js'
 import { angkatPengurus } from '@shared/services/pengurus.js'
 
 const router = useRouter()
@@ -118,20 +118,65 @@ function onCariInput() {
   debounceTimer = setTimeout(() => doCari(q), 300)
 }
 
+function normalizeList(data) {
+  if (Array.isArray(data)) return data
+  if (data && Array.isArray(data.data)) return data.data
+  return []
+}
+
 async function doCari(q) {
   const seq = ++cariSeq
   cariLoading.value = true
   cariErr.value = ''
+  let list = []
+
+  // 1) endpoint khusus anggota
   const res = await cariAnggota(q, 40)
   if (seq !== cariSeq) return
-  cariLoading.value = false
-  if (!res.ok) {
+  if (res.ok) {
+    list = normalizeList(res.data)
+  } else {
     cariErr.value = res.error || 'Gagal mencari'
-    hasil.value = []
-    showDrop.value = false
-    return
   }
-  hasil.value = res.data || []
+
+  // 2) fallback: list keluarga (sudah support q by nama) → ambil anggota
+  if (!list.length) {
+    const lk = await listKeluarga({ q, status: 'aktif' })
+    if (seq !== cariSeq) return
+    if (lk.ok && Array.isArray(lk.data) && lk.data.length) {
+      const qLower = q.toLowerCase()
+      const flat = []
+      const seen = new Set()
+      for (const k of lk.data.slice(0, 20)) {
+        const d = await getKeluarga(k.id)
+        if (seq !== cariSeq) return
+        if (!d.ok || !d.data?.anggota) continue
+        const alamat = k.alamat || k.alamat_label || d.data.alamat_label || ''
+        for (const a of d.data.anggota) {
+          if ((a.status || 'aktif') !== 'aktif') continue
+          if (seen.has(a.id)) continue
+          const nama = String(a.nama || '')
+          const matchNama = nama.toLowerCase().includes(qLower)
+          seen.add(a.id)
+          flat.push({
+            id: a.id,
+            nama,
+            hubungan: a.hubungan,
+            keluarga_id: k.id,
+            alamat,
+            _prio: matchNama ? 0 : 1,
+          })
+        }
+      }
+      flat.sort((a, b) => a._prio - b._prio || String(a.nama).localeCompare(String(b.nama)))
+      list = flat.map(({ _prio, ...rest }) => rest)
+      if (list.length) cariErr.value = ''
+    }
+  }
+
+  if (seq !== cariSeq) return
+  cariLoading.value = false
+  hasil.value = list
   showDrop.value = true
 }
 

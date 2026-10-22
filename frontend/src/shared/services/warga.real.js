@@ -155,8 +155,9 @@ export async function cariAnggota(q, limit = 40) {
     if (q) params.set('q', q)
     params.set('limit', String(limit))
     const res = await api('/warga/cari-anggota?' + params.toString())
-    return { ok: true, data: res.data }
+    const data = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])
+    return { ok: true, data }
   } catch (e) {
-    return { ok: false, error: e.message }
+    return { ok: false, error: e.message || 'Gagal mencari anggota' }
   }
 }

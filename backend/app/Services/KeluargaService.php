@@ -70,6 +70,7 @@ class KeluargaService
     /**
      * Cari anggota aktif by nama (primary) atau alamat/blok/nomor.
      * Dipakai UI angkat pengurus (floating search).
+     * Query raw agar stabil di shared hosting (hindari groupStart/orLike CI4).
      */
     public function cariAnggotaAktif(string $q, int $limit = 40): array
     {
@@ -78,29 +79,48 @@ class KeluargaService
             return [];
         }
         $db = \Config\Database::connect();
-        $limit = max(1, min(80, $limit));
-        $rows = $db->table('warga w')
-            ->select('w.id, w.nama, w.hubungan, w.keluarga_id, k.nomor, k.akhiran, k.alamat as alamat_teks, b.nama as blok_nama')
-            ->join('keluarga k', 'k.id = w.keluarga_id')
-            ->join('blok b', 'b.id = k.blok_id')
-            ->where('w.status', 'aktif')
-            ->where('k.status', 'aktif')
-            ->groupStart()
+        $limit = max(1, min(80, (int) $limit));
+        $like = '%' . $db->escapeLikeString($q) . '%';
+
+        $sql = "SELECT w.id, w.nama, w.hubungan, w.keluarga_id,
+                       k.nomor, k.akhiran, b.nama AS blok_nama
+                FROM warga w
+                INNER JOIN keluarga k ON k.id = w.keluarga_id
+                LEFT JOIN blok b ON b.id = k.blok_id
+                WHERE w.status = 'aktif'
+                  AND k.status = 'aktif'
+                  AND (
+                        w.nama LIKE ? ESCAPE '!'
+                     OR IFNULL(b.nama, '') LIKE ? ESCAPE '!'
+                     OR CAST(k.nomor AS CHAR) LIKE ? ESCAPE '!'
+                     OR IFNULL(k.akhiran, '') LIKE ? ESCAPE '!'
+                     OR IFNULL(k.alamat, '') LIKE ? ESCAPE '!'
+                     OR CONCAT(IFNULL(b.nama,''), '-', k.nomor, IFNULL(k.akhiran,'')) LIKE ? ESCAPE '!'
+                  )
+                ORDER BY w.nama ASC
+                LIMIT {$limit}";
+
+        try {
+            $rows = $db->query($sql, [$like, $like, $like, $like, $like, $like])->getResultArray();
+        } catch (\Throwable $e) {
+            // fallback Query Builder sederhana (nama saja)
+            $rows = $db->table('warga w')
+                ->select('w.id, w.nama, w.hubungan, w.keluarga_id, k.nomor, k.akhiran, b.nama as blok_nama')
+                ->join('keluarga k', 'k.id = w.keluarga_id')
+                ->join('blok b', 'b.id = k.blok_id', 'left')
+                ->where('w.status', 'aktif')
+                ->where('k.status', 'aktif')
                 ->like('w.nama', $q)
-                ->orLike('b.nama', $q)
-                ->orLike('k.nomor', $q)
-                ->orLike('k.akhiran', $q)
-                ->orLike('k.alamat', $q)
-            ->groupEnd()
-            ->orderBy('w.nama', 'ASC')
-            ->limit($limit)
-            ->get()
-            ->getResultArray();
+                ->orderBy('w.nama', 'ASC')
+                ->limit($limit)
+                ->get()
+                ->getResultArray();
+        }
 
         $out = [];
         $s = mb_strtolower($q);
         foreach ($rows as $r) {
-            $alamat = $r['blok_nama'] . '-' . $r['nomor'] . ($r['akhiran'] ?? '');
+            $alamat = ($r['blok_nama'] ?? '') . '-' . ($r['nomor'] ?? '') . ($r['akhiran'] ?? '');
             $out[] = [
                 'id'          => (int) $r['id'],
                 'nama'        => $r['nama'],
