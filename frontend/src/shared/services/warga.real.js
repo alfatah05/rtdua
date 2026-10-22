@@ -148,3 +148,15 @@ export async function portalUpdateAnggota(id, payload) {
     return { ok: false, error: e.message }
   }
 }
+
+export async function cariAnggota(q, limit = 40) {
+  try {
+    const params = new URLSearchParams()
+    if (q) params.set('q', q)
+    params.set('limit', String(limit))
+    const res = await api('/warga/cari-anggota?' + params.toString())
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}

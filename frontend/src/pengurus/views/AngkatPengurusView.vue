@@ -2,56 +2,43 @@
   <div>
     <AppBackHeader title="Angkat pengurus" />
     <form class="space-y-4" @submit.prevent="onSave">
-      <!-- Cari anggota -->
-      <div>
+      <div class="relative">
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Cari anggota (nama / alamat)</label>
         <input
           v-model="cari"
           type="search"
           autocomplete="off"
-          placeholder="Ketik nama atau alamat rumah…"
+          placeholder="Ketik nama (utama) atau alamat…"
           class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
           @input="onCariInput"
+          @focus="showDrop = hasil.length > 0"
         />
-        <p v-if="cariLoading" class="text-[12px] text-[var(--mut)] mt-1.5 m-0">Mencari…</p>
-        <p v-else-if="cariErr" class="text-[12px] text-red-600 mt-1.5 m-0">{{ cariErr }}</p>
-      </div>
+        <p v-if="cariLoading" class="text-[12px] text-[var(--mut)] mt-1 m-0">Mencari…</p>
+        <p v-else-if="cariErr" class="text-[12px] text-red-600 mt-1 m-0">{{ cariErr }}</p>
 
-      <!-- Hasil keluarga -->
-      <div v-if="hasilKeluarga.length && !selected" class="bg-[var(--card)] border border-[var(--line)] rounded-[14px] overflow-hidden">
-        <button
-          v-for="k in hasilKeluarga"
-          :key="k.id"
-          type="button"
-          class="w-full text-left px-3 py-3 border-b border-[var(--line)] last:border-0 active:bg-[var(--search)]"
-          @click="pilihKeluarga(k)"
+        <div
+          v-if="showDrop && hasil.length && !selected"
+          class="absolute left-0 right-0 top-[calc(100%-2px)] z-30 max-h-[240px] overflow-y-auto rounded-[12px] border border-[var(--line)] bg-[var(--card)] shadow-lg"
         >
-          <p class="font-bold text-[14px] m-0 leading-tight">{{ k.alamat || k.alamat_label || '—' }}</p>
-          <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">{{ k.nama || 'Keluarga' }}</p>
-        </button>
-      </div>
-      <p v-else-if="cari.trim().length >= 2 && !cariLoading && !hasilKeluarga.length && !selected" class="text-[13px] text-[var(--mut)] text-center py-2 m-0">
-        Tidak ada keluarga cocok
-      </p>
-
-      <!-- Daftar anggota setelah pilih keluarga -->
-      <div v-if="loadingAnggota" class="text-[13px] text-[var(--mut)] text-center py-2">Memuat anggota…</div>
-      <div v-else-if="anggotaList.length && !selected" class="space-y-1">
-        <p class="text-[13px] font-semibold text-[var(--mut)] m-0">Pilih anggota di {{ selectedKeluargaLabel }}</p>
-        <button
-          v-for="a in anggotaList"
-          :key="a.id"
-          type="button"
-          class="w-full text-left px-3 py-3 rounded-[12px] bg-[var(--search)] active:opacity-80"
-          @click="pilihAnggota(a)"
+          <button
+            v-for="a in hasil"
+            :key="a.id"
+            type="button"
+            class="w-full text-left px-3 py-2.5 border-b border-[var(--line)] last:border-0 active:bg-[var(--search)]"
+            @mousedown.prevent="pilihAnggota(a)"
+          >
+            <p class="font-bold text-[14px] m-0 leading-tight">{{ a.nama }}</p>
+            <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">{{ a.alamat }} · {{ a.hubungan || 'Anggota' }}</p>
+          </button>
+        </div>
+        <p
+          v-else-if="showDrop && !cariLoading && cari.trim().length >= 2 && !hasil.length && !selected"
+          class="absolute left-0 right-0 top-[calc(100%-2px)] z-30 px-3 py-2.5 rounded-[12px] border border-[var(--line)] bg-[var(--card)] shadow-lg text-[13px] text-[var(--mut)] m-0"
         >
-          <p class="font-bold text-[14px] m-0">{{ a.nama }}</p>
-          <p class="text-[12px] text-[var(--mut)] m-0">{{ a.hubungan || 'Anggota' }}</p>
-        </button>
-        <button type="button" class="text-[13px] font-semibold text-[var(--g)] mt-1" @click="batalPilihKeluarga">← Ganti keluarga</button>
+          Tidak ada anggota cocok
+        </p>
       </div>
 
-      <!-- Anggota terpilih -->
       <div v-if="selected" class="bg-[var(--gd)] rounded-[14px] px-4 py-3 flex items-start justify-between gap-2">
         <div class="min-w-0">
           <p class="text-[12px] text-[var(--mut)] m-0">Anggota terpilih</p>
@@ -93,7 +80,7 @@
 import { ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { listKeluarga, getKeluarga } from '@shared/services/warga.js'
+import { cariAnggota } from '@shared/services/warga.js'
 import { angkatPengurus } from '@shared/services/pengurus.js'
 
 const router = useRouter()
@@ -101,10 +88,8 @@ const router = useRouter()
 const cari = ref('')
 const cariLoading = ref(false)
 const cariErr = ref('')
-const hasilKeluarga = ref([])
-const selectedKeluargaLabel = ref('')
-const anggotaList = ref([])
-const loadingAnggota = ref(false)
+const hasil = ref([])
+const showDrop = ref(false)
 const selected = ref(null)
 
 const username = ref('')
@@ -121,65 +106,40 @@ let cariSeq = 0
 
 function onCariInput() {
   selected.value = null
-  anggotaList.value = []
-  selectedKeluargaLabel.value = ''
   clearTimeout(debounceTimer)
   const q = cari.value.trim()
   if (q.length < 2) {
-    hasilKeluarga.value = []
+    hasil.value = []
+    showDrop.value = false
     cariErr.value = ''
     cariLoading.value = false
     return
   }
-  debounceTimer = setTimeout(() => doCari(q), 320)
+  debounceTimer = setTimeout(() => doCari(q), 300)
 }
 
 async function doCari(q) {
   const seq = ++cariSeq
   cariLoading.value = true
   cariErr.value = ''
-  const res = await listKeluarga({ status: 'aktif', q })
+  const res = await cariAnggota(q, 40)
   if (seq !== cariSeq) return
   cariLoading.value = false
   if (!res.ok) {
     cariErr.value = res.error || 'Gagal mencari'
-    hasilKeluarga.value = []
+    hasil.value = []
+    showDrop.value = false
     return
   }
-  hasilKeluarga.value = (res.data || []).slice(0, 30)
-}
-
-async function pilihKeluarga(k) {
-  hasilKeluarga.value = []
-  selectedKeluargaLabel.value = k.alamat || k.alamat_label || k.nama || '—'
-  loadingAnggota.value = true
-  anggotaList.value = []
-  const d = await getKeluarga(k.id)
-  loadingAnggota.value = false
-  if (!d.ok) {
-    cariErr.value = d.error || 'Gagal memuat anggota'
-    return
-  }
-  const alamat = d.data?.alamat || d.data?.alamat_label || selectedKeluargaLabel.value
-  selectedKeluargaLabel.value = alamat
-  anggotaList.value = (d.data?.anggota || [])
-    .filter((a) => String(a.status || '').toLowerCase() === 'aktif')
-    .map((a) => ({
-      id: a.id,
-      nama: a.nama,
-      hubungan: a.hubungan,
-      alamat,
-    }))
-  if (!anggotaList.value.length) {
-    cariErr.value = 'Tidak ada anggota aktif di keluarga ini'
-  }
+  hasil.value = res.data || []
+  showDrop.value = true
 }
 
 function pilihAnggota(a) {
   selected.value = a
-  anggotaList.value = []
-  cari.value = ''
-  // saran username dari nama (huruf kecil, tanpa spasi)
+  hasil.value = []
+  showDrop.value = false
+  cari.value = a.nama || ''
   if (!username.value) {
     const base = String(a.nama || '')
       .toLowerCase()
@@ -189,18 +149,10 @@ function pilihAnggota(a) {
   }
 }
 
-function batalPilihKeluarga() {
-  anggotaList.value = []
-  selectedKeluargaLabel.value = ''
-  cariErr.value = ''
-  if (cari.value.trim().length >= 2) doCari(cari.value.trim())
-}
-
 function batalSemua() {
   selected.value = null
-  anggotaList.value = []
-  selectedKeluargaLabel.value = ''
-  hasilKeluarga.value = []
+  hasil.value = []
+  showDrop.value = false
   cari.value = ''
   cariErr.value = ''
 }
