@@ -1,76 +1,102 @@
 <template>
   <div class="pb-24">
-    <AppBackHeader title="Pilih warga" />
+    <AppBackHeader :title="step === 'keluarga' ? 'Pilih keluarga' : 'Pilih anggota'" />
 
-    <div class="mb-3">
-      <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12">
-        <Search :size="18" class="text-[var(--mut)] shrink-0" />
-        <input
-          v-model="cari"
-          type="search"
-          autocomplete="off"
-          placeholder="Cari nama atau alamat…"
-          class="flex-1 bg-transparent outline-none text-[15px] min-w-0"
-          @input="onCariInput"
-        />
-        <button
-          v-if="cari"
-          type="button"
-          class="text-[var(--mut)] text-[13px] font-semibold shrink-0"
-          @click="clearCari"
-        >✕</button>
+    <!-- STEP 1: list keluarga (sama pola halaman Warga) -->
+    <template v-if="step === 'keluarga'">
+      <div class="mb-3">
+        <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12">
+          <Search :size="18" class="text-[var(--mut)] shrink-0" />
+          <input
+            v-model="q"
+            type="search"
+            autocomplete="off"
+            placeholder="Cari nama atau blok/nomor rumah"
+            class="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-[var(--text)] placeholder:text-[var(--mut)]"
+          />
+        </div>
       </div>
-    </div>
 
-    <p v-if="cariLoading" class="text-[13px] text-[var(--mut)] text-center py-4 m-0">Mencari…</p>
-    <p v-else-if="cariErr" class="text-[13px] text-red-600 text-center py-4 m-0">{{ cariErr }}</p>
-    <p
-      v-else-if="cari.trim().length >= 2 && !hasil.length"
-      class="text-[13px] text-[var(--mut)] text-center py-6 m-0"
-    >Tidak ada anggota cocok</p>
-    <p
-      v-else-if="cari.trim().length < 2"
-      class="text-[13px] text-[var(--mut)] text-center py-6 m-0"
-    >Ketik minimal 2 huruf untuk mencari anggota</p>
-
-    <div v-else class="space-y-0.5">
-      <button
-        v-for="a in hasil"
-        :key="a.id"
-        type="button"
-        class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left rounded-[14px] transition-colors"
-        :class="selected?.id === a.id ? 'bg-[var(--gd)]' : 'active:bg-[var(--search)]'"
-        @click="pilih(a)"
-      >
-        <div
-          class="w-11 h-11 rounded-full grid place-items-center font-bold text-sm shrink-0"
-          :class="selected?.id === a.id ? 'bg-[var(--g)] text-white' : 'bg-[var(--gd)] text-[var(--gm)]'"
-        >{{ inisial(a.nama) }}</div>
-        <div class="flex-1 min-w-0">
-          <p class="font-bold text-[15px] m-0 leading-tight">{{ a.nama }}</p>
-          <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5 leading-tight">
-            {{ a.alamat || '—' }} · {{ a.hubungan || 'Anggota' }}
-          </p>
+      <AppPageSpinner v-if="loading" />
+      <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4 m-0">{{ err }}</p>
+      <template v-else>
+        <p class="text-[13px] text-[var(--mut)] mb-1 px-2 m-0">{{ filtered.length }} keluarga</p>
+        <div class="px-1 space-y-0.5">
+          <button
+            v-for="k in filtered"
+            :key="k.id"
+            type="button"
+            class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
+            @click="pilihKeluarga(k)"
+          >
+            <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0 overflow-hidden">
+              {{ k.inisial }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="font-bold text-[15px] m-0 leading-tight">{{ k.nama }}</p>
+              <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ k.alamat }}</p>
+            </div>
+            <ChevronRight :size="18" class="text-[var(--mut)] shrink-0" />
+          </button>
         </div>
-        <div
-          v-if="selected?.id === a.id"
-          class="w-5 h-5 rounded-full bg-[var(--g)] grid place-items-center shrink-0"
+        <p v-if="!filtered.length" class="text-[13px] text-[var(--mut)] text-center py-6 m-0">Tidak ada keluarga cocok</p>
+      </template>
+    </template>
+
+    <!-- STEP 2: list anggota di keluarga terpilih -->
+    <template v-else>
+      <div class="bg-[var(--gd)] rounded-[14px] px-4 py-3 mb-3 flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-[12px] text-[var(--mut)] m-0">Keluarga</p>
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ selectedKeluarga?.nama }}</p>
+          <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">{{ selectedKeluarga?.alamat }}</p>
+        </div>
+        <button type="button" class="text-[13px] font-semibold text-[var(--g)] shrink-0" @click="backKeluarga">Ganti</button>
+      </div>
+
+      <p v-if="loadingAnggota" class="text-[13px] text-[var(--mut)] text-center py-4 m-0">Memuat anggota…</p>
+      <p v-else-if="errAnggota" class="text-[13px] text-red-600 text-center py-4 m-0">{{ errAnggota }}</p>
+      <div v-else class="px-1 space-y-0.5">
+        <button
+          v-for="a in anggotaList"
+          :key="a.id"
+          type="button"
+          class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left rounded-[14px] transition-colors"
+          :class="selectedAnggota?.id === a.id ? 'bg-[var(--gd)]' : 'active:bg-[var(--search)]'"
+          @click="selectedAnggota = a"
         >
-          <span class="text-white text-[11px] font-bold">✓</span>
-        </div>
-      </button>
-    </div>
+          <div
+            class="w-11 h-11 rounded-full grid place-items-center font-bold text-sm shrink-0"
+            :class="selectedAnggota?.id === a.id ? 'bg-[var(--g)] text-white' : 'bg-[var(--gd)] text-[var(--gm)]'"
+          >{{ inisial(a.nama) }}</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-[15px] m-0 leading-tight">{{ a.nama }}</p>
+            <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">{{ a.hubungan || 'Anggota' }}</p>
+          </div>
+          <div
+            v-if="selectedAnggota?.id === a.id"
+            class="w-5 h-5 rounded-full bg-[var(--g)] grid place-items-center shrink-0"
+          >
+            <span class="text-white text-[11px] font-bold">✓</span>
+          </div>
+        </button>
+        <p v-if="!anggotaList.length" class="text-[13px] text-[var(--mut)] text-center py-6 m-0">Tidak ada anggota aktif</p>
+      </div>
+    </template>
 
-    <!-- sticky bottom action -->
-    <div class="fixed bottom-0 left-0 right-0 p-4 bg-[var(--card)] border-t border-[var(--line)] safe-bottom z-20">
+    <!-- sticky bottom — hanya saat step anggota -->
+    <div
+      v-if="step === 'anggota'"
+      class="fixed bottom-0 left-0 right-0 p-4 bg-[var(--card)] border-t border-[var(--line)] z-20"
+    >
       <div class="max-w-lg mx-auto">
-        <p v-if="selected" class="text-[12px] text-[var(--mut)] text-center m-0 mb-2">
-          Terpilih: <b class="text-[var(--ink)]">{{ selected.nama }}</b>
+        <p v-if="selectedAnggota" class="text-[12px] text-[var(--mut)] text-center m-0 mb-2">
+          Terpilih: <b class="text-[var(--ink)]">{{ selectedAnggota.nama }}</b>
         </p>
         <button
           type="button"
           class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-40 active:scale-[0.98] transition-transform"
-          :disabled="!selected"
+          :disabled="!selectedAnggota"
           @click="lanjut"
         >Jadikan pengurus</button>
       </div>
@@ -79,22 +105,26 @@
 </template>
 
 <script setup>
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search } from 'lucide-vue-next'
+import { Search, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { cariAnggota, listKeluarga, getKeluarga } from '@shared/services/warga.js'
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+import { listKeluarga, getKeluarga } from '@shared/services/warga.js'
 
 const router = useRouter()
 
-const cari = ref('')
-const cariLoading = ref(false)
-const cariErr = ref('')
-const hasil = ref([])
-const selected = ref(null)
+const step = ref('keluarga') // 'keluarga' | 'anggota'
+const q = ref('')
+const list = ref([])
+const loading = ref(true)
+const err = ref('')
 
-let debounceTimer = null
-let cariSeq = 0
+const selectedKeluarga = ref(null)
+const anggotaList = ref([])
+const loadingAnggota = ref(false)
+const errAnggota = ref('')
+const selectedAnggota = ref(null)
 
 function inisial(nama) {
   const p = String(nama || '').trim().split(/\s+/)
@@ -103,101 +133,72 @@ function inisial(nama) {
   return (p[0][0] + p[p.length - 1][0]).toUpperCase()
 }
 
-function clearCari() {
-  cari.value = ''
-  hasil.value = []
-  selected.value = null
-  cariErr.value = ''
-}
-
-function onCariInput() {
-  selected.value = null
-  clearTimeout(debounceTimer)
-  const q = cari.value.trim()
-  if (q.length < 2) {
-    hasil.value = []
-    cariErr.value = ''
-    cariLoading.value = false
+async function load() {
+  loading.value = true
+  err.value = ''
+  const res = await listKeluarga({ status: 'aktif' })
+  loading.value = false
+  if (!res.ok) {
+    err.value = res.error || 'Gagal memuat data warga'
     return
   }
-  debounceTimer = setTimeout(() => doCari(q), 300)
+  list.value = (res.data || []).map((k) => ({
+    id: k.id,
+    nama: k.nama || 'Keluarga',
+    alamat: k.alamat || k.alamat_label || '',
+    inisial: inisial(k.nama),
+  }))
 }
 
-function normalizeList(data) {
-  if (Array.isArray(data)) return data
-  if (data && Array.isArray(data.data)) return data.data
-  return []
-}
+const filtered = computed(() => {
+  const s = q.value.trim().toLowerCase()
+  if (!s) return list.value
+  return list.value.filter(
+    (k) =>
+      String(k.nama || '').toLowerCase().includes(s) ||
+      String(k.alamat || '').toLowerCase().includes(s)
+  )
+})
 
-async function doCari(q) {
-  const seq = ++cariSeq
-  cariLoading.value = true
-  cariErr.value = ''
-  let list = []
-
-  const res = await cariAnggota(q, 50)
-  if (seq !== cariSeq) return
-  if (res.ok) {
-    list = normalizeList(res.data)
+async function pilihKeluarga(k) {
+  selectedKeluarga.value = k
+  selectedAnggota.value = null
+  anggotaList.value = []
+  errAnggota.value = ''
+  step.value = 'anggota'
+  loadingAnggota.value = true
+  const res = await getKeluarga(k.id)
+  loadingAnggota.value = false
+  if (!res.ok) {
+    errAnggota.value = res.error || 'Gagal memuat anggota'
+    return
   }
-
-  // Fallback: list keluarga → anggota
-  if (!list.length) {
-    const lk = await listKeluarga({ q, status: 'aktif' })
-    if (seq !== cariSeq) return
-    if (lk.ok && Array.isArray(lk.data) && lk.data.length) {
-      const qLower = q.toLowerCase()
-      const flat = []
-      const seen = new Set()
-      for (const k of lk.data.slice(0, 25)) {
-        const d = await getKeluarga(k.id)
-        if (seq !== cariSeq) return
-        if (!d.ok || !d.data?.anggota) continue
-        const alamat = k.alamat || k.alamat_label || d.data.alamat_label || ''
-        for (const a of d.data.anggota) {
-          if ((a.status || 'aktif') !== 'aktif') continue
-          if (seen.has(a.id)) continue
-          seen.add(a.id)
-          const nama = String(a.nama || '')
-          flat.push({
-            id: a.id,
-            nama,
-            hubungan: a.hubungan,
-            keluarga_id: k.id,
-            alamat,
-            _prio: nama.toLowerCase().includes(qLower) ? 0 : 1,
-          })
-        }
-      }
-      flat.sort((a, b) => a._prio - b._prio || String(a.nama).localeCompare(String(b.nama)))
-      list = flat.map(({ _prio, ...rest }) => rest)
-    } else if (!res.ok) {
-      cariErr.value = res.error || 'Gagal mencari'
-    }
-  }
-
-  if (seq !== cariSeq) return
-  cariLoading.value = false
-  hasil.value = list
+  const anggota = res.data?.anggota || []
+  anggotaList.value = anggota.filter((a) => (a.status || 'aktif') === 'aktif')
 }
 
-function pilih(a) {
-  selected.value = a
+function backKeluarga() {
+  step.value = 'keluarga'
+  selectedKeluarga.value = null
+  selectedAnggota.value = null
+  anggotaList.value = []
+  errAnggota.value = ''
 }
 
 function lanjut() {
-  if (!selected.value?.id) return
-  const a = selected.value
+  const a = selectedAnggota.value
+  const k = selectedKeluarga.value
+  if (!a?.id) return
   router.push({
     path: '/kelola-pengurus/angkat/form',
     query: {
       warga_id: String(a.id),
       nama: a.nama || '',
-      alamat: a.alamat || '',
+      alamat: k?.alamat || '',
       hubungan: a.hubungan || '',
     },
   })
 }
 
-onBeforeUnmount(() => clearTimeout(debounceTimer))
+onMounted(load)
 </script>

@@ -1,16 +1,17 @@
-# Patch: Alur angkat pengurus 2 langkah
+# Patch: Pilih warga = pola halaman Warga (cepat)
 
-## Alur baru
-1. Kelola pengurus → **+ Angkat pengurus**
-2. Halaman **Pilih warga** (search + list, pilih satu)
-3. Tombol **Jadikan pengurus** → halaman **Buat akun pengurus** (username, password, jabatan, HP)
-4. Simpan → kembali ke daftar pengurus
+## Perubahan
+Halaman `/kelola-pengurus/angkat` sekarang:
+1. **Load semua keluarga sekali** (`listKeluarga`) — sama seperti halaman Warga
+2. **Search client-side** (instant, filter nama/alamat)
+3. Pilih keluarga → tampil anggota aktif keluarga itu
+4. Pilih anggota → **Jadikan pengurus** → form akun
+
+Tidak lagi search API per ketikan (lambat / kosong).
 
 ## File
-- `frontend/src/pengurus/views/AngkatPengurusView.vue` — list pilih warga
-- `frontend/src/pengurus/views/AngkatPengurusFormView.vue` — **baru** form akun
-- `frontend/src/pengurus/router/index.js` — route `/kelola-pengurus/angkat/form`
-- `frontend/src/shared/services/warga.real.js` / `warga.js` — cariAnggota
+- `frontend/src/pengurus/views/AngkatPengurusView.vue` (utama)
+- `AngkatPengurusFormView.vue` + `router/index.js` (ikut, bila belum ter-deploy)
 
 ## Setelah push
-Jalankan **Deploy Dev** agar frontend rebuild.
+Jalankan **Deploy Dev**.
