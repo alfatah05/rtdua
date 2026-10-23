@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS reward_pemenang (
   CONSTRAINT fk_reward_pemenang_event FOREIGN KEY (event_id) REFERENCES reward_event(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Keluarga yang sudah pernah menang di event (termasuk hangus) sampai reset siklus
 CREATE TABLE IF NOT EXISTS reward_event_pernah (
   event_id INT UNSIGNED NOT NULL,
   keluarga_id INT UNSIGNED NOT NULL,

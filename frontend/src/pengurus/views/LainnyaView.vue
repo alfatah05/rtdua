@@ -28,7 +28,7 @@ import { computed } from 'vue'
 import {
   Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
   UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf, HandCoins, Trophy, Layers, CalendarDays,
-  Bike, Fish, Swords, Activity, Building2, Ambulance,
+  Bike, Fish, Swords, Activity, Building2, Ambulance, Gift,
 } from 'lucide-vue-next'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
@@ -83,6 +83,7 @@ const groups = [
       { label: 'RW', icon: Building2, to: '/konten/rw', bg: 'rgba(100,116,139,.18)', color: '#334155' },
       { label: 'Ambulance', icon: Ambulance, to: '/konten/ambulance', bg: 'rgba(220,38,38,.18)', color: '#991B1B' },
       { label: 'Bazis', icon: HandCoins, to: '/konten/bazis', bg: 'rgba(5,150,105,.18)', color: '#047857' },
+      { label: 'Reward', icon: Gift, to: '/reward', bg: 'rgba(245,158,11,.18)', color: '#D97706' },
       { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
       { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
     ],

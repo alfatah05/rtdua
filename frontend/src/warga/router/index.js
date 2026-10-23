@@ -26,6 +26,8 @@ import EditAnggotaView from '../views/EditAnggotaView.vue'
 import ProgramListView from '../views/ProgramListView.vue'
 import ProgramDetailView from '../views/ProgramDetailView.vue'
 import GaleriListView from '../views/GaleriListView.vue'
+import RewardListView from '../views/RewardListView.vue'
+import RewardDetailView from '../views/RewardDetailView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
 import PosyanduView from '../views/PosyanduView.vue'
 import TalimView from '../views/TalimView.vue'
@@ -87,6 +89,8 @@ const routes = [
       { path: 'program/:id', name: 'program-detail', component: ProgramDetailView },
       { path: 'galeri', name: 'galeri', component: GaleriListView },
       { path: 'galeri/:id', name: 'galeri-detail', component: GaleriDetailView },
+      { path: 'reward', name: 'reward', component: RewardListView },
+      { path: 'reward/:id', name: 'reward-detail', component: RewardDetailView },
       { path: 'posyandu', name: 'posyandu', component: PosyanduView },
       { path: 'posyandu/detail', name: 'posyandu-detail', component: PosyanduDetailView },
       { path: 'posyandu/detail/:id', name: 'posyandu-item', component: PosyanduItemDetailView },

@@ -26,6 +26,9 @@ import AktivitasView from '../views/AktivitasView.vue'
 import AktivitasDetailView from '../views/AktivitasDetailView.vue'
 import ProfilView from '../views/ProfilView.vue'
 import LainnyaView from '../views/LainnyaView.vue'
+import RewardListView from '../views/RewardListView.vue'
+import RewardFormView from '../views/RewardFormView.vue'
+import RewardDetailView from '../views/RewardDetailView.vue'
 import RekeningPembayaranView from '../views/RekeningPembayaranView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import PengumumanListView from '../views/PengumumanListView.vue'
@@ -111,6 +114,10 @@ const routes = [
       { path: 'aktivitas/:id', component: AktivitasDetailView },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'lainnya', name: 'lainnya', component: LainnyaView },
+      { path: 'reward', name: 'reward', component: RewardListView },
+      { path: 'reward/tambah', name: 'reward-tambah', component: RewardFormView },
+      { path: 'reward/:id/edit', name: 'reward-edit', component: RewardFormView },
+      { path: 'reward/:id', name: 'reward-detail', component: RewardDetailView },
       { path: 'rekening-pembayaran', name: 'rekening-pembayaran', component: RekeningPembayaranView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
 

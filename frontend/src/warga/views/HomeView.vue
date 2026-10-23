@@ -238,7 +238,7 @@ import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
 import {
   Landmark, Handshake, Megaphone, Bell, ChevronRight, Wallet,
   ShieldCheck, Images, Users, HeartHandshake, BookOpen, Trophy,
-  Building2, Ambulance,
+  Building2, Ambulance, Gift,
 } from 'lucide-vue-next'
 
 const { user } = useAuth()
@@ -408,6 +408,13 @@ const quickTiles = computed(() => {
 
 /** Menu list di bawah grid (tanpa 4 yang sudah di grid) */
 const menus = computed(() => [
+  {
+    to: '/reward',
+    label: 'Reward',
+    desc: 'Undian & hadiah warga',
+    icon: Gift,
+    cardBg: '#F59E0B',
+  },
   {
     to: '/galeri',
     label: 'Galeri RT',
