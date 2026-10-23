@@ -3,25 +3,6 @@
     <AppBackHeader title="Bayar tagihan" />
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
-    <template v-else-if="sedangMenunggu">
-      <div class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] p-5 shadow-[var(--sh)] mb-4 text-center">
-        <div class="w-12 h-12 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 grid place-items-center mx-auto mb-3">
-          <Clock :size="22" />
-        </div>
-        <p class="text-[16px] font-extrabold m-0">Menunggu konfirmasi pengurus</p>
-        <p class="text-[13px] text-[var(--mut)] m-0 mt-2 leading-relaxed">
-          Masih ada permintaan pembayaran yang menunggu konfirmasi.
-          Selesaikan dulu sebelum mengajukan pembayaran baru.
-        </p>
-        <button
-          type="button"
-          class="mt-5 w-full min-h-[48px] rounded-full bg-[var(--card2)] font-bold active:scale-[0.98] transition"
-          @click="$router.replace('/rincian-iuran')"
-        >
-          Kembali ke rincian iuran
-        </button>
-      </div>
-    </template>
     <template v-else>
       <h2 class="text-[15px] font-bold m-0 mb-2">Pilih tagihan</h2>
       <div
@@ -40,7 +21,8 @@
           <label
             v-for="t in tagihanTerbuka"
             :key="t.id"
-            class="flex items-center gap-3 py-2.5 cursor-pointer"
+            class="flex items-center gap-3 py-2.5"
+            :class="isTagihanLocked(t.id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
             style="padding-left: 10px; padding-right: 10px"
           >
             <input
@@ -48,6 +30,7 @@
               type="checkbox"
               class="w-5 h-5 rounded accent-[var(--g)] shrink-0"
               :value="t.id"
+              :disabled="isTagihanLocked(t.id)"
             />
             <div
               class="w-9 h-9 rounded-full grid place-items-center shrink-0"
@@ -55,7 +38,10 @@
             >
               <component :is="iconMeta(t.jenis).icon" :size="16" />
             </div>
-            <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">{{ labelTagihan(t) }}</p>
+            <div class="flex-1 min-w-0">
+              <p class="text-[14px] font-semibold m-0 truncate">{{ labelTagihan(t) }}</p>
+              <p v-if="isTagihanLocked(t.id)" class="text-[11px] text-amber-600 m-0 mt-0.5">Menunggu konfirmasi</p>
+            </div>
             <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(t.sisa ?? t.nominal) }}</span>
           </label>
 
@@ -166,7 +152,7 @@
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Wallet, Home, ShieldAlert, Sparkles, QrCode, Building2, ChevronDown, Clock } from 'lucide-vue-next'
+import { Wallet, Home, ShieldAlert, Sparkles, QrCode, Building2, ChevronDown } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalRingkasan, portalListRekening, portalStatusPermintaan } from '@shared/services/keuangan.js'
 
@@ -180,7 +166,24 @@ const checked = ref([])
 const selectedId = ref(null)
 const openEw = ref(false)
 const openBank = ref(false)
-const sedangMenunggu = ref(false)
+const lockedTagihanIds = ref([])
+
+function parseTagihanIds(raw) {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.map(Number).filter((n) => n > 0)
+  try {
+    const j = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (Array.isArray(j)) return j.map(Number).filter((n) => n > 0)
+  } catch (_) {}
+  return String(raw)
+    .split(/[,\s]+/)
+    .map(Number)
+    .filter((n) => n > 0)
+}
+
+function isTagihanLocked(id) {
+  return lockedTagihanIds.value.includes(Number(id))
+}
 
 const BULAN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
@@ -199,7 +202,6 @@ function labelJenisDasar(jenis) {
   return jenis || 'Tagihan'
 }
 function labelTagihan(t) {
-  // Tagihan khusus (termasuk per keluarga): judul saja, tanpa suffix bulan
   if (t.jenis === 'khusus' && t.nama) {
     return t.nama
   }
@@ -228,7 +230,6 @@ const grupBank = computed(() => rekening.value.filter((r) => r.jenis === 'bank')
 const canBayar = computed(() => checked.value.length > 0 && selectedId.value && totalChecked.value > 0)
 
 function lanjut() {
-  if (sedangMenunggu.value) return
   const metode = rekening.value.find((r) => r.id === selectedId.value)
   if (!metode) return
   const items = tagihanTerbuka.value.filter((t) => checked.value.includes(t.id))
@@ -262,7 +263,13 @@ onMounted(async () => {
   }
   if (pm.ok) {
     const list = Array.isArray(pm.data) ? pm.data : (pm.data?.items || [])
-    sedangMenunggu.value = list.some((p) => p.status === 'menunggu')
+    const ids = []
+    for (const p of list) {
+      if (p.status !== 'menunggu') continue
+      ids.push(...parseTagihanIds(p.tagihan_ids))
+    }
+    lockedTagihanIds.value = [...new Set(ids)]
+    checked.value = checked.value.filter((id) => !lockedTagihanIds.value.includes(Number(id)))
   }
 })
 </script>
