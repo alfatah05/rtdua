@@ -85,11 +85,12 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Camera, ChevronRight, KeyRound, Moon, User, Home, HelpCircle, Info
+  Camera, ChevronRight, KeyRound, Moon, User, Home, HelpCircle, Info, Download
 } from 'lucide-vue-next'
 import { useAuth } from '@shared/composables/useAuth.js'
 import { useTheme } from '@shared/composables/useTheme.js'
 import { useToast } from '@shared/composables/useToast.js'
+import { usePwaInstall } from '@shared/composables/usePwaInstall.js'
 import { updateFotoProfil } from '@shared/services/auth.js'
 import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
 import { waitImages } from '@shared/utils/waitImages.js'
@@ -98,6 +99,7 @@ const router = useRouter()
 const { user, logout } = useAuth()
 const { mode, toggle } = useTheme()
 const { show } = useToast()
+const { canInstall, install: installPwa } = usePwaInstall()
 const fileInput = ref(null)
 const uploadingFoto = ref(false)
 const localFoto = ref('')
@@ -117,45 +119,60 @@ const fotoUrl = computed(() => {
   return f ? mediaUrl(f) : ''
 })
 
-const menus = computed(() => [
-  {
-    label: 'Data keluarga',
-    desc: 'Anggota di rumah Anda',
-    icon: User,
-    to: '/data-keluarga',
-  },
-  {
-    label: 'Ganti PIN',
-    desc: 'Ubah PIN masuk aplikasi',
-    icon: KeyRound,
-    to: '/ganti-pin',
-  },
-  {
-    label: 'Mode gelap',
-    desc: mode.value === 'dark' ? 'Sedang aktif' : 'Nonaktif',
-    icon: Moon,
-    action: () => toggle(),
-    right: mode.value === 'dark' ? 'Aktif' : 'Off',
-  },
-  {
-    label: 'Alamat rumah',
-    desc: alamatLabel.value,
-    icon: Home,
-    action: () => show(alamatLabel.value),
-  },
-  {
-    label: 'Bantuan',
-    desc: 'Hubungi pengurus',
-    icon: HelpCircle,
-    to: '/bantuan',
-  },
-  {
-    label: 'Tentang aplikasi',
-    desc: 'rtdua untuk warga RT',
-    icon: Info,
-    action: () => show('rtdua v0.1.0'),
-  },
-])
+const menus = computed(() => {
+  const list = [
+    {
+      label: 'Data keluarga',
+      desc: 'Anggota di rumah Anda',
+      icon: User,
+      to: '/data-keluarga',
+    },
+    {
+      label: 'Ganti PIN',
+      desc: 'Ubah PIN masuk aplikasi',
+      icon: KeyRound,
+      to: '/ganti-pin',
+    },
+    {
+      label: 'Mode gelap',
+      desc: mode.value === 'dark' ? 'Sedang aktif' : 'Nonaktif',
+      icon: Moon,
+      action: () => toggle(),
+      right: mode.value === 'dark' ? 'Aktif' : 'Off',
+    },
+    {
+      label: 'Alamat rumah',
+      desc: alamatLabel.value,
+      icon: Home,
+      action: () => show(alamatLabel.value),
+    },
+    {
+      label: 'Bantuan',
+      desc: 'Hubungi pengurus',
+      icon: HelpCircle,
+      to: '/bantuan',
+    },
+    {
+      label: 'Tentang aplikasi',
+      desc: 'rtdua untuk warga RT',
+      icon: Info,
+      action: () => show('rtdua v0.1.0'),
+    },
+  ]
+  // Paling bawah: install PWA hanya jika belum terpasang
+  if (canInstall.value) {
+    list.push({
+      label: 'Install aplikasi',
+      desc: 'Pasang di layar utama HP',
+      icon: Download,
+      action: async () => {
+        const res = await installPwa()
+        if (res.message) show(res.message)
+      },
+    })
+  }
+  return list
+})
 
 async function finishLoading() {
   const url = fotoUrl.value
