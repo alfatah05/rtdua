@@ -2,15 +2,15 @@
   <div>
     <AppBackHeader title="Notifikasi" :show-notif="false" />
 
-    <!-- Kartu aktifkan push: hilang setelah diizinkan (tanpa opsi matikan) -->
+    <!-- Card aktifkan: muncul jika perangkat ini belum punya subscription -->
     <div
-      v-if="pushStatus !== 'unsupported' && pushStatus !== 'active'"
+      v-if="pushSupported && !hasPushSub"
       class="mb-4 rounded-[14px] border border-[var(--line)] bg-[var(--card)] px-4 py-3"
     >
       <p class="font-bold text-[14px] m-0">Notifikasi perangkat</p>
       <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5 leading-snug">
         <template v-if="pushStatus === 'denied'">Izin ditolak. Buka pengaturan browser/HP untuk mengizinkan notifikasi.</template>
-        <template v-else>Aktifkan agar isi notifikasi di halaman ini juga muncul sebagai push PWA.</template>
+        <template v-else>Aktifkan agar isi notifikasi di halaman ini juga muncul sebagai push PWA di HP ini.</template>
       </p>
       <div class="flex gap-2 mt-2.5">
         <button
@@ -81,7 +81,7 @@ const loading = ref(true)
 const err = ref('')
 const pushMsg = ref('')
 const pushMsgOk = ref(true)
-const { status: pushStatus, aktifkan: aktifkanPush } = usePush()
+const { supported: pushSupported, status: pushStatus, hasSubscription: hasPushSub, aktifkan: aktifkanPush } = usePush()
 
 const JENIS = {
   pengumuman: { icon: Megaphone, bg: 'rgba(245,158,11,.18)', color: '#D97706' },
