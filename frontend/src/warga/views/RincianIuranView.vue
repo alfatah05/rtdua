@@ -50,26 +50,22 @@
           v-for="p in permintaanMenunggu"
           :key="'pm-' + p.id"
           type="button"
-          class="w-full rounded-[20px] p-5 relative overflow-hidden shadow-[var(--sh)] text-left active:scale-[0.99] transition-transform"
-          :style="stylePermintaan"
+          class="w-full text-left relative overflow-hidden touch-manipulation rounded-[1.125rem] active:scale-[0.98] transition"
+          style="background: #3B82F6"
           @click="bukaBuktiPermintaan(p)"
         >
-          <div class="relative z-10 flex items-start gap-3">
-            <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
+          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-16">
+            <div class="w-11 h-11 rounded-[0.875rem] grid place-items-center shrink-0 bg-white/20 text-white">
               <Clock :size="20" />
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-[13px] font-semibold m-0 text-white/90">Status permintaan</p>
-              <p class="text-[17px] font-extrabold m-0 mt-1 leading-snug text-white">
-                Menunggu konfirmasi pengurus
-              </p>
-              <p class="text-[13px] m-0 mt-1.5 text-white/85">
-                {{ rp(p.nominal_diajukan ?? p.nominal) }} · {{ formatTgl(p.diajukan_pada) }}
+            <div class="flex-1 min-w-0 py-2.5">
+              <p class="text-sm font-bold m-0 leading-tight text-white">Menunggu konfirmasi</p>
+              <p class="text-xs font-semibold m-0 mt-0.5 leading-tight text-white/85 tabular-nums truncate">
+                {{ labelPermintaan(p) }} · {{ rp(p.nominal_diajukan ?? p.nominal) }}
               </p>
             </div>
-            <ChevronRight :size="20" class="text-white/80 shrink-0 mt-1" />
+            <ChevronRight :size="16" class="shrink-0 text-white/70" />
           </div>
-          <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
         </button>
       </div>
 
@@ -273,14 +269,10 @@
       <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
         <button
           type="button"
-          class="pointer-events-auto w-full min-h-[48px] rounded-full font-bold transition"
-          :class="sedangMenunggu
-            ? 'bg-[var(--card2)] text-[var(--mut)] cursor-not-allowed'
-            : 'bg-[var(--btn)] text-[var(--btn-fg)] active:scale-[0.98]'"
-          :disabled="sedangMenunggu"
+          class="pointer-events-auto w-full min-h-[48px] rounded-full font-bold transition bg-[var(--btn)] text-[var(--btn-fg)] active:scale-[0.98]"
           @click="onBayarClick"
         >
-          {{ sedangMenunggu ? 'Menunggu konfirmasi' : 'Bayar iuran' }}
+          Bayar iuran
         </button>
       </div>
     </div>
@@ -511,14 +503,37 @@ const permintaanMenunggu = computed(() =>
   (permintaan.value || []).filter((p) => p.status === 'menunggu')
 )
 
-const sedangMenunggu = computed(() => permintaanMenunggu.value.length > 0)
-
 function onBayarClick() {
-  if (sedangMenunggu.value) {
-    show('Masih menunggu konfirmasi pengurus. Tidak bisa bayar dulu.')
-    return
-  }
   router.push('/bayar')
+}
+
+function parseTagihanIds(raw) {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.map(Number).filter((n) => n > 0)
+  try {
+    const j = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (Array.isArray(j)) return j.map(Number).filter((n) => n > 0)
+  } catch (_) {}
+  return String(raw)
+    .split(/[,\s]+/)
+    .map(Number)
+    .filter((n) => n > 0)
+}
+
+function labelPermintaan(p) {
+  const ids = parseTagihanIds(p?.tagihan_ids)
+  if (ids.length) {
+    const labels = ids
+      .map((id) => {
+        const t = (tagihan.value || []).find((x) => Number(x.id) === id)
+        return t ? labelTagihan(t) : null
+      })
+      .filter(Boolean)
+    if (labels.length === 1) return labels[0]
+    if (labels.length > 1) return labels[0] + ' +' + (labels.length - 1)
+  }
+  const rek = p?.rekening?.nama || p?.bank_pengirim || p?.metode_rekening
+  return rek || 'Transfer'
 }
 
 const heroStatus = computed(() => {
@@ -528,8 +543,10 @@ const heroStatus = computed(() => {
   return 'lunas'
 })
 const heroTitle = computed(() => {
+  if (heroStatus.value === 'pending') return 'Iuran yang belum di bayar'
+  if (heroStatus.value === 'lunas') return 'Iuran yang belum di bayar'
   if (heroStatus.value === 'lebih') return 'Kelebihan bayar'
-  return 'Jumlah tagihan anda'
+  return 'Iuran'
 })
 const heroNominal = computed(() => {
   if (total.value > 0) return rp(total.value)
@@ -537,7 +554,6 @@ const heroNominal = computed(() => {
   return 'Lunas'
 })
 const heroHint = computed(() => {
-  if (sedangMenunggu.value) return 'Menunggu konfirmasi pengurus — tidak bisa bayar dulu'
   if (heroStatus.value === 'pending') return 'Segera lunasi agar data RT tetap akurat'
   if (heroStatus.value === 'lunas') return 'Tidak ada tagihan terbuka'
   if (heroStatus.value === 'lebih') return 'Saldo lebih akan dipotong tagihan berikutnya'
@@ -555,8 +571,6 @@ const heroStyle = computed(() => {
   if (heroStatus.value === 'lebih') return styleLebih
   return styleLoading
 })
-
-const stylePermintaan = { background: '#F59E0B' }
 
 onMounted(async () => {
   const [res, pm] = await Promise.all([portalRingkasan(), portalStatusPermintaan()])
