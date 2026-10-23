@@ -1,6 +1,8 @@
 /**
  * Web Push PWA — wajib gesture pengguna untuk requestPermission.
  * iPhone: hanya setelah Add to Home Screen (iOS 16.4+).
+ * Multi-device: setiap perangkat punya endpoint sendiri di push_langganan.
+ * Card "aktifkan" di halaman notifikasi = perangkat ini belum punya subscription.
  */
 import { ref, onMounted } from 'vue'
 import { getVapidPublic, subscribePush, unsubscribePush } from '../services/notifikasi.js'
@@ -13,6 +15,8 @@ const supported =
 
 /** idle | unsupported | denied | default | active | loading */
 const status = ref('idle')
+/** true hanya jika perangkat ini punya PushSubscription lokal */
+const hasSubscription = ref(false)
 const errorMsg = ref('')
 
 function urlBase64ToUint8Array(base64String) {
@@ -25,16 +29,23 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 async function getSwRegistration() {
-  // Tunggu SW dari virtual:pwa-register
   const existing = await navigator.serviceWorker.getRegistration()
   if (existing) {
     await navigator.serviceWorker.ready
     return existing
   }
-  // Fallback: tunggu ready (bisa dari inject otomatis)
   try {
-    const reg = await navigator.serviceWorker.ready
-    return reg
+    return await navigator.serviceWorker.ready
+  } catch {
+    return null
+  }
+}
+
+async function getLocalSubscription() {
+  try {
+    const reg = await getSwRegistration()
+    if (!reg?.pushManager) return null
+    return await reg.pushManager.getSubscription()
   } catch {
     return null
   }
@@ -43,6 +54,7 @@ async function getSwRegistration() {
 export function usePush() {
   async function refreshStatus() {
     errorMsg.value = ''
+    hasSubscription.value = false
     if (!supported) {
       status.value = 'unsupported'
       return
@@ -52,21 +64,17 @@ export function usePush() {
       status.value = 'denied'
       return
     }
-    try {
-      const reg = await getSwRegistration()
-      const sub = await reg?.pushManager?.getSubscription()
-      if (sub) {
-        status.value = 'active'
-        return
-      }
-    } catch {
-      /* ignore */
+    const sub = await getLocalSubscription()
+    if (sub) {
+      hasSubscription.value = true
+      status.value = 'active'
+      return
     }
-    status.value = perm === 'granted' ? 'default' : 'default'
+    status.value = 'default'
   }
 
   /**
-   * Aktifkan push: izin + subscribe + simpan ke server.
+   * Aktifkan push di perangkat ini: izin + subscribe + simpan ke server.
    * Harus dipanggil dari klik tombol (user gesture).
    */
   async function aktifkan() {
@@ -81,6 +89,7 @@ export function usePush() {
       const perm = await Notification.requestPermission()
       if (perm !== 'granted') {
         status.value = 'denied'
+        hasSubscription.value = false
         return { ok: false, error: 'Izin notifikasi ditolak. Aktifkan di pengaturan browser/HP.' }
       }
 
@@ -108,12 +117,15 @@ export function usePush() {
       const res = await subscribePush(json, navigator.userAgent?.slice(0, 120))
       if (!res.ok) {
         status.value = 'default'
+        hasSubscription.value = false
         return { ok: false, error: res.error || 'Gagal menyimpan langganan push.' }
       }
+      hasSubscription.value = true
       status.value = 'active'
       return { ok: true }
     } catch (e) {
       status.value = 'default'
+      hasSubscription.value = false
       const msg = e?.message || 'Gagal mengaktifkan push.'
       errorMsg.value = msg
       return { ok: false, error: msg }
@@ -128,24 +140,31 @@ export function usePush() {
       const sub = await reg?.pushManager?.getSubscription()
       const endpoint = sub?.endpoint
       if (sub) await sub.unsubscribe()
-      await unsubscribePush(endpoint)
+      if (endpoint) await unsubscribePush(endpoint)
     } catch {
       /* ignore */
     }
+    hasSubscription.value = false
     status.value = 'default'
     return { ok: true }
   }
 
-  /** Jika izin sudah granted, pastikan subscription tersimpan di server. */
+  /**
+   * Izin sudah granted + ada subscription lokal → re-POST ke server (multi-device aman).
+   * Izin granted tapi belum ada subscription → biarkan card muncul (status default).
+   */
   async function syncIfGranted() {
     if (!supported || Notification.permission !== 'granted') return
     try {
-      const reg = await getSwRegistration()
-      const sub = await reg?.pushManager?.getSubscription()
-      if (sub) {
-        await subscribePush(sub.toJSON(), navigator.userAgent?.slice(0, 120))
-        status.value = 'active'
+      const sub = await getLocalSubscription()
+      if (!sub) {
+        hasSubscription.value = false
+        status.value = 'default'
+        return
       }
+      await subscribePush(sub.toJSON(), navigator.userAgent?.slice(0, 120))
+      hasSubscription.value = true
+      status.value = 'active'
     } catch {
       /* ignore */
     }
@@ -155,5 +174,14 @@ export function usePush() {
     refreshStatus().then(() => syncIfGranted())
   })
 
-  return { supported, status, errorMsg, aktifkan, matikan, refreshStatus, syncIfGranted }
+  return {
+    supported,
+    status,
+    hasSubscription,
+    errorMsg,
+    aktifkan,
+    matikan,
+    refreshStatus,
+    syncIfGranted,
+  }
 }
