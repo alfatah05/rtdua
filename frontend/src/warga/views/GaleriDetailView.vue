@@ -4,45 +4,74 @@
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="album">
-      <p class="text-[13px] text-[var(--mut)] mb-3">{{ album.tanggal_kegiatan || '—' }} · {{ (album.foto || []).length }} foto</p>
-      <div v-if="!(album.foto || []).length" class="text-[13px] text-[var(--mut)] text-center py-8">Belum ada foto</div>
-
-      <div v-else class="galeri-masonry">
-        <button
-          v-for="(f, idx) in album.foto"
-          :key="f.id"
-          type="button"
-          class="galeri-masonry-item block w-full p-0 border-0 rounded-[12px] overflow-hidden bg-[var(--search)]"
-          @click="preview = f"
-        >
-          <AppLazyImg
-            :src="mediaUrl(f.thumb || f.file)"
-            :eager="idx < 4"
-            img-class="block w-full h-auto"
-            alt=""
-          />
-        </button>
+      <p class="text-[13px] text-[var(--mut)] mb-3">
+        {{ album.tanggal_kegiatan || '—' }} · {{ (album.foto || []).length }} foto
+      </p>
+      <div v-if="!(album.foto || []).length" class="text-[13px] text-[var(--mut)] text-center py-8">
+        Belum ada foto
       </div>
 
-      <div
-        v-if="preview"
-        class="fixed inset-0 z-50 bg-black/90 flex flex-col"
-        @click.self="preview = null"
-      >
-        <button type="button" class="self-end m-3 text-white font-bold px-3 py-2" @click="preview = null">Tutup</button>
-        <img :src="mediaUrl(preview.file)" class="max-w-full max-h-[80vh] object-contain mx-auto" alt="" />
-        <a
-          class="text-center text-white text-[13px] font-semibold mt-3 underline"
-          :href="mediaUrl(preview.file)"
-          target="_blank"
-          rel="noopener"
-        >Buka / unduh</a>
-      </div>
+      <template v-else>
+        <!-- Foto expanded: full lebar layar (bukan floating), header tetap -->
+        <div v-if="expanded" class="mb-4">
+          <div class="expanded-bleed overflow-hidden bg-[var(--search)]">
+            <img
+              :src="mediaUrl(expanded.file)"
+              class="block w-full h-auto max-h-[70vh] object-contain bg-black"
+              alt=""
+            />
+          </div>
+          <div class="flex items-center gap-2 mt-3 px-0">
+            <button
+              type="button"
+              class="flex-1 min-h-[44px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] text-[14px] font-bold active:scale-[0.98] transition flex items-center justify-center gap-2"
+              @click="simpanFoto(expanded)"
+            >
+              <Download :size="18" />
+              Simpan
+            </button>
+            <button
+              type="button"
+              class="flex-1 min-h-[44px] rounded-full border border-[var(--line)] bg-[var(--card)] text-[var(--text)] text-[14px] font-bold active:scale-[0.98] transition flex items-center justify-center gap-2"
+              @click="bagikanFoto(expanded)"
+            >
+              <Share2 :size="18" />
+              Bagikan
+            </button>
+          </div>
+          <p v-if="aksiMsg" class="text-[12px] text-[var(--mut)] text-center m-0 mt-2">{{ aksiMsg }}</p>
+        </div>
+
+        <!-- Grid foto lain (atau semua jika belum expand) -->
+        <div class="galeri-masonry">
+          <button
+            v-for="(f, idx) in fotoGrid"
+            :key="f.id"
+            type="button"
+            class="galeri-masonry-item block w-full p-0 border-0 rounded-[12px] overflow-hidden bg-[var(--search)] active:opacity-90 transition-opacity"
+            @click="expandFoto(f)"
+          >
+            <AppLazyImg
+              :src="mediaUrl(f.thumb || f.file)"
+              :eager="idx < 4"
+              img-class="block w-full h-auto"
+              alt=""
+            />
+          </button>
+        </div>
+      </template>
     </template>
   </div>
 </template>
 
 <style scoped>
+/* Full bleed horizontal terhadap padding main (px-4) */
+.expanded-bleed {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  width: calc(100% + 2rem);
+}
+
 .galeri-masonry {
   column-count: 2;
   column-gap: 8px;
@@ -60,8 +89,9 @@
 
 <script setup>
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
+import { Download, Share2 } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { detailAlbum } from '@shared/services/konten.js'
 import { mediaUrl } from '@shared/services/upload.js'
@@ -71,7 +101,77 @@ const route = useRoute()
 const album = ref(null)
 const loading = ref(true)
 const err = ref('')
-const preview = ref(null)
+const expanded = ref(null)
+const aksiMsg = ref('')
+
+const fotoGrid = computed(() => {
+  const list = album.value?.foto || []
+  if (!expanded.value) return list
+  const eid = expanded.value.id
+  return list.filter((f) => f.id !== eid)
+})
+
+function expandFoto(f) {
+  expanded.value = f
+  aksiMsg.value = ''
+  nextTick(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+}
+
+async function simpanFoto(f) {
+  aksiMsg.value = ''
+  const url = mediaUrl(f.file)
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const ext = (blob.type || '').includes('png') ? 'png' : 'jpg'
+    const name = `foto-album-${f.id || 'rt'}.${ext}`
+
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = name
+    a.rel = 'noopener'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+    aksiMsg.value = 'Foto disimpan / diunduh.'
+  } catch {
+    window.open(url, '_blank', 'noopener')
+    aksiMsg.value = 'Buka foto di tab baru untuk menyimpan.'
+  }
+}
+
+async function bagikanFoto(f) {
+  aksiMsg.value = ''
+  const url = mediaUrl(f.file)
+  const title = album.value?.judul || 'Foto album'
+  try {
+    if (navigator.share) {
+      try {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        const ext = (blob.type || '').includes('png') ? 'png' : 'jpg'
+        const file = new File([blob], `foto-${f.id || 'album'}.${ext}`, { type: blob.type || 'image/jpeg' })
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ title, files: [file] })
+          aksiMsg.value = 'Berhasil dibagikan.'
+          return
+        }
+      } catch {
+        /* fall through to share URL */
+      }
+      await navigator.share({ title, url })
+      aksiMsg.value = 'Berhasil dibagikan.'
+      return
+    }
+    await navigator.clipboard.writeText(url)
+    aksiMsg.value = 'Tautan foto disalin.'
+  } catch {
+    aksiMsg.value = 'Tidak bisa membagikan di perangkat ini.'
+  }
+}
 
 onMounted(async () => {
   loading.value = true
