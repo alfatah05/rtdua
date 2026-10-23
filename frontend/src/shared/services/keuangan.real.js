@@ -123,6 +123,15 @@ export async function tambahKas(payload) {
   }
 }
 
+export async function getKasDetail(id) {
+  try {
+    const res = await api('/keuangan/kas/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function batalkanKas(id, alasan) {
   try {
     const res = await api('/keuangan/kas/' + id + '/batal', {

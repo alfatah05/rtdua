@@ -182,6 +182,19 @@ class KeuanganController extends Controller
         return $res['ok'] ? ApiResponse::ok($res['data'], 'OK') : ApiResponse::fail($res['message'], 422);
     }
 
+    public function detailKas($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $row = (new KasService())->detail((int) $id);
+        if (!$row) {
+            return ApiResponse::fail('Transaksi tidak ditemukan', 404);
+        }
+        return ApiResponse::ok($row);
+    }
+
     public function batalkanKas($id)
     {
         $user = $this->requirePengurus();
@@ -190,7 +203,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new KasService())->batalkan((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Dibatalkan') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function listKasPos()

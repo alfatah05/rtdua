@@ -127,6 +127,67 @@ class KasService
         return $out;
     }
 
+    /**
+     * Detail satu transaksi kas (termasuk yang masih aktif).
+     */
+    public function detail(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $db = \Config\Database::connect();
+        $hasPos = $this->hasKasPosColumn();
+        $q = $db->table('kas_transaksi kt')->where('kt.id', $id);
+        if ($hasPos) {
+            $q->select('kt.*, kp.nama as kas_pos_nama')
+                ->join('kas_pos kp', 'kp.id = kt.kas_pos_id', 'left');
+        } else {
+            $q->select('kt.*');
+        }
+        $r = $q->get()->getRowArray();
+        if (!$r) {
+            return null;
+        }
+
+        $dicatatNama = null;
+        $dicatatOleh = !empty($r['dicatat_oleh']) ? (int) $r['dicatat_oleh'] : null;
+        if ($dicatatOleh) {
+            $u = $db->table('users')->select('nama, username, jabatan')->where('id', $dicatatOleh)->get()->getRowArray();
+            if ($u) {
+                $nama = trim((string) ($u['nama'] ?? ''));
+                if ($nama === '') {
+                    $nama = (string) ($u['username'] ?? '');
+                }
+                $jab = trim((string) ($u['jabatan'] ?? ''));
+                $dicatatNama = $jab !== '' ? ($nama . ' (' . $jab . ')') : $nama;
+            }
+        }
+
+        $isAlokasi = ($r['kategori'] ?? '') === self::KAT_ALOKASI;
+        return [
+            'id'            => (int) $r['id'],
+            'tipe'          => $r['tipe'],
+            'nominal'       => (int) $r['nominal'],
+            'kategori'      => $r['kategori'],
+            'kas_pos_id'    => $hasPos && !empty($r['kas_pos_id']) ? (int) $r['kas_pos_id'] : null,
+            'kas_pos_nama'  => $hasPos ? ($r['kas_pos_nama'] ?? null) : null,
+            'metode'        => $r['metode'] ?? null,
+            'keterangan'    => $r['keterangan'] ?? '',
+            'tanggal'       => $r['tanggal'],
+            'keluarga_id'   => !empty($r['keluarga_id']) ? (int) $r['keluarga_id'] : null,
+            'pembayaran_id' => !empty($r['pembayaran_id']) ? (int) $r['pembayaran_id'] : null,
+            'otomatis'      => !empty($r['pembayaran_id']),
+            'is_alokasi'    => $isAlokasi,
+            'display_tipe'  => $isAlokasi ? 'alokasi' : $r['tipe'],
+            'dibatalkan'    => !empty($r['dibatalkan']),
+            'alasan_batal'  => $r['alasan_batal'] ?? null,
+            'dibatalkan_pada' => $r['dibatalkan_pada'] ?? null,
+            'dicatat_oleh'  => $dicatatOleh,
+            'dicatat_nama'  => $dicatatNama,
+            'dicatat_pada'  => $r['dicatat_pada'] ?? null,
+        ];
+    }
+
     public function tambah(array $data, int $userId): array
     {
         $tipe = ($data['tipe'] ?? '') === 'keluar' ? 'keluar' : 'masuk';

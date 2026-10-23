@@ -56,6 +56,12 @@ export function tambahKas(payload) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1 } }) : real.tambahKas(payload)
 }
 
+export function getKasDetail(id) {
+  return USE_MOCK.keuangan
+    ? Promise.resolve({ ok: false, error: 'Mock' })
+    : real.getKasDetail(id)
+}
+
 export function batalkanKas(id, alasan) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.batalkanKas(id, alasan)
 }

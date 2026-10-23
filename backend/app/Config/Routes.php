@@ -72,6 +72,7 @@ $routes->post('keuangan/permintaan/(:num)/konfirmasi', 'KeuanganController::konf
 $routes->post('keuangan/permintaan/(:num)/tolak', 'KeuanganController::tolakPermintaan/$1', ['filter' => 'auth']);
 $routes->get('keuangan/kas/saldo', 'KeuanganController::saldoKas', ['filter' => 'auth']);
 $routes->get('keuangan/kas', 'KeuanganController::listKas', ['filter' => 'auth']);
+$routes->get('keuangan/kas/(:num)', 'KeuanganController::detailKas/$1', ['filter' => 'auth']);
 $routes->post('keuangan/kas', 'KeuanganController::tambahKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas/(:num)/batal', 'KeuanganController::batalkanKas/$1', ['filter' => 'auth']);
 $routes->post('keuangan/alokasi-pos', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
