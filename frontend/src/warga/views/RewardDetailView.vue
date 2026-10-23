@@ -4,7 +4,7 @@
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="event">
-      <!-- Hero klaim: style menu-row warga, hanya pemenang -->
+      <!-- Hero: tetap 3 hari (tersedia / sudah diklaim) -->
       <div
         v-if="event.klaim_saya"
         class="menu-row relative overflow-hidden mb-4"
@@ -16,14 +16,22 @@
               <Gift :size="22" />
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-[12px] font-semibold m-0 text-white/90">Keluarga kamu terpilih</p>
+              <p class="text-[12px] font-semibold m-0 text-white/90">
+                {{ event.klaim_saya.status === 'diklaim' ? 'Hadiah sudah diklaim' : 'Keluarga kamu terpilih' }}
+              </p>
               <p class="text-[15px] font-bold m-0 mt-0.5 leading-tight text-white">{{ event.judul }}</p>
               <p class="text-[12px] m-0 mt-1 text-white/85">
-                Klaim sebelum {{ formatWaktu(event.klaim_saya.expired_at) }}
+                <template v-if="event.klaim_saya.status === 'diklaim'">
+                  Ambil hadiah di rumah RT · berlaku s.d. {{ formatWaktu(event.klaim_saya.expired_at) }}
+                </template>
+                <template v-else>
+                  Klaim sebelum {{ formatWaktu(event.klaim_saya.expired_at) }}
+                </template>
               </p>
             </div>
           </div>
           <button
+            v-if="event.klaim_saya.status === 'tersedia'"
             type="button"
             class="w-full mt-3 min-h-[44px] rounded-full bg-white text-[#B45309] text-[14px] font-bold disabled:opacity-60 active:scale-[0.98] transition"
             :disabled="klaimLoading"
@@ -31,46 +39,63 @@
           >
             {{ klaimLoading ? 'Mengklaim…' : 'Klaim sekarang' }}
           </button>
+          <div
+            v-else
+            class="w-full mt-3 min-h-[44px] rounded-full bg-white/25 text-white text-[14px] font-bold flex items-center justify-center"
+          >
+            Sudah diklaim
+          </div>
           <p v-if="klaimMsg" class="text-[12px] m-0 mt-2 text-white/90 text-center">{{ klaimMsg }}</p>
         </div>
         <div class="absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
       </div>
 
-      <!-- Konten MD -->
+      <!-- Deskripsi undian -->
       <div
         v-if="event.isi_html"
-        class="prose-reward text-[14px] leading-relaxed mb-4 rounded-[18px] border border-[var(--line)] bg-[var(--card)] px-4 py-3.5"
-        v-html="htmlIsi"
-      />
+        class="mb-5 rounded-[18px] overflow-hidden border border-[var(--line)] bg-[var(--card)]"
+      >
+        <div class="flex items-center gap-2.5 px-3.5 py-3 border-b border-[var(--line)] bg-[var(--search)]">
+          <span
+            class="w-9 h-9 rounded-[12px] grid place-items-center shrink-0"
+            style="background: rgba(245,158,11,.18); color: #D97706"
+          >
+            <FileText :size="18" />
+          </span>
+          <p class="font-bold text-[14px] m-0">Detail undian</p>
+        </div>
+        <div
+          class="prose-reward text-[14px] leading-relaxed px-3.5 py-3.5"
+          v-html="htmlIsi"
+        />
+      </div>
 
-      <!-- List pemenang: pola list warga (icon + teks + pill) -->
-      <h2 class="text-[13px] font-bold text-[var(--mut)] m-0 mb-2 px-0.5">Pemenang</h2>
-      <p v-if="!(event.pemenang || []).length" class="text-[13px] text-[var(--mut)] text-center py-4">
+      <!-- Pemenang: polos, grup per bulan, tanpa badge, tanggal di kanan -->
+      <h2 class="text-[13px] font-bold text-[var(--mut)] m-0 mb-1 px-0.5">Pemenang</h2>
+      <p v-if="!(event.pemenang || []).length" class="text-[13px] text-[var(--mut)] text-center py-6">
         Belum ada pemenang
       </p>
-      <div v-else class="overflow-hidden rounded-[16px] border border-[var(--line)] bg-[var(--card)]">
-        <div
-          v-for="(p, idx) in event.pemenang"
-          :key="p.id"
-          class="flex items-center gap-3 px-3.5 py-3"
-          :class="idx > 0 ? 'border-t border-[var(--line)]' : ''"
-        >
-          <span
-            class="w-11 h-11 rounded-full grid place-items-center shrink-0"
-            :style="iconStyle(p.status)"
+      <div v-else>
+        <div v-for="g in pemenangGrouped" :key="g.label" class="mb-4">
+          <p class="text-[13px] font-bold text-[var(--mut)] m-0 mb-1 px-0.5">{{ g.label }}</p>
+          <div
+            v-for="p in g.items"
+            :key="p.id"
+            class="flex items-center gap-3 py-3"
           >
-            <MapPin :size="20" />
-          </span>
-          <div class="flex-1 min-w-0">
-            <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ p.alamat }}</p>
-            <p v-if="p.diundi_pada" class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
-              {{ formatWaktu(p.diundi_pada) }}
-            </p>
+            <span
+              class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+              style="background: rgba(245,158,11,.18); color: #D97706"
+            >
+              <User :size="20" />
+            </span>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ p.alamat }}</p>
+            </div>
+            <span class="text-[12px] text-[var(--mut)] shrink-0 tabular-nums">
+              {{ formatTanggal(p.diundi_pada) }}
+            </span>
           </div>
-          <span
-            class="text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0"
-            :class="badgeClass(p.status)"
-          >{{ badgeLabel(p.status) }}</span>
         </div>
       </div>
     </template>
@@ -80,7 +105,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { Gift, MapPin } from 'lucide-vue-next'
+import { Gift, User, FileText } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { detailReward, klaimReward } from '@shared/services/reward.js'
@@ -95,21 +120,25 @@ const klaimMsg = ref('')
 
 const htmlIsi = computed(() => renderMarkdown(event.value?.isi_html || ''))
 
-function badgeLabel(s) {
-  if (s === 'diklaim') return 'Sudah klaim'
-  if (s === 'hangus') return 'Hangus'
-  return 'Menunggu'
+/** Group pemenang by month of diundi_pada, newest first */
+const pemenangGrouped = computed(() => {
+  const list = event.value?.pemenang || []
+  const map = new Map()
+  for (const p of list) {
+    const label = bulanLabel(p.diundi_pada)
+    if (!map.has(label)) map.set(label, [])
+    map.get(label).push(p)
+  }
+  return Array.from(map.entries()).map(([label, items]) => ({ label, items }))
+})
+
+function bulanLabel(ts) {
+  if (!ts) return 'Lainnya'
+  const d = new Date(String(ts).replace(' ', 'T'))
+  if (Number.isNaN(d.getTime())) return 'Lainnya'
+  return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
 }
-function badgeClass(s) {
-  if (s === 'diklaim') return 'bg-[var(--gd)] text-[var(--gm)]'
-  if (s === 'hangus') return 'bg-red-100 text-red-700'
-  return 'bg-amber-100 text-amber-800'
-}
-function iconStyle(s) {
-  if (s === 'diklaim') return { background: 'rgba(34,197,94,.18)', color: '#16A34A' }
-  if (s === 'hangus') return { background: 'rgba(239,68,68,.14)', color: '#DC2626' }
-  return { background: 'rgba(245,158,11,.18)', color: '#D97706' }
-}
+
 function formatWaktu(ts) {
   if (!ts) return ''
   const d = new Date(String(ts).replace(' ', 'T'))
@@ -120,6 +149,17 @@ function formatWaktu(ts) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+  })
+}
+
+function formatTanggal(ts) {
+  if (!ts) return ''
+  const d = new Date(String(ts).replace(' ', 'T'))
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   })
 }
 
@@ -137,6 +177,7 @@ async function load() {
 
 async function onKlaim() {
   if (!event.value?.klaim_saya?.id) return
+  if (event.value.klaim_saya.status !== 'tersedia') return
   if (!confirm('Klaim hadiah ini? Ambil di rumah RT setelah klaim.')) return
   klaimMsg.value = ''
   klaimLoading.value = true
