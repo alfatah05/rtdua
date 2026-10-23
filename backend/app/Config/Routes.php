@@ -175,5 +175,16 @@ $routes->post('ronda/absen/(:num)/batal', 'RondaController::batalkanAbsen/$1', [
 $routes->post('ronda/terbitkan-denda', 'RondaController::terbitkanDenda', ['filter' => 'auth']);
 $routes->post('ronda/hapus-jadwal', 'RondaController::hapusJadwal', ['filter' => 'auth']);
 
+// Reward / undian
+$routes->get('reward', 'RewardController::list', ['filter' => 'auth']);
+$routes->get('reward/(:num)', 'RewardController::detail/$1', ['filter' => 'auth']);
+$routes->post('reward', 'RewardController::buat', ['filter' => 'auth']);
+$routes->put('reward/(:num)', 'RewardController::ubah/$1', ['filter' => 'auth']);
+$routes->delete('reward/(:num)', 'RewardController::hapus/$1', ['filter' => 'auth']);
+$routes->post('reward/(:num)/undi', 'RewardController::undi/$1', ['filter' => 'auth']);
+$routes->post('reward/(:num)/reset-siklus', 'RewardController::resetSiklus/$1', ['filter' => 'auth']);
+$routes->post('reward/batch/(:num)/batal', 'RewardController::batalkanBatch/$1', ['filter' => 'auth']);
+$routes->post('reward/pemenang/(:num)/klaim', 'RewardController::klaim/$1', ['filter' => 'auth']);
+
 $routes->post('upload', 'UploadController::store');
 $routes->get('media/(:segment)/(:segment)', 'UploadController::media/$1/$2');
