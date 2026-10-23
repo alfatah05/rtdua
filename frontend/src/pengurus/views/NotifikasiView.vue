@@ -25,30 +25,19 @@
       <p v-if="pushMsg" class="text-[12px] m-0 mt-2" :class="pushMsgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ pushMsg }}</p>
     </div>
 
-    <div class="flex justify-end px-1 mb-2">
-      <button
-        type="button"
-        class="text-[13px] font-semibold text-[var(--g)] disabled:opacity-50"
-        :disabled="loading || !items.length"
-        @click="onBacaSemua"
-      >
-        Tandai semua dibaca
-      </button>
-    </div>
-
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <EmptyState v-else-if="!items.length" title="Belum ada notifikasi" />
     <div v-else>
       <div v-for="(group, hari) in grouped" :key="hari" class="mb-4">
         <h2 class="text-[13px] font-bold text-[var(--mut)] mb-1 px-2">{{ hari }}</h2>
-        <div class="px-1 space-y-0.5">
+        <div class="overflow-hidden">
           <button
             v-for="n in group"
             :key="n.id"
             type="button"
-            class="w-full flex flex-row items-start gap-3 px-2 py-3 rounded-[12px] text-left"
-            :class="!n.dibaca ? 'bg-[var(--ok)]/40' : ''"
+            class="w-full flex flex-row items-start gap-3 px-3 py-3.5 text-left transition"
+            :class="!n.dibaca ? 'bg-[var(--gd)] active:opacity-90' : 'bg-transparent active:bg-[var(--search)]'"
             @click="onTap(n)"
           >
             <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 shrink-0"></div>
@@ -72,7 +61,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
-import { listNotifikasi, bacaNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
+import { listNotifikasi, bacaNotifikasi } from '@shared/services/notifikasi.js'
 import { usePush } from '@shared/composables/usePush.js'
 
 const router = useRouter()
@@ -130,11 +119,6 @@ async function onTap(n) {
   if (n.tautan) {
     router.push(n.tautan)
   }
-}
-
-async function onBacaSemua() {
-  await bacaSemuaNotifikasi()
-  items.value = items.value.map((n) => ({ ...n, dibaca: true }))
 }
 
 const { status: pushStatus, aktifkan: aktifkanPush } = usePush()
