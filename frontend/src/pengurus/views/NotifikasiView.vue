@@ -2,34 +2,24 @@
   <div>
     <AppBackHeader title="Notifikasi" />
 
-    <!-- Kartu aktifkan push PWA -->
+    <!-- Kartu aktifkan push: hilang setelah diizinkan (tanpa opsi matikan) -->
     <div
-      v-if="pushStatus !== 'unsupported'"
+      v-if="pushStatus !== 'unsupported' && pushStatus !== 'active'"
       class="mb-3 rounded-[14px] border border-[var(--line)] bg-[var(--card)] px-4 py-3"
     >
       <p class="font-bold text-[14px] m-0">Notifikasi perangkat</p>
       <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5 leading-snug">
-        <template v-if="pushStatus === 'active'">Push aktif — pemberitahuan masuk ke HP/browser.</template>
-        <template v-else-if="pushStatus === 'denied'">Izin ditolak. Aktifkan notifikasi di pengaturan browser/HP.</template>
+        <template v-if="pushStatus === 'denied'">Izin ditolak. Aktifkan notifikasi di pengaturan browser/HP.</template>
         <template v-else>Aktifkan agar notifikasi di halaman ini juga muncul sebagai push PWA.</template>
       </p>
       <div class="flex gap-2 mt-2.5">
         <button
-          v-if="pushStatus !== 'active'"
           type="button"
           class="flex-1 min-h-[40px] rounded-full bg-[var(--g)] text-white text-[13px] font-bold disabled:opacity-50"
           :disabled="pushStatus === 'loading' || pushStatus === 'denied'"
           @click="onAktifkanPush"
         >
           {{ pushStatus === 'loading' ? 'Mengaktifkan…' : 'Aktifkan push' }}
-        </button>
-        <button
-          v-else
-          type="button"
-          class="flex-1 min-h-[40px] rounded-full bg-[var(--card2)] text-[13px] font-semibold"
-          @click="onMatikanPush"
-        >
-          Matikan push
         </button>
       </div>
       <p v-if="pushMsg" class="text-[12px] m-0 mt-2" :class="pushMsgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ pushMsg }}</p>
@@ -147,7 +137,7 @@ async function onBacaSemua() {
   items.value = items.value.map((n) => ({ ...n, dibaca: true }))
 }
 
-const { status: pushStatus, aktifkan: aktifkanPush, matikan: matikanPush } = usePush()
+const { status: pushStatus, aktifkan: aktifkanPush } = usePush()
 const pushMsg = ref('')
 const pushMsgOk = ref(true)
 
@@ -156,12 +146,6 @@ async function onAktifkanPush() {
   const res = await aktifkanPush()
   pushMsgOk.value = !!res.ok
   pushMsg.value = res.ok ? 'Push berhasil diaktifkan.' : (res.error || 'Gagal')
-}
-
-async function onMatikanPush() {
-  await matikanPush()
-  pushMsgOk.value = true
-  pushMsg.value = 'Push dimatikan di perangkat ini.'
 }
 
 onMounted(load)
