@@ -36,17 +36,21 @@
             v-for="n in group"
             :key="n.id"
             type="button"
-            class="w-full flex flex-row items-start gap-3 px-3 py-3.5 text-left transition"
-            :class="!n.dibaca ? 'bg-[var(--gd)] active:opacity-90' : 'bg-transparent active:bg-[var(--search)]'"
+            class="w-full flex flex-row items-center gap-3 px-3 py-3.5 text-left transition active:bg-[var(--search)]"
             @click="onTap(n)"
           >
-            <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 shrink-0"></div>
-            <div v-else class="w-2 shrink-0"></div>
+            <div
+              class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+              :class="n.dibaca ? 'bg-[var(--card2)] text-[var(--text)]' : 'bg-[var(--gd)] text-[var(--gm)]'"
+            >
+              <Bell :size="20" />
+            </div>
             <div class="min-w-0 flex-1">
-              <p class="font-bold text-[15px] m-0 leading-tight">{{ n.judul }}</p>
-              <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ n.isi }}</p>
+              <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ n.judul }}</p>
+              <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5 truncate">{{ previewIsi(n.isi) }}</p>
               <p class="text-[12px] text-[var(--mut)] m-0 mt-1">{{ formatWaktu(n.dibuat_pada) }}</p>
             </div>
+            <ChevronRight :size="16" class="text-[var(--mut)] shrink-0 opacity-50" />
           </button>
         </div>
       </div>
@@ -61,6 +65,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
+import { Bell, ChevronRight } from 'lucide-vue-next'
 import { listNotifikasi, bacaNotifikasi } from '@shared/services/notifikasi.js'
 import { usePush } from '@shared/composables/usePush.js'
 
@@ -90,6 +95,11 @@ function labelHari(ts) {
   if (same(d, today)) return 'Hari ini'
   if (same(d, yday)) return 'Kemarin'
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function previewIsi(isi) {
+  const t = String(isi || '').replace(/\s+/g, ' ').trim()
+  return t.length > 80 ? t.slice(0, 79) + '…' : t
 }
 
 function formatWaktu(ts) {
