@@ -117,12 +117,47 @@ class PembayaranService
             return ['ok' => false, 'message' => 'Nominal transfer wajib.'];
         }
         $db = \Config\Database::connect();
-        $ada = $db->table('pembayaran_permintaan')
+        // Blokir hanya jika ada overlap tagihan_ids dengan permintaan menunggu
+        $pending = $db->table('pembayaran_permintaan')
             ->where('keluarga_id', $keluargaId)
             ->where('status', 'menunggu')
-            ->countAllResults();
-        if ($ada > 0) {
-            return ['ok' => false, 'message' => 'Masih ada permintaan menunggu. Tunggu konfirmasi atau hubungi pengurus.'];
+            ->get()
+            ->getResultArray();
+        $newIds = [];
+        if (!empty($data['tagihan_ids']) && is_array($data['tagihan_ids'])) {
+            $newIds = array_map('intval', $data['tagihan_ids']);
+        } elseif (!empty($data['tagihan_ids']) && is_string($data['tagihan_ids'])) {
+            $decoded = json_decode($data['tagihan_ids'], true);
+            if (is_array($decoded)) {
+                $newIds = array_map('intval', $decoded);
+            }
+        }
+        $newIds = array_values(array_filter($newIds, static fn ($n) => $n > 0));
+        if ($pending) {
+            $locked = [];
+            foreach ($pending as $pr) {
+                $raw = $pr['tagihan_ids'] ?? null;
+                if (is_string($raw) && $raw !== '') {
+                    $d = json_decode($raw, true);
+                    if (is_array($d)) {
+                        foreach ($d as $x) {
+                            $locked[(int) $x] = true;
+                        }
+                    }
+                }
+            }
+            if ($newIds) {
+                foreach ($newIds as $nid) {
+                    if (!empty($locked[$nid])) {
+                        return ['ok' => false, 'message' => 'Sebagian tagihan masih menunggu konfirmasi. Pilih jenis lain atau tunggu pengurus.'];
+                    }
+                }
+            } elseif ($locked) {
+                // permintaan baru tanpa tagihan_ids tapi masih ada pending ber-tagihan — izinkan
+            } elseif (count($pending) > 0 && !$newIds) {
+                // pending tanpa tagihan_ids (legacy): tetap blokir ajukan tanpa daftar tagihan
+                return ['ok' => false, 'message' => 'Masih ada permintaan menunggu. Tunggu konfirmasi atau hubungi pengurus.'];
+            }
         }
 
         $buktiPath = $data['bukti_file'] ?? null;
@@ -361,7 +396,6 @@ class PembayaranService
             'alasan_batal'    => $alasan,
         ]);
         (new SubPosService())->batalkanDariPembayaran($id, $userId);
-        // Batalkan juga kas historis (pembayaran lama sebelum T2) bila masih ada
         (new KasService())->batalkanDariPembayaran($id, $userId);
         $db->transComplete();
 
