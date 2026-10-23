@@ -174,6 +174,12 @@ class AuthService
     private function startSession(string $side, array $user): void
     {
         $session = session();
+        // Cegah session fixation
+        try {
+            $session->regenerate(true);
+        } catch (\Throwable $e) {
+            // ignore jika driver tidak support
+        }
         $key = 'auth_' . $side;
         $session->set([
             $key . '_id'   => (int) $user['id'],

@@ -250,10 +250,8 @@ class KeluargaController extends Controller
 
             return ApiResponse::ok(['user_id' => $uid], $msg);
         } catch (Throwable $e) {
-            return ApiResponse::fail('Reset PIN gagal: ' . $e->getMessage(), 500, [
-                'file' => basename($e->getFile()),
-                'line' => $e->getLine(),
-            ]);
+            log_message('error', 'Reset PIN: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+            return ApiResponse::fail('Reset PIN gagal.', 500);
         }
     }
 

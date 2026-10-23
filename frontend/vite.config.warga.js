@@ -8,6 +8,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       includeAssets: ['icons/app-icon.png'],
       manifest: {
         id: '/?app=warga',

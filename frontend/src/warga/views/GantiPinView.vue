@@ -84,7 +84,18 @@ async function submit() {
   if (user.value) {
     user.value.harus_ganti_kredensial = false
     try {
-      localStorage.setItem('rtdua-auth-warga', JSON.stringify(user.value))
+      localStorage.setItem('rtdua-auth-warga', JSON.stringify({
+        id: user.value.id ?? null,
+        nama: user.value.nama ?? null,
+        role: user.value.role ?? null,
+        foto: user.value.foto ?? null,
+        jabatan: user.value.jabatan ?? null,
+        alamat: user.value.alamat ?? null,
+        keluarga_id: user.value.keluarga_id ?? null,
+        warga_id: user.value.warga_id ?? null,
+        harus_ganti_kredensial: false,
+        is_developer: !!user.value.is_developer,
+      }))
     } catch (e) {}
   }
 

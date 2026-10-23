@@ -19,6 +19,8 @@ class Filters extends BaseFilters
         'side'          => \App\Filters\SideFilter::class,
         'auth'          => \App\Filters\AuthFilter::class,
         'cron'          => \App\Filters\CronTokenFilter::class,
+        'secheaders'    => \App\Filters\SecurityHeadersFilter::class,
+        'csrforigin'    => \App\Filters\CsrfOriginFilter::class,
     ];
 
     public array $required = [
@@ -29,10 +31,14 @@ class Filters extends BaseFilters
     public array $globals = [
         'before' => [
             'side',
+            'csrforigin',
         ],
-        'after' => [],
+        'after' => [
+            'secheaders',
+        ],
     ];
 
     public array $methods = [];
+
     public array $filters = [];
 }

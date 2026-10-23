@@ -7,7 +7,7 @@ use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 
 /**
- * Proteksi endpoint cron: header X-Cron-Token harus sama dengan env CRON_TOKEN.
+ * Proteksi endpoint cron: hanya header X-Cron-Token (bukan query string).
  */
 class CronTokenFilter implements FilterInterface
 {
@@ -20,8 +20,8 @@ class CronTokenFilter implements FilterInterface
                 ->setJSON(['ok' => false, 'message' => 'CRON_TOKEN belum diset di .env']);
         }
 
-        $got = (string) ($request->getHeaderLine('X-Cron-Token') ?: $request->getGet('token') ?: '');
-        if (!hash_equals($expected, $got)) {
+        $got = (string) $request->getHeaderLine('X-Cron-Token');
+        if ($got === '' || !hash_equals($expected, $got)) {
             return service('response')
                 ->setStatusCode(401)
                 ->setJSON(['ok' => false, 'message' => 'Token cron tidak valid']);

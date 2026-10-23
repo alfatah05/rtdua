@@ -1,6 +1,6 @@
-/* Handler push terpisah — di-import workbox SW via importScripts (jangan dihapus). */
+/* Handler push — di-import workbox SW via importScripts (jangan dihapus). */
 self.addEventListener('push', (event) => {
-  let data = { title: 'rtdua', body: '', url: '/notifikasi' }
+  let data = { title: 'rtdua', body: '', url: '/notifikasi', tag: 'rtdua' }
   try {
     if (event.data) data = { ...data, ...event.data.json() }
   } catch (_) {}
@@ -10,6 +10,8 @@ self.addEventListener('push', (event) => {
       data: { url: data.url || '/notifikasi' },
       icon: '/icons/app-icon.png',
       badge: '/icons/app-icon.png',
+      tag: data.tag || 'rtdua',
+      renotify: true,
     })
   )
 })
@@ -20,8 +22,10 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const c of list) {
-        if ('focus' in c) {
-          if (c.navigate) c.navigate(url)
+        if (c.url && 'focus' in c) {
+          if (typeof c.navigate === 'function') {
+            try { c.navigate(url) } catch (_) {}
+          }
           return c.focus()
         }
       }

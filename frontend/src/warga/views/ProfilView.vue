@@ -211,7 +211,19 @@ async function onFoto(e) {
   if (user.value) {
     Object.assign(user.value, updated)
     try {
-      localStorage.setItem('rtdua-auth-warga', JSON.stringify(user.value))
+      const slim = {
+        id: user.value.id ?? null,
+        nama: user.value.nama ?? null,
+        role: user.value.role ?? null,
+        foto: user.value.foto ?? null,
+        jabatan: user.value.jabatan ?? null,
+        alamat: user.value.alamat ?? null,
+        keluarga_id: user.value.keluarga_id ?? null,
+        warga_id: user.value.warga_id ?? null,
+        harus_ganti_kredensial: !!user.value.harus_ganti_kredensial,
+        is_developer: !!user.value.is_developer,
+      }
+      localStorage.setItem('rtdua-auth-warga', JSON.stringify(slim))
     } catch (err) {}
   }
   localFoto.value = updated.foto ? mediaUrl(updated.foto) : mediaUrl(up.data.path)

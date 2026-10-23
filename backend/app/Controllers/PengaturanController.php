@@ -66,7 +66,8 @@ class PengaturanController extends Controller
             $data = (new PengaturanService())->getLoginBranding();
             return ApiResponse::ok($data);
         } catch (\Throwable $e) {
-            return ApiResponse::fail('Gagal memuat data login: ' . $e->getMessage(), 500);
+            log_message('error', 'listBlokLogin: ' . $e->getMessage());
+            return ApiResponse::fail('Gagal memuat data login.', 500);
         }
     }
 

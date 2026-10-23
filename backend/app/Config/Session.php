@@ -33,7 +33,20 @@ class Session extends BaseConfig
     // Properti wajib CI4.5+ (hindari Error di PHP 8 saat session start)
     public ?string $cookieDomain = '';
     public string $cookiePath = '/';
+    /**
+     * Secure cookie: true jika request HTTPS (production).
+     * Di konstruktor diset agar cocok shared hosting + proxy.
+     */
     public bool $cookieSecure = false;
     public bool $cookieHTTPOnly = true;
     public string $cookieSameSite = 'Lax';
+
+    public function __construct()
+    {
+        parent::__construct();
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+            || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443');
+        $this->cookieSecure = $https;
+    }
 }

@@ -159,7 +159,8 @@ class PortalKeuanganController extends Controller
             $data = (new \App\Services\KasService())->portalRingkasanKas();
             return ApiResponse::ok($data);
         } catch (\Throwable $e) {
-            return ApiResponse::fail('Gagal memuat kas: ' . $e->getMessage(), 500);
+            log_message('error', 'Portal kas: ' . $e->getMessage());
+            return ApiResponse::fail('Gagal memuat kas.', 500);
         }
     }
 
@@ -203,7 +204,8 @@ class PortalKeuanganController extends Controller
             }
             return ApiResponse::ok($out);
         } catch (\Throwable $e) {
-            return ApiResponse::fail('Gagal memuat status iuran: ' . $e->getMessage(), 500);
+            log_message('error', 'Portal iuran: ' . $e->getMessage());
+            return ApiResponse::fail('Gagal memuat status iuran.', 500);
         }
     }
 

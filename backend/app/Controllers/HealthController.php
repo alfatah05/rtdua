@@ -10,13 +10,13 @@ class HealthController extends \CodeIgniter\Controller
     public function index()
     {
         $dbOk = false;
-        $dbErr = null;
         try {
             $db = \Config\Database::connect();
             $db->query('SELECT 1');
             $dbOk = true;
         } catch (\Throwable $e) {
-            $dbErr = $e->getMessage();
+            log_message('error', 'Health DB: ' . $e->getMessage());
+            $dbOk = false;
         }
 
         $sessionPath = WRITEPATH . 'session';
@@ -30,7 +30,6 @@ class HealthController extends \CodeIgniter\Controller
             'tz' => date_default_timezone_get(),
             'php' => PHP_VERSION,
             'db' => $dbOk ? 'ok' : 'fail',
-            'db_error' => $dbErr,
             'writable' => $writableOk,
             'session_path' => $sessionOk,
         ], 'alive');
