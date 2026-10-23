@@ -2,20 +2,28 @@ import { ref, watch, onMounted } from 'vue'
 
 const mode = ref('light')
 
-// Android system nav bar sering tidak ikut toggle realtime → tetap hitam
-const SYSTEM_BAR = '#000000'
+/** Samakan dengan --bg di main.css */
+const BAR = {
+  light: '#FFFFFF',
+  dark: '#111314',
+}
 
-function setSystemBarColor() {
+function setSystemBarColor(value) {
+  const color = BAR[value] || BAR.light
+
   let meta = document.querySelector('meta[name="theme-color"]:not([media])')
   if (!meta) {
     meta = document.createElement('meta')
     meta.setAttribute('name', 'theme-color')
     document.head.appendChild(meta)
   }
-  meta.setAttribute('content', SYSTEM_BAR)
+  meta.setAttribute('content', color)
 
+  // media prefers-color-scheme (kalau ada di HTML)
   document.querySelectorAll('meta[name="theme-color"][media]').forEach((el) => {
-    el.setAttribute('content', SYSTEM_BAR)
+    const m = (el.getAttribute('media') || '').toLowerCase()
+    if (m.includes('dark')) el.setAttribute('content', BAR.dark)
+    else el.setAttribute('content', BAR.light)
   })
 
   let apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
@@ -24,19 +32,20 @@ function setSystemBarColor() {
     apple.setAttribute('name', 'apple-mobile-web-app-status-bar-style')
     document.head.appendChild(apple)
   }
-  // hitam + ikon terang (status bar)
-  apple.setAttribute('content', 'black')
+  // iOS: default = terang + ikon gelap; black = gelap + ikon terang
+  apple.setAttribute('content', value === 'dark' ? 'black' : 'default')
 }
 
 function applyMode(value) {
   const root = document.documentElement
   if (value === 'dark') {
     root.setAttribute('data-mode', 'dark')
+    root.style.colorScheme = 'dark'
   } else {
     root.removeAttribute('data-mode')
+    root.style.colorScheme = 'light'
   }
-  // System bar selalu hitam; isi app tetap ikut --bg (putih/dark)
-  setSystemBarColor()
+  setSystemBarColor(value)
   try {
     localStorage.setItem('rtdua-mode', value)
   } catch (e) {}
