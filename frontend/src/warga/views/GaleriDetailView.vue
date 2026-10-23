@@ -4,24 +4,21 @@
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="album">
-      <p class="text-[13px] text-[var(--mut)] mb-3">
-        {{ album.tanggal_kegiatan || '—' }} · {{ (album.foto || []).length }} foto
-      </p>
       <div v-if="!(album.foto || []).length" class="text-[13px] text-[var(--mut)] text-center py-8">
         Belum ada foto
       </div>
 
       <template v-else>
-        <!-- Foto expanded: full lebar layar (bukan floating), header tetap -->
-        <div v-if="expanded" class="mb-4">
-          <div class="expanded-bleed overflow-hidden bg-[var(--search)]">
+        <!-- Expanded: langsung di bawah header, padding sejajar grid, rasio asli -->
+        <div v-if="expanded" class="mb-6">
+          <div class="rounded-[16px] overflow-hidden bg-[var(--search)]">
             <img
               :src="mediaUrl(expanded.file)"
-              class="block w-full h-auto max-h-[70vh] object-contain bg-black"
+              class="block w-full h-auto"
               alt=""
             />
           </div>
-          <div class="flex items-center gap-2 mt-3 px-0">
+          <div class="flex items-center gap-2 mt-3">
             <button
               type="button"
               class="flex-1 min-h-[44px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] text-[14px] font-bold active:scale-[0.98] transition flex items-center justify-center gap-2"
@@ -65,13 +62,6 @@
 </template>
 
 <style scoped>
-/* Full bleed horizontal terhadap padding main (px-4) */
-.expanded-bleed {
-  margin-left: -1rem;
-  margin-right: -1rem;
-  width: calc(100% + 2rem);
-}
-
 .galeri-masonry {
   column-count: 2;
   column-gap: 8px;
