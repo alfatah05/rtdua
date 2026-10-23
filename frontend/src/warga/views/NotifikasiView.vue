@@ -31,25 +31,17 @@
       Browser ini tidak mendukung push. Di iPhone, pasang ke Layar Utama (Share → Add to Home Screen) dulu.
     </p>
 
-    <button
-      v-if="daftar.length"
-      type="button"
-      class="text-[13px] font-semibold text-[var(--g)] mb-3"
-      @click="bacaSemua"
-    >
-      Tandai semua dibaca
-    </button>
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <p v-else-if="!daftar.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada notifikasi</p>
 
-    <div v-else class="space-y-1">
+    <div v-else class="overflow-hidden">
       <button
         v-for="n in daftar"
         :key="n.id"
         type="button"
-        class="w-full text-left flex items-start gap-3 px-1 py-3 rounded-[16px] active:bg-[var(--search)] transition"
-        :class="n.dibaca ? 'opacity-55' : ''"
+        class="w-full text-left flex items-start gap-3 px-3 py-3.5 transition"
+        :class="n.dibaca ? 'bg-transparent active:bg-[var(--search)]' : 'bg-[var(--gd)] active:opacity-90'"
         @click="bukaDetail(n)"
       >
         <span
@@ -82,8 +74,7 @@ import {
 } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-import { listNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
-import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
+import { listNotifikasi } from '@shared/services/notifikasi.js'
 import { usePush } from '@shared/composables/usePush.js'
 
 const router = useRouter()
@@ -92,7 +83,6 @@ const loading = ref(true)
 const err = ref('')
 const pushMsg = ref('')
 const pushMsgOk = ref(true)
-const { refresh: refreshBadge } = useNotifBadge()
 const { status: pushStatus, aktifkan: aktifkanPush } = usePush()
 
 const JENIS = {
@@ -141,12 +131,6 @@ async function load() {
 
 function bukaDetail(n) {
   router.push('/notifikasi/' + n.id)
-}
-
-async function bacaSemua() {
-  await bacaSemuaNotifikasi()
-  await refreshBadge()
-  await load()
 }
 
 async function onAktifkanPush() {
