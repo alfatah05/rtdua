@@ -9,6 +9,7 @@ import '@fontsource/plus-jakarta-sans/700.css'
 import '@fontsource/plus-jakarta-sans/800.css'
 import '@shared/styles/main.css'
 import AppLazyImg from '@shared/components/AppLazyImg.vue'
+import '@shared/composables/usePwaInstall.js' // capture beforeinstallprompt early
 
 // Service worker PWA (wajib untuk Web Push)
 registerSW({ immediate: true })
