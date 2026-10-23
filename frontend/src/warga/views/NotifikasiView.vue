@@ -40,26 +40,24 @@
         v-for="n in daftar"
         :key="n.id"
         type="button"
-        class="w-full text-left flex items-start gap-3 px-3 py-3.5 transition"
-        :class="n.dibaca ? 'bg-transparent active:bg-[var(--search)]' : 'bg-[var(--gd)] active:opacity-90'"
+        class="w-full text-left flex items-center gap-3 px-3 py-3.5 transition active:bg-[var(--search)]"
         @click="bukaDetail(n)"
       >
         <span
-          class="w-11 h-11 rounded-full grid place-items-center shrink-0 mt-0.5"
-          :style="{ background: meta(n.jenis).bg, color: meta(n.jenis).color }"
+          class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+          :style="n.dibaca
+            ? { background: 'var(--card2)', color: 'var(--text)' }
+            : { background: meta(n.jenis).bg, color: meta(n.jenis).color }"
         >
           <component :is="meta(n.jenis).icon" :size="20" />
         </span>
 
         <div class="flex-1 min-w-0">
-          <div class="flex items-start gap-2">
-            <p class="font-bold text-[15px] m-0 leading-tight flex-1">{{ n.judul }}</p>
-            <span v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] shrink-0 mt-1.5" />
-          </div>
-          <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5 leading-snug">{{ preview(n.isi) }}</p>
+          <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ n.judul }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5 truncate">{{ preview(n.isi) }}</p>
           <p class="text-[11px] text-[var(--mut)] m-0 mt-1">{{ jam(n.dibuat_pada || n.created_at) }}</p>
         </div>
-        <ChevronRight :size="16" class="text-[var(--mut)] shrink-0 mt-2 opacity-50" />
+        <ChevronRight :size="16" class="text-[var(--mut)] shrink-0 opacity-50" />
       </button>
     </div>
   </div>
