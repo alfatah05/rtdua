@@ -91,7 +91,7 @@
             <span v-else>{{ inisial }}</span>
           </div>
           <div class="min-w-0 flex-1 text-left">
-            <p class="text-xs m-0 leading-snug text-[var(--mut)]">Selamat datang,</p>
+            <p class="text-xs m-0 leading-snug text-[var(--mut)]">Hallo,</p>
             <p class="text-sm font-bold m-0 leading-snug text-[var(--text)] truncate">{{ namaWarga }}</p>
           </div>
         </div>
@@ -541,7 +541,7 @@ onMounted(async () => {
 }
 .quick-tile.is-pressed {
   transform: scale(0.96);
-  transition: transform 0.08s ease-out;
+  transition: transform 0.12s ease-out;
 }
 .quick-tile--muted {
   background: var(--card);
@@ -550,38 +550,19 @@ onMounted(async () => {
 }
 .menu-row {
   border-radius: 1.125rem;
-  min-height: 4rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   transform: scale(1);
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .menu-row.is-pressed {
-  transform: scale(0.96);
-  transition: transform 0.08s ease-out;
-}
-.btn-press {
-  transform: scale(1);
-  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.btn-press.is-pressed {
-  transform: scale(0.94);
-  transition: transform 0.08s ease-out;
-}
-:global(html[data-mode="dark"]) .quick-tile:not(.quick-tile--muted),
-:global(html[data-mode="dark"]) .menu-row {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-}
-:global(html:not([data-mode="dark"])) .quick-tile:not(.quick-tile--muted),
-:global(html:not([data-mode="dark"])) .menu-row {
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
+  transform: scale(0.97);
+  transition: transform 0.12s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
   .quick-tile,
   .quick-tile.is-pressed,
   .menu-row,
-  .menu-row.is-pressed,
-  .btn-press,
-  .btn-press.is-pressed {
+  .menu-row.is-pressed {
     transition: none;
   }
 }
