@@ -47,7 +47,7 @@
         class="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
         @click="onAksi(a)"
       >
-        <span class="w-12 h-12 rounded-full grid place-items-center" :style="{ background: a.bg, color: a.color }">
+        <span class="w-12 h-12 rounded-[16px] grid place-items-center text-white" :style="{ background: a.bg }">
           <component :is="a.icon" :size="20" />
         </span>
         <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>
@@ -126,6 +126,7 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Calendar, List, Banknote, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { MENU } from '@shared/constants/menuColors.js'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { kalenderRonda, malamTerdekat, detailMalam, listJadwalTetap, listJadwalKhusus } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
@@ -151,9 +152,9 @@ const bulanLabel = computed(() => {
 })
 
 const aksi = [
-  { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap', bg: 'rgba(10,143,68,.18)', color: '#0A8F44' },
-  { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Denda', icon: Banknote, to: '/ronda/denda', bg: 'rgba(239,68,68,.18)', color: '#DC2626' },
+  { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap', bg: MENU.ronda },
+  { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: MENU.ronda },
+  { label: 'Denda', icon: Banknote, to: '/ronda/denda', bg: MENU.kasKeluar },
 ]
 
 function weekIndex(d) {
