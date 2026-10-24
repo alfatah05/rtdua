@@ -4,28 +4,75 @@
 
     <template v-if="!draft">
       <p class="text-[13px] text-[var(--mut)] text-center py-8">Data pembayaran tidak ditemukan.</p>
-      <button type="button" class="w-full min-h-12 rounded-full bg-[var(--g)] text-white font-bold" @click="$router.replace('/bayar')">
+      <button
+        type="button"
+        class="w-full min-h-12 rounded-[14px] bg-[var(--g)] text-white font-bold"
+        @click="$router.replace('/bayar')"
+      >
         Kembali pilih tagihan
       </button>
     </template>
 
     <template v-else>
+      <!-- Card total -->
       <div
-        class="w-full rounded-[20px] p-5 mb-4 relative overflow-hidden shadow-[var(--sh)]"
+        class="w-full rounded-[20px] p-4 mb-4 relative overflow-hidden shadow-[var(--sh)]"
         :style="heroStyle"
       >
-        <div class="relative z-10">
-          <p class="text-[13px] font-semibold m-0 text-white/90">Total pembayaran</p>
-          <p class="text-[28px] font-extrabold tracking-tight m-0 mt-1 leading-none text-white">{{ rp(draft.total) }}</p>
-          <p class="text-[13px] m-0 mt-2 text-white/85">{{ draft.rekening?.nama || '—' }}</p>
+        <div class="relative z-10 flex gap-3">
+          <div
+            class="w-12 h-12 rounded-[14px] grid place-items-center shrink-0"
+            style="background: rgba(255,255,255,0.22)"
+          >
+            <Wallet :size="22" class="text-white" stroke-width="2" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[12px] font-semibold m-0 text-white/85">Total pembayaran</p>
+            <p class="text-[26px] font-extrabold tracking-tight m-0 mt-0.5 leading-none text-white tabular-nums">
+              {{ rp(draft.total) }}
+            </p>
+            <p class="text-[12px] m-0 mt-1.5 text-white/80 truncate">
+              via {{ draft.rekening?.nama || '—' }}
+            </p>
+          </div>
         </div>
-        <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none"></div>
+
+        <!-- List jenis yang dicentang -->
+        <div
+          v-if="draft.items?.length"
+          class="relative z-10 mt-3 pt-3 border-t border-white/20 space-y-1.5"
+        >
+          <p class="text-[11px] font-semibold m-0 text-white/75 uppercase tracking-wide">
+            Rincian ({{ draft.items.length }})
+          </p>
+          <div
+            v-for="(it, i) in draft.items"
+            :key="it.id || i"
+            class="flex items-start justify-between gap-3"
+          >
+            <p class="text-[13px] m-0 text-white/95 leading-snug min-w-0 flex-1">
+              {{ it.label || 'Tagihan' }}
+            </p>
+            <p class="text-[13px] m-0 font-semibold text-white tabular-nums shrink-0">
+              {{ rp(it.sisa) }}
+            </p>
+          </div>
+        </div>
+        <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
       </div>
 
       <!-- QRIS -->
       <div v-if="draft.rekening?.jenis === 'qris'" class="mb-4">
         <div class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] p-4 shadow-[var(--sh)]">
-          <p class="text-[13px] font-semibold text-[var(--mut)] m-0 mb-3 text-center">Scan QRIS di bawah</p>
+          <div class="flex items-center gap-2.5 mb-3">
+            <div class="w-10 h-10 rounded-[12px] bg-[var(--gd)] text-[var(--gm)] grid place-items-center shrink-0">
+              <QrCode :size="18" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-[14px] font-bold m-0">{{ draft.rekening?.nama || 'QRIS' }}</p>
+              <p class="text-[12px] text-[var(--mut)] m-0">Scan QRIS merchant RT</p>
+            </div>
+          </div>
           <div class="aspect-square max-w-[280px] mx-auto rounded-[16px] bg-[var(--search)] overflow-hidden grid place-items-center">
             <img v-if="qrisUrl" :src="qrisUrl" alt="QRIS" class="w-full h-full object-contain" />
             <p v-else class="text-[13px] text-[var(--mut)] text-center px-4">Gambar QRIS belum diunggah pengurus</p>
@@ -37,22 +84,42 @@
       </div>
 
       <!-- Bank / e-wallet -->
-      <div v-else class="mb-4 rounded-[20px] border border-[var(--line)] bg-[var(--card)] p-4 shadow-[var(--sh)]">
-        <p class="text-[13px] font-semibold text-[var(--mut)] m-0 mb-1">{{ draft.rekening?.jenis === 'ewallet' ? 'E-wallet' : 'Rekening tujuan' }}</p>
-        <p class="text-[17px] font-extrabold m-0">{{ draft.rekening?.nama }}</p>
-        <div class="flex items-center gap-2 mt-3">
-          <p class="flex-1 text-[18px] font-bold m-0 tracking-wide">{{ draft.rekening?.nomor || '—' }}</p>
-          <button
-            type="button"
-            class="min-h-10 px-4 rounded-full bg-[var(--card2)] text-[13px] font-bold"
-            @click="salin(draft.rekening?.nomor)"
+      <div
+        v-else
+        class="mb-4 rounded-[20px] border border-[var(--line)] bg-[var(--card)] p-4 shadow-[var(--sh)]"
+      >
+        <div class="flex items-start gap-3">
+          <div
+            class="w-11 h-11 rounded-[12px] grid place-items-center shrink-0"
+            :style="rekeningIconStyle"
           >
-            Salin
-          </button>
+            <component :is="rekeningIcon" :size="20" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[12px] font-semibold text-[var(--mut)] m-0">
+              {{ draft.rekening?.jenis === 'ewallet' ? 'E-wallet tujuan' : 'Rekening tujuan' }}
+            </p>
+            <p class="text-[16px] font-extrabold m-0 mt-0.5 leading-tight">
+              {{ draft.rekening?.nama || '—' }}
+            </p>
+            <div class="flex items-center gap-1.5 mt-2">
+              <p class="text-[17px] font-bold m-0 tracking-wide tabular-nums">
+                {{ draft.rekening?.nomor || '—' }}
+              </p>
+              <button
+                type="button"
+                class="w-9 h-9 rounded-[10px] grid place-items-center text-[var(--mut)] bg-[var(--search)] shrink-0 active:opacity-70"
+                aria-label="Salin nomor"
+                @click="salin(draft.rekening?.nomor)"
+              >
+                <Copy :size="16" stroke-width="2" />
+              </button>
+            </div>
+            <p v-if="draft.rekening?.atas_nama" class="text-[12px] m-0 mt-1.5 text-[var(--mut)]">
+              a.n. {{ draft.rekening.atas_nama }}
+            </p>
+          </div>
         </div>
-        <p v-if="draft.rekening?.atas_nama" class="text-[13px] m-0 mt-2 text-[var(--mut)]">
-          a.n. {{ draft.rekening.atas_nama }}
-        </p>
       </div>
 
       <form class="space-y-4" @submit.prevent="submit">
@@ -61,18 +128,23 @@
           <input
             v-model="namaPengirim"
             type="text"
-            class="w-full min-h-[48px] px-4 rounded-[12px] bg-[var(--search)] outline-none"
+            class="w-full min-h-[48px] px-4 rounded-[14px] bg-[var(--search)] outline-none"
             placeholder="Nama di rekening / e-wallet"
             autocomplete="name"
           />
         </div>
+
         <div>
           <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1.5">Bukti pembayaran</label>
-          <div v-if="preview" class="h-40 rounded-[16px] overflow-hidden mb-2 bg-[var(--search)]">
+          <div v-if="preview" class="h-40 rounded-[16px] overflow-hidden mb-2 bg-[var(--search)] border border-[var(--line)]">
             <img :src="preview" class="w-full h-full object-contain" alt="" />
           </div>
-          <label class="inline-flex min-h-[44px] px-4 rounded-full bg-[var(--card2)] font-semibold items-center cursor-pointer">
-            {{ uploading ? 'Mengunggah…' : 'Pilih foto bukti' }}
+          <label
+            class="w-full min-h-[48px] px-4 rounded-[14px] border border-dashed border-[var(--line)] bg-[var(--search)] font-semibold text-[14px] flex items-center justify-center gap-2 cursor-pointer active:opacity-80"
+            :class="uploading ? 'opacity-60 pointer-events-none' : ''"
+          >
+            <ImagePlus :size="18" class="text-[var(--mut)] shrink-0" />
+            <span>{{ uploading ? 'Mengunggah…' : (preview ? 'Ganti foto bukti' : 'Pilih foto bukti') }}</span>
             <input type="file" accept="image/*" class="hidden" :disabled="uploading" @change="onBukti" />
           </label>
         </div>
@@ -87,7 +159,7 @@
       <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
         <button
           type="button"
-          class="pointer-events-auto w-full min-h-[48px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] font-bold disabled:opacity-50 active:scale-[0.98] transition"
+          class="pointer-events-auto w-full min-h-[48px] rounded-[14px] bg-[var(--btn)] text-[var(--btn-fg)] font-bold disabled:opacity-50 active:scale-[0.98] transition"
           :disabled="!canSubmit || saving || uploading"
           @click="submit"
         >
@@ -101,6 +173,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Wallet, QrCode, Building2, Copy, ImagePlus } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { portalAjukanTransfer } from '@shared/services/keuangan.js'
 import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
@@ -128,6 +201,16 @@ const qrisUrl = computed(() => {
   const f = draft.value?.rekening?.qris_file
   return f ? mediaUrl(f) : ''
 })
+
+const isEwallet = computed(() => draft.value?.rekening?.jenis === 'ewallet')
+
+const rekeningIcon = computed(() => (isEwallet.value ? Wallet : Building2))
+
+const rekeningIconStyle = computed(() =>
+  isEwallet.value
+    ? { background: 'rgba(236,72,153,.16)', color: '#DB2777' }
+    : { background: 'rgba(59,130,246,.16)', color: '#2563EB' }
+)
 
 const canSubmit = computed(() => namaPengirim.value.trim() && buktiPath.value)
 
