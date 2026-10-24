@@ -1,5 +1,9 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component, route }">
+    <Transition name="app-fade" mode="out-in">
+      <component :is="Component" :key="route.matched[0]?.path || route.path" />
+    </Transition>
+  </router-view>
   <AppToast />
 </template>
 <script setup>
@@ -85,5 +89,21 @@ body::-webkit-scrollbar,
   display: none;
   width: 0;
   height: 0;
+}
+
+/* Login ↔ app shell */
+.app-fade-enter-active,
+.app-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.app-fade-enter-from,
+.app-fade-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-fade-enter-active,
+  .app-fade-leave-active {
+    transition: none !important;
+  }
 }
 </style>
