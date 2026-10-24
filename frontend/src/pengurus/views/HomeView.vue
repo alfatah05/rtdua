@@ -13,7 +13,6 @@
       </button>
     </div>
 
-    <!-- Card total kas — hijau -->
     <button
       type="button"
       class="w-full text-left rounded-[20px] p-5 text-white mb-4 relative overflow-hidden active:scale-[0.99] transition-transform"
@@ -135,7 +134,7 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import {
   Search, Banknote, ArrowDownLeft, ArrowUpRight,
-  FileText, LayoutGrid, ChevronRight, Check,
+  FileText, LayoutGrid, ChevronRight, Check, ClipboardList,
   Wallet, Landmark,
 } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
@@ -159,7 +158,7 @@ const labelBulan = computed(() => {
 })
 
 const aksi = [
-  { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat', bg: MENU.catatIuran },
+  { label: 'Tagihan warga', icon: ClipboardList, to: '/keuangan/catat', bg: MENU.catatIuran },
   { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: MENU.kasMasuk },
   { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: MENU.kasKeluar },
   { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: MENU.laporan },
