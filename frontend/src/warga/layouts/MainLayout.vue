@@ -38,33 +38,35 @@ const isHome = computed(() => route.name === 'home')
 
 <style>
 /*
- * Page transition (adaptasi meimo_native):
- * - Page tujuan: geser naik 50px + bounce, opacity cepat penuh biar
- *   bayangan page lama tidak keliatan lama.
- * - Page lama: HANYA fade cepat (tanpa translateY).
- * - TANPA transform di wrapper → position:fixed (floating button)
- *   tetap nempel viewport, tidak "blink" ke flow dokumen.
- *   Geser pakai margin-top (bukan transform).
+ * Page transition:
+ * - Hanya geser (margin-top), TANPA fade/opacity.
+ * - Page lama langsung tertutup page baru (z-index), tanpa animasi leave.
+ * - Background solid --bg di wrap + page agar celah geser tidak menampilkan
+ *   html hitam (#000) yang dipakai untuk navigation bar sistem.
  */
 .page-transition-wrap {
   position: relative;
   min-height: 40vh;
+  background: var(--bg);
+  background-color: var(--bg);
 }
 
 .page-transition-page {
   width: 100%;
+  min-height: 40vh;
+  background: var(--bg);
+  background-color: var(--bg);
 }
 
-/* Halaman tujuan — di ATAS */
+/* Halaman tujuan — geser naik saja */
 .meimo-page-enter-active {
   animation: meimo-page-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   position: relative;
   z-index: 2;
 }
 
-/* Halaman lama — di BELAKANG, fade saja */
+/* Halaman lama — tanpa fade, langsung di belakang page baru */
 .meimo-page-leave-active {
-  animation: meimo-page-out 120ms ease-out both;
   position: absolute;
   left: 0;
   right: 0;
@@ -72,40 +74,23 @@ const isHome = computed(() => route.name === 'home')
   width: 100%;
   z-index: 1;
   pointer-events: none;
+  /* tidak ada animasi opacity */
+  transition: none;
+  animation: none;
 }
 
-/* Page lama: fade cepat, tanpa geser */
-@keyframes meimo-page-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-/*
- * Page baru:
- * - opacity full di ~30% (≈114ms) supaya bayangan page lama cepat hilang
- * - geser 50px→0 sampai 100% dengan bounce (margin-top, bukan transform)
- */
+/* Hanya geser, opacity tetap 1 */
 @keyframes meimo-page-in {
   0% {
-    opacity: 0;
     margin-top: 50px;
   }
-  30% {
-    opacity: 1;
-  }
   100% {
-    opacity: 1;
     margin-top: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .meimo-page-enter-active,
-  .meimo-page-leave-active {
+  .meimo-page-enter-active {
     animation: none !important;
   }
 }
