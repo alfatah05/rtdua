@@ -17,15 +17,18 @@ import BayarBuktiView from '../views/BayarBuktiView.vue'
 import RondaView from '../views/RondaView.vue'
 import BantuanView from '../views/BantuanView.vue'
 import StrukturView from '../views/StrukturView.vue'
-import GaleriView from '../views/GaleriView.vue'
-import GaleriAlbumView from '../views/GaleriAlbumView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import NotifikasiDetailView from '../views/NotifikasiDetailView.vue'
 import GantiPinView from '../views/GantiPinView.vue'
+import ProgramListView from '../views/ProgramListView.vue'
+import ProgramDetailView from '../views/ProgramDetailView.vue'
+import GaleriListView from '../views/GaleriListView.vue'
+import GaleriDetailView from '../views/GaleriDetailView.vue'
 import DataKeluargaView from '../views/DataKeluargaView.vue'
 import TambahAnggotaView from '../views/TambahAnggotaView.vue'
 import EditAnggotaView from '../views/EditAnggotaView.vue'
 import PosyanduView from '../views/PosyanduView.vue'
+import PosyanduDetailView from '../views/PosyanduDetailView.vue'
 import PosyanduItemDetailView from '../views/PosyanduItemDetailView.vue'
 import PengajianView from '../views/PengajianView.vue'
 import PengajianItemDetailView from '../views/PengajianItemDetailView.vue'
@@ -65,7 +68,7 @@ const routes = [
       { path: 'warga/:id', name: 'warga-detail', component: WargaDetailView },
       { path: 'keuangan', name: 'keuangan', component: KeuanganView },
       { path: 'profil', name: 'profil', component: ProfilView, meta: { mainTab: true } },
-      { path: 'ganti-pin', name: 'ganti-pin', component: GantiPinView },
+
       { path: 'data-keluarga', name: 'data-keluarga', component: DataKeluargaView },
       { path: 'data-keluarga/tambah', name: 'data-keluarga-tambah', component: TambahAnggotaView },
       { path: 'data-keluarga/edit', name: 'data-keluarga-edit', component: EditAnggotaView },
@@ -78,15 +81,19 @@ const routes = [
       { path: 'bayar/bukti', name: 'bayar-bukti', component: BayarBuktiView },
       { path: 'ronda', name: 'ronda', component: RondaView },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
-      { path: 'struktur', name: 'struktur', component: StrukturView },
-      { path: 'galeri', name: 'galeri', component: GaleriView },
-      { path: 'galeri/:id', name: 'galeri-album', component: GaleriAlbumView },
+      { path: 'struktur', name: 'struktur', component: StrukturView, meta: { mainTab: true } },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
       { path: 'notifikasi/:id', name: 'notifikasi-detail', component: NotifikasiDetailView },
+      { path: 'ganti-pin', name: 'ganti-pin', component: GantiPinView },
+      { path: 'program', name: 'program', component: ProgramListView, meta: { mainTab: true } },
+      { path: 'program/:id', name: 'program-detail', component: ProgramDetailView },
+      { path: 'galeri', name: 'galeri', component: GaleriListView },
+      { path: 'galeri/:id', name: 'galeri-detail', component: GaleriDetailView },
       { path: 'reward', name: 'reward', component: RewardListView },
       { path: 'reward/:id', name: 'reward-detail', component: RewardDetailView },
       { path: 'posyandu', name: 'posyandu', component: PosyanduView },
-      { path: 'posyandu/item/:id', name: 'posyandu-item', component: PosyanduItemDetailView },
+      { path: 'posyandu/detail', name: 'posyandu-detail', component: PosyanduDetailView },
+      { path: 'posyandu/detail/:id', name: 'posyandu-item', component: PosyanduItemDetailView },
       { path: 'posyandu/pengajian', name: 'posyandu-pengajian', component: PengajianView },
       { path: 'posyandu/pengajian/:id', name: 'posyandu-pengajian-item', component: PengajianItemDetailView },
       { path: 'posyandu/lingkungan', name: 'posyandu-lingkungan', component: LingkunganView },
