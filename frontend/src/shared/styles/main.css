@@ -50,15 +50,14 @@
  * agar UI konsisten di semua perangkat.
  */
 /*
- * html selalu hitam → navigation bar sistem (bawah) di Android Chrome/PWA
- * cenderung ikut gelap. Konten app tetap pakai --bg di body/#app.
- * Status bar (notifikasi) diwarnai terpisah via meta theme-color di useTheme.
+ * html ikut --bg (bukan #000) supaya celah animasi page tidak menampilkan
+ * hitam. Status bar / nav sistem diatur lewat meta theme-color di useTheme.
  */
 html {
   font-size: 16px;
   scroll-padding-top: env(safe-area-inset-top, 0px);
-  background: #000000;
-  background-color: #000000;
+  background: var(--bg);
+  background-color: var(--bg);
   min-height: 100%;
   min-height: 100dvh;
 }

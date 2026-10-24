@@ -8,7 +8,7 @@ const BAR = {
   dark: '#111314',
 }
 
-/** Warna status bar (atas). Navigation bar sistem di bawah dipaksa gelap via html bg #000 di main.css. */
+/** Warna status bar (atas). Mengikuti --bg light/dark. */
 function setSystemBarColor(value) {
   const color = BAR[value] || BAR.light
 
@@ -38,40 +38,48 @@ function setSystemBarColor(value) {
 }
 
 function applyMode(value) {
-  const root = document.documentElement
-  if (value === 'dark') {
-    root.setAttribute('data-mode', 'dark')
-    root.style.colorScheme = 'dark'
-  } else {
-    root.removeAttribute('data-mode')
-    root.style.colorScheme = 'light'
-  }
-  setSystemBarColor(value)
+  const v = value === 'dark' ? 'dark' : 'light'
+  mode.value = v
+  document.documentElement.setAttribute('data-mode', v)
   try {
-    localStorage.setItem('rtdua-mode', value)
-  } catch (e) {}
+    localStorage.setItem('rt_theme', v)
+  } catch (_) {}
+  setSystemBarColor(v)
+}
+
+function initTheme() {
+  let saved = null
+  try {
+    saved = localStorage.getItem('rt_theme')
+  } catch (_) {}
+  if (saved === 'dark' || saved === 'light') {
+    applyMode(saved)
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyMode('dark')
+  } else {
+    applyMode('light')
+  }
+}
+
+function toggleTheme() {
+  applyMode(mode.value === 'dark' ? 'light' : 'dark')
 }
 
 export function useTheme() {
   onMounted(() => {
-    try {
-      const saved = localStorage.getItem('rtdua-mode')
-      if (saved === 'dark' || saved === 'light') {
-        mode.value = saved
-      }
-    } catch (e) {}
-    applyMode(mode.value)
+    if (!document.documentElement.getAttribute('data-mode')) initTheme()
+    else setSystemBarColor(mode.value)
   })
+  return { mode, applyMode, toggleTheme, initTheme }
+}
 
-  watch(mode, (v) => applyMode(v))
-
-  function toggle() {
-    mode.value = mode.value === 'dark' ? 'light' : 'dark'
-  }
-
-  function setMode(v) {
-    if (v === 'dark' || v === 'light') mode.value = v
-  }
-
-  return { mode, toggle, setMode }
+// init segera agar FOUC minimal
+if (typeof document !== 'undefined') {
+  try {
+    const saved = localStorage.getItem('rt_theme')
+    if (saved === 'dark' || saved === 'light') {
+      document.documentElement.setAttribute('data-mode', saved)
+      setSystemBarColor(saved)
+    }
+  } catch (_) {}
 }
