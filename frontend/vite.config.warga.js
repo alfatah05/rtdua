@@ -16,7 +16,7 @@ export default defineConfig({
         short_name: 'Warga rtdua',
         description: 'Aplikasi warga rtdua',
         theme_color: '#FFFFFF',
-        background_color: '#FFFFFF',
+        background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -47,18 +47,7 @@ export default defineConfig({
             options: {
               cacheName: 'rtdua-assets-dev',
               networkTimeoutSeconds: 4,
-              expiration: {
-                maxEntries: 48,
-                maxAgeSeconds: 60 * 30,
-              },
-            },
-          },
-          {
-            urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'rtdua-img-dev',
-              expiration: { maxEntries: 64, maxAgeSeconds: 60 * 60 * 6 },
+              expiration: { maxEntries: 48, maxAgeSeconds: 60 * 60 * 6 },
             },
           },
         ],
@@ -78,5 +67,4 @@ export default defineConfig({
       '@warga': resolve(__dirname, 'src/warga'),
     },
   },
-  server: { port: 5173 },
 })

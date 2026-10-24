@@ -8,6 +8,7 @@ const BAR = {
   dark: '#111314',
 }
 
+/** Warna status bar (atas). Navigation bar sistem di bawah dipaksa gelap via html bg #000 di main.css. */
 function setSystemBarColor(value) {
   const color = BAR[value] || BAR.light
 
