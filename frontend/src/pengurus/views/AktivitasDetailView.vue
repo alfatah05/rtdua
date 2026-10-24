@@ -5,6 +5,7 @@
     <AppPageSpinner v-if="loading" class="!py-10" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-6">{{ err }}</p>
     <template v-else-if="row">
+      <!-- Header jenis -->
       <div
         class="rounded-[20px] p-5 mb-4 relative overflow-hidden"
         :style="{ background: headerBg }"
@@ -22,6 +23,7 @@
         <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
       </div>
 
+      <!-- Info utama -->
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 mb-3 space-y-3">
         <div>
           <p class="text-[12px] text-[var(--mut)] m-0 mb-0.5">Pelaku</p>
@@ -40,6 +42,7 @@
         </div>
       </div>
 
+      <!-- Ringkasan khusus jenis -->
       <div v-if="highlights.length" class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 mb-3">
         <p class="text-[13px] font-bold m-0 mb-2">Ringkasan</p>
         <div class="space-y-2">
@@ -50,6 +53,7 @@
         </div>
       </div>
 
+      <!-- Sebelum / sesudah -->
       <div v-if="sebelumText" class="mb-3">
         <p class="text-[13px] font-bold m-0 mb-1.5 px-0.5">Sebelum</p>
         <pre class="m-0 text-[13px] leading-relaxed whitespace-pre-wrap bg-[var(--search)] rounded-[16px] p-4 text-[var(--text)]">{{ sebelumText }}</pre>
@@ -99,6 +103,7 @@ const kategori = computed(() => {
 
 const headerBg = computed(() => {
   const c = meta.value.color || '#64748B'
+  // solid-ish gradient from icon color
   return `radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, ${c}, ${c})`
 })
 
@@ -132,6 +137,7 @@ const highlights = computed(() => {
     if (s.batch_id) out.push({ label: 'Batch', value: '#' + s.batch_id })
   }
 
+  // generic nominal
   if (!out.length && s.nominal != null) out.push({ label: 'Nominal', value: rp(s.nominal) })
   if (!out.length && b.nominal != null) out.push({ label: 'Nominal (sebelum)', value: rp(b.nominal) })
 

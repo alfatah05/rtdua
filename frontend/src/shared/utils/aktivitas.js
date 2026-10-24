@@ -1,17 +1,20 @@
 import {
   Activity, ArrowDownLeft, ArrowUpRight, ArrowLeftRight,
-  Banknote, Users, UserCog, KeyRound,
+  Banknote, Users, UserPlus, UserMinus, UserCog, KeyRound,
   Megaphone, ClipboardList, Images, Settings, Shield,
-  Gift, Wallet, Layers, CreditCard, X, LogIn, LogOut,
+  Gift, Wallet, Layers, CreditCard, Check, X, RotateCcw,
+  FileText, Building2, LogIn, LogOut,
 } from 'lucide-vue-next'
 
 function formatRp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 }
 
+/** Label manusiawi untuk aksi audit */
 export function labelAksi(a) {
   const aksi = String(a?.aksi || '')
   const s = a?.sesudah || {}
+  const b = a?.sebelum || {}
 
   const map = {
     catat_pembayaran: 'Mencatat pembayaran',
@@ -87,20 +90,23 @@ export function labelAksi(a) {
     const nom = s.nominal != null ? formatRp(s.nominal) : ''
     return `Alokasi ${dari} → ${ke}${nom ? ' · ' + nom : ''}`
   }
-  if (aksi === 'kas_masuk' || (aksi.startsWith('kas_') && aksi.includes('masuk'))) {
+  if (aksi.startsWith('kas_') && (aksi === 'kas_masuk' || aksi.includes('masuk'))) {
     const nom = s.nominal != null ? formatRp(s.nominal) : ''
     return nom ? `Kas masuk · ${nom}` : 'Kas masuk'
   }
-  if (aksi === 'kas_keluar' || (aksi.startsWith('kas_') && aksi.includes('keluar'))) {
+  if (aksi.startsWith('kas_') && (aksi === 'kas_keluar' || aksi.includes('keluar'))) {
     const nom = s.nominal != null ? formatRp(s.nominal) : ''
     return nom ? `Kas keluar · ${nom}` : 'Kas keluar'
   }
-  if (aksi.startsWith('status_anggota_')) return 'Mengubah status anggota'
+  if (aksi.startsWith('status_anggota_')) {
+    return 'Mengubah status anggota'
+  }
   if (map[aksi]) return map[aksi]
   if (aksi.startsWith('kas_')) return aksi.replace(/^kas_/, 'Kas ').replace(/_/g, ' ')
   return aksi.replace(/_/g, ' ')
 }
 
+/** Meta ikon + warna per jenis aksi */
 export function iconMeta(aksiRaw) {
   const aksi = String(aksiRaw || '')
 
@@ -158,6 +164,7 @@ export function iconMeta(aksiRaw) {
   return { icon: Activity, bg: 'rgba(100,116,139,.12)', color: '#64748B' }
 }
 
+/** Judul singkat untuk list: "Nama · aksi" */
 export function listTitle(a) {
   const nama = a?.pelaku || 'Sistem'
   return `${nama} · ${labelAksi(a)}`
@@ -176,6 +183,7 @@ export function formatWaktu(w) {
   })
 }
 
+/** Ringkas JSON sebelum/sesudah untuk detail */
 export function formatJsonBlock(obj) {
   if (obj == null) return null
   if (typeof obj !== 'object') return String(obj)
