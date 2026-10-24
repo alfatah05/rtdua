@@ -39,6 +39,9 @@ body,
   text-size-adjust: 100%;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  /* Matikan rubber-band / bounce saat overscroll (iOS Safari & Android Chrome) */
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 
 html,
