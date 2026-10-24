@@ -13,20 +13,65 @@
       </button>
     </div>
 
-    <div
-      class="rounded-[20px] p-5 text-white mb-4 relative overflow-hidden"
-      style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)"
+    <!-- Card total kas — pola sama KeuanganView warga -->
+    <button
+      type="button"
+      class="w-full text-left rounded-[20px] p-5 text-white mb-4 relative overflow-hidden active:scale-[0.99] transition-transform"
+      style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #C084FC, #A855F7 55%, #7C3AED)"
+      @click="$router.push('/keuangan')"
     >
-      <div class="flex items-center justify-between">
-        <p class="text-[13px] font-semibold text-white/90">Saldo kas</p>
-        <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">{{ labelBulan }}</span>
+      <div class="relative z-10">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <p class="text-[13px] font-semibold text-white/90 m-0">Total saldo kas</p>
+          <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20 shrink-0">
+            {{ labelBulan }}
+          </span>
+        </div>
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-full bg-white/20 text-white grid place-items-center shrink-0">
+            <Wallet :size="20" />
+          </div>
+          <p class="text-[26px] font-extrabold m-0 tracking-tight leading-none whitespace-nowrap tabular-nums">
+            {{ loadingKas ? '…' : formatRp(saldo) }}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-4">
+          <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white">
+            <ArrowDownLeft :size="16" class="shrink-0" style="color: #16A34A" />
+            <span class="text-[13px] font-bold truncate" style="color: #16A34A">
+              {{ loadingKas ? '…' : formatRp(totalMasuk) }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white">
+            <ArrowUpRight :size="16" class="shrink-0" style="color: #F87171" />
+            <span class="text-[13px] font-bold truncate" style="color: #F87171">
+              {{ loadingKas ? '…' : formatRp(totalKeluar) }}
+            </span>
+          </div>
+        </div>
+
+        <div v-if="daftarPos.length" class="mt-4 pt-3 border-t border-white/20 space-y-0">
+          <div
+            v-for="k in daftarPos"
+            :key="k.id"
+            class="flex items-center gap-3 py-1.5"
+          >
+            <div class="w-8 h-8 rounded-full grid place-items-center shrink-0 bg-white/15 text-white">
+              <Landmark :size="15" />
+            </div>
+            <p class="flex-1 min-w-0 text-[13px] font-medium m-0 truncate text-white/90">
+              {{ k.nama }}
+            </p>
+            <span class="text-[13px] font-bold tabular-nums shrink-0 text-white whitespace-nowrap">
+              {{ formatRp(k.saldo) }}
+            </span>
+          </div>
+        </div>
+        <p v-if="loadErr" class="text-[12px] text-white/80 m-0 mt-2">{{ loadErr }}</p>
       </div>
-      <p class="text-[34px] font-extrabold mt-2.5 tracking-tight leading-none">
-        {{ loadingKas ? '…' : formatRp(saldo) }}
-      </p>
-      <p class="text-[13px] text-white/80 mt-2">{{ loadErr || 'Dari database' }}</p>
-      <div class="absolute -right-14 -bottom-20 w-52 h-52 rounded-full bg-white/10 pointer-events-none"></div>
-    </div>
+      <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
+    </button>
 
     <button
       v-if="jumlahPermintaan > 0"
@@ -119,6 +164,7 @@ import EmptyState from '@shared/components/EmptyState.vue'
 import {
   Search, Banknote, ArrowDownLeft, ArrowUpRight,
   FileText, LayoutGrid, House, Users, ChevronRight, Check,
+  Wallet, Landmark,
 } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
 import { listKas, listPermintaan, daftarIuran } from '@shared/services/keuangan.js'
@@ -126,6 +172,9 @@ import { listKeluarga } from '@shared/services/warga.js'
 import { listAktivitas } from '@shared/services/aktivitas.js'
 
 const saldo = ref(0)
+const daftarPos = ref([])
+const totalMasuk = ref(0)
+const totalKeluar = ref(0)
 const loadingKas = ref(true)
 const loadErr = ref('')
 const jumlahPermintaan = ref(0)
@@ -150,7 +199,7 @@ const aksi = [
   { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: 'rgba(16,185,129,.18)', color: '#059669' },
   { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: 'rgba(239,68,68,.15)', color: '#DC2626' },
   { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Lainnya', icon: LayoutGrid, to: '/lainnya', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
+  { label: 'Menu', icon: LayoutGrid, to: '/lainnya', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
 ]
 
 async function load() {
@@ -159,7 +208,7 @@ async function load() {
   loadErr.value = ''
 
   const [kas, perm, kel, iuran, act] = await Promise.all([
-    listKas({}),
+    listKas({ bulan: new Date().toISOString().slice(0, 7) }),
     listPermintaan('menunggu'),
     listKeluarga({ status: 'aktif' }),
     daftarIuran({}),
@@ -171,6 +220,21 @@ async function load() {
 
   if (kas.ok) {
     saldo.value = kas.data?.saldo ?? 0
+    daftarPos.value = kas.data?.pos || []
+    const items = kas.data?.items || []
+    const now = new Date()
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    let masuk = 0
+    let keluar = 0
+    for (const it of items) {
+      const tgl = String(it.tanggal || it.created_at || '')
+      if (!tgl.startsWith(ym)) continue
+      const n = Number(it.nominal) || 0
+      if (it.tipe === 'masuk') masuk += n
+      else if (it.tipe === 'keluar') keluar += n
+    }
+    totalMasuk.value = masuk
+    totalKeluar.value = keluar
   } else {
     loadErr.value = kas.error || 'Gagal memuat saldo'
   }
