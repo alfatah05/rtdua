@@ -38,17 +38,13 @@ const isHome = computed(() => route.name === 'home')
 
 <style>
 /*
- * Keyframes & timing disalin 1:1 dari meimo_native:
- *   src/css/view-transitions.css + src/css/variables.css
- *   --duration-page-in: 380ms
- *   --duration-page-out: 220ms
- *   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1)
- *   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1)
- *   in:  translateY(50px) → 0 + opacity 0→1
- *   out: translateY(0) → -16px + opacity 1→0
- *
- * Halaman tujuan SELALU di atas (z-index lebih tinggi) — termasuk saat back.
- * Header & bottom nav di luar wrap → tidak ikut animasi.
+ * Page transition (adaptasi meimo_native):
+ * - Page tujuan: geser naik 50px + bounce, opacity cepat penuh biar
+ *   bayangan page lama tidak keliatan lama.
+ * - Page lama: HANYA fade cepat (tanpa translateY).
+ * - TANPA transform di wrapper → position:fixed (floating button)
+ *   tetap nempel viewport, tidak "blink" ke flow dokumen.
+ *   Geser pakai margin-top (bukan transform).
  */
 .page-transition-wrap {
   position: relative;
@@ -57,21 +53,18 @@ const isHome = computed(() => route.name === 'home')
 
 .page-transition-page {
   width: 100%;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
-/* Enter = halaman tujuan — di ATAS, animasi meimo-page-in */
+/* Halaman tujuan — di ATAS */
 .meimo-page-enter-active {
   animation: meimo-page-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   position: relative;
   z-index: 2;
-  will-change: transform, opacity;
 }
 
-/* Leave = halaman sekarang — di BELAKANG, animasi meimo-page-out */
+/* Halaman lama — di BELAKANG, fade saja */
 .meimo-page-leave-active {
-  animation: meimo-page-out 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: meimo-page-out 120ms ease-out both;
   position: absolute;
   left: 0;
   right: 0;
@@ -79,28 +72,34 @@ const isHome = computed(() => route.name === 'home')
   width: 100%;
   z-index: 1;
   pointer-events: none;
-  will-change: transform, opacity;
 }
 
+/* Page lama: fade cepat, tanpa geser */
 @keyframes meimo-page-out {
   from {
     opacity: 1;
-    transform: translateY(0);
   }
   to {
     opacity: 0;
-    transform: translateY(-16px);
   }
 }
 
+/*
+ * Page baru:
+ * - opacity full di ~30% (≈114ms) supaya bayangan page lama cepat hilang
+ * - geser 50px→0 sampai 100% dengan bounce (margin-top, bukan transform)
+ */
 @keyframes meimo-page-in {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(50px);
+    margin-top: 50px;
   }
-  to {
+  30% {
     opacity: 1;
-    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    margin-top: 0;
   }
 }
 
