@@ -1,22 +1,11 @@
 import { ref } from 'vue'
 
-/**
- * Selalu animasi page-up (geser naik) — maju, back, dan antar-tab.
- * Pola Meimo-like: page baru selalu naik dari bawah; page lama fade tanpa turun.
- */
-export const pageTransitionName = ref('page-up')
+/** Nama fixed — animasi selalu meimo-page (sama maju/back/tab). */
+export const pageTransitionName = ref('meimo-page')
 
-export function resolvePageTransition(to, from) {
-  // First paint / hard load: tanpa animasi
-  if (!from || !from.name) {
-    pageTransitionName.value = 'page-none'
-    return pageTransitionName.value
-  }
-  // Semua navigasi berikutnya: naik
-  pageTransitionName.value = 'page-up'
+export function resolvePageTransition(_to, _from) {
+  pageTransitionName.value = 'meimo-page'
   return pageTransitionName.value
 }
 
-export function syncHistoryPosition() {
-  // no-op — arah tidak lagi membedakan animasi
-}
+export function syncHistoryPosition() {}

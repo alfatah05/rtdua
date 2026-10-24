@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-    <!-- Header di luar zone animasi — tidak ikut geser -->
+    <!-- Header di luar zone animasi -->
     <div
       class="max-w-[560px] mx-auto px-4 pt-0"
       :class="showNav
@@ -9,10 +9,9 @@
     >
       <AppMainHeader v-if="showNav && !isHome" show-pengumuman />
 
-      <!-- Hanya konten page yang dianimasikan -->
       <div class="page-transition-wrap">
         <router-view v-slot="{ Component, route: r }">
-          <Transition :name="pageTransitionName">
+          <Transition name="meimo-page">
             <div :key="r.fullPath" class="page-transition-page">
               <component :is="Component" />
             </div>
@@ -21,7 +20,7 @@
       </div>
     </div>
 
-    <!-- Bottom nav di luar zone animasi — tidak ikut geser -->
+    <!-- Bottom nav di luar zone animasi -->
     <AppBottomNav v-if="showNav" side="warga" />
   </div>
 </template>
@@ -31,7 +30,6 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppBottomNav from '@shared/components/AppBottomNav.vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
-import { pageTransitionName } from '@shared/composables/usePageTransition.js'
 
 const route = useRoute()
 const showNav = computed(() => !!route.meta.mainTab)
@@ -39,77 +37,77 @@ const isHome = computed(() => route.name === 'home')
 </script>
 
 <style>
+/*
+ * Keyframes & timing disalin 1:1 dari meimo_native:
+ *   src/css/view-transitions.css + src/css/variables.css
+ *   --duration-page-in: 380ms
+ *   --duration-page-out: 220ms
+ *   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1)
+ *   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1)
+ *   in:  translateY(50px) → 0 + opacity 0→1
+ *   out: translateY(0) → -16px + opacity 1→0
+ *
+ * Halaman tujuan SELALU di atas (z-index lebih tinggi) — termasuk saat back.
+ * Header & bottom nav di luar wrap → tidak ikut animasi.
+ */
 .page-transition-wrap {
   position: relative;
-  /* Cegah flash layout saat leave absolute */
   min-height: 40vh;
 }
 
 .page-transition-page {
   width: 100%;
-  /* GPU layer biar halus di mobile */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/*
- * Meimo-like page-up
- * - Enter: dari bawah (~64px) + fade, 420ms, ease-out native
- * - Leave: fade saja (tidak turun / tidak naik), sedikit lebih cepat
- * - Dipakai untuk maju, back, DAN antar-tab navbar
- */
-.page-up-enter-active {
-  transition:
-    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.36s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform, opacity;
+/* Enter = halaman tujuan — di ATAS, animasi meimo-page-in */
+.meimo-page-enter-active {
+  animation: meimo-page-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  position: relative;
   z-index: 2;
+  will-change: transform, opacity;
 }
-.page-up-leave-active {
-  transition: opacity 0.28s cubic-bezier(0.4, 0, 1, 1);
+
+/* Leave = halaman sekarang — di BELAKANG, animasi meimo-page-out */
+.meimo-page-leave-active {
+  animation: meimo-page-out 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   width: 100%;
-  will-change: opacity;
   z-index: 1;
   pointer-events: none;
+  will-change: transform, opacity;
 }
 
-/* Page baru: mulai di bawah, naik ke posisi normal */
-.page-up-enter-from {
-  transform: translate3d(0, 64px, 0);
-  opacity: 0;
-}
-.page-up-enter-to {
-  transform: translate3d(0, 0, 0);
-  opacity: 1;
-}
-
-/* Page lama: hanya pudar, TIDAK geser turun/naik */
-.page-up-leave-from {
-  opacity: 1;
-}
-.page-up-leave-to {
-  opacity: 0;
+@keyframes meimo-page-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
 }
 
-/* First load */
-.page-none-enter-active,
-.page-none-leave-active {
-  transition: none;
+@keyframes meimo-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-up-enter-active,
-  .page-up-leave-active {
-    transition: none !important;
-  }
-  .page-up-enter-from,
-  .page-up-leave-to {
-    transform: none !important;
-    opacity: 1 !important;
+  .meimo-page-enter-active,
+  .meimo-page-leave-active {
+    animation: none !important;
   }
 }
 </style>
