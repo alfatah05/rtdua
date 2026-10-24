@@ -16,7 +16,7 @@ export default defineConfig({
         short_name: 'Warga rtdua',
         description: 'Aplikasi warga rtdua',
         theme_color: '#FFFFFF',
-        background_color: '#000000',
+        background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
