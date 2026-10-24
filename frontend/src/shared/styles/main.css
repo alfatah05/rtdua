@@ -128,7 +128,8 @@ body {
 .prose-rt h2,
 .prose-rt h3,
 .prose-rt h4 {
-  font-weight:   line-height: 1.25;
+  font-weight: 800;
+  line-height: 1.25;
   margin: 1em 0 0.4em;
   color: var(--text);
 }
