@@ -1,4 +1,4 @@
-import { ref, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const mode = ref('light')
 
@@ -20,7 +20,6 @@ function setSystemBarColor(value) {
   }
   meta.setAttribute('content', color)
 
-  // media prefers-color-scheme (kalau ada di HTML)
   document.querySelectorAll('meta[name="theme-color"][media]').forEach((el) => {
     const m = (el.getAttribute('media') || '').toLowerCase()
     if (m.includes('dark')) el.setAttribute('content', BAR.dark)
@@ -33,7 +32,6 @@ function setSystemBarColor(value) {
     apple.setAttribute('name', 'apple-mobile-web-app-status-bar-style')
     document.head.appendChild(apple)
   }
-  // iOS: default = terang + ikon gelap; black = gelap + ikon terang
   apple.setAttribute('content', value === 'dark' ? 'black' : 'default')
 }
 
@@ -65,19 +63,29 @@ function toggleTheme() {
   applyMode(mode.value === 'dark' ? 'light' : 'dark')
 }
 
+/** Alias yang dipakai ProfilView: const { mode, toggle } = useTheme() */
+const toggle = toggleTheme
+
 export function useTheme() {
   onMounted(() => {
-    if (!document.documentElement.getAttribute('data-mode')) initTheme()
-    else setSystemBarColor(mode.value)
+    const attr = document.documentElement.getAttribute('data-mode')
+    if (attr === 'dark' || attr === 'light') {
+      // Sinkron ref dengan DOM (early init hanya set attribute, bukan ref)
+      mode.value = attr
+      setSystemBarColor(attr)
+    } else {
+      initTheme()
+    }
   })
-  return { mode, applyMode, toggleTheme, initTheme }
+  return { mode, applyMode, toggleTheme, toggle, initTheme }
 }
 
-// init segera agar FOUC minimal
+// Early init: set data-mode + mode ref agar tidak desync
 if (typeof document !== 'undefined') {
   try {
     const saved = localStorage.getItem('rt_theme')
     if (saved === 'dark' || saved === 'light') {
+      mode.value = saved
       document.documentElement.setAttribute('data-mode', saved)
       setSystemBarColor(saved)
     }
