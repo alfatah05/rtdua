@@ -4,8 +4,20 @@
     class="home-root"
     :style="{ paddingTop: 'max(1.3125rem, calc(env(safe-area-inset-top, 0px) + 1.0625rem))' }"
   >
-    <div v-show="ptrVisible" class="ptr-circle" :style="ptrCircleStyle" aria-hidden="true">
-      <div class="ptr-spinner" :class="{ 'is-spin': ptrRefreshing }" />
+    <!-- Custom pull-to-refresh: spinner fixed di atas, ikut jarak tarik + resistance -->
+    <div
+      class="ptr-indicator"
+      :class="{ 'is-animating': ptrAnimating }"
+      :style="ptrIndicatorStyle"
+      aria-hidden="true"
+    >
+      <div class="ptr-circle" :style="ptrCircleInnerStyle">
+        <div
+          class="ptr-spinner"
+          :class="{ 'is-spin': ptrRefreshing }"
+          :style="ptrSpinnerStyle"
+        />
+      </div>
     </div>
 
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
@@ -282,52 +294,121 @@ async function loadHome({ showSkeleton = true } = {}) {
   if (showSkeleton) loading.value = false
 }
 
-const PTR_THRESHOLD = 72
+/* Custom pull-to-refresh (overscroll resistance)
+ * Spinner fixed top-center — bukan ikut koordinat jari.
+ * Jarak tarik → resistance → posisi Y + opacity + rotasi progres.
+ */
+const PTR_THRESHOLD = 70
+const PTR_MAX = 120
+const PTR_HIDDEN_Y = -52
+const PTR_LOADING_OFFSET = 108
+
 const homeRoot = ref(null)
-const ptrPull = ref(0)
-const ptrX = ref(0)
-const ptrY = ref(0)
+const ptrOffset = ref(0)
 const ptrRefreshing = ref(false)
-const ptrVisible = computed(() => ptrPull.value > 8 || ptrRefreshing.value)
-const ptrCircleStyle = computed(() => ({
-  transform: `translate3d(${ptrX.value}px, ${ptrY.value}px, 0) translate(-50%, -50%)`,
-  opacity: ptrRefreshing.value ? 1 : Math.min(1, ptrPull.value / PTR_THRESHOLD),
-}))
-let ptrStartY = 0, ptrStartX = 0, ptrTracking = false, ptrArmed = false
-function scrollTop() { return window.scrollY || document.documentElement.scrollTop || 0 }
-function onPtrStart(e) {
-  if (ptrRefreshing.value) return
-  if (scrollTop() > 2) { ptrArmed = false; return }
-  const t = e.touches?.[0]; if (!t) return
-  ptrArmed = true; ptrTracking = false
-  ptrStartY = t.clientY; ptrStartX = t.clientX
-  ptrX.value = t.clientX; ptrY.value = t.clientY
+const ptrAnimating = ref(false)
+
+let ptrStartY = 0
+let ptrStartX = 0
+let ptrTracking = false
+let ptrArmed = false
+
+function scrollTop() {
+  return window.scrollY || document.documentElement.scrollTop || 0
 }
+
+function applyResistance(dy) {
+  if (dy <= 0) return 0
+  return PTR_MAX * (1 - 1 / (dy / PTR_MAX + 1))
+}
+
+const ptrProgress = computed(() => Math.min(1, ptrOffset.value / PTR_THRESHOLD))
+
+const ptrIndicatorStyle = computed(() => {
+  const y = PTR_HIDDEN_Y + ptrOffset.value
+  const op = ptrRefreshing.value ? 1 : Math.min(1, ptrOffset.value / 24)
+  return {
+    transform: `translate3d(-50%, ${y}px, 0)`,
+    opacity: op,
+  }
+})
+
+const ptrCircleInnerStyle = computed(() => {
+  const s = ptrRefreshing.value ? 1 : (0.72 + 0.28 * ptrProgress.value)
+  return { transform: `scale(${s})` }
+})
+
+const ptrSpinnerStyle = computed(() => {
+  if (ptrRefreshing.value) return {}
+  const deg = Math.round(ptrProgress.value * 270)
+  return { transform: `rotate(${deg}deg)` }
+})
+
+function onPtrStart(e) {
+  if (ptrRefreshing.value || ptrAnimating.value) return
+  if (scrollTop() > 1) { ptrArmed = false; return }
+  const t = e.touches?.[0]
+  if (!t) return
+  ptrArmed = true
+  ptrTracking = false
+  ptrStartY = t.clientY
+  ptrStartX = t.clientX
+  ptrAnimating.value = false
+}
+
 function onPtrMove(e) {
   if (!ptrArmed || ptrRefreshing.value) return
-  const t = e.touches?.[0]; if (!t) return
-  const dy = t.clientY - ptrStartY, dx = t.clientX - ptrStartX
+  const t = e.touches?.[0]
+  if (!t) return
+  const dy = t.clientY - ptrStartY
+  const dx = t.clientX - ptrStartX
   if (!ptrTracking) {
-    if (dy < 8) return
-    if (Math.abs(dx) > Math.abs(dy) * 0.9) { ptrArmed = false; return }
-    if (scrollTop() > 2) { ptrArmed = false; return }
+    if (dy < 6) return
+    if (Math.abs(dx) > Math.abs(dy) * 0.85) { ptrArmed = false; return }
+    if (scrollTop() > 1) { ptrArmed = false; return }
     ptrTracking = true
   }
   if (dy > 0) {
     e.preventDefault()
-    ptrPull.value = Math.min(140, dy * 0.55)
-    ptrX.value = t.clientX; ptrY.value = t.clientY
-  } else ptrPull.value = 0
+    ptrOffset.value = applyResistance(dy)
+  } else {
+    ptrOffset.value = 0
+  }
 }
+
+function animateOffsetTo(target, ms = 280) {
+  return new Promise((resolve) => {
+    ptrAnimating.value = true
+    ptrOffset.value = target
+    window.setTimeout(() => {
+      ptrAnimating.value = false
+      resolve()
+    }, ms)
+  })
+}
+
 async function onPtrEnd() {
   if (!ptrTracking && !ptrArmed) return
-  const should = ptrTracking && ptrPull.value >= PTR_THRESHOLD && !ptrRefreshing.value
-  ptrArmed = false; ptrTracking = false
-  if (should) {
+  const shouldRefresh =
+    ptrTracking && ptrOffset.value >= PTR_THRESHOLD && !ptrRefreshing.value
+  ptrArmed = false
+  ptrTracking = false
+
+  if (shouldRefresh) {
     ptrRefreshing.value = true
-    try { await loadHome({ showSkeleton: false }) }
-    finally { ptrRefreshing.value = false; ptrPull.value = 0 }
-  } else ptrPull.value = 0
+    await animateOffsetTo(PTR_LOADING_OFFSET, 240)
+    try {
+      await loadHome({ showSkeleton: false })
+    } finally {
+      await animateOffsetTo(0, 300)
+      ptrRefreshing.value = false
+      ptrOffset.value = 0
+      ptrAnimating.value = false
+    }
+  } else {
+    await animateOffsetTo(0, 260)
+    ptrOffset.value = 0
+  }
 }
 
 onMounted(async () => {
@@ -340,6 +421,7 @@ onMounted(async () => {
     el.addEventListener('touchcancel', onPtrEnd, { passive: true })
   }
 })
+
 onUnmounted(() => {
   const el = homeRoot.value
   if (el) {
@@ -367,15 +449,47 @@ onUnmounted(() => {
   transition: transform .28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .menu-row.is-pressed { transform: scale(0.96); transition: transform .08s ease-out; }
+.ptr-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  z-index: 80;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.ptr-indicator.is-animating {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.24s ease;
+}
 .ptr-circle {
-  position: fixed; top: 0; left: 0; width: 44px; height: 44px; border-radius: 9999px;
-  background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.14);
-  z-index: 80; pointer-events: none; display: grid; place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: grid;
+  place-items: center;
+  will-change: transform;
 }
 .ptr-spinner {
-  width: 20px; height: 20px; border-radius: 9999px;
-  border: 2.5px solid rgba(16,22,20,.15); border-top-color: #0A8F44;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 2.5px solid rgba(16, 22, 20, 0.12);
+  border-top-color: #0A8F44;
+  box-sizing: border-box;
+  will-change: transform;
 }
-.ptr-spinner.is-spin { animation: ptr-spin .7s linear infinite; }
-@keyframes ptr-spin { to { transform: rotate(360deg); } }
+.ptr-spinner.is-spin {
+  animation: ptr-spin 0.7s linear infinite;
+}
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ptr-indicator.is-animating { transition: none; }
+  .ptr-spinner.is-spin { animation: none; }
+}
 </style>
