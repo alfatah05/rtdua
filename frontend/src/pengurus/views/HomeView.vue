@@ -13,11 +13,11 @@
       </button>
     </div>
 
-    <!-- Card total kas — pola sama KeuanganView warga -->
+    <!-- Card total kas — hijau -->
     <button
       type="button"
       class="w-full text-left rounded-[20px] p-5 text-white mb-4 relative overflow-hidden active:scale-[0.99] transition-transform"
-      style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #C084FC, #A855F7 55%, #7C3AED)"
+      style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)"
       @click="$router.push('/keuangan')"
     >
       <div class="relative z-10">
@@ -107,37 +107,6 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-2 gap-2 mb-5">
-      <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
-        <div class="flex items-center gap-2"><House :size="20" /><b class="text-[22px] font-extrabold">{{ jumlahKk }}</b></div>
-        <span class="block text-[12px] font-semibold text-[var(--mut)] mt-1">Keluarga (KK)</span>
-      </div>
-      <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4">
-        <div class="flex items-center gap-2"><Users :size="20" /><b class="text-[22px] font-extrabold">{{ jumlahWarga }}</b></div>
-        <span class="block text-[12px] font-semibold text-[var(--mut)] mt-1">Warga</span>
-      </div>
-    </div>
-
-    <div
-      class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-[18px] mb-5 active:scale-[0.98] transition cursor-pointer"
-      @click="$router.push('/keuangan/iuran')"
-    >
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-[17px] font-bold m-0">Iuran {{ labelBulan }}</h2>
-          <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ jumlahLunas }} dari {{ jumlahKk }} keluarga sudah lunas</p>
-        </div>
-        <div class="flex items-center gap-1">
-          <span class="text-2xl font-extrabold">{{ pctLunas }}%</span>
-          <ChevronRight :size="20" class="text-[var(--mut)]" />
-        </div>
-      </div>
-      <div class="h-2.5 rounded-full bg-[var(--card2)] mt-3.5 overflow-hidden">
-        <div class="h-full rounded-full bg-[var(--g)]" :style="{ width: pctLunas + '%' }"></div>
-      </div>
-      <p class="text-[13px] text-[var(--mut)] mt-2.5 mb-0">{{ Math.max(0, jumlahKk - jumlahLunas) }} keluarga belum lunas</p>
-    </div>
-
     <div class="flex items-center justify-between mb-3">
       <h2 class="text-[17px] font-bold m-0">Aktivitas terakhir</h2>
       <router-link to="/aktivitas" class="text-[13px] font-semibold text-[var(--g)] no-underline">Lihat semua</router-link>
@@ -166,13 +135,12 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import {
   Search, Banknote, ArrowDownLeft, ArrowUpRight,
-  FileText, LayoutGrid, House, Users, ChevronRight, Check,
+  FileText, LayoutGrid, ChevronRight, Check,
   Wallet, Landmark,
 } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
 import { MENU } from '@shared/constants/menuColors.js'
-import { listKas, listPermintaan, daftarIuran } from '@shared/services/keuangan.js'
-import { listKeluarga } from '@shared/services/warga.js'
+import { listKas, listPermintaan } from '@shared/services/keuangan.js'
 import { listAktivitas } from '@shared/services/aktivitas.js'
 
 const saldo = ref(0)
@@ -182,20 +150,12 @@ const totalKeluar = ref(0)
 const loadingKas = ref(true)
 const loadErr = ref('')
 const jumlahPermintaan = ref(0)
-const jumlahKk = ref(0)
-const jumlahWarga = ref(0)
-const jumlahLunas = ref(0)
 const aktivitas = ref([])
 const loadingAct = ref(true)
 
 const labelBulan = computed(() => {
   const d = new Date()
   return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
-})
-
-const pctLunas = computed(() => {
-  if (!jumlahKk.value) return 0
-  return Math.round((jumlahLunas.value / jumlahKk.value) * 100)
 })
 
 const aksi = [
@@ -211,11 +171,9 @@ async function load() {
   loadingAct.value = true
   loadErr.value = ''
 
-  const [kas, perm, kel, iuran, act] = await Promise.all([
+  const [kas, perm, act] = await Promise.all([
     listKas({ bulan: new Date().toISOString().slice(0, 7) }),
     listPermintaan('menunggu'),
-    listKeluarga({ status: 'aktif' }),
-    daftarIuran({}),
     listAktivitas({ limit: 5 }),
   ])
 
@@ -243,16 +201,6 @@ async function load() {
     loadErr.value = kas.error || 'Gagal memuat saldo'
   }
   if (perm.ok) jumlahPermintaan.value = (perm.data || []).length
-  if (kel.ok) {
-    const rows = kel.data || []
-    jumlahKk.value = rows.length
-    jumlahWarga.value = rows.reduce((s, k) => s + (Number(k.jumlah_anggota) || 0), 0)
-  }
-  if (iuran.ok) {
-    const rows = iuran.data || []
-    jumlahLunas.value = rows.filter((r) => (r.total ?? 0) <= 0 || r.status === 'lunas').length
-    if (!jumlahKk.value) jumlahKk.value = rows.length
-  }
   if (act.ok) {
     aktivitas.value = (act.data || []).slice(0, 5)
   }

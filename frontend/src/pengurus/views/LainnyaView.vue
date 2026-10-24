@@ -75,22 +75,37 @@ const groups = [
     items: [
       { label: 'Pengumuman', icon: Megaphone, to: '/konten/pengumuman', bg: MENU.pengumuman },
       { label: 'Program RT', icon: ClipboardList, to: '/konten/program', bg: MENU.program },
-      { label: 'Posyandu', icon: Baby, to: '/konten/posyandu', bg: MENU.posyandu },
-      { label: 'Pengajian', icon: BookOpen, to: '/konten/pengajian', bg: MENU.pengajian },
-      { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: MENU.lingkungan },
+      { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: MENU.galeri },
+      { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: MENU.struktur },
+      { label: 'Reward', icon: Gift, to: '/reward', bg: MENU.reward },
+      { label: 'RW', icon: Building2, to: '/konten/rw', bg: MENU.rw },
+      { label: 'Ambulance', icon: Ambulance, to: '/konten/ambulance', bg: MENU.ambulance },
+    ],
+  },
+  {
+    title: 'Komunitas',
+    items: [
       { label: 'Bulutangkis', icon: Trophy, to: '/konten/bulutangkis', bg: MENU.bulutangkis },
       { label: 'Gowes', icon: Bike, to: '/konten/gowes', bg: MENU.gowes },
       { label: 'Mancing', icon: Fish, to: '/konten/mancing', bg: MENU.mancing },
       { label: 'Pencak silat', icon: Swords, to: '/konten/silat', bg: MENU.silat },
       { label: 'Senam', icon: Activity, to: '/konten/senam', bg: MENU.senam },
+    ],
+  },
+  {
+    title: 'Kader RT 002',
+    items: [
+      { label: 'Posyandu', icon: Baby, to: '/konten/posyandu', bg: MENU.posyandu },
+      { label: 'Pengajian', icon: BookOpen, to: '/konten/pengajian', bg: MENU.pengajian },
+      { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: MENU.lingkungan },
+    ],
+  },
+  {
+    title: 'DKM',
+    items: [
       { label: "Ta'lim", icon: BookOpen, to: '/konten/talim', bg: MENU.talim },
       { label: 'PHBI', icon: CalendarDays, to: '/konten/phbi', bg: MENU.phbi },
-      { label: 'RW', icon: Building2, to: '/konten/rw', bg: MENU.rw },
-      { label: 'Ambulance', icon: Ambulance, to: '/konten/ambulance', bg: MENU.ambulance },
       { label: 'Bazis', icon: HandCoins, to: '/konten/bazis', bg: MENU.bazis },
-      { label: 'Reward', icon: Gift, to: '/reward', bg: MENU.reward },
-      { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: MENU.galeri },
-      { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: MENU.struktur },
     ],
   },
   {
