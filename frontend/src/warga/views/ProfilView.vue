@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Skeleton profil -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
       <div class="flex flex-col items-center text-center mb-6 pt-2">
         <div class="w-24 h-24 rounded-full bg-[var(--card2)] mb-3" />
@@ -47,7 +46,6 @@
         <p v-if="uploadingFoto" class="text-[12px] text-[var(--mut)] m-0 mt-1">Mengunggah foto…</p>
       </div>
 
-      <!-- Menu aksi: style simpel seperti WhatsApp settings -->
       <div class="px-1">
         <button
           v-for="m in menus"
@@ -85,10 +83,11 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Camera, ChevronRight, KeyRound, Moon, User, Home, HelpCircle, Info, Download
+  Camera, ChevronRight, KeyRound, Moon, User, HelpCircle, Download, RefreshCw, Sparkles
 } from 'lucide-vue-next'
 import { useAuth } from '@shared/composables/useAuth.js'
 import { useTheme } from '@shared/composables/useTheme.js'
+import { useMotion } from '@shared/composables/useMotion.js'
 import { useToast } from '@shared/composables/useToast.js'
 import { usePwaInstall } from '@shared/composables/usePwaInstall.js'
 import { updateFotoProfil } from '@shared/services/auth.js'
@@ -98,6 +97,7 @@ import { waitImages } from '@shared/utils/waitImages.js'
 const router = useRouter()
 const { user, logout } = useAuth()
 const { mode, toggle } = useTheme()
+const { animEnabled, toggleAnim } = useMotion()
 const { show } = useToast()
 const { canInstall, install: installPwa } = usePwaInstall()
 const fileInput = ref(null)
@@ -118,6 +118,23 @@ const fotoUrl = computed(() => {
   const f = user.value?.foto
   return f ? mediaUrl(f) : ''
 })
+
+async function hardRefresh() {
+  show('Membersihkan cache…')
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys()
+      await Promise.all(keys.map((k) => caches.delete(k)))
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(regs.map((r) => r.unregister()))
+    }
+  } catch (_) {}
+  const url = new URL(window.location.href)
+  url.searchParams.set('_r', String(Date.now()))
+  window.location.replace(url.toString())
+}
 
 const menus = computed(() => {
   const list = [
@@ -141,10 +158,14 @@ const menus = computed(() => {
       right: mode.value === 'dark' ? 'Aktif' : 'Off',
     },
     {
-      label: 'Alamat rumah',
-      desc: alamatLabel.value,
-      icon: Home,
-      action: () => show(alamatLabel.value),
+      label: 'Animasi',
+      desc: animEnabled.value ? 'Transisi halaman & tombol aktif' : 'Semua animasi nonaktif',
+      icon: Sparkles,
+      action: () => {
+        toggleAnim()
+        show(animEnabled.value ? 'Animasi diaktifkan' : 'Animasi dimatikan')
+      },
+      right: animEnabled.value ? 'Aktif' : 'Off',
     },
     {
       label: 'Bantuan',
@@ -153,13 +174,12 @@ const menus = computed(() => {
       to: '/bantuan',
     },
     {
-      label: 'Tentang aplikasi',
-      desc: 'rtdua untuk warga RT',
-      icon: Info,
-      action: () => show('rtdua v0.1.0'),
+      label: 'Hard refresh',
+      desc: 'Hapus cache & muat ulang aplikasi',
+      icon: RefreshCw,
+      action: () => hardRefresh(),
     },
   ]
-  // Paling bawah: install PWA hanya jika belum terpasang
   if (canInstall.value) {
     list.push({
       label: 'Install aplikasi',
@@ -181,10 +201,8 @@ async function finishLoading() {
 }
 
 onMounted(() => {
-  // user biasanya sudah di-hydrate dari session; tunggu foto bila ada
   if (user.value) finishLoading()
   else {
-    // fallback singkat bila session belum siap
     const t = setInterval(() => {
       if (user.value) {
         clearInterval(t)

@@ -19,7 +19,6 @@
   --rs: 12px;
   --r: 20px;
   --rm: 9999px;
-  /* Button primary: hijau di light */
   --btn: #0A8F44;
   --btn-fg: #FFFFFF;
   color-scheme: light;
@@ -39,20 +38,11 @@
   --gd: #12392A;
   --gm: #D5F7E1;
   --sh: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  /* Button primary: putih di dark */
   --btn: #FFFFFF;
   --btn-fg: #111314;
   color-scheme: dark;
 }
 
-/*
- * Root font tetap 16px — tidak di-scale per lebar layar
- * agar UI konsisten di semua perangkat.
- */
-/*
- * html ikut --bg (bukan #000) supaya celah animasi page tidak menampilkan
- * hitam. Status bar / nav sistem diatur lewat meta theme-color di useTheme.
- */
 html {
   font-size: 16px;
   scroll-padding-top: env(safe-area-inset-top, 0px);
@@ -69,7 +59,7 @@ body {
   color: var(--text);
   font-family: "Plus Jakarta Sans", system-ui, sans-serif;
   font-weight: 500;
-  font-size: 0.9375rem; /* 15px */
+  font-size: 0.9375rem;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   padding-top: 0;
@@ -89,7 +79,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Primary buttons yang masih pakai bg-[var(--g)] text-white → ikut --btn di dark */
 :root[data-mode="dark"] button.bg-\[var\(--g\)\],
 :root[data-mode="dark"] a.bg-\[var\(--g\)\] {
   background-color: var(--btn) !important;
@@ -107,22 +96,15 @@ body {
   }
 }
 
-/* Konten Markdown / HTML dari pengurus (prose) */
 .prose-rt {
   font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--text);
   word-break: break-word;
 }
-.prose-rt > *:first-child {
-  margin-top: 0;
-}
-.prose-rt > *:last-child {
-  margin-bottom: 0;
-}
-.prose-rt p {
-  margin: 0.65em 0;
-}
+.prose-rt > *:first-child { margin-top: 0; }
+.prose-rt > *:last-child { margin-bottom: 0; }
+.prose-rt p { margin: 0.65em 0; }
 .prose-rt h1,
 .prose-rt h2,
 .prose-rt h3,
@@ -140,17 +122,13 @@ body {
   margin: 0.5em 0;
   padding-left: 1.35em;
 }
-.prose-rt li {
-  margin: 0.25em 0;
-}
+.prose-rt li { margin: 0.25em 0; }
 .prose-rt a {
   color: var(--g);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.prose-rt strong {
-  font-weight: 700;
-}
+.prose-rt strong { font-weight: 700; }
 .prose-rt blockquote {
   margin: 0.75em 0;
   padding: 0.5em 0.85em;
@@ -230,4 +208,14 @@ body {
   border-radius: 6px;
   background: var(--card);
   box-shadow: 0 1px 0 var(--line);
+}
+
+/* Matikan semua animasi/transisi saat user nonaktifkan di Profil */
+html[data-anim="off"] *,
+html[data-anim="off"] *::before,
+html[data-anim="off"] *::after {
+  animation: none !important;
+  animation-duration: 0.01ms !important;
+  transition: none !important;
+  transition-duration: 0.01ms !important;
 }
