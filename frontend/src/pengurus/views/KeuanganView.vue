@@ -14,7 +14,6 @@
       <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
     </div>
 
-    <!-- Sub pos: terkumpul belum disetor (terpisah dari saldo kas) -->
     <button
       type="button"
       class="w-full text-left rounded-[16px] border border-[var(--line)] bg-[var(--card)] p-4 mb-4 active:scale-[0.99] transition-transform"
@@ -43,8 +42,8 @@
         @click="$router.push(a.to)"
       >
         <span
-          class="w-12 h-12 rounded-full grid place-items-center relative"
-          :style="{ background: a.bg, color: a.color }"
+          class="w-12 h-12 rounded-[16px] grid place-items-center relative text-white"
+          :style="{ background: a.bg }"
         >
           <component :is="a.icon" :size="20" />
           <span
@@ -110,6 +109,7 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ClipboardList, FileText, Landmark } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
+import { MENU } from '@shared/constants/menuColors.js'
 import { listKas, listPermintaan, listSubPos } from '@shared/services/keuangan.js'
 
 const saldo = ref(0)
@@ -122,11 +122,11 @@ const loadErr = ref('')
 const badgePermintaan = ref(0)
 
 const aksi = computed(() => [
-  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: 'rgba(239,68,68,.15)', color: '#DC2626' },
-  { label: 'Iuran', icon: ClipboardList, to: '/keuangan/iuran', bg: 'rgba(16,185,129,.18)', color: '#059669', badge: badgePermintaan.value || undefined },
-  { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Pos kas', icon: Landmark, to: '/keuangan/pos-kas', bg: 'rgba(14,165,233,.15)', color: '#0284C7' },
+  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: MENU.kasMasuk },
+  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: MENU.kasKeluar },
+  { label: 'Iuran', icon: ClipboardList, to: '/keuangan/iuran', bg: MENU.iuran, badge: badgePermintaan.value || undefined },
+  { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: MENU.laporan },
+  { label: 'Pos kas', icon: Landmark, to: '/keuangan/pos-kas', bg: MENU.posKas },
 ])
 
 function isAlokasi(t) {

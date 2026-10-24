@@ -97,7 +97,10 @@
         class="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
         @click="$router.push(a.to)"
       >
-        <span class="w-12 h-12 rounded-full grid place-items-center relative" :style="{ background: a.bg, color: a.color }">
+        <span
+          class="w-12 h-12 rounded-[16px] grid place-items-center relative text-white"
+          :style="{ background: a.bg }"
+        >
           <component :is="a.icon" :size="20" />
         </span>
         <span class="text-[11px] font-semibold leading-tight text-center">{{ a.label }}</span>
@@ -167,6 +170,7 @@ import {
   Wallet, Landmark,
 } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
+import { MENU } from '@shared/constants/menuColors.js'
 import { listKas, listPermintaan, daftarIuran } from '@shared/services/keuangan.js'
 import { listKeluarga } from '@shared/services/warga.js'
 import { listAktivitas } from '@shared/services/aktivitas.js'
@@ -195,11 +199,11 @@ const pctLunas = computed(() => {
 })
 
 const aksi = [
-  { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: 'rgba(239,68,68,.15)', color: '#DC2626' },
-  { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Menu', icon: LayoutGrid, to: '/lainnya', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
+  { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat', bg: MENU.catatIuran },
+  { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: MENU.kasMasuk },
+  { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: MENU.kasKeluar },
+  { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: MENU.laporan },
+  { label: 'Menu', icon: LayoutGrid, to: '/lainnya', bg: MENU.menu },
 ]
 
 async function load() {
