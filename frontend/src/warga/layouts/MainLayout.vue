@@ -1,13 +1,15 @@
 <template>
   <div class="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-    <main
+    <!-- Header di luar zone animasi — tidak ikut geser -->
+    <div
       class="max-w-[560px] mx-auto px-4 pt-0"
       :class="showNav
         ? 'pb-[calc(96px+env(safe-area-inset-bottom,0px))]'
         : 'pb-[calc(24px+env(safe-area-inset-bottom,0px))]'"
     >
-      <!-- Header utama stabil — disembunyikan di beranda (diganti bar di HomeView) -->
       <AppMainHeader v-if="showNav && !isHome" show-pengumuman />
+
+      <!-- Hanya konten page yang dianimasikan -->
       <div class="page-transition-wrap">
         <router-view v-slot="{ Component, route: r }">
           <Transition :name="pageTransitionName">
@@ -17,7 +19,9 @@
           </Transition>
         </router-view>
       </div>
-    </main>
+    </div>
+
+    <!-- Bottom nav di luar zone animasi — tidak ikut geser -->
     <AppBottomNav v-if="showNav" side="warga" />
   </div>
 </template>
@@ -37,107 +41,73 @@ const isHome = computed(() => route.name === 'home')
 <style>
 .page-transition-wrap {
   position: relative;
+  /* Cegah flash layout saat leave absolute */
+  min-height: 40vh;
 }
 
 .page-transition-page {
   width: 100%;
+  /* GPU layer biar halus di mobile */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
-/* ——— Maju: page baru naik dari bawah ——— */
-.page-forward-enter-active {
+/*
+ * Meimo-like page-up
+ * - Enter: dari bawah (~64px) + fade, 420ms, ease-out native
+ * - Leave: fade saja (tidak turun / tidak naik), sedikit lebih cepat
+ * - Dipakai untuk maju, back, DAN antar-tab navbar
+ */
+.page-up-enter-active {
   transition:
-    transform 0.36s cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 0.3s ease;
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.36s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform, opacity;
   z-index: 2;
 }
-.page-forward-leave-active {
-  transition:
-    transform 0.28s cubic-bezier(0.4, 0, 1, 1),
-    opacity 0.24s ease;
+.page-up-leave-active {
+  transition: opacity 0.28s cubic-bezier(0.4, 0, 1, 1);
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   width: 100%;
-  will-change: transform, opacity;
+  will-change: opacity;
   z-index: 1;
   pointer-events: none;
 }
-.page-forward-enter-from {
-  transform: translate3d(0, 36px, 0);
+
+/* Page baru: mulai di bawah, naik ke posisi normal */
+.page-up-enter-from {
+  transform: translate3d(0, 64px, 0);
   opacity: 0;
 }
-.page-forward-leave-to {
-  transform: translate3d(0, -10px, 0);
+.page-up-enter-to {
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+}
+
+/* Page lama: hanya pudar, TIDAK geser turun/naik */
+.page-up-leave-from {
+  opacity: 1;
+}
+.page-up-leave-to {
   opacity: 0;
 }
 
-/* ——— Mundur: page keluar turun ——— */
-.page-back-enter-active {
-  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  will-change: transform, opacity;
-  z-index: 1;
-}
-.page-back-leave-active {
-  transition:
-    transform 0.34s cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 0.28s ease;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  width: 100%;
-  will-change: transform, opacity;
-  z-index: 2;
-  pointer-events: none;
-}
-.page-back-enter-from {
-  transform: translate3d(0, -8px, 0);
-  opacity: 0.7;
-}
-.page-back-leave-to {
-  transform: translate3d(0, 40px, 0);
-  opacity: 0;
-}
-
-/* ——— Antar tab bottom nav: fade ——— */
-.page-fade-enter-active,
-.page-fade-leave-active {
-  transition: opacity 0.18s ease;
-}
-.page-fade-leave-active {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  width: 100%;
-  pointer-events: none;
-}
-.page-fade-enter-from,
-.page-fade-leave-to {
-  opacity: 0;
-}
-
-/* Tanpa animasi (first load) */
+/* First load */
 .page-none-enter-active,
 .page-none-leave-active {
   transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-forward-enter-active,
-  .page-forward-leave-active,
-  .page-back-enter-active,
-  .page-back-leave-active,
-  .page-fade-enter-active,
-  .page-fade-leave-active {
+  .page-up-enter-active,
+  .page-up-leave-active {
     transition: none !important;
   }
-  .page-forward-enter-from,
-  .page-forward-leave-to,
-  .page-back-enter-from,
-  .page-back-leave-to {
+  .page-up-enter-from,
+  .page-up-leave-to {
     transform: none !important;
     opacity: 1 !important;
   }
