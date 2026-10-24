@@ -47,7 +47,7 @@ const groups = [
   {
     title: 'Keuangan',
     items: [
-      { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat', bg: MENU.catatIuran },
+      { label: 'Tagihan warga', icon: Banknote, to: '/keuangan/catat', bg: MENU.catatIuran },
       { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: MENU.laporan },
       { label: 'Iuran khusus', icon: Banknote, to: '/keuangan/iuran-khusus', bg: MENU.iuranKhusus },
       { label: 'Pos kas', icon: Wallet, to: '/keuangan/pos-kas', bg: MENU.posKas },

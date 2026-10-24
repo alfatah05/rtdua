@@ -1,166 +1,235 @@
 <template>
-  <div>
-    <AppBackHeader title="Rincian tagihan" />
+  <div class="pb-[calc(72px+env(safe-area-inset-bottom,0px))]">
+    <AppBackHeader title="Detail tagihan" />
 
     <AppPageSpinner v-if="loading" />
-    <div v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</div>
+    <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else>
-      <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4 text-center">
-        <p class="text-[13px] text-[var(--mut)] m-0">{{ labelKeluarga }}</p>
-        <p class="text-[28px] font-extrabold mt-1 m-0" :class="total <= 0 ? 'text-[var(--g)]' : ''">
-          {{ total < 0 ? 'Kelebihan ' + formatRp(-total) : formatRp(total) }}
-        </p>
-        <span class="inline-block mt-2 text-[12px] font-bold px-2.5 py-1 rounded-full" :class="statusClass">
-          {{ labelStatus }}
-        </span>
+      <div
+        class="w-full rounded-[20px] p-5 mb-4 relative overflow-hidden shadow-[var(--sh)]"
+        :style="heroStyle"
+      >
+        <div class="relative z-10 flex items-start gap-3">
+          <div class="w-11 h-11 rounded-full grid place-items-center shrink-0 bg-white/20 text-white">
+            <Wallet :size="20" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[13px] font-semibold m-0 text-white/90">{{ labelKeluarga }}</p>
+            <p class="text-[28px] font-extrabold tracking-tight m-0 mt-1 leading-none text-white">
+              {{ total <= 0 ? 'Lunas' : formatRp(total) }}
+            </p>
+            <p class="text-[13px] m-0 mt-2 text-white/85">
+              {{ total <= 0 ? 'Tidak ada tagihan terbuka' : 'Total tagihan belum lunas' }}
+            </p>
+          </div>
+        </div>
+        <div class="absolute -right-10 -bottom-14 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
       </div>
 
-      <h2 class="text-[15px] font-bold mb-2">Tagihan</h2>
-      <EmptyState v-if="!tagihan.length" title="Tidak ada tagihan" class="mb-5" />
-      <div v-else class="space-y-2 mb-5">
+      <h2 class="text-[15px] font-bold m-0 mb-2">Rincian tagihan</h2>
+      <div
+        class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-5"
+        style="padding: 5px"
+      >
+        <div
+          class="flex items-center justify-between px-3"
+          style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
+        >
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Jenis</span>
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Sisa</span>
+        </div>
+        <EmptyState v-if="!tagihan.length" title="Tidak ada tagihan" />
         <div
           v-for="t in tagihan"
           :key="t.id"
-          class="flex justify-between items-start gap-2 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4"
+          class="flex items-center gap-3 py-2.5"
+          style="padding-left: 10px; padding-right: 10px"
         >
-          <div class="min-w-0">
-            <p class="font-bold text-[15px] m-0">{{ labelItem(t) }}</p>
-            <p v-if="t.jenis !== 'khusus'" class="text-[13px] text-[var(--mut)] m-0">{{ t.periode }}</p>
-            <p v-else-if="t.periode" class="text-[12px] text-[var(--mut)] m-0">Periode {{ t.periode }}</p>
+          <div
+            class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+            :style="{ background: iconMeta(t.jenis).bg, color: iconMeta(t.jenis).color }"
+          >
+            <component :is="iconMeta(t.jenis).icon" :size="16" />
           </div>
-          <div class="text-right flex-none">
-            <span class="font-bold block">{{ formatRp(t.sisa) }}</span>
-            <button
-              v-if="t.jenis === 'denda_ronda' && Number(t.sisa) > 0"
-              type="button"
-              class="text-[12px] font-semibold text-red-600 mt-1"
-              @click="$router.push('/keuangan/tagihan/' + t.id + '/batal-denda')"
-            >Batalkan denda</button>
-            <button
-              v-if="t.jenis === 'khusus'"
-              type="button"
-              class="text-[12px] font-semibold text-[var(--g)] mt-1"
-              @click="$router.push('/keuangan/tagihan/' + keluargaId + '/khusus/' + t.id)"
-            >Edit</button>
+          <div class="flex-1 min-w-0">
+            <p class="text-[14px] font-semibold m-0 truncate">{{ labelTagihan(t) }}</p>
+            <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5">
+              {{ t.periode || '—' }}
+              <span v-if="Number(t.sisa ?? t.nominal) <= 0" class="text-[var(--g)] font-semibold"> · Lunas</span>
+            </p>
+            <div class="flex gap-2 mt-1">
+              <button
+                v-if="t.jenis === 'denda_ronda' && Number(t.sisa ?? t.nominal) > 0"
+                type="button"
+                class="text-[12px] font-semibold text-red-600"
+                @click="$router.push('/keuangan/tagihan/' + keluargaId + '/batal-denda')"
+              >Batalkan denda</button>
+              <button
+                v-if="t.jenis === 'khusus'"
+                type="button"
+                class="text-[12px] font-semibold text-[var(--g)]"
+                @click="$router.push('/keuangan/tagihan/' + keluargaId + '/khusus/' + t.id)"
+              >Edit</button>
+            </div>
           </div>
+          <span
+            class="text-[14px] font-bold tabular-nums shrink-0"
+            :class="Number(t.sisa ?? t.nominal) <= 0 ? 'text-[var(--g)]' : ''"
+          >
+            {{ Number(t.sisa ?? t.nominal) <= 0 ? 'Lunas' : formatRp(t.sisa ?? t.nominal) }}
+          </span>
         </div>
       </div>
 
-      <h2 class="text-[15px] font-bold mb-2">Riwayat pembayaran</h2>
-      <EmptyState v-if="!bayar.length" title="Belum ada pembayaran" class="mb-6" />
-      <div v-else class="space-y-2 mb-6">
+      <h2 class="text-[15px] font-bold m-0 mb-2">Riwayat pembayaran</h2>
+      <EmptyState v-if="!bayar.length" title="Belum ada pembayaran" />
+      <div v-else class="space-y-0 mb-6 px-1">
         <div
           v-for="p in bayar"
           :key="p.id"
-          class="flex justify-between items-start gap-2 bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-4"
+          class="flex items-center gap-3 py-3"
         >
-          <div class="min-w-0">
-            <p class="font-bold text-[15px] m-0">{{ formatRp(p.nominal) }}</p>
-            <p class="text-[13px] text-[var(--mut)] m-0">{{ p.tanggal_bayar }} · {{ p.metode || '—' }}</p>
+          <div class="w-10 h-10 rounded-full grid place-items-center shrink-0 bg-emerald-500/15 text-emerald-600">
+            <Check :size="18" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-bold text-[15px] m-0 leading-tight">{{ formatRp(p.nominal) }}</p>
+            <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">
+              {{ formatTanggal(p.tanggal_bayar) }} · {{ p.metode || 'tunai' }}
+            </p>
           </div>
           <button
             type="button"
-            class="text-[12px] font-semibold text-red-600"
+            class="text-[12px] font-semibold text-red-600 shrink-0"
             :disabled="busyId === p.id"
             @click="onBatalBayar(p)"
           >{{ busyId === p.id ? '…' : 'Batal' }}</button>
         </div>
       </div>
 
-      <div class="space-y-2">
+      <p v-if="msg" class="text-[13px] text-center mb-3" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
+    </template>
+
+    <div
+      v-if="!loading && !err && total > 0"
+      class="fixed bottom-0 left-0 right-0 z-30 pointer-events-none"
+    >
+      <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
         <button
           type="button"
-          class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold"
+          class="pointer-events-auto w-full min-h-[48px] rounded-full font-bold transition bg-[var(--btn)] text-[var(--btn-fg)] active:scale-[0.98]"
           @click="$router.push('/keuangan/tagihan/' + keluargaId + '/bayar')"
         >
-          Catat pembayaran
+          Konfirmasi pembayaran
         </button>
-        <p v-if="msg" class="text-[13px] text-center" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
 <script setup>
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { Wallet, Check, Banknote, Shield, Sparkles } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { formatRp } from '@shared/utils/format.js'
 import { ringkasanKeluarga, batalkanPembayaran } from '@shared/services/keuangan.js'
 import { listKeluarga } from '@shared/services/warga.js'
+import { useToast } from '@shared/composables/useToast.js'
 
 const route = useRoute()
+const { success, error: toastError } = useToast()
 const keluargaId = computed(() => Number(route.params.id))
 const loading = ref(true)
 const err = ref('')
 const labelKeluarga = ref('—')
 const total = ref(0)
-const status = ref('lunas')
 const tagihan = ref([])
 const bayar = ref([])
-const busyId = ref(null)
+const busyId = ref(0)
 const msg = ref('')
 const msgOk = ref(true)
 
-const labelJenis = { kas: 'Kas', denda_ronda: 'Denda ronda', khusus: 'Iuran khusus' }
+const heroStyle = computed(() => {
+  if (total.value <= 0) {
+    return {
+      background:
+        'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
+    }
+  }
+  return {
+    background:
+      'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #F59E0B, #D97706 55%, #B45309)',
+  }
+})
 
-function labelItem(t) {
-  if (t.jenis === 'khusus' && t.nama) return t.nama
-  return labelJenis[t.jenis] || t.jenis
+function iconMeta(jenis) {
+  if (jenis === 'denda_ronda') return { icon: Shield, bg: 'rgba(239,68,68,.15)', color: '#DC2626' }
+  if (jenis === 'khusus') return { icon: Sparkles, bg: 'rgba(168,85,247,.15)', color: '#7C3AED' }
+  return { icon: Banknote, bg: 'rgba(34,184,99,.15)', color: '#0B8442' }
 }
 
-const labelStatus = computed(() => {
-  if (total.value < 0) return 'Kelebihan bayar'
-  if (status.value === 'lunas' || total.value <= 0) return 'Lunas'
-  if (status.value === 'menunggak') return 'Menunggak'
-  return 'Belum lunas'
-})
+function labelTagihan(t) {
+  if (t.jenis === 'kas') return 'Iuran kas' + (t.periode ? ` ${t.periode}` : '')
+  if (t.jenis === 'denda_ronda') return 'Denda ronda'
+  if (t.jenis === 'khusus') return t.nama || t.nama_khusus || 'Iuran khusus'
+  return t.jenis || 'Tagihan'
+}
 
-const statusClass = computed(() => {
-  if (total.value < 0 || status.value === 'lunas' || total.value <= 0) return 'bg-[var(--ok)] text-[var(--g)]'
-  if (status.value === 'menunggak') return 'bg-red-500/15 text-red-600'
-  return 'bg-amber-500/15 text-amber-700'
-})
+function formatTanggal(t) {
+  if (!t) return ''
+  const d = new Date(t + (String(t).length === 10 ? 'T00:00:00' : ''))
+  if (Number.isNaN(d.getTime())) return t
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 
 async function load() {
   loading.value = true
   err.value = ''
-  const [ring, kel] = await Promise.all([
-    ringkasanKeluarga(keluargaId.value),
-    listKeluarga({}),
-  ])
-  loading.value = false
-  if (!ring.ok) {
-    err.value = ring.error || 'Gagal memuat'
+  msg.value = ''
+  const id = keluargaId.value
+  if (!id) {
+    err.value = 'Keluarga tidak valid.'
+    loading.value = false
     return
   }
-  total.value = Number(ring.data?.total ?? 0)
-  status.value = ring.data?.status || 'lunas'
-  tagihan.value = ring.data?.tagihan || []
-  bayar.value = ring.data?.pembayaran || []
-  if (kel.ok && Array.isArray(kel.data)) {
-    const row = kel.data.find((k) => Number(k.id) === keluargaId.value)
-    if (row) labelKeluarga.value = row.nama || row.alamat || ('#' + keluargaId.value)
+  const [ring, list] = await Promise.all([
+    ringkasanKeluarga(id),
+    listKeluarga({ status: 'aktif' }),
+  ])
+  if (!ring.ok) {
+    err.value = ring.error || 'Gagal memuat tagihan.'
+    loading.value = false
+    return
   }
+  total.value = ring.data?.total ?? 0
+  tagihan.value = ring.data?.tagihan || []
+  bayar.value = (ring.data?.pembayaran || []).slice().reverse()
+  const k = (list.data || []).find((x) => x.id === id)
+  labelKeluarga.value = k
+    ? `${k.alamat || ''} · ${k.nama || ''}`.replace(/^ · | · $/g, '')
+    : `Keluarga #${id}`
+  loading.value = false
 }
 
 async function onBatalBayar(p) {
   if (!confirm('Batalkan pembayaran ini?')) return
-  msg.value = ''
   busyId.value = p.id
-  const res = await batalkanPembayaran(p.id, 'Dibatalkan pengurus')
-  busyId.value = null
+  msg.value = ''
+  const res = await batalkanPembayaran(p.id)
+  busyId.value = 0
   if (!res.ok) {
+    msg.value = res.error || 'Gagal membatalkan.'
     msgOk.value = false
-    msg.value = res.error || 'Gagal batal'
+    toastError?.(msg.value)
     return
   }
+  msg.value = 'Pembayaran dibatalkan.'
   msgOk.value = true
-  msg.value = 'Pembayaran dibatalkan'
-  load()
+  success?.('Pembayaran dibatalkan')
+  await load()
 }
 
 onMounted(load)
