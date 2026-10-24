@@ -113,15 +113,25 @@
     <AppPageSpinner v-if="loadingAct" class="!py-6" />
     <EmptyState v-else-if="!aktivitas.length" title="Belum ada aktivitas" />
     <div v-else class="px-1 space-y-0.5">
-      <div v-for="act in aktivitas" :key="act.id" class="w-full flex flex-row items-center gap-3 px-2 py-3">
-        <div class="w-10 h-10 rounded-full grid place-items-center shrink-0 bg-[var(--search)]">
-          <Check :size="18" class="text-[var(--g)]" />
+      <button
+        v-for="act in aktivitas"
+        :key="act.id"
+        type="button"
+        class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
+        @click="$router.push('/aktivitas/' + act.id)"
+      >
+        <div
+          class="w-10 h-10 rounded-full grid place-items-center shrink-0"
+          :style="{ background: iconMeta(act.aksi).bg, color: iconMeta(act.aksi).color }"
+        >
+          <component :is="iconMeta(act.aksi).icon" :size="18" />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0 leading-tight">{{ act.pelaku }} · {{ act.aksi }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ act.waktu }}</p>
+          <p class="font-bold text-[15px] m-0 leading-tight">{{ listTitle(act) }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ formatWaktu(act.waktu) }}</p>
         </div>
-      </div>
+        <ChevronRight :size="18" class="text-[var(--mut)] shrink-0" />
+      </button>
     </div>
   </div>
 </template>
@@ -134,13 +144,14 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import {
   Search, Banknote, ArrowDownLeft, ArrowUpRight,
-  FileText, LayoutGrid, ChevronRight, Check, ClipboardList,
+  FileText, LayoutGrid, ChevronRight, ClipboardList,
   Wallet, Landmark,
 } from 'lucide-vue-next'
 import { formatRp } from '@shared/utils/format.js'
 import { MENU } from '@shared/constants/menuColors.js'
 import { listKas, listPermintaan } from '@shared/services/keuangan.js'
 import { listAktivitas } from '@shared/services/aktivitas.js'
+import { listTitle, iconMeta, formatWaktu } from '@shared/utils/aktivitas.js'
 
 const saldo = ref(0)
 const daftarPos = ref([])
