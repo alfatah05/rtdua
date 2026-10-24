@@ -5,6 +5,7 @@
     </Transition>
   </router-view>
   <AppToast />
+  <AppFullscreenToggle />
 </template>
 <script setup>
 import { computed, onMounted, onUnmounted } from 'vue'
@@ -13,6 +14,7 @@ import { useTheme } from '@shared/composables/useTheme.js'
 import { useMotion } from '@shared/composables/useMotion.js'
 import { useAuth } from '@shared/composables/useAuth.js'
 import AppToast from '@shared/components/AppToast.vue'
+import AppFullscreenToggle from '@shared/components/AppFullscreenToggle.vue'
 
 useTheme()
 const { animEnabled } = useMotion()
