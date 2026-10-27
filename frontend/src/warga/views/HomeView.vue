@@ -122,10 +122,11 @@
           :style="cardStyle(true)"
         >
           <div class="relative z-10">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-1.5 min-w-0">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="flex items-center gap-2 text-xs font-semibold text-white/90">
+                <Megaphone :size="15" /> Pengumuman
                 <span v-if="p.hasLampiran" class="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
-              </div>
+              </span>
               <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white/20 text-white shrink-0">{{ p.tanggal }}</span>
             </div>
             <h2 class="text-base font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
