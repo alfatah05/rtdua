@@ -50,10 +50,10 @@ function initTheme() {
   try {
     saved = localStorage.getItem('rt_theme')
   } catch (_) {}
-  // Default selalu light. Jangan ikut prefers-color-scheme sistem
-  // (setelah hapus data situs HP dark mode tidak memaksa app jadi gelap).
   if (saved === 'dark' || saved === 'light') {
     applyMode(saved)
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyMode('dark')
   } else {
     applyMode('light')
   }
@@ -84,13 +84,18 @@ export function useTheme() {
 if (typeof document !== 'undefined') {
   try {
     const saved = localStorage.getItem('rt_theme')
-    const v = saved === 'dark' || saved === 'light' ? saved : 'light'
-    mode.value = v
-    document.documentElement.setAttribute('data-mode', v)
-    setSystemBarColor(v)
-  } catch (_) {
-    mode.value = 'light'
-    document.documentElement.setAttribute('data-mode', 'light')
-    setSystemBarColor('light')
-  }
+    if (saved === 'dark' || saved === 'light') {
+      mode.value = saved
+      document.documentElement.setAttribute('data-mode', saved)
+      setSystemBarColor(saved)
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      mode.value = 'dark'
+      document.documentElement.setAttribute('data-mode', 'dark')
+      setSystemBarColor('dark')
+    } else {
+      mode.value = 'light'
+      document.documentElement.setAttribute('data-mode', 'light')
+      setSystemBarColor('light')
+    }
+  } catch (_) {}
 }
