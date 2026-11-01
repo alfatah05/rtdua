@@ -4,11 +4,10 @@ name: Deploy Dev
 # Frontend: warga-dev.rtdua.my.id , pengurus-dev.rtdua.my.id
 # Backend:  rt-app-dev
 #
-# Secrets:
-#   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
-#   FTP_SERVER_DIR_WARGA_DEV
-#   FTP_SERVER_DIR_PENGURUS_DEV
-#   FTP_SERVER_DIR_BACKEND_DEV   (folder rt-app-dev)
+# Secrets (FTP_SERVER / USERNAME / PASSWORD sama seperti sebelumnya):
+#   FTP_SERVER_DIR_WARGA       → folder warga-dev (secret lama, tetap)
+#   FTP_SERVER_DIR_PENGURUS    → folder pengurus-dev (secret lama, tetap)
+#   FTP_SERVER_DIR_BACKEND_DEV → folder rt-app-dev (BARU)
 on:
   workflow_dispatch:
 
@@ -128,7 +127,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/warga/
-          server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA_DEV }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA }}
           dangerous-clean-slate: true
           timeout: 600000
           security: loose
@@ -146,7 +145,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/pengurus/
-          server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS_DEV }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS }}
           dangerous-clean-slate: true
           timeout: 600000
           security: loose
@@ -220,7 +219,7 @@ jobs:
         if: always()
         run: |
           echo "=== DEPLOY DEV ==="
-          echo "Warga → FTP_SERVER_DIR_WARGA_DEV:       ${{ steps.ftp_warga.outcome }}"
-          echo "Pengurus → FTP_SERVER_DIR_PENGURUS_DEV: ${{ steps.ftp_pengurus.outcome }}"
+          echo "Warga → FTP_SERVER_DIR_WARGA:           ${{ steps.ftp_warga.outcome }}"
+          echo "Pengurus → FTP_SERVER_DIR_PENGURUS:     ${{ steps.ftp_pengurus.outcome }}"
           echo "Backend → FTP_SERVER_DIR_BACKEND_DEV:   ${{ steps.ftp_backend.outcome }}"
           echo "Proxy API → rt-app-dev"

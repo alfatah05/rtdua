@@ -4,11 +4,10 @@ name: Deploy Prod
 # Frontend: warga.rtdua.my.id , pengurus.rtdua.my.id
 # Backend:  rt-app
 #
-# Secrets:
-#   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
-#   FTP_SERVER_DIR_WARGA_PROD
-#   FTP_SERVER_DIR_PENGURUS_PROD
-#   FTP_SERVER_DIR_BACKEND_PROD   (folder rt-app)
+# Secrets (FTP_SERVER / USERNAME / PASSWORD sama seperti sebelumnya):
+#   FTP_SERVER_DIR_WARGA_PROD    → folder warga.rtdua.my.id (BARU)
+#   FTP_SERVER_DIR_PENGURUS_PROD → folder pengurus.rtdua.my.id (BARU)
+#   FTP_SERVER_DIR_BACKEND       → folder rt-app (secret lama, tetap)
 on:
   workflow_dispatch:
 
@@ -166,7 +165,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/rt-app/
-          server-dir: ${{ secrets.FTP_SERVER_DIR_BACKEND_PROD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR_BACKEND }}
           dangerous-clean-slate: false
           timeout: 600000
           security: loose
@@ -224,5 +223,5 @@ jobs:
           echo "=== DEPLOY PROD ==="
           echo "Warga → FTP_SERVER_DIR_WARGA_PROD:       ${{ steps.ftp_warga.outcome }}"
           echo "Pengurus → FTP_SERVER_DIR_PENGURUS_PROD: ${{ steps.ftp_pengurus.outcome }}"
-          echo "Backend → FTP_SERVER_DIR_BACKEND_PROD:   ${{ steps.ftp_backend.outcome }}"
+          echo "Backend → FTP_SERVER_DIR_BACKEND:        ${{ steps.ftp_backend.outcome }}"
           echo "Proxy API → rt-app"
