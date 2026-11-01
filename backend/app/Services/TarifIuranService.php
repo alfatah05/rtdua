@@ -257,11 +257,12 @@ class TarifIuranService
         $this->ensureSchema();
         $db = \Config\Database::connect();
         $rows = $db->table('tarif_iuran_keluarga tik')
-            ->select('tik.keluarga_id, k.alamat, k.blok_id, b.nama as blok_nama')
+            ->select('tik.keluarga_id, k.nomor, k.akhiran, k.alamat, k.blok_id, b.nama as blok_nama')
             ->join('keluarga k', 'k.id = tik.keluarga_id')
             ->join('blok b', 'b.id = k.blok_id', 'left')
             ->where('tik.tarif_id', $tarifId)
-            ->orderBy('k.alamat', 'ASC')
+            ->orderBy('b.nama', 'ASC')
+            ->orderBy('k.nomor', 'ASC')
             ->get()
             ->getResultArray();
         $out = [];
@@ -270,20 +271,29 @@ class TarifIuranService
             $kepala = $db->table('warga')
                 ->select('nama')
                 ->where('keluarga_id', $kid)
-                ->groupStart()
+                ->where('status', 'aktif')
                 ->where('hubungan', 'Kepala keluarga')
-                ->orWhere('hubungan', 'kepala')
-                ->groupEnd()
                 ->get()
                 ->getRowArray();
             if (!$kepala) {
-                $kepala = $db->table('warga')->select('nama')->where('keluarga_id', $kid)->orderBy('id', 'ASC')->get()->getRowArray();
+                $kepala = $db->table('warga')
+                    ->select('nama')
+                    ->where('keluarga_id', $kid)
+                    ->where('status', 'aktif')
+                    ->orderBy('id', 'ASC')
+                    ->get()
+                    ->getRowArray();
             }
+            $blok = (string) ($r['blok_nama'] ?? '');
+            $nomor = (string) ($r['nomor'] ?? '');
+            $akhiran = (string) ($r['akhiran'] ?? '');
+            $alamatLabel = $blok !== '' ? ($blok . '-' . $nomor . $akhiran) : (string) ($r['alamat'] ?? '');
             $out[] = [
                 'keluarga_id' => $kid,
-                'alamat' => $r['alamat'] ?? '',
-                'blok' => $r['blok_nama'] ?? '',
-                'nama_kepala' => $kepala['nama'] ?? '',
+                'nama' => $kepala['nama'] ?? '—',
+                'nama_kepala' => $kepala['nama'] ?? '—',
+                'alamat' => $alamatLabel,
+                'blok' => $blok,
             ];
         }
         return $out;

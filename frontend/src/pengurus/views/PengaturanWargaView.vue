@@ -81,21 +81,29 @@
           <h2 class="text-[13px] font-bold text-[var(--mut)] uppercase tracking-wide m-0">Tarif khusus</h2>
           <button type="button" class="text-[13px] font-bold text-[var(--g)]" @click="buatTarif">+ Tarif baru</button>
         </div>
-        <div class="rounded-[16px] bg-[var(--card)] border border-[var(--line)] overflow-hidden">
+        <div class="space-y-2">
           <button
             v-for="t in tarifKhusus"
             :key="t.id"
             type="button"
-            class="w-full flex items-center gap-3 px-3 py-2.5 border-b border-[var(--line)] last:border-0 text-left active:scale-[0.99]"
+            class="w-full flex items-center gap-3 px-3 py-3 rounded-[16px] bg-[var(--card)] border border-[var(--line)] text-left active:scale-[0.99] transition"
             @click="$router.push('/tarif-khusus/' + t.id)"
           >
-            <div class="flex-1 min-w-0">
-              <p class="text-[14px] font-semibold m-0 truncate">{{ t.nama }}</p>
-              <p class="text-[12px] text-[var(--mut)] m-0">{{ t.jumlah_keluarga || 0 }} KK · {{ rp(t.total) }}</p>
+            <div
+              class="w-11 h-11 rounded-[12px] grid place-items-center shrink-0 text-white"
+              :style="{ background: MENU.iuranKhusus }"
+            >
+              <Users :size="20" />
             </div>
-            <span class="text-[var(--mut)] text-[18px] leading-none">›</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-[15px] font-bold m-0 truncate">{{ t.nama }}</p>
+              <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">
+                {{ t.jumlah_keluarga || 0 }} KK · {{ rp(t.total) }}
+              </p>
+            </div>
+            <ChevronRight :size="18" class="text-[var(--mut)] shrink-0" />
           </button>
-          <p v-if="!tarifKhusus.length" class="text-[13px] text-[var(--mut)] text-center py-5 m-0">
+          <p v-if="!tarifKhusus.length" class="text-[13px] text-[var(--mut)] text-center py-5 m-0 rounded-[16px] bg-[var(--card)] border border-[var(--line)]">
             Belum ada tarif khusus. Untuk keluarga dengan iuran berbeda dari utama.
           </p>
         </div>
@@ -176,6 +184,7 @@ import {
   buatTarifKhusus,
 } from '@shared/services/keuangan.js'
 import { useToast } from '@shared/composables/useToast.js'
+import { MENU } from '@shared/constants/menuColors.js'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
