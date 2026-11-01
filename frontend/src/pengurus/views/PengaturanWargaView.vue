@@ -75,6 +75,32 @@
         </p>
       </div>
 
+      <!-- Tarif khusus -->
+      <div class="mt-5 mb-3">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-[13px] font-bold text-[var(--mut)] uppercase tracking-wide m-0">Tarif khusus</h2>
+          <button type="button" class="text-[13px] font-bold text-[var(--g)]" @click="buatTarif">+ Tarif baru</button>
+        </div>
+        <div class="rounded-[16px] bg-[var(--card)] border border-[var(--line)] overflow-hidden">
+          <button
+            v-for="t in tarifKhusus"
+            :key="t.id"
+            type="button"
+            class="w-full flex items-center gap-3 px-3 py-2.5 border-b border-[var(--line)] last:border-0 text-left active:scale-[0.99]"
+            @click="$router.push('/tarif-khusus/' + t.id)"
+          >
+            <div class="flex-1 min-w-0">
+              <p class="text-[14px] font-semibold m-0 truncate">{{ t.nama }}</p>
+              <p class="text-[12px] text-[var(--mut)] m-0">{{ t.jumlah_keluarga || 0 }} KK · {{ rp(t.total) }}</p>
+            </div>
+            <span class="text-[var(--mut)] text-[18px] leading-none">›</span>
+          </button>
+          <p v-if="!tarifKhusus.length" class="text-[13px] text-[var(--mut)] text-center py-5 m-0">
+            Belum ada tarif khusus. Untuk keluarga dengan iuran berbeda dari utama.
+          </p>
+        </div>
+      </div>
+
       <label class="flex items-start gap-3 p-3 rounded-[16px] bg-[var(--card)] border border-[var(--line)] mb-3">
         <input v-model="terapkanBulanIni" type="checkbox" class="mt-1 w-4 h-4 accent-[var(--g)]" />
         <span>
@@ -146,14 +172,19 @@ import {
   ubahIuranKomponen,
   hapusIuranKomponen,
   terapkanKomponenBulanIni,
+  listTarifIuran,
+  buatTarifKhusus,
 } from '@shared/services/keuangan.js'
 import { useToast } from '@shared/composables/useToast.js'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const { success, error } = useToast()
 const loading = ref(true)
 const err = ref('')
 const items = ref([])
 const total = ref(0)
+const tarifKhusus = ref([])
 const terapkanBulanIni = ref(false)
 const saving = ref(false)
 const msg = ref('')
@@ -175,7 +206,7 @@ function toNum(v) {
 async function load() {
   loading.value = true
   err.value = ''
-  const res = await listIuranKomponen()
+  const [res, tr] = await Promise.all([listIuranKomponen(), listTarifIuran()])
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
@@ -184,6 +215,26 @@ async function load() {
   const d = res.data || {}
   items.value = Array.isArray(d.items) ? d.items.filter((i) => i.aktif !== false) : []
   total.value = Number(d.total ?? items.value.reduce((s, i) => s + Number(i.nominal || 0), 0))
+  if (tr.ok) {
+    const all = Array.isArray(tr.data?.items) ? tr.data.items : []
+    tarifKhusus.value = all.filter((x) => !x.is_utama)
+  }
+}
+
+async function buatTarif() {
+  const nama = prompt('Nama tarif khusus (contoh: Iuran setengah)')
+  if (nama == null) return
+  const n = String(nama).trim()
+  if (!n) return
+  const res = await buatTarifKhusus({ nama: n })
+  if (!res.ok) {
+    error(res.error || 'Gagal buat tarif')
+    return
+  }
+  success('Tarif dibuat')
+  const id = res.data?.id
+  if (id) router.push('/tarif-khusus/' + id)
+  else await load()
 }
 
 function openForm(row) {

@@ -39,6 +39,7 @@ import StrukturView from '../views/StrukturView.vue'
 import RondaView from '../views/RondaView.vue'
 import RondaMalamView from '../views/RondaMalamView.vue'
 import PengaturanWargaView from '../views/PengaturanWargaView.vue'
+import TarifKhususDetailView from '../views/TarifKhususDetailView.vue'
 import PengaturanAplikasiView from '../views/PengaturanAplikasiView.vue'
 import KelolaPengurusView from '../views/KelolaPengurusView.vue'
 import KonfirmasiTransferView from '../views/KonfirmasiTransferView.vue'
@@ -178,6 +179,7 @@ const routes = [
       { path: 'ronda/denda', component: RondaDendaView },
 
       { path: 'pengaturan-warga', component: PengaturanWargaView },
+      { path: 'tarif-khusus/:id', component: TarifKhususDetailView },
       { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
       { path: 'kelola-pengurus', component: KelolaPengurusView },
       { path: 'kelola-pengurus/angkat', component: AngkatPengurusView },

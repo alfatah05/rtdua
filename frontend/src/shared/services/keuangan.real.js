@@ -333,7 +333,7 @@ export async function hapusIuranKomponen(id) {
 
 export async function terapkanKomponenBulanIni() {
   try {
-    const res = await api('/keuangan/iuran-komponen/terapkan', { method: 'POST' })
+    const res = await api('/keuangan/iuran-komponen/terapkan-bulan-ini', { method: 'POST' })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -497,6 +497,100 @@ export async function subPosBatalMutasi(mutasiId, alasan) {
       method: 'POST',
       body: { alasan: alasan || '' },
     })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+
+export async function listTarifIuran() {
+  try {
+    const res = await api('/keuangan/tarif-iuran')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function detailTarifIuran(id) {
+  try {
+    const res = await api('/keuangan/tarif-iuran/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function buatTarifKhusus(payload) {
+  try {
+    const res = await api('/keuangan/tarif-iuran', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function ubahTarifIuran(id, payload) {
+  try {
+    const res = await api('/keuangan/tarif-iuran/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function hapusTarifKhusus(id) {
+  try {
+    const res = await api('/keuangan/tarif-iuran/' + id, { method: 'DELETE' })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function setAnggotaTarif(id, payload) {
+  try {
+    const res = await api('/keuangan/tarif-iuran/' + id + '/anggota', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function tambahAnggotaTarif(id, payload) {
+  try {
+    const res = await api('/keuangan/tarif-iuran/' + id + '/anggota/tambah', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function hapusAnggotaTarif(id, keluargaId, payload = {}) {
+  try {
+    const res = await api('/keuangan/tarif-iuran/' + id + '/anggota/' + keluargaId + '/hapus', {
+      method: 'POST',
+      body: payload,
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function mapKeluargaTarif() {
+  try {
+    const res = await api('/keuangan/tarif-iuran/map-keluarga')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function listKomponenTarif(id) {
+  try {
+    const res = await api('/keuangan/tarif-iuran/' + id + '/komponen')
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }

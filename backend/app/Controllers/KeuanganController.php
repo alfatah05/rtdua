@@ -316,6 +316,125 @@ class KeuanganController extends Controller
         return $res['ok'] ? ApiResponse::ok($res['data'], 'Diterapkan ke bulan ini') : ApiResponse::fail($res['message'], 422);
     }
 
+    // ---- Tarif iuran (utama + khusus) ----
+
+    public function listTarifIuran()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $svc = new \App\Services\TarifIuranService();
+        return ApiResponse::ok(['items' => $svc->listTarif()]);
+    }
+
+    public function detailTarifIuran($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $d = (new \App\Services\TarifIuranService())->detail((int) $id);
+        if (!$d) {
+            return ApiResponse::fail('Tidak ditemukan', 404);
+        }
+        return ApiResponse::ok($d);
+    }
+
+    public function buatTarifKhusus()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new \App\Services\TarifIuranService())->buatKhusus((string) ($json['nama'] ?? ''), (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Dibuat') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function ubahTarifIuran($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new \App\Services\TarifIuranService())->ubah((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Disimpan') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function hapusTarifKhusus($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $res = (new \App\Services\TarifIuranService())->hapusKhusus((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok(null, 'Dihapus') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function setAnggotaTarif($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $ids = $json['keluarga_ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+        $terapkan = !empty($json['terapkan_bulan_ini']);
+        $res = (new \App\Services\TarifIuranService())->setAnggota((int) $id, $ids, (int) $user['id'], $terapkan);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Anggota disimpan') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function tambahAnggotaTarif($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $kid = (int) ($json['keluarga_id'] ?? 0);
+        $terapkan = !empty($json['terapkan_bulan_ini']);
+        $res = (new \App\Services\TarifIuranService())->tambahAnggota((int) $id, $kid, (int) $user['id'], $terapkan);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Ditambah') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function hapusAnggotaTarif($id, $keluargaId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $terapkan = !empty($json['terapkan_bulan_ini']);
+        $res = (new \App\Services\TarifIuranService())->hapusAnggota((int) $id, (int) $keluargaId, (int) $user['id'], $terapkan);
+        return $res['ok'] ? ApiResponse::ok($res['data'], 'Dikeluarkan') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function mapKeluargaTarif()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        return ApiResponse::ok(['map' => (new \App\Services\TarifIuranService())->mapKeluargaTarifKhusus()]);
+    }
+
+    public function listKomponenTarif($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $svc = new \App\Services\IuranKomponenService();
+        $items = $svc->listByTarif((int) $id, false);
+        $total = (new \App\Services\TarifIuranService())->totalTarif((int) $id, true);
+        return ApiResponse::ok(['items' => $items, 'total' => $total, 'tarif_id' => (int) $id]);
+    }
+
     // ---- Iuran khusus ----
 
     public function listIuranKhusus()

@@ -288,13 +288,22 @@ class TagihanService
             ? max(0, $nominalOverride)
             : (int) ($peng['nominal_kas'] ?? 0);
 
-        // Prefer total komponen aktif jika tersedia
-        try {
-            $totalKomp = (new IuranKomponenService())->totalAktif();
-            if ($totalKomp > 0 && $nominalOverride === null) {
-                $nominal = $totalKomp;
+        // Prefer nominal sesuai tarif keluarga (utama / khusus)
+        if ($nominalOverride === null) {
+            try {
+                $nominalTarif = (new TarifIuranService())->nominalUntukKeluarga($keluargaId);
+                if ($nominalTarif >= 0) {
+                    $nominal = $nominalTarif;
+                }
+            } catch (\Throwable $e) {
+                try {
+                    $totalKomp = (new IuranKomponenService())->totalAktif();
+                    if ($totalKomp > 0) {
+                        $nominal = $totalKomp;
+                    }
+                } catch (\Throwable $e2) {
+                }
             }
-        } catch (\Throwable $e) {
         }
 
         $db->table('iuran_tagihan')->insert([

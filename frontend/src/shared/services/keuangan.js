@@ -199,3 +199,35 @@ export function subPosAlokasi(id, payload) {
 export function subPosBatalMutasi(mutasiId, alasan) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.subPosBatalMutasi(mutasiId, alasan)
 }
+
+
+export function listTarifIuran() {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { items: [] } }) : real.listTarifIuran()
+}
+export function detailTarifIuran(id) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: {} }) : real.detailTarifIuran(id)
+}
+export function buatTarifKhusus(payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1 } }) : real.buatTarifKhusus(payload)
+}
+export function ubahTarifIuran(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.ubahTarifIuran(id, payload)
+}
+export function hapusTarifKhusus(id) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.hapusTarifKhusus(id)
+}
+export function setAnggotaTarif(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.setAnggotaTarif(id, payload)
+}
+export function tambahAnggotaTarif(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.tambahAnggotaTarif(id, payload)
+}
+export function hapusAnggotaTarif(id, keluargaId, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.hapusAnggotaTarif(id, keluargaId, payload)
+}
+export function mapKeluargaTarif() {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { map: {} } }) : real.mapKeluargaTarif()
+}
+export function listKomponenTarif(id) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { items: [], total: 0 } }) : real.listKomponenTarif(id)
+}
