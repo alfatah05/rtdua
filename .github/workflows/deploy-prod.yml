@@ -97,8 +97,10 @@ jobs:
           mkdir -p dist/pengurus/api
           cp deploy/pengurus/api/index.php dist/pengurus/api/index.php
 
-          if grep -q 'rt-app-dev' dist/warga/api/index.php dist/pengurus/api/index.php; then
-            echo "ERROR: proxy prod masih rt-app-dev" >&2
+          # Pastikan default backendDir = rt-app
+          if ! grep -q "?: 'rt-app'" dist/warga/api/index.php dist/pengurus/api/index.php; then
+            echo "ERROR: proxy prod harus default ke rt-app" >&2
+            grep -n backendDir dist/warga/api/index.php dist/pengurus/api/index.php || true
             exit 1
           fi
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * Thin proxy — pengurus
- * BACKEND_DIR diganti saat deploy: rt-app-dev (dev) atau rt-app (prod)
+ * Default backend folder: rt-app. Deploy Dev mengganti ke folder backend development.
  */
 header('Content-Type: application/json; charset=utf-8');
 
