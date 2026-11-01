@@ -170,7 +170,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { PlusCircle, Home } from 'lucide-vue-next'
+import { PlusCircle, Home, Users, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import {
