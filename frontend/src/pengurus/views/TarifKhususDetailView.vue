@@ -1,74 +1,93 @@
 <template>
   <div class="pb-24">
     <AppBackHeader :title="detail?.nama || 'Tarif khusus'">
-      <template #right>
+      <template #actions>
         <button
           type="button"
-          class="text-[13px] font-bold text-[var(--g)] px-1"
-          @click="showMenu = !showMenu"
+          class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+          aria-label="Ubah nama"
+          @click="openRename"
         >
-          ⋯
+          <Pencil :size="18" />
+        </button>
+        <button
+          type="button"
+          class="w-10 h-10 grid place-items-center rounded-full text-red-600"
+          aria-label="Hapus tarif"
+          @click="hapusTarif"
+        >
+          <Trash2 :size="18" />
+        </button>
+        <button
+          type="button"
+          class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)]"
+          aria-label="Tambah komponen"
+          @click="openKomponenForm(null)"
+        >
+          <PlusCircle :size="20" />
         </button>
       </template>
     </AppBackHeader>
 
-    <!-- menu aksi header -->
-    <div v-if="showMenu" class="fixed inset-0 z-40" @click="showMenu = false">
-      <div
-        class="absolute right-3 top-[52px] w-48 rounded-[14px] bg-[var(--card)] border border-[var(--line)] shadow-lg overflow-hidden z-50"
-        @click.stop
-      >
-        <button type="button" class="w-full text-left px-4 py-3 text-[14px] font-semibold border-b border-[var(--line)]" @click="gantiNama">
-          Ganti nama
-        </button>
-        <button type="button" class="w-full text-left px-4 py-3 text-[14px] font-semibold text-red-600" @click="hapusTarif">
-          Hapus tarif
-        </button>
-      </div>
-    </div>
-
     <AppPageSpinner v-if="loading" />
-    <p v-else-if="err" class="text-[13px] text-red-600 text-center px-4 py-6 m-0">{{ err }}</p>
+    <p v-else-if="err" class="text-[13px] text-red-600 text-center py-6 m-0">{{ err }}</p>
     <template v-else-if="detail">
-      <!-- Total pill -->
+      <!-- Tabel komponen — sama persis halaman tarif utama -->
+      <h2 class="text-[15px] font-bold m-0 mb-2">Rincian iuran tetap</h2>
       <div
-        class="flex items-center justify-between px-4 mb-4"
-        style="height: 44px; border-radius: 16px; background: rgba(245, 158, 11, 0.16)"
+        class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
+        style="padding: 5px"
       >
-        <span class="text-[13px] font-bold" style="color: #B45309">Total / bulan</span>
-        <span class="text-[15px] font-extrabold tabular-nums" style="color: #D97706">{{ rp(detail.total) }}</span>
-      </div>
-
-      <!-- Komponen — sama pola tarif utama -->
-      <div class="flex items-center justify-between mb-2 px-1">
-        <h2 class="text-[13px] font-bold text-[var(--mut)] uppercase tracking-wide m-0">Komponen</h2>
-        <button type="button" class="text-[13px] font-bold text-[var(--g)]" @click="openKomponenForm(null)">+ Tambah</button>
-      </div>
-      <div class="rounded-[16px] bg-[var(--card)] border border-[var(--line)] overflow-hidden mb-3">
         <div
-          v-for="c in komponenAktif"
-          :key="c.id"
-          class="flex items-center gap-3 px-3 py-2.5 border-b border-[var(--line)] last:border-0"
+          class="flex items-center justify-between px-3"
+          style="height: 30px; border-radius: 15px; background: rgba(34, 184, 99, 0.14)"
         >
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Komponen</span>
+          <span class="text-[12px] font-semibold text-[var(--gm)]">Biaya</span>
+        </div>
+
+        <template v-if="komponenAktif.length">
           <div
-            class="w-9 h-9 rounded-[10px] grid place-items-center shrink-0"
-            style="background: rgba(59,130,246,.16); color: #2563EB"
+            v-for="c in komponenAktif"
+            :key="c.id"
+            class="flex items-center gap-3 py-2.5"
+            style="padding-left: 10px; padding-right: 10px"
           >
-            <Home :size="16" />
+            <div
+              class="w-9 h-9 rounded-full grid place-items-center shrink-0"
+              style="background: rgba(59,130,246,.16); color: #2563EB"
+            >
+              <Home :size="16" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[14px] font-semibold m-0 truncate">{{ c.nama }}</p>
+              <div class="flex gap-2 mt-0.5">
+                <button type="button" class="text-[12px] font-semibold text-[var(--g)]" @click="openKomponenForm(c)">Ubah</button>
+                <button type="button" class="text-[12px] font-semibold text-red-600" @click="hapusKomponen(c)">Hapus</button>
+              </div>
+            </div>
+            <span class="text-[14px] font-bold tabular-nums shrink-0 whitespace-nowrap">
+              {{ rp(c.nominal) }}
+            </span>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-[14px] font-semibold m-0 truncate">{{ c.nama }}</p>
-            <div class="flex gap-2 mt-0.5">
-              <button type="button" class="text-[12px] font-semibold text-[var(--g)]" @click="openKomponenForm(c)">Ubah</button>
-              <button type="button" class="text-[12px] font-semibold text-red-600" @click="hapusKomponen(c)">Hapus</button>
+
+          <div class="flex justify-end" style="padding: 2px 0 4px">
+            <div
+              class="inline-flex items-center justify-between gap-4 px-3 min-w-[48%]"
+              style="height: 30px; border-radius: 15px; background: rgba(245, 158, 11, 0.16)"
+            >
+              <span class="text-[12px] font-bold" style="color: #B45309">Total / bulan</span>
+              <span class="text-[13px] font-extrabold tabular-nums" style="color: #D97706">
+                {{ rp(detail.total) }}
+              </span>
             </div>
           </div>
-          <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(c.nominal) }}</span>
-        </div>
-        <p v-if="!komponenAktif.length" class="text-[13px] text-[var(--mut)] text-center py-5 m-0">
-          Belum ada komponen. Ketuk + Tambah atau salin dari utama.
+        </template>
+        <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">
+          Belum ada komponen. Ketuk + untuk menambah.
         </p>
       </div>
+
       <button
         v-if="utamaKomponen.length"
         type="button"
@@ -78,30 +97,31 @@
         Salin komponen dari tarif utama
       </button>
 
-      <!-- Keluarga -->
-      <div class="flex items-center justify-between mb-2 px-1">
-        <h2 class="text-[13px] font-bold text-[var(--mut)] uppercase tracking-wide m-0">Keluarga</h2>
-        <span class="text-[12px] font-semibold text-[var(--mut)]">{{ (detail.anggota || []).length }} KK</span>
+      <!-- Keluarga terdaftar -->
+      <div class="flex items-center justify-between mb-1 px-1">
+        <h2 class="text-[15px] font-bold m-0">Keluarga</h2>
+        <span class="text-[13px] text-[var(--mut)]">{{ (detail.anggota || []).length }} Keluarga</span>
       </div>
-      <div class="rounded-[16px] bg-[var(--card)] border border-[var(--line)] overflow-hidden mb-3">
+      <div class="px-1 space-y-0.5 mb-3">
         <div
           v-for="a in detail.anggota || []"
           :key="a.keluarga_id"
-          class="flex items-center gap-3 px-3 py-2.5 border-b border-[var(--line)] last:border-0"
+          class="w-full flex flex-row items-center gap-3 px-2 py-3"
         >
           <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0">
             {{ inisial(a.nama_kepala || a.nama) }}
           </div>
-          <div class="flex-1 min-w-0">
+          <div class="min-w-0 flex-1">
             <p class="font-bold text-[15px] m-0 leading-tight">{{ a.nama_kepala || a.nama || '—' }}</p>
-            <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ alamatAnggota(a) }}</p>
+            <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ a.alamat || '' }}</p>
           </div>
           <button type="button" class="text-[12px] font-semibold text-red-600 shrink-0" @click="keluarkan(a)">Keluarkan</button>
         </div>
-        <p v-if="!(detail.anggota || []).length" class="text-[13px] text-[var(--mut)] text-center py-5 m-0">
+        <p v-if="!(detail.anggota || []).length" class="text-[13px] text-[var(--mut)] text-center py-6 m-0">
           Belum ada keluarga di tarif ini.
         </p>
       </div>
+
       <button
         type="button"
         class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition mb-4"
@@ -119,6 +139,32 @@
       </label>
     </template>
 
+    <!-- Form ubah nama tarif -->
+    <div v-if="showRename" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40" @click.self="showRename = false">
+      <div class="w-full max-w-[560px] rounded-t-[24px] bg-[var(--bg)] p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))]">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-[17px] font-extrabold m-0">Ubah nama tarif</h2>
+          <button type="button" class="text-[13px] font-semibold text-[var(--mut)]" @click="showRename = false">Batal</button>
+        </div>
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nama</label>
+        <input
+          v-model="renameNama"
+          type="text"
+          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3"
+          placeholder="Nama tarif khusus"
+        />
+        <p v-if="renameErr" class="text-[13px] text-red-600 text-center mb-2">{{ renameErr }}</p>
+        <button
+          type="button"
+          class="w-full min-h-12 rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50"
+          :disabled="renameSaving"
+          @click="simpanNama"
+        >
+          {{ renameSaving ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
+
     <!-- Form komponen -->
     <div v-if="showKomponenForm" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40" @click.self="showKomponenForm = false">
       <div class="w-full max-w-[560px] rounded-t-[24px] bg-[var(--bg)] p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))]">
@@ -127,7 +173,7 @@
           <button type="button" class="text-[13px] font-semibold text-[var(--mut)]" @click="showKomponenForm = false">Batal</button>
         </div>
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nama</label>
-        <input v-model="form.nama" type="text" class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3" placeholder="Keamanan, …" />
+        <input v-model="form.nama" type="text" class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3" placeholder="Keamanan, Kebersihan, …" />
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nominal / bulan</label>
         <input v-model="form.nominal" type="text" inputmode="numeric" class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3" placeholder="15000" />
         <p v-if="formErr" class="text-[13px] text-red-600 text-center mb-2">{{ formErr }}</p>
@@ -144,48 +190,48 @@
           <h2 class="text-[17px] font-extrabold m-0">Salin dari utama</h2>
           <button type="button" class="text-[13px] font-semibold text-[var(--mut)]" @click="showSalin = false">Tutup</button>
         </div>
-        <div class="overflow-y-auto flex-1 space-y-1">
+        <div class="overflow-y-auto flex-1">
           <button
             v-for="c in utamaKomponen"
             :key="c.id"
             type="button"
-            class="w-full flex items-center gap-3 px-2 py-3 text-left active:scale-[0.99]"
+            class="w-full flex items-center gap-3 py-2.5 text-left"
+            style="padding-left: 10px; padding-right: 10px"
             @click="salinKomponen(c)"
           >
-            <div class="w-9 h-9 rounded-[10px] grid place-items-center shrink-0" style="background: rgba(59,130,246,.16); color: #2563EB">
+            <div class="w-9 h-9 rounded-full grid place-items-center shrink-0" style="background: rgba(59,130,246,.16); color: #2563EB">
               <Home :size="16" />
             </div>
             <span class="flex-1 text-[14px] font-semibold">{{ c.nama }}</span>
-            <span class="text-[13px] font-bold tabular-nums text-[var(--mut)]">{{ rp(c.nominal) }}</span>
+            <span class="text-[14px] font-bold tabular-nums">{{ rp(c.nominal) }}</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Pilih keluarga — pola sama AngkatPengurus / Warga -->
+    <!-- Pilih keluarga — sama persis AngkatPengurus step keluarga -->
     <div v-if="showPilih" class="fixed inset-0 z-50 flex flex-col bg-[var(--bg)]">
-      <div class="px-4 pt-[max(12px,env(safe-area-inset-top))] pb-2 border-b border-[var(--line)] flex items-center gap-2">
-        <button type="button" class="text-[14px] font-semibold text-[var(--mut)] px-1" @click="showPilih = false">Batal</button>
-        <p class="flex-1 text-center text-[16px] font-extrabold m-0">Pilih keluarga</p>
-        <span class="text-[12px] font-semibold text-[var(--mut)] min-w-[3rem] text-right">{{ selectedIds.length }}</span>
+      <div class="px-4 pt-[max(12px,env(safe-area-inset-top))]">
+        <AppBackHeader title="Pilih keluarga" @back="showPilih = false" />
       </div>
-      <div class="px-4 pt-3 pb-2">
-        <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12">
-          <Search :size="18" class="text-[var(--mut)] shrink-0" />
-          <input
-            v-model="q"
-            type="search"
-            autocomplete="off"
-            placeholder="Cari nama atau blok/nomor rumah"
-            class="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-[var(--text)] placeholder:text-[var(--mut)]"
-          />
+      <div class="px-4 flex-1 flex flex-col min-h-0">
+        <div class="mb-3">
+          <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12">
+            <Search :size="18" class="text-[var(--mut)] shrink-0" />
+            <input
+              v-model="q"
+              type="search"
+              autocomplete="off"
+              placeholder="Cari nama atau blok/nomor rumah"
+              class="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-[var(--text)] placeholder:text-[var(--mut)]"
+            />
+          </div>
         </div>
-      </div>
-      <div class="flex-1 overflow-y-auto px-3 pb-4">
+
         <AppPageSpinner v-if="loadingKeluarga" />
         <template v-else>
           <p class="text-[13px] text-[var(--mut)] mb-1 px-2 m-0">{{ filteredKeluarga.length }} keluarga</p>
-          <div class="px-1 space-y-0.5">
+          <div class="flex-1 overflow-y-auto px-1 space-y-0.5 pb-28">
             <button
               v-for="k in filteredKeluarga"
               :key="k.id"
@@ -195,7 +241,7 @@
               :disabled="k._locked"
               @click="toggleSelect(k)"
             >
-              <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0">
+              <div class="w-11 h-11 rounded-full bg-[var(--gd)] text-[var(--gm)] grid place-items-center font-bold text-sm shrink-0 overflow-hidden">
                 {{ k.inisial }}
               </div>
               <div class="min-w-0 flex-1">
@@ -204,8 +250,7 @@
               </div>
               <span
                 v-if="k._locked"
-                class="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full"
-                style="background: rgba(245,158,11,.18); color: #B45309"
+                class="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--search)] text-[var(--mut)]"
               >{{ k._tarifNama }}</span>
               <div
                 v-else
@@ -215,15 +260,17 @@
                 <span v-if="selectedSet.has(k.id)" class="text-white text-[11px] font-bold">✓</span>
               </div>
             </button>
+            <p v-if="!filteredKeluarga.length" class="text-[13px] text-[var(--mut)] text-center py-6 m-0">Tidak ada keluarga cocok</p>
           </div>
-          <p v-if="!filteredKeluarga.length" class="text-[13px] text-[var(--mut)] text-center py-6 m-0">Tidak ada keluarga cocok</p>
         </template>
       </div>
-      <div class="p-4 border-t border-[var(--line)] pb-[calc(16px+env(safe-area-inset-bottom,0px))] bg-[var(--card)]">
+
+      <div class="fixed bottom-0 left-0 right-0 p-4 bg-[var(--card)] border-t border-[var(--line)] z-20">
         <div class="max-w-lg mx-auto">
+          <p class="text-[12px] text-[var(--mut)] text-center m-0 mb-2">{{ selectedIds.length }} dipilih</p>
           <button
             type="button"
-            class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50 active:scale-[0.98]"
+            class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-40 active:scale-[0.98] transition-transform"
             :disabled="savingAnggota"
             @click="simpanAnggota"
           >
@@ -238,7 +285,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Search, Home } from 'lucide-vue-next'
+import { Search, Home, PlusCircle, Pencil, Trash2 } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import {
@@ -266,7 +313,6 @@ const err = ref('')
 const detail = ref(null)
 const terapkanBulanIni = ref(false)
 const bulanIni = new Date().toISOString().slice(0, 7)
-const showMenu = ref(false)
 
 const showKomponenForm = ref(false)
 const formSaving = ref(false)
@@ -308,9 +354,6 @@ function inisial(nama) {
   if (p.length === 1) return p[0].slice(0, 2).toUpperCase()
   return (p[0][0] + p[p.length - 1][0]).toUpperCase()
 }
-function alamatAnggota(a) {
-  return [a.blok, a.alamat].filter(Boolean).join(' · ') || a.alamat || ''
-}
 
 async function load() {
   loading.value = true
@@ -322,9 +365,7 @@ async function load() {
     return
   }
   detail.value = res.data
-  if (detail.value?.is_utama) {
-    router.replace('/pengaturan-warga')
-  }
+  if (detail.value?.is_utama) router.replace('/pengaturan-warga')
 }
 
 async function loadUtamaKomponen() {
@@ -334,29 +375,34 @@ async function loadUtamaKomponen() {
   }
 }
 
-async function gantiNama() {
-  showMenu.value = false
-  const nama = prompt('Nama tarif', detail.value?.nama || '')
-  if (nama == null) return
-  const n = String(nama).trim()
-  if (!n) return
+const showRename = ref(false)
+const renameNama = ref('')
+const renameErr = ref('')
+const renameSaving = ref(false)
+
+function openRename() {
+  renameNama.value = detail.value?.nama || ''
+  renameErr.value = ''
+  showRename.value = true
+}
+
+async function simpanNama() {
+  renameErr.value = ''
+  const n = renameNama.value.trim()
+  if (!n) { renameErr.value = 'Nama wajib'; return }
+  renameSaving.value = true
   const res = await ubahTarifIuran(tarifId.value, { nama: n })
-  if (!res.ok) {
-    error(res.error || 'Gagal ganti nama')
-    return
-  }
+  renameSaving.value = false
+  if (!res.ok) { renameErr.value = res.error || 'Gagal simpan'; return }
+  showRename.value = false
   success('Nama disimpan')
   await load()
 }
 
 async function hapusTarif() {
-  showMenu.value = false
   if (!confirm('Hapus tarif khusus ini? Keluarga akan kembali ke tarif utama.')) return
   const res = await hapusTarifKhusus(tarifId.value)
-  if (!res.ok) {
-    error(res.error || 'Gagal hapus')
-    return
-  }
+  if (!res.ok) { error(res.error || 'Gagal hapus'); return }
   success('Tarif dihapus')
   router.replace('/pengaturan-warga')
 }
@@ -395,11 +441,7 @@ async function hapusKomponen(c) {
 }
 
 async function salinKomponen(c) {
-  const res = await buatIuranKomponen({
-    nama: c.nama,
-    nominal: c.nominal,
-    tarif_id: tarifId.value,
-  })
+  const res = await buatIuranKomponen({ nama: c.nama, nominal: c.nominal, tarif_id: tarifId.value })
   if (!res.ok) { error(res.error || 'Gagal salin'); return }
   success('Disalin: ' + c.nama)
   showSalin.value = false
@@ -418,7 +460,7 @@ async function openPilihKeluarga() {
     const id = Number(k.id || k.keluarga_id)
     const m = map[id]
     const locked = !!(m && Number(m.tarif_id) !== tarifId.value)
-    const nama = k.nama || k.nama_kepala || k.kepala || 'Keluarga'
+    const nama = k.nama || k.nama_kepala || 'Keluarga'
     return {
       id,
       nama,

@@ -16,10 +16,6 @@
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else>
-      <p class="text-[13px] text-[var(--mut)] m-0 mb-4">
-        Pecah iuran tetap bulanan menjadi komponen (keamanan, kebersihan, dll). Total inilah yang ditagihkan ke warga tiap bulan.
-      </p>
-
       <h2 class="text-[15px] font-bold m-0 mb-2">Rincian iuran tetap</h2>
       <div
         class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
@@ -75,38 +71,41 @@
         </p>
       </div>
 
-      <!-- Tarif khusus -->
+      <!-- Tarif khusus — card baris seperti menu beranda warga -->
       <div class="mt-5 mb-3">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-[13px] font-bold text-[var(--mut)] uppercase tracking-wide m-0">Tarif khusus</h2>
+        <div class="flex items-center justify-between mb-2 px-0.5">
+          <h2 class="text-[15px] font-bold m-0">Tarif khusus</h2>
           <button type="button" class="text-[13px] font-bold text-[var(--g)]" @click="buatTarif">+ Tarif baru</button>
         </div>
-        <div class="space-y-2">
+        <div class="space-y-2.5">
           <button
             v-for="t in tarifKhusus"
             :key="t.id"
             type="button"
-            class="w-full flex items-center gap-3 px-3 py-3 rounded-[16px] bg-[var(--card)] border border-[var(--line)] text-left active:scale-[0.99] transition"
+            class="menu-row-tarif w-full text-left relative overflow-hidden touch-manipulation"
+            :style="{ background: MENU.iuranKhusus }"
             @click="$router.push('/tarif-khusus/' + t.id)"
           >
-            <div
-              class="w-11 h-11 rounded-[12px] grid place-items-center shrink-0 text-white"
-              :style="{ background: MENU.iuranKhusus }"
-            >
-              <Users :size="20" />
+            <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-16">
+              <div class="w-11 h-11 rounded-[0.875rem] grid place-items-center shrink-0 bg-white/20 text-white">
+                <Users :size="20" />
+              </div>
+              <div class="flex-1 min-w-0 py-2.5">
+                <p class="text-sm font-bold m-0 leading-tight text-white truncate">{{ t.nama }}</p>
+                <p class="text-xs font-semibold m-0 mt-0.5 leading-tight text-white/85 truncate">
+                  {{ t.jumlah_keluarga || 0 }} Keluarga
+                </p>
+              </div>
+              <div class="shrink-0 text-right pr-1">
+                <p class="text-sm font-extrabold m-0 tabular-nums text-white leading-tight">{{ rp(t.total) }}</p>
+              </div>
+              <ChevronRight :size="16" class="shrink-0 text-white/70" />
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-[15px] font-bold m-0 truncate">{{ t.nama }}</p>
-              <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">
-                {{ t.jumlah_keluarga || 0 }} KK · {{ rp(t.total) }}
-              </p>
-            </div>
-            <ChevronRight :size="18" class="text-[var(--mut)] shrink-0" />
           </button>
-          <p v-if="!tarifKhusus.length" class="text-[13px] text-[var(--mut)] text-center py-5 m-0 rounded-[16px] bg-[var(--card)] border border-[var(--line)]">
-            Belum ada tarif khusus. Untuk keluarga dengan iuran berbeda dari utama.
-          </p>
         </div>
+        <p v-if="!tarifKhusus.length" class="text-[13px] text-[var(--mut)] text-center py-6 m-0">
+          Belum ada tarif khusus.
+        </p>
       </div>
 
       <label class="flex items-start gap-3 p-3 rounded-[16px] bg-[var(--card)] border border-[var(--line)] mb-3">
@@ -317,3 +316,11 @@ async function terapkan() {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.menu-row-tarif {
+  border-radius: 1.125rem;
+  min-height: 4rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+</style>
