@@ -1,21 +1,29 @@
-import { ref, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const mode = ref('light')
 
-// Android system nav bar sering tidak ikut toggle realtime → tetap hitam
-const SYSTEM_BAR = '#000000'
+/** Samakan dengan --bg di main.css */
+const BAR = {
+  light: '#FFFFFF',
+  dark: '#111314',
+}
 
-function setSystemBarColor() {
+/** Warna status bar (atas). Mengikuti --bg light/dark. */
+function setSystemBarColor(value) {
+  const color = BAR[value] || BAR.light
+
   let meta = document.querySelector('meta[name="theme-color"]:not([media])')
   if (!meta) {
     meta = document.createElement('meta')
     meta.setAttribute('name', 'theme-color')
     document.head.appendChild(meta)
   }
-  meta.setAttribute('content', SYSTEM_BAR)
+  meta.setAttribute('content', color)
 
   document.querySelectorAll('meta[name="theme-color"][media]').forEach((el) => {
-    el.setAttribute('content', SYSTEM_BAR)
+    const m = (el.getAttribute('media') || '').toLowerCase()
+    if (m.includes('dark')) el.setAttribute('content', BAR.dark)
+    else el.setAttribute('content', BAR.light)
   })
 
   let apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
@@ -24,44 +32,70 @@ function setSystemBarColor() {
     apple.setAttribute('name', 'apple-mobile-web-app-status-bar-style')
     document.head.appendChild(apple)
   }
-  // hitam + ikon terang (status bar)
-  apple.setAttribute('content', 'black')
+  apple.setAttribute('content', value === 'dark' ? 'black' : 'default')
 }
 
 function applyMode(value) {
-  const root = document.documentElement
-  if (value === 'dark') {
-    root.setAttribute('data-mode', 'dark')
-  } else {
-    root.removeAttribute('data-mode')
-  }
-  // System bar selalu hitam; isi app tetap ikut --bg (putih/dark)
-  setSystemBarColor()
+  const v = value === 'dark' ? 'dark' : 'light'
+  mode.value = v
+  document.documentElement.setAttribute('data-mode', v)
   try {
-    localStorage.setItem('rtdua-mode', value)
-  } catch (e) {}
+    localStorage.setItem('rt_theme', v)
+  } catch (_) {}
+  setSystemBarColor(v)
 }
+
+function initTheme() {
+  let saved = null
+  try {
+    saved = localStorage.getItem('rt_theme')
+  } catch (_) {}
+  if (saved === 'dark' || saved === 'light') {
+    applyMode(saved)
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyMode('dark')
+  } else {
+    applyMode('light')
+  }
+}
+
+function toggleTheme() {
+  applyMode(mode.value === 'dark' ? 'light' : 'dark')
+}
+
+/** Alias yang dipakai ProfilView: const { mode, toggle } = useTheme() */
+const toggle = toggleTheme
 
 export function useTheme() {
   onMounted(() => {
-    try {
-      const saved = localStorage.getItem('rtdua-mode')
-      if (saved === 'dark' || saved === 'light') {
-        mode.value = saved
-      }
-    } catch (e) {}
-    applyMode(mode.value)
+    const attr = document.documentElement.getAttribute('data-mode')
+    if (attr === 'dark' || attr === 'light') {
+      // Sinkron ref dengan DOM (early init hanya set attribute, bukan ref)
+      mode.value = attr
+      setSystemBarColor(attr)
+    } else {
+      initTheme()
+    }
   })
+  return { mode, applyMode, toggleTheme, toggle, initTheme }
+}
 
-  watch(mode, (v) => applyMode(v))
-
-  function toggle() {
-    mode.value = mode.value === 'dark' ? 'light' : 'dark'
-  }
-
-  function setMode(v) {
-    if (v === 'dark' || v === 'light') mode.value = v
-  }
-
-  return { mode, toggle, setMode }
+// Early init: set data-mode + mode ref agar tidak desync
+if (typeof document !== 'undefined') {
+  try {
+    const saved = localStorage.getItem('rt_theme')
+    if (saved === 'dark' || saved === 'light') {
+      mode.value = saved
+      document.documentElement.setAttribute('data-mode', saved)
+      setSystemBarColor(saved)
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      mode.value = 'dark'
+      document.documentElement.setAttribute('data-mode', 'dark')
+      setSystemBarColor('dark')
+    } else {
+      mode.value = 'light'
+      document.documentElement.setAttribute('data-mode', 'light')
+      setSystemBarColor('light')
+    }
+  } catch (_) {}
 }

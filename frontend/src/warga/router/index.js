@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@shared/composables/useAuth.js'
+import { resolvePageTransition, syncHistoryPosition } from '@shared/composables/usePageTransition.js'
 import MainLayout from '../layouts/MainLayout.vue'
 import LoginView from '../views/LoginView.vue'
 import HomeView from '../views/HomeView.vue'
@@ -10,31 +11,51 @@ import ProfilView from '../views/ProfilView.vue'
 import PengumumanView from '../views/PengumumanView.vue'
 import PengumumanDetailView from '../views/PengumumanDetailView.vue'
 import RincianIuranView from '../views/RincianIuranView.vue'
-import TransferView from '../views/TransferView.vue'
 import PreBayarView from '../views/PreBayarView.vue'
 import BayarDetailView from '../views/BayarDetailView.vue'
+import BayarBuktiView from '../views/BayarBuktiView.vue'
 import RondaView from '../views/RondaView.vue'
 import BantuanView from '../views/BantuanView.vue'
 import StrukturView from '../views/StrukturView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import NotifikasiDetailView from '../views/NotifikasiDetailView.vue'
 import GantiPinView from '../views/GantiPinView.vue'
-import DataKeluargaView from '../views/DataKeluargaView.vue'
-import TambahAnggotaView from '../views/TambahAnggotaView.vue'
-import EditAnggotaView from '../views/EditAnggotaView.vue'
 import ProgramListView from '../views/ProgramListView.vue'
 import ProgramDetailView from '../views/ProgramDetailView.vue'
 import GaleriListView from '../views/GaleriListView.vue'
 import GaleriDetailView from '../views/GaleriDetailView.vue'
+import DataKeluargaView from '../views/DataKeluargaView.vue'
+import TambahAnggotaView from '../views/TambahAnggotaView.vue'
+import EditAnggotaView from '../views/EditAnggotaView.vue'
 import PosyanduView from '../views/PosyanduView.vue'
+import PosyanduDetailView from '../views/PosyanduDetailView.vue'
+import PosyanduItemDetailView from '../views/PosyanduItemDetailView.vue'
+import PengajianView from '../views/PengajianView.vue'
+import PengajianItemDetailView from '../views/PengajianItemDetailView.vue'
+import LingkunganView from '../views/LingkunganView.vue'
+import LingkunganItemDetailView from '../views/LingkunganItemDetailView.vue'
+import KomunitasView from '../views/KomunitasView.vue'
+import BulutangkisView from '../views/BulutangkisView.vue'
+import BulutangkisItemDetailView from '../views/BulutangkisItemDetailView.vue'
+import GowesView from '../views/GowesView.vue'
+import GowesItemDetailView from '../views/GowesItemDetailView.vue'
+import MancingView from '../views/MancingView.vue'
+import MancingItemDetailView from '../views/MancingItemDetailView.vue'
+import SilatView from '../views/SilatView.vue'
+import SilatItemDetailView from '../views/SilatItemDetailView.vue'
+import SenamView from '../views/SenamView.vue'
+import SenamItemDetailView from '../views/SenamItemDetailView.vue'
 import TalimView from '../views/TalimView.vue'
 import TalimJadwalView from '../views/TalimJadwalView.vue'
-import PosyanduDetailView from '../views/PosyanduDetailView.vue'
-import PengajianView from '../views/PengajianView.vue'
-import LingkunganView from '../views/LingkunganView.vue'
-import PosyanduItemDetailView from '../views/PosyanduItemDetailView.vue'
-import PengajianItemDetailView from '../views/PengajianItemDetailView.vue'
-import LingkunganItemDetailView from '../views/LingkunganItemDetailView.vue'
+import TalimItemDetailView from '../views/TalimItemDetailView.vue'
+import PhbiView from '../views/PhbiView.vue'
+import PhbiItemDetailView from '../views/PhbiItemDetailView.vue'
+import RwView from '../views/RwView.vue'
+import RwItemDetailView from '../views/RwItemDetailView.vue'
+import AmbulanceView from '../views/AmbulanceView.vue'
+import AmbulanceItemDetailView from '../views/AmbulanceItemDetailView.vue'
+import RewardListView from '../views/RewardListView.vue'
+import RewardDetailView from '../views/RewardDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -57,6 +78,7 @@ const routes = [
       { path: 'transfer', name: 'transfer', component: PreBayarView },
       { path: 'bayar', name: 'bayar', component: PreBayarView },
       { path: 'bayar/detail', name: 'bayar-detail', component: BayarDetailView },
+      { path: 'bayar/bukti', name: 'bayar-bukti', component: BayarBuktiView },
       { path: 'ronda', name: 'ronda', component: RondaView },
       { path: 'bantuan', name: 'bantuan', component: BantuanView },
       { path: 'struktur', name: 'struktur', component: StrukturView, meta: { mainTab: true } },
@@ -67,6 +89,8 @@ const routes = [
       { path: 'program/:id', name: 'program-detail', component: ProgramDetailView },
       { path: 'galeri', name: 'galeri', component: GaleriListView },
       { path: 'galeri/:id', name: 'galeri-detail', component: GaleriDetailView },
+      { path: 'reward', name: 'reward', component: RewardListView },
+      { path: 'reward/:id', name: 'reward-detail', component: RewardDetailView },
       { path: 'posyandu', name: 'posyandu', component: PosyanduView },
       { path: 'posyandu/detail', name: 'posyandu-detail', component: PosyanduDetailView },
       { path: 'posyandu/detail/:id', name: 'posyandu-item', component: PosyanduItemDetailView },
@@ -74,8 +98,26 @@ const routes = [
       { path: 'posyandu/pengajian/:id', name: 'posyandu-pengajian-item', component: PengajianItemDetailView },
       { path: 'posyandu/lingkungan', name: 'posyandu-lingkungan', component: LingkunganView },
       { path: 'posyandu/lingkungan/:id', name: 'posyandu-lingkungan-item', component: LingkunganItemDetailView },
+      { path: 'komunitas', name: 'komunitas', component: KomunitasView },
+      { path: 'komunitas/bulutangkis', name: 'komunitas-bulutangkis', component: BulutangkisView },
+      { path: 'komunitas/bulutangkis/:id', name: 'komunitas-bulutangkis-item', component: BulutangkisItemDetailView },
+      { path: 'komunitas/gowes', name: 'komunitas-gowes', component: GowesView },
+      { path: 'komunitas/gowes/:id', name: 'komunitas-gowes-item', component: GowesItemDetailView },
+      { path: 'komunitas/mancing', name: 'komunitas-mancing', component: MancingView },
+      { path: 'komunitas/mancing/:id', name: 'komunitas-mancing-item', component: MancingItemDetailView },
+      { path: 'komunitas/silat', name: 'komunitas-silat', component: SilatView },
+      { path: 'komunitas/silat/:id', name: 'komunitas-silat-item', component: SilatItemDetailView },
+      { path: 'komunitas/senam', name: 'komunitas-senam', component: SenamView },
+      { path: 'komunitas/senam/:id', name: 'komunitas-senam-item', component: SenamItemDetailView },
       { path: 'talim', name: 'talim', component: TalimView },
       { path: 'talim/jadwal', name: 'talim-jadwal', component: TalimJadwalView },
+      { path: 'talim/jadwal/:id', name: 'talim-item', component: TalimItemDetailView },
+      { path: 'talim/phbi', name: 'phbi', component: PhbiView },
+      { path: 'talim/phbi/:id', name: 'phbi-item', component: PhbiItemDetailView },
+      { path: 'rw', name: 'rw', component: RwView },
+      { path: 'rw/:id', name: 'rw-item', component: RwItemDetailView },
+      { path: 'ambulance', name: 'ambulance', component: AmbulanceView },
+      { path: 'ambulance/:id', name: 'ambulance-item', component: AmbulanceItemDetailView },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -87,7 +129,8 @@ const router = createRouter({
   scrollBehavior() { return { top: 0 } },
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
+  resolvePageTransition(to, from)
   const { isLoggedIn, ensureSession, user } = useAuth()
   await ensureSession('warga')
 
@@ -100,6 +143,11 @@ router.beforeEach(async (to) => {
   if (isLoggedIn.value && user.value?.harus_ganti_kredensial && to.name !== 'ganti-pin') {
     return { name: 'ganti-pin' }
   }
+})
+
+router.afterEach((to, from) => {
+  resolvePageTransition(to, from)
+  syncHistoryPosition()
 })
 
 export default router

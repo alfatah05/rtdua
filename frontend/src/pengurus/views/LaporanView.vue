@@ -9,11 +9,37 @@
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else-if="data">
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-5 shadow-[var(--sh)] mb-4 space-y-2">
-        <div class="flex justify-between"><span class="text-[var(--mut)]">Saldo keseluruhan</span><span class="font-bold">{{ rp(data.saldo_keseluruhan) }}</span></div>
+        <div class="flex justify-between"><span class="text-[var(--mut)]">Saldo kas</span><span class="font-bold">{{ rp(data.saldo_keseluruhan) }}</span></div>
+        <div class="flex justify-between"><span class="text-[var(--mut)]">Sub pos (belum disetor)</span><span class="font-bold">{{ rp(totalSubPos) }}</span></div>
         <div class="flex justify-between"><span class="text-[var(--mut)]">Total masuk</span><span class="font-bold text-[var(--g)]">+ {{ rp(data.total_masuk) }}</span></div>
         <div class="flex justify-between"><span class="text-[var(--mut)]">Total keluar</span><span class="font-bold text-red-500">− {{ rp(data.total_keluar) }}</span></div>
         <div class="flex justify-between border-t border-[var(--line)] pt-2"><span class="font-bold">Netto bulan ini</span><span class="font-extrabold text-lg">{{ rp((data.total_masuk || 0) - (data.total_keluar || 0)) }}</span></div>
       </div>
+
+      <h2 class="text-[15px] font-bold mb-2">Rekap sub pos</h2>
+      <p class="text-[12px] text-[var(--mut)] m-0 mb-2">Mutasi sub pos bulan ini (terpisah dari kas).</p>
+      <div class="space-y-2 mb-5">
+        <div
+          v-for="s in rekapSubPos"
+          :key="s.id"
+          class="bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5"
+        >
+          <div class="flex justify-between gap-2">
+            <div class="min-w-0">
+              <p class="font-bold text-[14px] m-0 truncate">{{ s.judul }}</p>
+              <p class="text-[11px] text-[var(--mut)] m-0 mt-0.5">{{ labelJenis(s.jenis) }}<span v-if="s.aktif === false"> · nonaktif</span></p>
+            </div>
+            <span class="font-bold shrink-0">{{ rp(s.saldo) }}</span>
+          </div>
+          <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-[12px]">
+            <span class="text-[var(--g)]">+{{ rp(s.masuk) }}</span>
+            <span class="text-red-500">−{{ rp(s.keluar) }}</span>
+            <span class="text-sky-600">Alokasi {{ rp(s.alokasi) }}</span>
+          </div>
+        </div>
+        <p v-if="!rekapSubPos.length" class="text-[13px] text-[var(--mut)]">Tidak ada mutasi sub pos bulan ini</p>
+      </div>
+
       <h2 class="text-[15px] font-bold mb-2">Per kategori</h2>
       <div class="space-y-2 mb-5">
         <div v-for="(v, nama) in (data.per_kategori || {})" :key="nama" class="flex justify-between bg-[var(--card)] border border-[var(--line)] rounded-[16px] p-3.5">
@@ -36,27 +62,49 @@
 <script setup>
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { laporan } from '@shared/services/keuangan.js'
+import { laporan, listSubPos } from '@shared/services/keuangan.js'
 
 const bulan = ref(new Date().toISOString().slice(0, 7))
 const loading = ref(true)
 const err = ref('')
 const data = ref(null)
+const totalSubPos = ref(0)
 const msg = ref('')
+
+const rekapSubPos = computed(() => {
+  const r = data.value?.rekap_sub_pos
+  return Array.isArray(r) ? r : []
+})
 
 function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 }
 
+function labelJenis(j) {
+  if (j === 'komponen') return 'Komponen'
+  if (j === 'khusus') return 'Khusus'
+  if (j === 'denda') return 'Denda'
+  return j || '—'
+}
+
 async function load() {
   loading.value = true
   err.value = ''
-  const res = await laporan(bulan.value)
+  const [res, sub] = await Promise.all([
+    laporan(bulan.value),
+    listSubPos(),
+  ])
   loading.value = false
   if (!res.ok) { err.value = res.error || 'Gagal'; return }
   data.value = res.data
+  if (sub.ok) {
+    const items = Array.isArray(sub.data) ? sub.data : (sub.data?.items || [])
+    totalSubPos.value = items.reduce((s, p) => s + (Number(p.saldo) || 0), 0)
+  } else {
+    totalSubPos.value = 0
+  }
 }
 
 function unduhCsv() {
@@ -76,7 +124,13 @@ function unduhCsv() {
 async function salinRingkas() {
   const d = data.value
   if (!d) return
-  const t = `Laporan ${d.bulan}\nMasuk: ${rp(d.total_masuk)}\nKeluar: ${rp(d.total_keluar)}\nSaldo: ${rp(d.saldo_keseluruhan)}`
+  let t = `Laporan ${d.bulan}\nMasuk: ${rp(d.total_masuk)}\nKeluar: ${rp(d.total_keluar)}\nSaldo kas: ${rp(d.saldo_keseluruhan)}\nSub pos: ${rp(totalSubPos.value)}`
+  if (rekapSubPos.value.length) {
+    t += '\n\nRekap sub pos:'
+    for (const s of rekapSubPos.value) {
+      t += `\n- ${s.judul}: saldo ${rp(s.saldo)} (+${rp(s.masuk)} / −${rp(s.keluar)} / alokasi ${rp(s.alokasi)})`
+    }
+  }
   try {
     await navigator.clipboard.writeText(t)
     msg.value = 'Ringkasan disalin'

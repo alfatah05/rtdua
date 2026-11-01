@@ -7,21 +7,46 @@ const sessionReady = ref(false)
 let validatePromise = null
 
 function storageKey(side) {
-  return side === 'warga' ? 'rtdua-auth-warga' : 'rtdua-auth-pengurus'
+  return side === 'pengurus' ? 'rtdua-auth-pengurus' : 'rtdua-auth-warga'
+}
+
+/** Cache lokal minimal (bukan token) — hanya untuk UI sebelum /auth/me selesai. */
+function slimUser(u) {
+  if (!u || typeof u !== 'object') return null
+  return {
+    id: u.id ?? null,
+    nama: u.nama ?? null,
+    role: u.role ?? null,
+    foto: u.foto ?? null,
+    jabatan: u.jabatan ?? null,
+    alamat: u.alamat ?? null,
+    keluarga_id: u.keluarga_id ?? null,
+    warga_id: u.warga_id ?? null,
+    harus_ganti_kredensial: !!u.harus_ganti_kredensial,
+    is_developer: !!u.is_developer,
+  }
+}
+
+function persist(side, u) {
+  try {
+    const s = slimUser(u)
+    if (s) localStorage.setItem(storageKey(side), JSON.stringify(s))
+    else localStorage.removeItem(storageKey(side))
+  } catch (e) {}
 }
 
 function clearLocal(side) {
   user.value = null
   try {
     localStorage.removeItem(storageKey(side))
-    // bersihkan juga sisi lain agar tidak nyasar
+    // bersihkan sisa key lama bila ada
     localStorage.removeItem('rtdua-auth-warga')
     localStorage.removeItem('rtdua-auth-pengurus')
   } catch (e) {}
 }
 
 export function useAuth() {
-  const isLoggedIn = computed(() => !!user.value)
+  const isLoggedIn = computed(() => !!user.value?.id)
   const role = computed(() => user.value?.role || null)
   const isKetua = computed(() => user.value?.role === 'ketua')
   const isDeveloper = computed(() => !!user.value?.is_developer)
@@ -32,7 +57,7 @@ export function useAuth() {
       const res = await authService.loginWarga(username, pin)
       if (!res.ok) return { ok: false, error: res.error }
       user.value = res.user
-      try { localStorage.setItem('rtdua-auth-warga', JSON.stringify(user.value)) } catch (e) {}
+      persist('warga', user.value)
       sessionReady.value = true
       return { ok: true, mustChange: res.mustChange || !!res.user?.harus_ganti_kredensial }
     } finally { loading.value = false }
@@ -44,7 +69,7 @@ export function useAuth() {
       const res = await authService.loginPengurus(username, password)
       if (!res.ok) return { ok: false, error: res.error }
       user.value = res.user
-      try { localStorage.setItem('rtdua-auth-pengurus', JSON.stringify(user.value)) } catch (e) {}
+      persist('pengurus', user.value)
       sessionReady.value = true
       return { ok: true, mustChange: res.mustChange || !!res.user?.harus_ganti_kredensial }
     } finally { loading.value = false }
@@ -60,7 +85,7 @@ export function useAuth() {
   function restore(side) {
     try {
       const raw = localStorage.getItem(storageKey(side))
-      if (raw) user.value = JSON.parse(raw)
+      if (raw) user.value = slimUser(JSON.parse(raw))
       else user.value = null
     } catch (e) {
       user.value = null
@@ -77,18 +102,15 @@ export function useAuth() {
 
     validatePromise = (async () => {
       restore(side)
-      // tanpa cache lokal pun tetap cek server (kalau cookie masih hidup)
       try {
         const res = await authService.me()
         if (res.ok && res.user) {
           user.value = res.user
-          try { localStorage.setItem(storageKey(side), JSON.stringify(res.user)) } catch (e) {}
+          persist(side, res.user)
         } else {
           clearLocal(side)
         }
       } catch (e) {
-        // network error: jangan langsung kick kalau masih ada cache;
-        // tapi kalau server bilang 401, clear
         if (e && e.status === 401) clearLocal(side)
       }
       sessionReady.value = true

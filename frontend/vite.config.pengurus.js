@@ -8,13 +8,14 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       includeAssets: ['icons/app-icon.png'],
       manifest: {
         id: '/?app=pengurus',
         name: 'Pengurus rtdua',
         short_name: 'Pengurus rtdua',
         description: 'Aplikasi pengurus rtdua',
-        theme_color: '#000000',
+        theme_color: '#FFFFFF',
         background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'portrait',

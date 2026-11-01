@@ -10,7 +10,7 @@
     </div>
     <div class="grid grid-cols-4 gap-2 text-center mb-5">
       <button v-for="a in aksi" :key="a.label" type="button" class="flex flex-col items-center gap-1.5 active:scale-95 transition-transform" @click="$router.push(a.to)">
-        <span class="w-12 h-12 rounded-full grid place-items-center" :style="{ background: a.bg, color: a.color }">
+        <span class="w-12 h-12 rounded-[16px] grid place-items-center text-white" :style="{ background: a.bg }">
           <component :is="a.icon" :size="20" />
         </span>
         <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>
@@ -46,6 +46,7 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import { listKeluarga } from '@shared/services/warga.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { Search, UserPlus, ScanLine, Download, SlidersHorizontal, ChevronRight } from 'lucide-vue-next'
+import { MENU } from '@shared/constants/menuColors.js'
 
 const route = useRoute()
 const q = ref('')
@@ -53,10 +54,10 @@ const list = ref([])
 const loading = ref(true)
 
 const aksi = [
-  { label: 'Tambah', icon: UserPlus, to: '/warga/tambah', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-  { label: 'Scan KK', icon: ScanLine, to: '/warga/scan-kk', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
-  { label: 'Ekspor', icon: Download, to: '/warga/ekspor', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
-  { label: 'Filter', icon: SlidersHorizontal, to: '/warga/filter', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
+  { label: 'Tambah', icon: UserPlus, to: '/warga/tambah', bg: MENU.tambahKeluarga },
+  { label: 'Scan KK', icon: ScanLine, to: '/warga/scan-kk', bg: MENU.scanKk },
+  { label: 'Ekspor', icon: Download, to: '/warga/ekspor', bg: MENU.ekspor },
+  { label: 'Filter', icon: SlidersHorizontal, to: '/warga/filter', bg: MENU.filter },
 ]
 
 function inisial(nama) {

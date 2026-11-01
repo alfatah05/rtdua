@@ -49,7 +49,7 @@ export async function batalkanPembayaran(id, alasan) {
   try {
     const res = await api('/keuangan/pembayaran/' + id + '/batal', {
       method: 'POST',
-      body: { alasan },
+      body: { alasan: alasan || '' },
     })
     return { ok: true, data: res.data }
   } catch (e) {
@@ -82,7 +82,7 @@ export async function tolakPermintaan(id, alasan) {
   try {
     const res = await api('/keuangan/permintaan/' + id + '/tolak', {
       method: 'POST',
-      body: { alasan },
+      body: { alasan: alasan || '' },
     })
     return { ok: true, data: res.data }
   } catch (e) {
@@ -123,11 +123,20 @@ export async function tambahKas(payload) {
   }
 }
 
+export async function getKasDetail(id) {
+  try {
+    const res = await api('/keuangan/kas/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function batalkanKas(id, alasan) {
   try {
     const res = await api('/keuangan/kas/' + id + '/batal', {
       method: 'POST',
-      body: { alasan },
+      body: { alasan: alasan || '' },
     })
     return { ok: true, data: res.data }
   } catch (e) {
@@ -211,7 +220,7 @@ export async function batalkanIuranKhusus(id, alasan) {
   try {
     const res = await api('/keuangan/iuran-khusus/' + id + '/batal', {
       method: 'POST',
-      body: { alasan },
+      body: { alasan: alasan || '' },
     })
     return { ok: true, data: res.data }
   } catch (e) {
@@ -233,7 +242,7 @@ export async function buatTagihanKhususKeluarga(keluargaId, payload) {
 
 export async function ubahTagihanKhusus(tagihanId, payload) {
   try {
-    const res = await api('/keuangan/tagihan-khusus/' + encodeURIComponent(tagihanId), {
+    const res = await api('/keuangan/tagihan-khusus/' + tagihanId, {
       method: 'PUT',
       body: payload,
     })
@@ -245,9 +254,9 @@ export async function ubahTagihanKhusus(tagihanId, payload) {
 
 export async function hapusTagihanKhusus(tagihanId, alasan) {
   try {
-    const res = await api('/keuangan/tagihan-khusus/' + encodeURIComponent(tagihanId) + '/batal', {
+    const res = await api('/keuangan/tagihan-khusus/' + tagihanId + '/hapus', {
       method: 'POST',
-      body: { alasan: alasan || 'Dihapus pengurus' },
+      body: { alasan: alasan || '' },
     })
     return { ok: true, data: res.data }
   } catch (e) {
@@ -276,7 +285,7 @@ export async function ubahNominal(payload) {
 
 export async function pastikanTagihanKas(periode) {
   try {
-    const res = await api('/keuangan/pastikan-tagihan-kas', {
+    const res = await api('/keuangan/pastikan-tagihan', {
       method: 'POST',
       body: { periode },
     })
@@ -324,7 +333,7 @@ export async function hapusIuranKomponen(id) {
 
 export async function terapkanKomponenBulanIni() {
   try {
-    const res = await api('/keuangan/iuran-komponen/terapkan-bulan-ini', { method: 'POST' })
+    const res = await api('/keuangan/iuran-komponen/terapkan', { method: 'POST' })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -368,6 +377,15 @@ export async function portalKas(bulan) {
   }
 }
 
+export async function portalStatusIuranWarga() {
+  try {
+    const res = await api('/portal/keuangan/status-iuran')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function listRekening() {
   try {
     const res = await api('/keuangan/rekening')
@@ -403,6 +421,82 @@ export async function deleteRekening(id) {
 export async function portalListRekening() {
   try {
     const res = await api('/portal/keuangan/rekening')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+// ---- Sub pos (T4) ----
+
+export async function listSubPos(params = {}) {
+  try {
+    const q = new URLSearchParams()
+    if (params.aktif) q.set('aktif', params.aktif)
+    const qs = q.toString()
+    const res = await api('/keuangan/sub-pos' + (qs ? '?' + qs : ''))
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function detailSubPos(id) {
+  try {
+    const res = await api('/keuangan/sub-pos/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function listSubPosMutasi(id, params = {}) {
+  try {
+    const q = new URLSearchParams()
+    if (params.tipe) q.set('tipe', params.tipe)
+    if (params.bulan) q.set('bulan', params.bulan)
+    if (params.limit) q.set('limit', String(params.limit))
+    const qs = q.toString()
+    const res = await api('/keuangan/sub-pos/' + id + '/mutasi' + (qs ? '?' + qs : ''))
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function subPosMasuk(id, payload) {
+  try {
+    const res = await api('/keuangan/sub-pos/' + id + '/masuk', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function subPosKeluar(id, payload) {
+  try {
+    const res = await api('/keuangan/sub-pos/' + id + '/keluar', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function subPosAlokasi(id, payload) {
+  try {
+    const res = await api('/keuangan/sub-pos/' + id + '/alokasi', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function subPosBatalMutasi(mutasiId, alasan) {
+  try {
+    const res = await api('/keuangan/sub-pos/mutasi/' + mutasiId + '/batal', {
+      method: 'POST',
+      body: { alasan: alasan || '' },
+    })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }

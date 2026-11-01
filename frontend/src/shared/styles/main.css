@@ -19,6 +19,8 @@
   --rs: 12px;
   --r: 20px;
   --rm: 9999px;
+  --btn: #0A8F44;
+  --btn-fg: #FFFFFF;
   color-scheme: light;
 }
 
@@ -36,10 +38,13 @@
   --gd: #12392A;
   --gm: #D5F7E1;
   --sh: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --btn: #FFFFFF;
+  --btn-fg: #111314;
   color-scheme: dark;
 }
 
 html {
+  font-size: 16px;
   scroll-padding-top: env(safe-area-inset-top, 0px);
   background: var(--bg);
   background-color: var(--bg);
@@ -54,7 +59,7 @@ body {
   color: var(--text);
   font-family: "Plus Jakarta Sans", system-ui, sans-serif;
   font-weight: 500;
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   padding-top: 0;
@@ -74,122 +79,82 @@ body {
   outline-offset: 2px;
 }
 
+:root[data-mode="dark"] button.bg-\[var\(--g\)\],
+:root[data-mode="dark"] a.bg-\[var\(--g\)\] {
+  background-color: var(--btn) !important;
+  color: var(--btn-fg) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* Konten Markdown (pengumuman & program) */
 .prose-rt {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--text);
   word-break: break-word;
 }
-.prose-rt > *:first-child {
-  margin-top: 0;
-}
-.prose-rt > *:last-child {
-  margin-bottom: 0;
-}
+.prose-rt > *:first-child { margin-top: 0; }
+.prose-rt > *:last-child { margin-bottom: 0; }
+.prose-rt p { margin: 0.65em 0; }
 .prose-rt h1,
 .prose-rt h2,
 .prose-rt h3,
-.prose-rt h4,
-.prose-rt h5,
-.prose-rt h6 {
+.prose-rt h4 {
   font-weight: 800;
   line-height: 1.25;
-  margin: 1.1em 0 0.45em;
+  margin: 1em 0 0.4em;
   color: var(--text);
 }
-.prose-rt h1 {
-  font-size: 1.4em;
-}
-.prose-rt h2 {
-  font-size: 1.25em;
-}
-.prose-rt h3 {
-  font-size: 1.12em;
-}
-.prose-rt h4 {
-  font-size: 1.05em;
-}
-.prose-rt h5,
-.prose-rt h6 {
-  font-size: 1em;
-}
-.prose-rt p {
-  margin: 0.65em 0;
-}
+.prose-rt h1 { font-size: 1.25rem; }
+.prose-rt h2 { font-size: 1.125rem; }
+.prose-rt h3 { font-size: 1rem; }
 .prose-rt ul,
 .prose-rt ol {
-  margin: 0.65em 0;
+  margin: 0.5em 0;
   padding-left: 1.35em;
 }
-.prose-rt li {
-  margin: 0.25em 0;
-}
-.prose-rt li > ul,
-.prose-rt li > ol {
-  margin: 0.15em 0;
-}
-.prose-rt input[type="checkbox"] {
-  margin-right: 0.4em;
-  vertical-align: middle;
-}
+.prose-rt li { margin: 0.25em 0; }
 .prose-rt a {
   color: var(--g);
-  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.prose-rt strong {
-  font-weight: 800;
-}
-.prose-rt em {
-  font-style: italic;
-}
-.prose-rt del,
-.prose-rt s {
-  text-decoration: line-through;
-  color: var(--mut);
-}
+.prose-rt strong { font-weight: 700; }
 .prose-rt blockquote {
   margin: 0.75em 0;
-  padding: 0.35em 0 0.35em 0.9em;
+  padding: 0.5em 0.85em;
   border-left: 3px solid var(--g);
+  background: var(--search);
+  border-radius: 0 10px 10px 0;
   color: var(--mut);
-}
-.prose-rt blockquote blockquote {
-  margin-left: 0.25em;
-  border-left-color: color-mix(in srgb, var(--g) 55%, var(--line));
 }
 .prose-rt code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.9em;
-  background: var(--search);
+  font-size: 0.85em;
   padding: 0.1em 0.35em;
   border-radius: 6px;
+  background: var(--search);
 }
 .prose-rt pre {
   margin: 0.75em 0;
-  padding: 12px 14px;
-  background: var(--search);
-  border-radius: 12px;
+  padding: 0.85em 1em;
   overflow-x: auto;
+  border-radius: 12px;
+  background: var(--search);
+  border: 1px solid var(--line);
 }
 .prose-rt pre code {
-  background: transparent;
   padding: 0;
-  font-size: 0.85em;
-  white-space: pre;
-}
-.prose-rt hr {
-  border: none;
-  border-top: 1px solid var(--line);
-  margin: 1.1em 0;
+  background: transparent;
 }
 .prose-rt img {
   max-width: 100%;
@@ -197,27 +162,22 @@ body {
   border-radius: 12px;
   margin: 0.75em 0;
 }
+.prose-rt hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 1em 0;
+}
 .prose-rt table {
   width: 100%;
   border-collapse: collapse;
-  margin: 0.85em 0;
-  font-size: 0.92em;
-  display: block;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.prose-rt thead,
-.prose-rt tbody {
-  display: table;
-  width: 100%;
-  table-layout: auto;
+  margin: 0.75em 0;
+  font-size: 0.875rem;
 }
 .prose-rt th,
 .prose-rt td {
   border: 1px solid var(--line);
-  padding: 8px 10px;
+  padding: 0.45em 0.6em;
   text-align: left;
-  vertical-align: top;
 }
 .prose-rt th {
   background: var(--search);
@@ -248,4 +208,14 @@ body {
   border-radius: 6px;
   background: var(--card);
   box-shadow: 0 1px 0 var(--line);
+}
+
+/* Matikan semua animasi/transisi saat user nonaktifkan di Profil */
+html[data-anim="off"] *,
+html[data-anim="off"] *::before,
+html[data-anim="off"] *::after {
+  animation: none !important;
+  animation-duration: 0.01ms !important;
+  transition: none !important;
+  transition-duration: 0.01ms !important;
 }

@@ -29,6 +29,17 @@ class KeluargaController extends Controller
         return ApiResponse::ok((new KeluargaService())->list($filter));
     }
 
+    public function cariAnggota()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $q = trim((string) ($this->request->getGet('q') ?? ''));
+        $limit = (int) ($this->request->getGet('limit') ?? 40);
+        return ApiResponse::ok((new KeluargaService())->cariAnggotaAktif($q, $limit));
+    }
+
     public function show($id)
     {
         $user = $this->requirePengurus();
@@ -239,10 +250,8 @@ class KeluargaController extends Controller
 
             return ApiResponse::ok(['user_id' => $uid], $msg);
         } catch (Throwable $e) {
-            return ApiResponse::fail('Reset PIN gagal: ' . $e->getMessage(), 500, [
-                'file' => basename($e->getFile()),
-                'line' => $e->getLine(),
-            ]);
+            log_message('error', 'Reset PIN: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+            return ApiResponse::fail('Reset PIN gagal.', 500);
         }
     }
 

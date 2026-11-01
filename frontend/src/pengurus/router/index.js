@@ -26,6 +26,9 @@ import AktivitasView from '../views/AktivitasView.vue'
 import AktivitasDetailView from '../views/AktivitasDetailView.vue'
 import ProfilView from '../views/ProfilView.vue'
 import LainnyaView from '../views/LainnyaView.vue'
+import RewardListView from '../views/RewardListView.vue'
+import RewardFormView from '../views/RewardFormView.vue'
+import RewardDetailView from '../views/RewardDetailView.vue'
 import RekeningPembayaranView from '../views/RekeningPembayaranView.vue'
 import NotifikasiView from '../views/NotifikasiView.vue'
 import PengumumanListView from '../views/PengumumanListView.vue'
@@ -56,10 +59,13 @@ import GaleriDetailView from '../views/GaleriDetailView.vue'
 import FilterKasView from '../views/FilterKasView.vue'
 import FilterIuranView from '../views/FilterIuranView.vue'
 import AngkatPengurusView from '../views/AngkatPengurusView.vue'
+import AngkatPengurusFormView from '../views/AngkatPengurusFormView.vue'
 import KelolaPengurusDetailView from '../views/KelolaPengurusDetailView.vue'
 import EksporIuranView from '../views/EksporIuranView.vue'
 import BatalDendaView from '../views/BatalDendaView.vue'
 import PosKasView from '../views/PosKasView.vue'
+import SubPosView from '../views/SubPosView.vue'
+import SubPosDetailView from '../views/SubPosDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -101,11 +107,17 @@ const routes = [
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
       { path: 'keuangan/catat', component: CatatIuranPilihView },
       { path: 'keuangan/pos-kas', component: PosKasView },
+      { path: 'keuangan/sub-pos', component: SubPosView },
+      { path: 'keuangan/sub-pos/:id', component: SubPosDetailView },
 
       { path: 'aktivitas', name: 'aktivitas', component: AktivitasView },
       { path: 'aktivitas/:id', component: AktivitasDetailView },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'lainnya', name: 'lainnya', component: LainnyaView },
+      { path: 'reward', name: 'reward', component: RewardListView },
+      { path: 'reward/tambah', name: 'reward-tambah', component: RewardFormView },
+      { path: 'reward/:id/edit', name: 'reward-edit', component: RewardFormView },
+      { path: 'reward/:id', name: 'reward-detail', component: RewardDetailView },
       { path: 'rekening-pembayaran', name: 'rekening-pembayaran', component: RekeningPembayaranView },
       { path: 'notifikasi', name: 'notifikasi', component: NotifikasiView },
 
@@ -124,6 +136,33 @@ const routes = [
       { path: 'konten/lingkungan', component: KaderKontenListView, meta: { kategori: 'lingkungan' } },
       { path: 'konten/lingkungan/tambah', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
       { path: 'konten/lingkungan/:id', component: KaderKontenFormView, meta: { kategori: 'lingkungan' } },
+      { path: 'konten/bulutangkis', component: KaderKontenListView, meta: { kategori: 'bulutangkis' } },
+      { path: 'konten/bulutangkis/tambah', component: KaderKontenFormView, meta: { kategori: 'bulutangkis' } },
+      { path: 'konten/bulutangkis/:id', component: KaderKontenFormView, meta: { kategori: 'bulutangkis' } },
+      { path: 'konten/gowes', component: KaderKontenListView, meta: { kategori: 'gowes' } },
+      { path: 'konten/gowes/tambah', component: KaderKontenFormView, meta: { kategori: 'gowes' } },
+      { path: 'konten/gowes/:id', component: KaderKontenFormView, meta: { kategori: 'gowes' } },
+      { path: 'konten/mancing', component: KaderKontenListView, meta: { kategori: 'mancing' } },
+      { path: 'konten/mancing/tambah', component: KaderKontenFormView, meta: { kategori: 'mancing' } },
+      { path: 'konten/mancing/:id', component: KaderKontenFormView, meta: { kategori: 'mancing' } },
+      { path: 'konten/silat', component: KaderKontenListView, meta: { kategori: 'silat' } },
+      { path: 'konten/silat/tambah', component: KaderKontenFormView, meta: { kategori: 'silat' } },
+      { path: 'konten/silat/:id', component: KaderKontenFormView, meta: { kategori: 'silat' } },
+      { path: 'konten/senam', component: KaderKontenListView, meta: { kategori: 'senam' } },
+      { path: 'konten/senam/tambah', component: KaderKontenFormView, meta: { kategori: 'senam' } },
+      { path: 'konten/senam/:id', component: KaderKontenFormView, meta: { kategori: 'senam' } },
+      { path: 'konten/talim', component: KaderKontenListView, meta: { kategori: 'talim' } },
+      { path: 'konten/talim/tambah', component: KaderKontenFormView, meta: { kategori: 'talim' } },
+      { path: 'konten/talim/:id', component: KaderKontenFormView, meta: { kategori: 'talim' } },
+      { path: 'konten/phbi', component: KaderKontenListView, meta: { kategori: 'phbi' } },
+      { path: 'konten/phbi/tambah', component: KaderKontenFormView, meta: { kategori: 'phbi' } },
+      { path: 'konten/phbi/:id', component: KaderKontenFormView, meta: { kategori: 'phbi' } },
+      { path: 'konten/rw', component: KaderKontenListView, meta: { kategori: 'rw' } },
+      { path: 'konten/rw/tambah', component: KaderKontenFormView, meta: { kategori: 'rw' } },
+      { path: 'konten/rw/:id', component: KaderKontenFormView, meta: { kategori: 'rw' } },
+      { path: 'konten/ambulance', component: KaderKontenListView, meta: { kategori: 'ambulance' } },
+      { path: 'konten/ambulance/tambah', component: KaderKontenFormView, meta: { kategori: 'ambulance' } },
+      { path: 'konten/ambulance/:id', component: KaderKontenFormView, meta: { kategori: 'ambulance' } },
       { path: 'konten/bazis', component: BazisFormView },
       { path: 'konten/galeri', component: GaleriListView },
       { path: 'konten/galeri/tambah', component: GaleriAlbumFormView },
@@ -142,6 +181,7 @@ const routes = [
       { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
       { path: 'kelola-pengurus', component: KelolaPengurusView },
       { path: 'kelola-pengurus/angkat', component: AngkatPengurusView },
+      { path: 'kelola-pengurus/angkat/form', component: AngkatPengurusFormView },
       { path: 'kelola-pengurus/:id', component: KelolaPengurusDetailView },
     ],
   },

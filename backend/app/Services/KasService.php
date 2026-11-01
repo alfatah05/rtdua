@@ -4,8 +4,9 @@ namespace App\Services;
 
 /**
  * Kas masuk/keluar.
+ * T2: pembayaran iuran tidak lagi otomatis mengisi kas_transaksi (lihat SubPosService).
  * Kategori tetap: Saldo awal, Pengembalian kelebihan,
- * otomatis Iuran kas / Iuran khusus / Denda ronda, Alokasi antar pos.
+ * otomatis Iuran kas / Iuran khusus / Denda ronda (historis), Alokasi antar pos.
  * Alokasi antar pos: 2 baris DB (keluar+masuk) agar saldo per-pos benar,
  * tapi di list ringkas hanya 1 baris (bukan pengeluaran).
  * Multi-pos: kolom kas_pos_id (opsional, setelah migrasi 025).
@@ -39,11 +40,6 @@ class KasService
         return $masuk - $keluar;
     }
 
-    /**
-     * Total masuk/keluar (untuk laporan) — alokasi antar pos tidak dihitung.
-     *
-     * @return array{masuk:int, keluar:int}
-     */
     public function totalMasukKeluarTanpaAlokasi(?string $bulan = null): array
     {
         $db = \Config\Database::connect();
@@ -90,7 +86,6 @@ class KasService
         if ($hasPos && !empty($filter['kas_pos_id'])) {
             $q->where('kt.kas_pos_id', (int) $filter['kas_pos_id']);
         }
-        // Portal warga: jangan tampilkan kas otomatis dari pembayaran (sudah di tab iuran)
         if (!empty($filter['tanpa_otomatis'])) {
             $q->groupStart()
                 ->where('kt.pembayaran_id', null)
@@ -99,14 +94,12 @@ class KasService
         }
         $rows = $q->orderBy('kt.tanggal', 'DESC')->orderBy('kt.id', 'DESC')->get()->getResultArray();
 
-        // Ringkas alokasi: 1 baris (sisi keluar) kecuali filter per-pos
         $ringkasAlokasi = empty($filter['kas_pos_id']) && empty($filter['tanpa_ringkas_alokasi']);
 
         $out = [];
         foreach ($rows as $r) {
             $isAlokasi = ($r['kategori'] ?? '') === self::KAT_ALOKASI;
             if ($ringkasAlokasi && $isAlokasi && ($r['tipe'] ?? '') === 'masuk') {
-                // Pasangan masuk tidak ditampilkan di list ringkas (hindari seolah pengeluaran+pemasukan)
                 continue;
             }
             $item = [
@@ -124,7 +117,6 @@ class KasService
                 'otomatis'      => !empty($r['pembayaran_id']),
                 'is_alokasi'    => $isAlokasi,
             ];
-            // Untuk UI: alokasi bukan masuk/keluar biasa
             if ($isAlokasi) {
                 $item['display_tipe'] = 'alokasi';
             } else {
@@ -136,8 +128,66 @@ class KasService
     }
 
     /**
-     * Catat kas manual (bukan dari iuran).
+     * Detail satu transaksi kas (termasuk yang masih aktif).
      */
+    public function detail(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $db = \Config\Database::connect();
+        $hasPos = $this->hasKasPosColumn();
+        $q = $db->table('kas_transaksi kt')->where('kt.id', $id);
+        if ($hasPos) {
+            $q->select('kt.*, kp.nama as kas_pos_nama')
+                ->join('kas_pos kp', 'kp.id = kt.kas_pos_id', 'left');
+        } else {
+            $q->select('kt.*');
+        }
+        $r = $q->get()->getRowArray();
+        if (!$r) {
+            return null;
+        }
+
+        $dicatatNama = null;
+        $dicatatOleh = !empty($r['dicatat_oleh']) ? (int) $r['dicatat_oleh'] : null;
+        if ($dicatatOleh) {
+            $u = $db->table('users')->select('nama, username, jabatan')->where('id', $dicatatOleh)->get()->getRowArray();
+            if ($u) {
+                $nama = trim((string) ($u['nama'] ?? ''));
+                if ($nama === '') {
+                    $nama = (string) ($u['username'] ?? '');
+                }
+                $jab = trim((string) ($u['jabatan'] ?? ''));
+                $dicatatNama = $jab !== '' ? ($nama . ' (' . $jab . ')') : $nama;
+            }
+        }
+
+        $isAlokasi = ($r['kategori'] ?? '') === self::KAT_ALOKASI;
+        return [
+            'id'            => (int) $r['id'],
+            'tipe'          => $r['tipe'],
+            'nominal'       => (int) $r['nominal'],
+            'kategori'      => $r['kategori'],
+            'kas_pos_id'    => $hasPos && !empty($r['kas_pos_id']) ? (int) $r['kas_pos_id'] : null,
+            'kas_pos_nama'  => $hasPos ? ($r['kas_pos_nama'] ?? null) : null,
+            'metode'        => $r['metode'] ?? null,
+            'keterangan'    => $r['keterangan'] ?? '',
+            'tanggal'       => $r['tanggal'],
+            'keluarga_id'   => !empty($r['keluarga_id']) ? (int) $r['keluarga_id'] : null,
+            'pembayaran_id' => !empty($r['pembayaran_id']) ? (int) $r['pembayaran_id'] : null,
+            'otomatis'      => !empty($r['pembayaran_id']),
+            'is_alokasi'    => $isAlokasi,
+            'display_tipe'  => $isAlokasi ? 'alokasi' : $r['tipe'],
+            'dibatalkan'    => !empty($r['dibatalkan']),
+            'alasan_batal'  => $r['alasan_batal'] ?? null,
+            'dibatalkan_pada' => $r['dibatalkan_pada'] ?? null,
+            'dicatat_oleh'  => $dicatatOleh,
+            'dicatat_nama'  => $dicatatNama,
+            'dicatat_pada'  => $r['dicatat_pada'] ?? null,
+        ];
+    }
+
     public function tambah(array $data, int $userId): array
     {
         $tipe = ($data['tipe'] ?? '') === 'keluar' ? 'keluar' : 'masuk';
@@ -186,10 +236,6 @@ class KasService
         return ['ok' => true, 'data' => ['id' => $id, 'saldo' => $this->saldo()]];
     }
 
-    /**
-     * Pindah dana antar pos: keluar di pos sumber + masuk di pos tujuan (nominal sama).
-     * Total saldo RT tidak berubah. Bukan pengeluaran. Tercatat di audit.
-     */
     public function alokasiAntarPos(array $data, int $userId): array
     {
         if (!$this->hasKasPosColumn()) {
@@ -319,7 +365,6 @@ class KasService
         if (!empty($row['pembayaran_id'])) {
             return ['ok' => false, 'message' => 'Kas dari iuran hanya batal bersama pembatalan pembayaran.'];
         }
-        // Batalkan pasangan alokasi (keluar+masuk) bersama
         if (($row['kategori'] ?? '') === self::KAT_ALOKASI) {
             $pairQ = $db->table('kas_transaksi')
                 ->where('kategori', self::KAT_ALOKASI)
@@ -348,49 +393,15 @@ class KasService
     }
 
     /**
-     * Kas masuk otomatis dari pembayaran iuran.
+     * DEPRECATED T2: pembayaran iuran tidak lagi mengisi kas_transaksi.
+     * Mutasi masuk ke SubPosService::masukDariPembayaran.
      *
      * @param list<array{jenis:string, jumlah:int}> $potongan
      */
     public function masukDariPembayaran(int $pembayaranId, int $keluargaId, string $metode, string $tanggal, array $potongan, int $sisaBayar, int $userId): void
     {
-        $db = \Config\Database::connect();
-        $map = [
-            'kas'         => self::KAT_IURAN_KAS,
-            'khusus'      => self::KAT_IURAN_KHUSUS,
-            'denda_ronda' => self::KAT_DENDA,
-        ];
-        $agregat = [];
-        foreach ($potongan as $p) {
-            $kat = $map[$p['jenis']] ?? self::KAT_IURAN_KAS;
-            $agregat[$kat] = ($agregat[$kat] ?? 0) + (int) $p['jumlah'];
-        }
-        if ($sisaBayar > 0) {
-            $agregat[self::KAT_IURAN_KAS] = ($agregat[self::KAT_IURAN_KAS] ?? 0) + $sisaBayar;
-        }
-        $posId = $this->hasKasPosColumn() ? (new KasPosService())->defaultPosId() : null;
-        foreach ($agregat as $kategori => $nominal) {
-            if ($nominal < 1) {
-                continue;
-            }
-            $row = [
-                'tipe'          => 'masuk',
-                'nominal'       => $nominal,
-                'kategori'      => $kategori,
-                'metode'        => $metode,
-                'keterangan'    => 'Otomatis dari pembayaran #' . $pembayaranId,
-                'tanggal'       => $tanggal,
-                'keluarga_id'   => $keluargaId,
-                'pembayaran_id' => $pembayaranId,
-                'dibatalkan'    => 0,
-                'dicatat_oleh'  => $userId,
-                'dicatat_pada'  => date('Y-m-d H:i:s'),
-            ];
-            if ($posId) {
-                $row['kas_pos_id'] = $posId;
-            }
-            $db->table('kas_transaksi')->insert($row);
-        }
+        // T2: iuran masuk sub pos, bukan kas.
+        return;
     }
 
     public function batalkanDariPembayaran(int $pembayaranId, int $userId): void
@@ -407,9 +418,6 @@ class KasService
             ]);
     }
 
-    /**
-     * Data portal warga: saldo, pos, items kas (tanpa otomatis bayar), pembayaran + nama kepala.
-     */
     public function portalRingkasanKas(): array
     {
         $posSvc = new KasPosService();
@@ -472,33 +480,19 @@ class KasService
             $kid = (int) ($r['keluarga_id'] ?? 0);
             $nama = $kepalaMap[$kid] ?? 'Warga';
             return [
-                'id'           => (int) $r['id'],
-                'tanggal'      => $r['tanggal_bayar'],
-                'nominal'      => (int) $r['nominal'],
-                'metode'       => $r['metode'],
-                'catatan'      => $r['catatan'],
-                'nama_kepala'  => $nama,
+                'id'          => (int) $r['id'],
+                'tanggal'     => $r['tanggal_bayar'],
+                'nominal'     => (int) $r['nominal'],
+                'metode'      => $r['metode'],
+                'catatan'     => $r['catatan'],
+                'nama_kepala' => $nama,
             ];
         }, $payRows);
 
         return [
             'saldo'      => $this->saldo(),
             'pos'        => $pos,
-            'items'      => array_map(static function ($r) {
-                return [
-                    'id'           => $r['id'],
-                    'tipe'         => $r['tipe'],
-                    'display_tipe' => $r['display_tipe'] ?? $r['tipe'],
-                    'nominal'      => $r['nominal'],
-                    'kategori'     => $r['kategori'],
-                    'kas_pos_id'   => $r['kas_pos_id'],
-                    'kas_pos_nama' => $r['kas_pos_nama'],
-                    'keterangan'   => $r['keterangan'],
-                    'tanggal'      => $r['tanggal'],
-                    'otomatis'     => false,
-                    'is_alokasi'   => !empty($r['is_alokasi']),
-                ];
-            }, $items),
+            'items'      => $items,
             'pembayaran' => $pembayaran,
         ];
     }

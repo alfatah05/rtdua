@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="pb-[calc(72px+env(safe-area-inset-bottom,0px))]">
     <AppBackHeader title="Bayar tagihan" />
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
@@ -21,7 +21,8 @@
           <label
             v-for="t in tagihanTerbuka"
             :key="t.id"
-            class="flex items-center gap-3 py-2.5 cursor-pointer"
+            class="flex items-center gap-3 py-2.5"
+            :class="isTagihanLocked(t.id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
             style="padding-left: 10px; padding-right: 10px"
           >
             <input
@@ -29,6 +30,7 @@
               type="checkbox"
               class="w-5 h-5 rounded accent-[var(--g)] shrink-0"
               :value="t.id"
+              :disabled="isTagihanLocked(t.id)"
             />
             <div
               class="w-9 h-9 rounded-full grid place-items-center shrink-0"
@@ -36,7 +38,10 @@
             >
               <component :is="iconMeta(t.jenis).icon" :size="16" />
             </div>
-            <p class="flex-1 min-w-0 text-[14px] font-semibold m-0 truncate">{{ labelTagihan(t) }}</p>
+            <div class="flex-1 min-w-0">
+              <p class="text-[14px] font-semibold m-0 truncate">{{ labelTagihan(t) }}</p>
+              <p v-if="isTagihanLocked(t.id)" class="text-[11px] text-amber-600 m-0 mt-0.5">Menunggu konfirmasi</p>
+            </div>
             <span class="text-[14px] font-bold tabular-nums shrink-0">{{ rp(t.sisa ?? t.nominal) }}</span>
           </label>
 
@@ -123,15 +128,23 @@
 
       <p v-if="!rekening.length" class="text-[13px] text-[var(--mut)] text-center mb-4">Belum ada metode pembayaran. Hubungi pengurus.</p>
 
-      <button
-        type="button"
-        class="w-full min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold active:scale-[0.98] transition disabled:opacity-50"
-        :disabled="!canBayar"
-        @click="lanjut"
-      >
-        Bayar {{ totalChecked > 0 ? rp(totalChecked) : '' }}
-      </button>
     </template>
+
+    <div
+      v-if="!loading && !err"
+      class="fixed bottom-0 left-0 right-0 z-30 pointer-events-none"
+    >
+      <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
+        <button
+          type="button"
+          class="pointer-events-auto w-full min-h-[48px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] font-bold active:scale-[0.98] transition disabled:opacity-50"
+          :disabled="!canBayar"
+          @click="lanjut"
+        >
+          Bayar {{ totalChecked > 0 ? rp(totalChecked) : '' }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -141,7 +154,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Wallet, Home, ShieldAlert, Sparkles, QrCode, Building2, ChevronDown } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
-import { portalRingkasan, portalListRekening } from '@shared/services/keuangan.js'
+import { portalRingkasan, portalListRekening, portalStatusPermintaan } from '@shared/services/keuangan.js'
 
 const DRAFT_KEY = 'rtdua_bayar_draft'
 const router = useRouter()
@@ -153,6 +166,24 @@ const checked = ref([])
 const selectedId = ref(null)
 const openEw = ref(false)
 const openBank = ref(false)
+const lockedTagihanIds = ref([])
+
+function parseTagihanIds(raw) {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.map(Number).filter((n) => n > 0)
+  try {
+    const j = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (Array.isArray(j)) return j.map(Number).filter((n) => n > 0)
+  } catch (_) {}
+  return String(raw)
+    .split(/[,\s]+/)
+    .map(Number)
+    .filter((n) => n > 0)
+}
+
+function isTagihanLocked(id) {
+  return lockedTagihanIds.value.includes(Number(id))
+}
 
 const BULAN = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
@@ -165,15 +196,14 @@ function bulanDariPeriode(periode) {
   return BULAN[m] || String(periode)
 }
 function labelJenisDasar(jenis) {
-  if (jenis === 'kas') return 'Kas'
+  if (jenis === 'kas') return 'Iuran'
   if (jenis === 'denda_ronda') return 'Denda ronda'
   if (jenis === 'khusus') return 'Iuran khusus'
   return jenis || 'Tagihan'
 }
 function labelTagihan(t) {
   if (t.jenis === 'khusus' && t.nama) {
-    const bln = bulanDariPeriode(t.periode)
-    return bln ? `${t.nama} (${bln})` : t.nama
+    return t.nama
   }
   const jenis = labelJenisDasar(t.jenis)
   const bln = bulanDariPeriode(t.periode)
@@ -214,7 +244,11 @@ function lanjut() {
 }
 
 onMounted(async () => {
-  const [res, rek] = await Promise.all([portalRingkasan(), portalListRekening()])
+  const [res, rek, pm] = await Promise.all([
+    portalRingkasan(),
+    portalListRekening(),
+    portalStatusPermintaan(),
+  ])
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
@@ -226,6 +260,16 @@ onMounted(async () => {
     const q = rekening.value.find((r) => r.jenis === 'qris')
     if (q) selectedId.value = q.id
     else if (rekening.value[0]) selectedId.value = rekening.value[0].id
+  }
+  if (pm.ok) {
+    const list = Array.isArray(pm.data) ? pm.data : (pm.data?.items || [])
+    const ids = []
+    for (const p of list) {
+      if (p.status !== 'menunggu') continue
+      ids.push(...parseTagihanIds(p.tagihan_ids))
+    }
+    lockedTagihanIds.value = [...new Set(ids)]
+    checked.value = checked.value.filter((id) => !lockedTagihanIds.value.includes(Number(id)))
   }
 })
 </script>

@@ -87,3 +87,10 @@ export function portalUpdateAnggota(id, payload) {
   if (USE_MOCK.warga) return Promise.resolve({ ok: true })
   return real.portalUpdateAnggota(id, payload)
 }
+
+export function cariAnggota(q, limit = 40) {
+  if (USE_MOCK.warga) {
+    return Promise.resolve({ ok: true, data: [] })
+  }
+  return real.cariAnggota(q, limit)
+}

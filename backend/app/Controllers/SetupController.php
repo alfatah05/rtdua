@@ -17,7 +17,8 @@ class SetupController extends Controller
             $done = $row && (int) ($row['setup_selesai'] ?? 0) === 1;
             return ApiResponse::ok(['setup_selesai' => $done]);
         } catch (Throwable $e) {
-            return ApiResponse::fail('Gagal cek status: ' . $e->getMessage(), 500);
+            log_message('error', 'Setup status: ' . $e->getMessage());
+            return ApiResponse::fail('Gagal cek status setup.', 500);
         }
     }
 
@@ -116,14 +117,8 @@ class SetupController extends Controller
                 'role'     => 'ketua',
             ], 'Setup selesai. Login di aplikasi pengurus.');
         } catch (Throwable $e) {
-            return ApiResponse::fail(
-                'Setup gagal: ' . $e->getMessage(),
-                500,
-                [
-                    'file' => basename($e->getFile()),
-                    'line' => $e->getLine(),
-                ]
-            );
+            log_message('error', 'Setup run: ' . $e->getMessage());
+            return ApiResponse::fail('Setup gagal. Periksa log server.', 500);
         }
     }
 }

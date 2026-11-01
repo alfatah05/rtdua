@@ -9,6 +9,7 @@ use App\Services\IuranKhususService;
 use App\Services\KasPosService;
 use App\Services\KasService;
 use App\Services\PembayaranService;
+use App\Services\SubPosService;
 use App\Services\TagihanService;
 use CodeIgniter\Controller;
 
@@ -181,6 +182,19 @@ class KeuanganController extends Controller
         return $res['ok'] ? ApiResponse::ok($res['data'], 'OK') : ApiResponse::fail($res['message'], 422);
     }
 
+    public function detailKas($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $row = (new KasService())->detail((int) $id);
+        if (!$row) {
+            return ApiResponse::fail('Transaksi tidak ditemukan', 404);
+        }
+        return ApiResponse::ok($row);
+    }
+
     public function batalkanKas($id)
     {
         $user = $this->requirePengurus();
@@ -189,7 +203,7 @@ class KeuanganController extends Controller
         }
         $json = $this->request->getJSON(true) ?? [];
         $res = (new KasService())->batalkan((int) $id, (string) ($json['alasan'] ?? ''), (int) $user['id']);
-        return $res['ok'] ? ApiResponse::ok(null, 'Dibatalkan') : ApiResponse::fail($res['message'], 422);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
     public function listKasPos()
@@ -381,6 +395,7 @@ class KeuanganController extends Controller
             'per_kategori'      => $perKat,
             'transaksi'         => $items,
             'rekap_iuran'       => (new TagihanService())->daftarIuran([]),
+            'rekap_sub_pos'     => (new SubPosService())->rekapBulan($bulan),
         ]);
     }
 
@@ -429,6 +444,102 @@ class KeuanganController extends Controller
         return $res['ok']
             ? ApiResponse::ok($res['data'] ?? null, 'Tagihan khusus dihapus')
             : ApiResponse::fail($res['message'], 422);
+    }
+
+    // ---- Sub pos ----
+
+    public function listSubPos()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $aktif = $this->request->getGet('aktif');
+        $aktifSaja = $aktif === '1' || $aktif === 'true';
+        return ApiResponse::ok((new SubPosService())->list($aktifSaja));
+    }
+
+    public function detailSubPos($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $row = (new SubPosService())->detail((int) $id);
+        if (!$row) {
+            return ApiResponse::fail('Sub pos tidak ditemukan', 404);
+        }
+        return ApiResponse::ok($row);
+    }
+
+    public function listSubPosMutasi($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $filter = [
+            'tipe'  => $this->request->getGet('tipe'),
+            'bulan' => $this->request->getGet('bulan'),
+            'limit' => $this->request->getGet('limit'),
+        ];
+        $svc = new SubPosService();
+        $detail = $svc->detail((int) $id);
+        if (!$detail) {
+            return ApiResponse::fail('Sub pos tidak ditemukan', 404);
+        }
+        return ApiResponse::ok([
+            'sub_pos' => $detail,
+            'items'   => $svc->listMutasi((int) $id, $filter),
+        ]);
+    }
+
+    public function subPosMasuk($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new SubPosService())->catatMasuk((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Masuk dicatat') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function subPosKeluar($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new SubPosService())->catatKeluar((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Keluar dicatat') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function subPosAlokasi($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new SubPosService())->alokasiKePosKas((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Alokasi berhasil') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function subPosBatalMutasi($mutasiId)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new SubPosService())->batalkanMutasi(
+            (int) $mutasiId,
+            (string) ($json['alasan'] ?? ''),
+            (int) $user['id']
+        );
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Mutasi dibatalkan') : ApiResponse::fail($res['message'], 422);
     }
 
     private function requirePengurus(): ?array

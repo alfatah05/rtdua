@@ -26,6 +26,7 @@ $routes->get('blok', 'PengaturanController::listBlok', ['filter' => 'auth']);
 $routes->post('blok', 'PengaturanController::tambahBlok', ['filter' => 'auth']);
 
 $routes->get('warga', 'KeluargaController::index', ['filter' => 'auth']);
+$routes->get('warga/cari-anggota', 'KeluargaController::cariAnggota', ['filter' => 'auth']);
 $routes->get('warga/(:num)', 'KeluargaController::show/$1', ['filter' => 'auth']);
 $routes->post('warga', 'KeluargaController::create', ['filter' => 'auth']);
 $routes->put('warga/(:num)', 'KeluargaController::update/$1', ['filter' => 'auth']);
@@ -46,6 +47,7 @@ $routes->get('struktur', 'PengurusController::struktur', ['filter' => 'auth']);
 $routes->get('bantuan', 'PengurusController::bantuan', ['filter' => 'auth']);
 
 $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
+$routes->get('aktivitas/(:num)', 'AktivitasController::detail/$1', ['filter' => 'auth']);
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
 $routes->get('portal/warga/(:num)', 'PortalController::detailKeluarga/$1', ['filter' => 'auth']);
@@ -71,6 +73,7 @@ $routes->post('keuangan/permintaan/(:num)/konfirmasi', 'KeuanganController::konf
 $routes->post('keuangan/permintaan/(:num)/tolak', 'KeuanganController::tolakPermintaan/$1', ['filter' => 'auth']);
 $routes->get('keuangan/kas/saldo', 'KeuanganController::saldoKas', ['filter' => 'auth']);
 $routes->get('keuangan/kas', 'KeuanganController::listKas', ['filter' => 'auth']);
+$routes->get('keuangan/kas/(:num)', 'KeuanganController::detailKas/$1', ['filter' => 'auth']);
 $routes->post('keuangan/kas', 'KeuanganController::tambahKas', ['filter' => 'auth']);
 $routes->post('keuangan/kas/(:num)/batal', 'KeuanganController::batalkanKas/$1', ['filter' => 'auth']);
 $routes->post('keuangan/alokasi-pos', 'KeuanganController::alokasiKasPos', ['filter' => 'auth']);
@@ -79,6 +82,13 @@ $routes->get('keuangan/kas-pos', 'KeuanganController::listKasPos', ['filter' => 
 $routes->post('keuangan/kas-pos', 'KeuanganController::buatKasPos', ['filter' => 'auth']);
 $routes->put('keuangan/kas-pos/(:num)', 'KeuanganController::ubahKasPos/$1', ['filter' => 'auth']);
 $routes->post('keuangan/kas-pos/(:num)/nonaktif', 'KeuanganController::nonaktifKasPos/$1', ['filter' => 'auth']);
+$routes->get('keuangan/sub-pos', 'KeuanganController::listSubPos', ['filter' => 'auth']);
+$routes->get('keuangan/sub-pos/(:num)', 'KeuanganController::detailSubPos/$1', ['filter' => 'auth']);
+$routes->get('keuangan/sub-pos/(:num)/mutasi', 'KeuanganController::listSubPosMutasi/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/(:num)/masuk', 'KeuanganController::subPosMasuk/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/(:num)/keluar', 'KeuanganController::subPosKeluar/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/(:num)/alokasi', 'KeuanganController::subPosAlokasi/$1', ['filter' => 'auth']);
+$routes->post('keuangan/sub-pos/mutasi/(:num)/batal', 'KeuanganController::subPosBatalMutasi/$1', ['filter' => 'auth']);
 $routes->get('keuangan/iuran-khusus', 'KeuanganController::listIuranKhusus', ['filter' => 'auth']);
 $routes->post('keuangan/iuran-khusus', 'KeuanganController::buatIuranKhusus', ['filter' => 'auth']);
 $routes->put('keuangan/iuran-khusus/(:num)', 'KeuanganController::ubahIuranKhusus/$1', ['filter' => 'auth']);
@@ -96,6 +106,7 @@ $routes->get('portal/keuangan', 'PortalKeuanganController::ringkasanSaya', ['fil
 $routes->post('portal/keuangan/transfer', 'PortalKeuanganController::ajukanTransfer', ['filter' => 'auth']);
 $routes->get('portal/keuangan/permintaan', 'PortalKeuanganController::statusPermintaan', ['filter' => 'auth']);
 $routes->get('portal/keuangan/kas', 'PortalKeuanganController::kas', ['filter' => 'auth']);
+$routes->get('portal/keuangan/status-iuran', 'PortalKeuanganController::statusIuranWarga', ['filter' => 'auth']);
 $routes->get('portal/keuangan/rekening', 'RekeningPembayaranController::portalList', ['filter' => 'auth']);
 
 $routes->get('notifikasi', 'NotifikasiController::index', ['filter' => 'auth']);
@@ -164,6 +175,18 @@ $routes->post('ronda/malam/(:num)/ganti-keluarga', 'RondaController::gantiKeluar
 $routes->post('ronda/absen/(:num)/batal', 'RondaController::batalkanAbsen/$1', ['filter' => 'auth']);
 $routes->post('ronda/terbitkan-denda', 'RondaController::terbitkanDenda', ['filter' => 'auth']);
 $routes->post('ronda/hapus-jadwal', 'RondaController::hapusJadwal', ['filter' => 'auth']);
+
+
+// Reward / undian
+$routes->get('reward', 'RewardController::list', ['filter' => 'auth']);
+$routes->get('reward/(:num)', 'RewardController::detail/$1', ['filter' => 'auth']);
+$routes->post('reward', 'RewardController::buat', ['filter' => 'auth']);
+$routes->put('reward/(:num)', 'RewardController::ubah/$1', ['filter' => 'auth']);
+$routes->delete('reward/(:num)', 'RewardController::hapus/$1', ['filter' => 'auth']);
+$routes->post('reward/(:num)/undi', 'RewardController::undi/$1', ['filter' => 'auth']);
+$routes->post('reward/(:num)/reset-siklus', 'RewardController::resetSiklus/$1', ['filter' => 'auth']);
+$routes->post('reward/batch/(:num)/batal', 'RewardController::batalkanBatch/$1', ['filter' => 'auth']);
+$routes->post('reward/pemenang/(:num)/klaim', 'RewardController::klaim/$1', ['filter' => 'auth']);
 
 $routes->post('upload', 'UploadController::store');
 $routes->get('media/(:segment)/(:segment)', 'UploadController::media/$1/$2');

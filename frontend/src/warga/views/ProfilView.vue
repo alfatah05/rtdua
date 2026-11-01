@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Skeleton profil -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
       <div class="flex flex-col items-center text-center mb-6 pt-2">
         <div class="w-24 h-24 rounded-full bg-[var(--card2)] mb-3" />
@@ -9,7 +8,7 @@
       </div>
       <div class="px-1 space-y-1">
         <div v-for="n in 6" :key="n" class="flex items-center gap-3 px-2 py-3.5">
-          <div class="w-10 h-10 rounded-full bg-[var(--card2)] shrink-0" />
+          <div class="w-6 h-6 rounded bg-[var(--card2)] shrink-0" />
           <div class="flex-1 space-y-2">
             <div class="h-3.5 rounded-full bg-[var(--card2)] w-[45%]" />
             <div class="h-3 rounded-full bg-[var(--card2)] w-[60%]" />
@@ -47,23 +46,23 @@
         <p v-if="uploadingFoto" class="text-[12px] text-[var(--mut)] m-0 mt-1">Mengunggah foto…</p>
       </div>
 
-      <div class="px-1 space-y-0.5">
+      <div class="px-1">
         <button
           v-for="m in menus"
           :key="m.label"
           type="button"
-          class="w-full flex flex-row items-center gap-3 px-2 py-3.5 text-left active:scale-[0.99] transition-transform"
+          class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:opacity-70 transition-opacity"
           @click="m.action ? m.action() : $router.push(m.to)"
         >
-          <span class="w-10 h-10 rounded-full grid place-items-center shrink-0" :style="{ background: m.bg, color: m.color }">
-            <component :is="m.icon" :size="18" />
+          <span class="w-5 shrink-0 grid place-items-center text-[var(--mut)]">
+            <component :is="m.icon" :size="18" stroke-width="1.75" />
           </span>
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-[15px] m-0">{{ m.label }}</p>
-            <p v-if="m.desc" class="text-[12px] text-[var(--mut)] m-0">{{ m.desc }}</p>
+            <p class="font-medium text-[14px] m-0 text-[var(--text)] leading-snug">{{ m.label }}</p>
+            <p v-if="m.desc" class="text-[11px] text-[var(--mut)] m-0 mt-0.5 leading-snug">{{ m.desc }}</p>
           </div>
-          <span v-if="m.right" class="text-[13px] text-[var(--mut)] shrink-0">{{ m.right }}</span>
-          <ChevronRight v-else :size="18" class="text-[var(--mut)] shrink-0" />
+          <span v-if="m.right" class="text-[11px] text-[var(--mut)] shrink-0">{{ m.right }}</span>
+          <ChevronRight v-else :size="16" class="text-[var(--mut)] shrink-0 opacity-60" />
         </button>
       </div>
 
@@ -84,11 +83,13 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Camera, ChevronRight, KeyRound, Moon, User, Home, HelpCircle, Info
+  Camera, ChevronRight, KeyRound, Moon, User, HelpCircle, Download, RefreshCw, Sparkles
 } from 'lucide-vue-next'
 import { useAuth } from '@shared/composables/useAuth.js'
 import { useTheme } from '@shared/composables/useTheme.js'
+import { useMotion } from '@shared/composables/useMotion.js'
 import { useToast } from '@shared/composables/useToast.js'
+import { usePwaInstall } from '@shared/composables/usePwaInstall.js'
 import { updateFotoProfil } from '@shared/services/auth.js'
 import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
 import { waitImages } from '@shared/utils/waitImages.js'
@@ -96,7 +97,9 @@ import { waitImages } from '@shared/utils/waitImages.js'
 const router = useRouter()
 const { user, logout } = useAuth()
 const { mode, toggle } = useTheme()
+const { animEnabled, toggleAnim } = useMotion()
 const { show } = useToast()
+const { canInstall, install: installPwa } = usePwaInstall()
 const fileInput = ref(null)
 const uploadingFoto = ref(false)
 const localFoto = ref('')
@@ -116,57 +119,80 @@ const fotoUrl = computed(() => {
   return f ? mediaUrl(f) : ''
 })
 
-const menus = computed(() => [
-  {
-    label: 'Data keluarga',
-    desc: 'Anggota di rumah Anda',
-    icon: User,
-    to: '/data-keluarga',
-    bg: 'rgba(6,182,212,.18)',
-    color: '#0891B2',
-  },
-  {
-    label: 'Ganti PIN',
-    desc: 'Ubah PIN masuk aplikasi',
-    icon: KeyRound,
-    to: '/ganti-pin',
-    bg: 'rgba(16,185,129,.18)',
-    color: '#059669',
-  },
-  {
-    label: 'Mode gelap',
-    desc: mode.value === 'dark' ? 'Sedang aktif' : 'Nonaktif',
-    icon: Moon,
-    action: () => toggle(),
-    right: mode.value === 'dark' ? 'Aktif' : 'Off',
-    bg: 'rgba(107,114,128,.18)',
-    color: '#4B5563',
-  },
-  {
-    label: 'Alamat rumah',
-    desc: alamatLabel.value,
-    icon: Home,
-    action: () => show(alamatLabel.value),
-    bg: 'rgba(59,130,246,.18)',
-    color: '#2563EB',
-  },
-  {
-    label: 'Bantuan',
-    desc: 'Hubungi pengurus',
-    icon: HelpCircle,
-    to: '/bantuan',
-    bg: 'rgba(34,197,94,.18)',
-    color: '#16A34A',
-  },
-  {
-    label: 'Tentang aplikasi',
-    desc: 'rtdua untuk warga RT',
-    icon: Info,
-    action: () => show('rtdua v0.1.0'),
-    bg: 'rgba(168,85,247,.18)',
-    color: '#7C3AED',
-  },
-])
+async function hardRefresh() {
+  show('Membersihkan cache…')
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys()
+      await Promise.all(keys.map((k) => caches.delete(k)))
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(regs.map((r) => r.unregister()))
+    }
+  } catch (_) {}
+  const url = new URL(window.location.href)
+  url.searchParams.set('_r', String(Date.now()))
+  window.location.replace(url.toString())
+}
+
+const menus = computed(() => {
+  const list = [
+    {
+      label: 'Data keluarga',
+      desc: 'Anggota di rumah Anda',
+      icon: User,
+      to: '/data-keluarga',
+    },
+    {
+      label: 'Ganti PIN',
+      desc: 'Ubah PIN masuk aplikasi',
+      icon: KeyRound,
+      to: '/ganti-pin',
+    },
+    {
+      label: 'Mode gelap',
+      desc: mode.value === 'dark' ? 'Sedang aktif' : 'Nonaktif',
+      icon: Moon,
+      action: () => toggle(),
+      right: mode.value === 'dark' ? 'Aktif' : 'Off',
+    },
+    {
+      label: 'Animasi',
+      desc: animEnabled.value ? 'Transisi halaman & tombol aktif' : 'Semua animasi nonaktif',
+      icon: Sparkles,
+      action: () => {
+        toggleAnim()
+        show(animEnabled.value ? 'Animasi diaktifkan' : 'Animasi dimatikan')
+      },
+      right: animEnabled.value ? 'Aktif' : 'Off',
+    },
+    {
+      label: 'Bantuan',
+      desc: 'Hubungi pengurus',
+      icon: HelpCircle,
+      to: '/bantuan',
+    },
+    {
+      label: 'Hard refresh',
+      desc: 'Hapus cache & muat ulang aplikasi',
+      icon: RefreshCw,
+      action: () => hardRefresh(),
+    },
+  ]
+  if (canInstall.value) {
+    list.push({
+      label: 'Install aplikasi',
+      desc: 'Pasang di layar utama HP',
+      icon: Download,
+      action: async () => {
+        const res = await installPwa()
+        if (res.message) show(res.message)
+      },
+    })
+  }
+  return list
+})
 
 async function finishLoading() {
   const url = fotoUrl.value
@@ -175,10 +201,8 @@ async function finishLoading() {
 }
 
 onMounted(() => {
-  // user biasanya sudah di-hydrate dari session; tunggu foto bila ada
   if (user.value) finishLoading()
   else {
-    // fallback singkat bila session belum siap
     const t = setInterval(() => {
       if (user.value) {
         clearInterval(t)
@@ -222,7 +246,19 @@ async function onFoto(e) {
   if (user.value) {
     Object.assign(user.value, updated)
     try {
-      localStorage.setItem('rtdua-auth-warga', JSON.stringify(user.value))
+      const slim = {
+        id: user.value.id ?? null,
+        nama: user.value.nama ?? null,
+        role: user.value.role ?? null,
+        foto: user.value.foto ?? null,
+        jabatan: user.value.jabatan ?? null,
+        alamat: user.value.alamat ?? null,
+        keluarga_id: user.value.keluarga_id ?? null,
+        warga_id: user.value.warga_id ?? null,
+        harus_ganti_kredensial: !!user.value.harus_ganti_kredensial,
+        is_developer: !!user.value.is_developer,
+      }
+      localStorage.setItem('rtdua-auth-warga', JSON.stringify(slim))
     } catch (err) {}
   }
   localFoto.value = updated.foto ? mediaUrl(updated.foto) : mediaUrl(up.data.path)

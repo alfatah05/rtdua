@@ -35,11 +35,24 @@ const item = ref(null)
 const loading = ref(true)
 const err = ref('')
 
+const TITLE = {
+  pengajian: 'Pengajian',
+  lingkungan: 'Lingkungan',
+  bulutangkis: 'Bulutangkis',
+  gowes: 'Gowes',
+  mancing: 'Mancing',
+  silat: 'Pencak silat',
+  senam: 'Senam',
+  talim: "Ta'lim",
+  phbi: 'PHBI',
+  rw: 'RW',
+  ambulance: 'Ambulance',
+  posyandu: 'Posyandu',
+}
+
 const pageTitle = computed(() => {
   const k = props.kategori || item.value?.kategori || ''
-  if (k === 'pengajian') return 'Pengajian'
-  if (k === 'lingkungan') return 'Lingkungan'
-  return 'Posyandu'
+  return TITLE[k] || 'Posyandu'
 })
 const rendered = computed(() => renderMarkdown(item.value?.isi_html || ''))
 

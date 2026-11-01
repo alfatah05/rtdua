@@ -1,29 +1,63 @@
 <template>
-  <div>
-    <!-- Skeleton beranda (header/nav tidak ikut) -->
+  <div
+    ref="homeRoot"
+    class="home-root"
+    :style="{ paddingTop: 'max(1.3125rem, calc(env(safe-area-inset-top, 0px) + 1.0625rem))' }"
+  >
+    <div
+      class="ptr-indicator"
+      :class="{ 'is-animating': ptrAnimating }"
+      :style="ptrIndicatorStyle"
+      aria-hidden="true"
+    >
+      <div class="ptr-circle" :style="ptrCircleInnerStyle">
+        <div
+          class="ptr-spinner"
+          :class="{ 'is-spin': ptrRefreshing }"
+          :style="ptrSpinnerStyle"
+        />
+      </div>
+    </div>
+    <!-- Skeleton beranda -->
     <div v-if="loading" class="animate-pulse" aria-hidden="true">
-      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
-        <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
+      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-3">
+        <div class="w-14 h-14 rounded-xl bg-[var(--card2)]" />
         <div class="min-w-0 space-y-2">
           <div class="h-5 rounded-full bg-[var(--card2)] w-[70%] mx-auto" />
           <div class="h-3 rounded-full bg-[var(--card2)] w-[55%] mx-auto" />
         </div>
-        <div class="w-[60px] h-[60px] rounded-[12px] bg-[var(--card2)]" />
+        <div class="w-14 h-14 rounded-xl bg-[var(--card2)]" />
       </div>
-      <div class="h-px bg-[var(--line)] my-4" />
-      <div class="flex flex-col gap-2.5">
-        <div class="rounded-[20px] h-[140px] bg-[var(--card2)]" />
-        <div class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
-        <div v-for="n in 6" :key="n" class="rounded-[18px] h-[64px] bg-[var(--card2)]" />
+      <div class="h-px bg-[var(--line)] mb-2" />
+      <div class="flex items-center justify-between gap-3 py-3.5 mb-1">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-11 h-11 rounded-full bg-[var(--card2)] shrink-0" />
+          <div class="space-y-1.5 flex-1 min-w-0">
+            <div class="h-3 rounded-full bg-[var(--card2)] w-[40%]" />
+            <div class="h-3.5 rounded-full bg-[var(--card2)] w-[55%]" />
+          </div>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <div class="w-12 h-12 rounded-full bg-[var(--card2)]" />
+          <div class="w-12 h-12 rounded-full bg-[var(--card2)]" />
+        </div>
+      </div>
+      <div class="flex flex-col gap-2.5 mt-2">
+        <div class="rounded-2xl h-36 bg-[var(--card2)]" />
+        <div class="grid grid-cols-2 gap-2.5">
+          <div v-for="n in 4" :key="n" class="rounded-[1.125rem] h-[6.75rem] bg-[var(--card2)]" />
+        </div>
+        <div v-for="n in 6" :key="'m' + n" class="rounded-[1.125rem] h-16 bg-[var(--card2)]" />
       </div>
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-2">
+      <!-- Kop RT -->
+      <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 text-center mb-3">
         <div
-          class="w-[60px] h-[60px] grid place-items-center shrink-0"
+          class="w-14 h-14 grid place-items-center shrink-0"
           :class="logoRtUrl
-            ? 'rounded-[12px] bg-transparent'
+            ? 'rounded-xl bg-transparent'
             : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
         >
           <img
@@ -33,16 +67,16 @@
             class="max-w-full max-h-full w-auto h-auto object-contain"
             @error="logoRtUrl = ''"
           />
-          <Landmark v-else :size="26" class="text-[var(--mut)]" />
+          <Landmark v-else :size="22" class="text-[var(--mut)]" />
         </div>
         <div class="min-w-0">
-          <p class="text-[22px] font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
-          <small class="block text-[13px] font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
+          <p class="text-xl font-extrabold leading-tight m-0 text-[var(--text)]">{{ namaRt || 'RT' }}</p>
+          <small class="block text-xs font-medium text-[var(--mut)] leading-snug">{{ namaPerumahan }}</small>
         </div>
         <div
-          class="w-[60px] h-[60px] grid place-items-center shrink-0"
+          class="w-14 h-14 grid place-items-center shrink-0"
           :class="logoDesaUrl
-            ? 'rounded-[12px] bg-transparent'
+            ? 'rounded-xl bg-transparent'
             : 'rounded-full bg-[var(--card)] border border-[var(--line)] overflow-hidden'"
         >
           <img
@@ -52,78 +86,91 @@
             class="max-w-full max-h-full w-auto h-auto object-contain"
             @error="logoDesaUrl = ''"
           />
-          <Handshake v-else :size="26" class="text-[var(--mut)]" />
+          <Handshake v-else :size="22" class="text-[var(--mut)]" />
         </div>
       </div>
-      <div class="h-px bg-[var(--line)] my-4"></div>
 
-      <div class="flex flex-col gap-2.5">
-        <!-- Pengumuman: card tidak dianimasi; hanya tombol Lihat detail -->
+      <div class="h-px bg-[var(--line)] mb-2" aria-hidden="true"></div>
+
+      <div class="flex items-center justify-between gap-3 py-3.5">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-11 h-11 rounded-full shrink-0 overflow-hidden bg-[var(--gd)] text-[var(--gm)] grid place-items-center text-xs font-bold">
+            <img v-if="fotoUrl" :src="fotoUrl" alt="Foto profil" class="w-full h-full object-cover" @error="fotoBroken = true" />
+            <span v-else>{{ inisial }}</span>
+          </div>
+          <div class="min-w-0 flex-1 text-left">
+            <p class="text-xs m-0 leading-snug text-[var(--mut)]">Hallo,</p>
+            <p class="text-sm font-bold m-0 leading-snug text-[var(--text)] truncate">{{ namaWarga }}</p>
+          </div>
+        </div>
+        <div class="flex items-center shrink-0" style="margin-right: -6px">
+          <router-link to="/pengumuman" class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] touch-manipulation" aria-label="Pengumuman">
+            <Megaphone :size="18" />
+          </router-link>
+          <router-link to="/notifikasi" class="w-10 h-10 grid place-items-center rounded-full text-[var(--text)] touch-manipulation relative" aria-label="Notifikasi">
+            <Bell :size="18" />
+            <span v-if="badge > 0" class="absolute top-1 right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-[var(--g)] text-white text-[10px] font-bold grid place-items-center">{{ badge > 9 ? '9+' : badge }}</span>
+          </router-link>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2.5 mt-2">
         <div
           v-for="p in pengumuman"
           :key="p.id"
-          class="rounded-[20px] overflow-hidden relative text-white shadow-[var(--sh)]"
+          class="relative overflow-hidden rounded-2xl p-4 shadow-[var(--sh)]"
           :style="cardStyle(true)"
         >
-          <div class="p-5 relative z-10">
+          <div class="relative z-10">
             <div class="flex items-center justify-between gap-2 flex-wrap">
-              <span class="flex items-center gap-2 text-[13px] font-semibold text-white/90">
-                <Megaphone :size="16" /> Pengumuman
-                <span v-if="p.hasLampiran" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
+              <span class="flex items-center gap-2 text-xs font-semibold text-white/90">
+                <Megaphone :size="15" /> Pengumuman
+                <span v-if="p.hasLampiran" class="text-[0.6875rem] font-bold px-2 py-0.5 rounded-full bg-white/20">📎</span>
               </span>
-              <span class="text-[12px] font-semibold px-3 py-1 rounded-full bg-white/20">
-                {{ p.tanggal }}
-              </span>
+              <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white/20 text-white shrink-0">{{ p.tanggal }}</span>
             </div>
-            <h2 class="text-[17px] font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
-            <p class="text-[13px] m-0 text-white/90">{{ p.ringkas }}</p>
+            <h2 class="text-base font-bold leading-snug mt-3 mb-1 text-white">{{ p.judul }}</h2>
+            <p class="text-xs m-0 text-white/90">{{ p.ringkas }}</p>
             <button
               type="button"
-              class="btn-press inline-flex items-center gap-1 mt-3.5 min-h-[44px] px-4 rounded-full font-bold text-[15px] bg-white text-[#0B6B34] touch-manipulation"
+              class="btn-press inline-flex items-center gap-1 mt-3.5 min-h-11 px-4 rounded-full font-bold text-sm bg-white text-[#0B6B34] touch-manipulation"
               :class="pressedKey === 'peng-' + p.id ? 'is-pressed' : ''"
               @click="goTo('/pengumuman/' + p.id, 'peng-' + p.id)"
             >
-              Lihat detail <ChevronRight :size="18" />
+              Lihat detail <ChevronRight :size="16" />
             </button>
           </div>
           <div class="absolute -right-12 -bottom-16 w-48 h-48 rounded-full bg-white/10 pointer-events-none"></div>
         </div>
 
-        <!-- Iuran + menu: rounded rectangle style -->
-        <button
-          type="button"
-          class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
-          :class="[
-            iuranStatus === 'loading' ? 'menu-row--muted' : '',
-            pressedKey === 'iuran' ? 'is-pressed' : '',
-          ]"
-          :style="iuranStatus === 'loading' ? undefined : iuranCardStyle"
-          @click="goTo('/rincian-iuran', 'iuran')"
-        >
-          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
-            <div
-              class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0"
-              :class="iuranStatus === 'loading' ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
-            >
-              <Wallet :size="22" />
+        <div class="grid grid-cols-2 gap-2.5">
+          <button
+            v-for="tile in quickTiles"
+            :key="tile.key"
+            type="button"
+            class="quick-tile text-left relative overflow-hidden touch-manipulation will-change-transform"
+            :class="[tile.muted ? 'quick-tile--muted' : '', pressedKey === tile.key ? 'is-pressed' : '']"
+            :style="tile.muted ? undefined : { background: tile.bg }"
+            @click="goTo(tile.to, tile.key)"
+          >
+            <div class="relative z-10 flex flex-col h-full min-h-[6.75rem] p-3.5">
+              <div class="flex items-start gap-2.5">
+                <div
+                  class="w-10 h-10 rounded-xl grid place-items-center shrink-0"
+                  :class="tile.muted ? 'bg-[var(--card2)] text-[var(--gm)]' : 'bg-white/20 text-white'"
+                >
+                  <component :is="tile.icon" :size="18" />
+                </div>
+                <div class="flex-1 min-w-0 pt-0.5">
+                  <p class="text-xs font-bold m-0 leading-snug line-clamp-2" :class="tile.muted ? 'text-[var(--text)]' : 'text-white'">{{ tile.label }}</p>
+                </div>
+                <ChevronRight :size="16" class="shrink-0 mt-1 opacity-80" :class="tile.muted ? 'text-[var(--mut)]' : 'text-white'" />
+              </div>
+              <p class="text-base font-extrabold m-0 mt-auto pt-3 leading-tight tabular-nums truncate" :class="tile.muted ? 'text-[var(--mut)]' : 'text-white'">{{ tile.value }}</p>
             </div>
-            <div class="flex-1 min-w-0 py-2.5">
-              <p
-                class="text-[15px] font-bold m-0 leading-tight truncate"
-                :class="iuranStatus === 'loading' ? 'text-[var(--text)]' : 'text-white'"
-              >{{ iuranTitle }}</p>
-              <p
-                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight tabular-nums"
-                :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white/85'"
-              >{{ iuranNominal }}</p>
-            </div>
-            <ChevronRight
-              :size="18"
-              class="shrink-0 opacity-70"
-              :class="iuranStatus === 'loading' ? 'text-[var(--mut)]' : 'text-white'"
-            />
-          </div>
-        </button>
+            <div v-if="!tile.muted" class="absolute -right-6 -bottom-8 w-24 h-24 rounded-full bg-white/10 pointer-events-none"></div>
+          </button>
+        </div>
 
         <button
           v-for="m in menus"
@@ -134,28 +181,24 @@
           :style="{ background: m.cardBg }"
           @click="goTo(m.to, m.to)"
         >
-          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
-            <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-white/20 text-white">
-              <component :is="m.icon" :size="22" />
+          <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-16">
+            <div class="w-11 h-11 rounded-[0.875rem] grid place-items-center shrink-0 bg-white/20 text-white">
+              <component :is="m.icon" :size="20" />
             </div>
             <div class="flex-1 min-w-0 py-2.5">
-              <p class="text-[15px] font-bold m-0 leading-tight text-white truncate">{{ m.label }}</p>
-              <p
-                v-if="m.headline"
-                class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-white/85 tabular-nums truncate"
-              >{{ m.headline }}</p>
+              <p class="text-sm font-bold m-0 leading-tight text-white truncate">{{ m.label }}</p>
+              <p v-if="m.headline" class="text-xs font-semibold m-0 mt-0.5 leading-tight text-white/85 tabular-nums truncate">{{ m.headline }}</p>
             </div>
-            <ChevronRight :size="18" class="shrink-0 text-white/70" />
+            <ChevronRight :size="16" class="shrink-0 text-white/70" />
           </div>
         </button>
-
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPengaturan } from '@shared/services/pengaturan.js'
 import { listPengumuman } from '@shared/services/konten.js'
@@ -164,17 +207,32 @@ import { malamTerdekat } from '@shared/services/ronda.js'
 import { mediaUrl } from '@shared/services/upload.js'
 import { plainFromMarkdown } from '@shared/utils/markdown.js'
 import { waitImages } from '@shared/utils/waitImages.js'
+import { useAuth } from '@shared/composables/useAuth.js'
+import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
+import { usePullToRefresh } from '../composables/usePullToRefresh.js'
 import {
-  Landmark, Handshake, Megaphone, ChevronRight, Wallet,
-  ShieldCheck, Images, Users, HeartHandshake, BookOpen
+  Landmark, Handshake, Megaphone, Bell, ChevronRight, Wallet,
+  ShieldCheck, Images, Users, HeartHandshake, BookOpen, Trophy,
+  Building2, Ambulance, Gift,
 } from 'lucide-vue-next'
 
-const styleAktif = {
-  background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
-}
-const styleSelesai = {
-  background: 'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(145deg, #9CA3AF, #6B7280 55%, #4B5563)',
-}
+const { user } = useAuth()
+const { badge, ensure } = useNotifBadge()
+
+const namaWarga = computed(() => user.value?.nama || 'Warga')
+const fotoBroken = ref(false)
+const fotoUrl = computed(() => {
+  if (fotoBroken.value) return ''
+  const f = user.value?.foto
+  return f ? mediaUrl(f) : ''
+})
+const inisial = computed(() => {
+  const n = namaWarga.value || 'W'
+  return n.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+})
+
+const styleAktif = { background: '#22B863' }
+const styleSelesai = { background: '#6B7280' }
 function cardStyle(aktif) {
   return aktif ? styleAktif : styleSelesai
 }
@@ -201,7 +259,6 @@ const router = useRouter()
 const pressedKey = ref('')
 let navLock = false
 
-/** Tekan → mantul naik → baru navigasi */
 async function goTo(to, key) {
   if (navLock) return
   navLock = true
@@ -219,26 +276,16 @@ async function goTo(to, key) {
 const iuranStatus = ref('loading')
 const iuranTitle = ref('Iuran yang belum di bayar')
 const iuranNominal = ref('…')
-const iuranHint = ref('Ketuk untuk melihat rincian')
 
-const styleTagihan = {
-  background: 'linear-gradient(105deg, #F59E0B 0%, #B45309 100%)',
-}
-const styleLunas = {
-  background: 'linear-gradient(105deg, #22B863 0%, #0B8442 100%)',
-}
-const styleLebih = {
-  background: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
-}
-const styleLoading = {
-  background: 'var(--card2)',
-}
+const styleTagihan = '#F59E0B'
+const styleLunas = '#22B863'
+const styleLebih = '#3B82F6'
 
-const iuranCardStyle = computed(() => {
+const iuranBg = computed(() => {
   if (iuranStatus.value === 'pending') return styleTagihan
   if (iuranStatus.value === 'lunas') return styleLunas
   if (iuranStatus.value === 'lebih') return styleLebih
-  return styleLoading
+  return null
 })
 
 function formatTgl(s) {
@@ -246,9 +293,12 @@ function formatTgl(s) {
   const d = new Date(String(s).length === 10 ? s + 'T00:00:00' : String(s).replace(' ', 'T'))
   return Number.isNaN(d.getTime()) ? String(s).slice(0, 10) : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
+
 function ringkas(isi) {
-  return plainFromMarkdown(isi, 100)
+  const t = plainFromMarkdown(isi || '').replace(/\s+/g, ' ').trim()
+  return t.length > 80 ? t.slice(0, 80) + '…' : t
 }
+
 function rp(n) {
   return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 }
@@ -267,11 +317,11 @@ function weekIndex(d) {
 }
 
 function labelKapanTgl(tanggal) {
-  if (!tanggal) return 'Belum ada jadwal'
+  if (!tanggal) return 'Belum ada'
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const tgl = new Date(String(tanggal).slice(0, 10) + 'T00:00:00')
-  if (Number.isNaN(tgl.getTime())) return 'Belum ada jadwal'
+  if (Number.isNaN(tgl.getTime())) return 'Belum ada'
   if (tgl.getTime() === today.getTime()) return 'Malam ini'
   const wToday = weekIndex(today)
   const wTgl = weekIndex(tgl)
@@ -290,55 +340,65 @@ function formatHariPendek(s) {
   return d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+const quickTiles = computed(() => {
+  const rt = namaRt.value || 'RT'
+  return [
+    {
+      key: 'iuran',
+      to: '/rincian-iuran',
+      label: iuranTitle.value,
+      value: iuranNominal.value,
+      icon: Wallet,
+      bg: iuranBg.value || '#F59E0B',
+      muted: iuranStatus.value === 'loading',
+    },
+    {
+      key: 'kas',
+      to: '/keuangan',
+      label: 'Total Kas ' + rt,
+      value: kasHeadline.value,
+      icon: Wallet,
+      bg: '#A855F7',
+      muted: false,
+    },
+    {
+      key: 'ronda',
+      to: '/ronda',
+      label: rondaGroupName.value
+        ? 'Jadwal Ronda (' + rondaGroupName.value + ')'
+        : 'Jadwal Ronda',
+      value: rondaHeadline.value,
+      icon: ShieldCheck,
+      bg: '#3B82F6',
+      muted: false,
+    },
+    {
+      key: 'warga',
+      to: '/warga',
+      label: 'Daftar warga ' + rt,
+      value: 'Lihat daftar',
+      icon: Users,
+      bg: '#06B6D4',
+      muted: false,
+    },
+  ]
+})
+
 const menus = computed(() => [
-  {
-    to: '/ronda',
-    label: rondaGroupName.value ? ('Jadwal Ronda (' + rondaGroupName.value + ')') : 'Jadwal Ronda',
-    headline: rondaHeadline.value,
-    desc: rondaDesc.value,
-    icon: ShieldCheck,
-    cardBg: 'linear-gradient(105deg, #3B82F6 0%, #1D4ED8 100%)',
-  },
-  {
-    to: '/keuangan',
-    label: 'Jumlah kas ' + (namaRt.value || 'RT'),
-    headline: kasHeadline.value,
-    desc: 'Ketuk untuk riwayat kas',
-    icon: Wallet,
-    cardBg: 'linear-gradient(105deg, #A855F7 0%, #6D28D9 100%)',
-  },
-  {
-    to: '/galeri',
-    label: 'Galeri RT',
-    desc: 'Foto kegiatan warga',
-    icon: Images,
-    cardBg: 'linear-gradient(105deg, #EC4899 0%, #BE185D 100%)',
-  },
-  {
-    to: '/warga',
-    label: 'Warga',
-    desc: 'Daftar warga RT 002',
-    icon: Users,
-    cardBg: 'linear-gradient(105deg, #F87171 0%, #DC2626 100%)',
-  },
-  {
-    to: '/posyandu',
-    label: 'Kader RT 002',
-    desc: 'Kegiatan pengurus ibu-ibu',
-    icon: HeartHandshake,
-    cardBg: 'linear-gradient(105deg, #F97316 0%, #C2410C 100%)',
-  },
-  {
-    to: '/talim',
-    label: 'DKM',
-    desc: 'Kegiatan & informasi DKM',
-    icon: BookOpen,
-    cardBg: 'linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)',
-  },
+  { to: '/galeri', label: 'Galeri RT', desc: 'Foto kegiatan warga', icon: Images, cardBg: '#EC4899' },
+  { to: '/komunitas', label: 'Komunitas', desc: 'Kegiatan komunitas warga', icon: Trophy, cardBg: '#14B8A6' },
+  { to: '/posyandu', label: 'Kader RT 002', desc: 'Kegiatan pengurus ibu-ibu', icon: HeartHandshake, cardBg: '#F97316' },
+  { to: '/talim', label: 'DKM', desc: 'Kegiatan & informasi DKM', icon: BookOpen, cardBg: '#0EA5E9' },
+  { to: '/rw', label: 'RW', desc: 'Informasi & kegiatan RW', icon: Building2, cardBg: '#64748B' },
+  { to: '/ambulance', label: 'Ambulance', desc: 'Info & kontak ambulance', icon: Ambulance, cardBg: '#DC2626' },
+  { to: '/reward', label: 'Reward', desc: 'Undian & hadiah warga', icon: Gift, cardBg: '#F59E0B' },
 ])
 
-onMounted(async () => {
-  loading.value = true
+const homeRoot = ref(null)
+
+async function loadHome({ showSkeleton = true } = {}) {
+  ensure()
+  if (showSkeleton) loading.value = true
   const [pg, pn, iu, rn, kas] = await Promise.all([
     getPengaturan(),
     listPengumuman({ beranda: true }),
@@ -376,23 +436,19 @@ onMounted(async () => {
       iuranStatus.value = 'pending'
       iuranTitle.value = 'Iuran yang belum di bayar'
       iuranNominal.value = rp(total)
-      iuranHint.value = 'Belum lunas · Ketuk untuk rincian'
     } else if (total < 0) {
       iuranStatus.value = 'lebih'
       iuranTitle.value = 'Kelebihan bayar'
       iuranNominal.value = rp(-total)
-      iuranHint.value = 'Saldo menguntungkan · Ketuk untuk rincian'
     } else {
       iuranStatus.value = 'lunas'
       iuranTitle.value = 'Iuran yang belum di bayar'
       iuranNominal.value = 'Lunas'
-      iuranHint.value = 'Semua tagihan sudah dibayar'
     }
   } else {
     iuranStatus.value = 'loading'
     iuranTitle.value = 'Iuran yang belum di bayar'
     iuranNominal.value = '—'
-    iuranHint.value = 'Ketuk untuk melihat rincian'
   }
 
   if (rn.ok && rn.data?.tanggal) {
@@ -401,7 +457,7 @@ onMounted(async () => {
     rondaGroupName.value = ng
     rondaDesc.value = formatHariPendek(rn.data.tanggal) + (ng ? ' · ' + ng : '') + ' · Ketuk untuk detail'
   } else {
-    rondaHeadline.value = 'Belum ada jadwal'
+    rondaHeadline.value = 'Belum ada'
     rondaDesc.value = 'Ketuk untuk melihat jadwal ronda'
     rondaGroupName.value = ''
   }
@@ -412,30 +468,60 @@ onMounted(async () => {
     kasHeadline.value = '—'
   }
 
+  const foto = user.value?.foto ? mediaUrl(user.value.foto) : ''
+  if (foto) imgs.push(foto)
+
   await waitImages(imgs)
-  loading.value = false
+  if (showSkeleton) loading.value = false
+}
+
+const {
+  ptrAnimating,
+  ptrRefreshing,
+  ptrIndicatorStyle,
+  ptrCircleInnerStyle,
+  ptrSpinnerStyle,
+  bind: bindPtr,
+  unbind: unbindPtr,
+} = usePullToRefresh(() => loadHome({ showSkeleton: false }), homeRoot)
+
+onMounted(async () => {
+  await loadHome({ showSkeleton: true })
+  await nextTick()
+  bindPtr()
+})
+
+onUnmounted(() => {
+  unbindPtr()
 })
 </script>
 
 <style scoped>
-/* Rounded rectangle — mirip list Apple Arcade, bukan capsule */
-.menu-row {
-  border-radius: 18px;
-  min-height: 64px;
+.quick-tile {
+  border-radius: 1.125rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   transform: scale(1);
-  /* naik: spring bounce */
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.quick-tile.is-pressed {
+  transform: scale(0.96);
+  transition: transform 0.08s ease-out;
+}
+.quick-tile--muted {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.menu-row {
+  border-radius: 1.125rem;
+  min-height: 4rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transform: scale(1);
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .menu-row.is-pressed {
   transform: scale(0.96);
-  /* turun: cepat */
   transition: transform 0.08s ease-out;
-}
-.menu-row--muted {
-  background: var(--card);
-  border: 1px solid var(--line);
-  box-shadow: none;
 }
 .btn-press {
   transform: scale(1);
@@ -445,21 +531,59 @@ onMounted(async () => {
   transform: scale(0.94);
   transition: transform 0.08s ease-out;
 }
-/* Dark mode: redupkan gradient agar tidak silau */
-:global(html[data-mode="dark"]) .menu-row:not(.menu-row--muted) {
+:global(html[data-mode="dark"]) .quick-tile:not(.quick-tile--muted),
+:global(html[data-mode="dark"]) .menu-row {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  filter: brightness(0.82) saturate(0.9);
 }
-/* Light mode: kontras di atas bg putih */
-:global(html:not([data-mode="dark"])) .menu-row:not(.menu-row--muted) {
+:global(html:not([data-mode="dark"])) .quick-tile:not(.quick-tile--muted),
+:global(html:not([data-mode="dark"])) .menu-row {
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);
 }
 @media (prefers-reduced-motion: reduce) {
+  .quick-tile,
+  .quick-tile.is-pressed,
   .menu-row,
   .menu-row.is-pressed,
   .btn-press,
   .btn-press.is-pressed {
     transition: none;
   }
+}
+
+.ptr-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  z-index: 80;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.ptr-indicator.is-animating {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+}
+.ptr-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: grid;
+  place-items: center;
+}
+.ptr-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 2.5px solid rgba(16, 22, 20, 0.12);
+  border-top-color: #0A8F44;
+  box-sizing: border-box;
+}
+.ptr-spinner.is-spin { animation: ptr-spin 0.7s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .ptr-indicator.is-animating { transition: none; }
+  .ptr-spinner.is-spin { animation: none; }
 }
 </style>

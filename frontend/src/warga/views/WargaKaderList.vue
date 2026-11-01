@@ -60,14 +60,32 @@ const props = defineProps({
   kategori: { type: String, required: true },
 })
 
-const pageTitle = computed(() => {
-  if (props.kategori === 'pengajian') return 'Pengajian'
-  if (props.kategori === 'lingkungan') return 'Lingkungan'
-  return 'Posyandu'
-})
+const TITLE = {
+  pengajian: 'Pengajian',
+  lingkungan: 'Lingkungan',
+  bulutangkis: 'Bulutangkis',
+  gowes: 'Gowes',
+  mancing: 'Mancing',
+  silat: 'Pencak silat',
+  senam: 'Senam',
+  talim: "Ta'lim",
+  phbi: 'PHBI',
+  rw: 'RW',
+  ambulance: 'Ambulance',
+  posyandu: 'Posyandu',
+}
+
+const pageTitle = computed(() => TITLE[props.kategori] || 'Posyandu')
 const detailBase = computed(() => {
   if (props.kategori === 'pengajian') return '/posyandu/pengajian'
   if (props.kategori === 'lingkungan') return '/posyandu/lingkungan'
+  if (['bulutangkis', 'gowes', 'mancing', 'silat', 'senam'].includes(props.kategori)) {
+    return '/komunitas/' + props.kategori
+  }
+  if (props.kategori === 'talim') return '/talim/jadwal'
+  if (props.kategori === 'phbi') return '/talim/phbi'
+  if (props.kategori === 'rw') return '/rw'
+  if (props.kategori === 'ambulance') return '/ambulance'
   return '/posyandu/detail'
 })
 
@@ -88,12 +106,21 @@ function bannerUrl(b) {
 }
 function cardStyle(p) {
   if (p.banner) return {}
-  const grads = {
-    posyandu: 'linear-gradient(145deg, #F97316, #C2410C)',
-    pengajian: 'linear-gradient(145deg, #A855F7, #6D28D9)',
-    lingkungan: 'linear-gradient(145deg, #22B863, #0B8442)',
+  const colors = {
+    posyandu: '#F97316',
+    pengajian: '#A855F7',
+    lingkungan: '#22B863',
+    bulutangkis: '#0EA5E9',
+    gowes: '#22C55E',
+    mancing: '#06B6D4',
+    silat: '#EF4444',
+    senam: '#F59E0B',
+    talim: '#0EA5E9',
+    phbi: '#8B5CF6',
+    rw: '#64748B',
+    ambulance: '#DC2626',
   }
-  return { background: grads[props.kategori] || grads.posyandu }
+  return { background: colors[props.kategori] || colors.posyandu }
 }
 
 async function load() {

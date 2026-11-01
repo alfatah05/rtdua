@@ -72,10 +72,14 @@ class PushService
         if (!$n) {
             return;
         }
+        $tautan = trim((string) ($n['tautan'] ?? ''));
+        if ($tautan === '') {
+            $tautan = '/notifikasi/' . $notifId;
+        }
         $payload = json_encode([
             'title' => $n['judul'],
-            'body'  => mb_substr((string) $n['isi'], 0, 120),
-            'url'   => $n['tautan'] ?: '/notifikasi',
+            'body'  => mb_substr((string) $n['isi'], 0, 180),
+            'url'   => $tautan,
             'tag'   => 'notif-' . $notifId,
         ], JSON_UNESCAPED_UNICODE);
 

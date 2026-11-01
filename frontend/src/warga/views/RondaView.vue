@@ -5,7 +5,7 @@
     <div class="rounded-[20px] border border-[var(--line)] overflow-hidden mb-4 bg-[var(--card)]">
       <div class="px-4 py-3 flex items-center justify-between" :style="headerStyle">
         <div class="min-w-0">
-          <p class="text-[13px] font-semibold m-0" :class="headerTextClass">{{ labelKapan }}</p>
+          <p class="text-[13px] font-semibold m-0" :class="headerTextClass">{{ labelHeaderMalam }}</p>
           <p v-if="malam && !malamLoading" class="text-[12px] m-0 mt-0.5 opacity-90" :class="headerTextClass">
             {{ formatHari(malam.tanggal) }} · {{ jamLabel(malam.jam_mulai) }}–{{ jamLabel(malam.jam_selesai) }}
           </p>
@@ -15,7 +15,7 @@
         <AppPageSpinner v-if="malamLoading" class="!py-6" />
         <template v-else-if="malam">
           <div
-            v-for="k in (malam.keluarga || [])"
+            v-for="k in malamKeluargaTampil"
             :key="k.keluarga_id"
             class="flex items-center justify-between gap-3 py-1"
           >
@@ -32,6 +32,22 @@
             <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
           </div>
           <p v-if="!(malam.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0">Belum ada keluarga bertugas</p>
+          <button
+            v-else-if="malamKeluargaFull.length > 3 && !expandMalam"
+            type="button"
+            class="w-full text-[13px] font-semibold text-[var(--g)] py-2 mt-0.5"
+            @click="expandMalam = true"
+          >
+            Tampilkan semua ({{ malamKeluargaFull.length }})
+          </button>
+          <button
+            v-else-if="malamKeluargaFull.length > 3 && expandMalam"
+            type="button"
+            class="w-full text-[13px] font-semibold text-[var(--mut)] py-2 mt-0.5"
+            @click="expandMalam = false"
+          >
+            Sembunyikan
+          </button>
 
           <div v-if="bisaAbsen" class="pt-2">
             <input ref="fileAbsen" type="file" accept="image/*" class="hidden" @change="onAbsen" />
@@ -92,7 +108,7 @@
       <AppPageSpinner v-if="selectedLoading" class="!py-6" />
       <template v-else-if="selectedDetail">
         <div
-          v-for="k in (selectedDetail.keluarga || [])"
+          v-for="k in selectedKeluargaTampil"
           :key="k.keluarga_id"
           class="flex items-center justify-between gap-3 py-2"
         >
@@ -109,6 +125,22 @@
           <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
         </div>
         <p v-if="!(selectedDetail.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0 py-1">Belum ada keluarga bertugas</p>
+        <button
+          v-else-if="selectedKeluargaFull.length > 3 && !expandSelected"
+          type="button"
+          class="w-full text-[13px] font-semibold text-[var(--g)] py-2"
+          @click="expandSelected = true"
+        >
+          Tampilkan semua ({{ selectedKeluargaFull.length }})
+        </button>
+        <button
+          v-else-if="selectedKeluargaFull.length > 3 && expandSelected"
+          type="button"
+          class="w-full text-[13px] font-semibold text-[var(--mut)] py-2"
+          @click="expandSelected = false"
+        >
+          Sembunyikan
+        </button>
       </template>
       <p v-else class="text-[13px] text-[var(--mut)] py-2">Belum ada jadwal ronda di tanggal ini</p>
     </div>
@@ -185,10 +217,43 @@ function weekIndex(d) {
   return x.getTime()
 }
 
+const expandMalam = ref(false)
+const expandSelected = ref(false)
+
 const labelKapan = computed(() => {
   if (malamLoading.value) return '…'
   if (!malam.value?.tanggal) return 'Ronda terdekat Anda'
   return labelKapanTgl(malam.value.tanggal)
+})
+
+const labelHeaderMalam = computed(() => {
+  const base = labelKapan.value
+  const g = String(malam.value?.nama_group || '').trim()
+  if (g) return `${base} - ${g}`
+  return base
+})
+
+function sortKeluargaRonda(list) {
+  const kid = keluargaId.value
+  return [...(list || [])].sort((a, b) => {
+    const aMe = Number(a.keluarga_id) === kid ? 0 : 1
+    const bMe = Number(b.keluarga_id) === kid ? 0 : 1
+    return aMe - bMe
+  })
+}
+
+const malamKeluargaFull = computed(() => sortKeluargaRonda(malam.value?.keluarga || []))
+const malamKeluargaTampil = computed(() => {
+  const all = malamKeluargaFull.value
+  if (expandMalam.value || all.length <= 3) return all
+  return all.slice(0, 3)
+})
+
+const selectedKeluargaFull = computed(() => sortKeluargaRonda(selectedDetail.value?.keluarga || []))
+const selectedKeluargaTampil = computed(() => {
+  const all = selectedKeluargaFull.value
+  if (expandSelected.value || all.length <= 3) return all
+  return all.slice(0, 3)
 })
 
 function labelKapanTgl(tanggal) {
@@ -209,13 +274,11 @@ function labelKapanTgl(tanggal) {
 
 const headerStyle = computed(() => {
   if (!malam.value) return { background: 'var(--card2)' }
+  // Flat (tanpa gradient)
   if (malam.value.sumber === 'khusus') {
-    return { background: 'linear-gradient(145deg, #3B82F6, #2563EB 55%, #1D4ED8)' }
+    return { background: '#2563EB' }
   }
-  return {
-    background:
-      'radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)',
-  }
+  return { background: '#0A8F44' }
 })
 
 const headerTextClass = computed(() => (malam.value ? 'text-white' : 'text-[var(--mut)]'))
@@ -453,6 +516,7 @@ function prefetchAround(centerDate) {
 }
 
 async function onPickDay(day) {
+  expandSelected.value = false
   if (!day?.date) return
   selectedTanggal.value = day.date
   selectedDetail.value = null
@@ -533,25 +597,22 @@ onUnmounted(() => {
   if (midnightTimer) clearTimeout(midnightTimer)
 })
 
-watch(() => route.fullPath, (p) => {
-  if (p === '/ronda' || p === '/ronda/') {
-    kalCache.clear()
-    metaLoaded = false
-    reloadAll()
+watch(
+  () => route.fullPath,
+  (p) => {
+    if (p === '/ronda' || p === '/ronda/') {
+      const ym = ymFromDate(new Date())
+      if (calYm.value !== ym) {
+        calYm.value = ym
+        selectedTanggal.value = ''
+        selectedDetail.value = null
+      }
+      reloadAll()
+    }
   }
-})
+)
 
-watch(() => todayStr(), () => {
-  const ym = ymFromDate(new Date())
-  if (calYm.value !== ym) {
-    calYm.value = ym
-    selectedTanggal.value = ''
-    selectedDetail.value = null
-  }
-  kalCache.clear()
-  metaLoaded = false
-  reloadAll()
-})
+watch(malam, () => { expandMalam.value = false })
 
 watch(keluargaId, () => {
   if (kalCache.has(calYm.value)) buildDays(kalCache.get(calYm.value))

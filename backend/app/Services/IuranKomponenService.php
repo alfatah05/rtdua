@@ -11,16 +11,7 @@ class IuranKomponenService
     public function ensureTable(): void
     {
         $db = \Config\Database::connect();
-        $db->query("CREATE TABLE IF NOT EXISTS iuran_komponen (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            nama VARCHAR(120) NOT NULL,
-            nominal INT UNSIGNED NOT NULL DEFAULT 0,
-            urutan INT NOT NULL DEFAULT 0,
-            aktif TINYINT(1) NOT NULL DEFAULT 1,
-            created_at DATETIME NULL,
-            updated_at DATETIME NULL,
-            INDEX idx_aktif_urutan (aktif, urutan)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $db->query("CREATE TABLE IF NOT EXISTS iuran_komponen (\n            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n            nama VARCHAR(120) NOT NULL,\n            nominal INT UNSIGNED NOT NULL DEFAULT 0,\n            urutan INT NOT NULL DEFAULT 0,\n            aktif TINYINT(1) NOT NULL DEFAULT 1,\n            created_at DATETIME NULL,\n            updated_at DATETIME NULL,\n            INDEX idx_aktif_urutan (aktif, urutan)\n        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         $n = (int) $db->table('iuran_komponen')->countAllResults();
         if ($n === 0) {
@@ -105,6 +96,10 @@ class IuranKomponenService
         ]);
         $id = (int) $db->insertID();
         $total = $this->syncNominalKas();
+        try {
+            (new SubPosService())->ensureKomponen($id, $nama, true);
+        } catch (\Throwable $e) {
+        }
         (new AuditService())->log('tambah_iuran_komponen', 'iuran_komponen', $id, null, [
             'nama' => $nama,
             'nominal' => $nominal,
@@ -141,6 +136,12 @@ class IuranKomponenService
         }
         $db->table('iuran_komponen')->where('id', $id)->update($update);
         $total = $this->syncNominalKas();
+        try {
+            $namaBaru = $update['nama'] ?? $row['nama'];
+            $aktifBaru = array_key_exists('aktif', $update) ? ((int) $update['aktif'] === 1) : ((int) $row['aktif'] === 1);
+            (new SubPosService())->ensureKomponen($id, (string) $namaBaru, $aktifBaru);
+        } catch (\Throwable $e) {
+        }
         (new AuditService())->log('ubah_iuran_komponen', 'iuran_komponen', $id, $row, $update, 'pengguna', true, $userId);
         return ['ok' => true, 'data' => ['total' => $total]];
     }
@@ -155,6 +156,10 @@ class IuranKomponenService
         }
         $db->table('iuran_komponen')->where('id', $id)->delete();
         $total = $this->syncNominalKas();
+        try {
+            (new SubPosService())->ensureKomponen($id, (string) $row['nama'], false);
+        } catch (\Throwable $e) {
+        }
         (new AuditService())->log('hapus_iuran_komponen', 'iuran_komponen', $id, $row, null, 'pengguna', true, $userId);
         return ['ok' => true, 'data' => ['total' => $total]];
     }
@@ -163,7 +168,6 @@ class IuranKomponenService
     {
         $total = $this->syncNominalKas();
         $bulanIni = date('Y-m');
-        // Buat dulu tagihan kas untuk keluarga aktif yang belum punya (warga SQL/import)
         $dibuat = (new TagihanService())->pastikanTagihanKasBulan($bulanIni, $total);
         $db = \Config\Database::connect();
         $db->table('iuran_tagihan')

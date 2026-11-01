@@ -32,7 +32,7 @@ const classes = computed(() => {
     lg: 'min-h-[48px] px-6 text-base',
   }
   const variants = {
-    primary: 'bg-[var(--g)] text-white',
+    primary: 'bg-[var(--btn)] text-[var(--btn-fg)]',
     secondary: 'bg-[var(--card2)] text-[var(--text)]',
     danger: 'bg-red-500/15 text-red-600 dark:text-red-400',
     ghost: 'bg-transparent text-[var(--text)]',

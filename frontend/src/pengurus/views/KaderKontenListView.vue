@@ -40,11 +40,21 @@ import { waitImages, takeImageUrls } from '@shared/utils/waitImages.js'
 
 const route = useRoute()
 const kategori = computed(() => String(route.meta.kategori || route.params.kategori || 'posyandu'))
-const pageTitle = computed(() => {
-  if (kategori.value === 'pengajian') return 'Pengajian'
-  if (kategori.value === 'lingkungan') return 'Lingkungan'
-  return 'Posyandu'
-})
+const TITLE = {
+  pengajian: 'Pengajian',
+  lingkungan: 'Lingkungan',
+  bulutangkis: 'Bulutangkis',
+  gowes: 'Gowes',
+  mancing: 'Mancing',
+  silat: 'Pencak silat',
+  senam: 'Senam',
+  talim: "Ta'lim",
+  phbi: 'PHBI',
+  rw: 'RW',
+  ambulance: 'Ambulance',
+  posyandu: 'Posyandu',
+}
+const pageTitle = computed(() => TITLE[kategori.value] || 'Posyandu')
 const basePath = computed(() => '/konten/' + kategori.value)
 
 const daftar = ref([])
@@ -73,7 +83,6 @@ async function load() {
     loading.value = false
     return
   }
-  // filter ketat di client — hanya kategori halaman ini
   const rows = (res.data || []).filter((r) => String(r.kategori || '') === kat)
   daftar.value = rows
   const urls = []
@@ -84,6 +93,5 @@ async function load() {
   loading.value = false
 }
 
-// komponen list dipakai bersama 3 route — harus reload tiap ganti kategori
 watch(kategori, () => { load() }, { immediate: true })
 </script>

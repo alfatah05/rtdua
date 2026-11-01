@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="pb-[calc(72px+env(safe-area-inset-bottom,0px))]">
     <AppBackHeader title="Detail notifikasi" :show-notif="false" />
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
@@ -21,15 +21,22 @@
         <p class="text-[15px] leading-relaxed m-0 whitespace-pre-wrap text-[var(--text)]">{{ item.isi }}</p>
       </div>
 
-      <button
-        v-if="item.tautan"
-        type="button"
-        class="w-full mt-5 min-h-[48px] rounded-full bg-[var(--g)] text-white font-bold text-[15px]"
-        @click="bukaTautan"
-      >
-        {{ labelTautan }}
-      </button>
     </template>
+
+    <div
+      v-if="item?.tautan"
+      class="fixed bottom-0 left-0 right-0 z-30 pointer-events-none"
+    >
+      <div class="max-w-[560px] mx-auto px-4 pt-2 pb-[max(12px,env(safe-area-inset-bottom,0px))]">
+        <button
+          type="button"
+          class="pointer-events-auto w-full min-h-[48px] rounded-full bg-[var(--btn)] text-[var(--btn-fg)] font-bold text-[15px] active:scale-[0.98] transition"
+          @click="bukaTautan"
+        >
+          {{ labelTautan }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 

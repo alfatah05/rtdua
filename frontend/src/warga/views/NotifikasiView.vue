@@ -1,67 +1,87 @@
 <template>
   <div>
     <AppBackHeader title="Notifikasi" :show-notif="false" />
-    <button
-      v-if="daftar.length"
-      type="button"
-      class="text-[13px] font-semibold text-[var(--g)] mb-3"
-      @click="bacaSemua"
+
+    <!-- Card aktifkan: muncul jika perangkat ini belum punya subscription -->
+    <div
+      v-if="pushSupported && !hasPushSub"
+      class="mb-4 rounded-[14px] border border-[var(--line)] bg-[var(--card)] px-4 py-3"
     >
-      Tandai semua dibaca
-    </button>
+      <p class="font-bold text-[14px] m-0">Notifikasi perangkat</p>
+      <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5 leading-snug">
+        <template v-if="pushStatus === 'denied'">Izin ditolak. Buka pengaturan browser/HP untuk mengizinkan notifikasi.</template>
+        <template v-else>Aktifkan agar isi notifikasi di halaman ini juga muncul sebagai push PWA di HP ini.</template>
+      </p>
+      <div class="flex gap-2 mt-2.5">
+        <button
+          type="button"
+          class="flex-1 min-h-[40px] rounded-full bg-[var(--g)] text-white text-[13px] font-bold disabled:opacity-50"
+          :disabled="pushStatus === 'loading' || pushStatus === 'denied'"
+          @click="onAktifkanPush"
+        >
+          {{ pushStatus === 'loading' ? 'Mengaktifkan…' : 'Aktifkan push' }}
+        </button>
+      </div>
+      <p v-if="pushMsg" class="text-[12px] m-0 mt-2" :class="pushMsgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ pushMsg }}</p>
+    </div>
+    <p
+      v-else-if="pushStatus === 'unsupported'"
+      class="text-[12px] text-[var(--mut)] mb-4 m-0 px-1"
+    >
+      Browser ini tidak mendukung push. Di iPhone, pasang ke Layar Utama (Share → Add to Home Screen) dulu.
+    </p>
+
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <p v-else-if="!daftar.length" class="text-[13px] text-[var(--mut)] text-center py-6">Belum ada notifikasi</p>
 
-    <div v-else class="space-y-1">
+    <div v-else class="overflow-hidden">
       <button
         v-for="n in daftar"
         :key="n.id"
         type="button"
-        class="w-full text-left flex items-start gap-3 px-1 py-3 rounded-[16px] active:bg-[var(--search)] transition"
-        :class="n.dibaca ? 'opacity-55' : ''"
+        class="w-full text-left flex items-center gap-3 px-3 py-3.5 transition active:bg-[var(--search)]"
         @click="bukaDetail(n)"
       >
         <span
-          class="w-11 h-11 rounded-full grid place-items-center shrink-0 mt-0.5"
-          :style="{ background: meta(n.jenis).bg, color: meta(n.jenis).color }"
+          class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+          :style="n.dibaca
+            ? { background: 'var(--card2)', color: 'var(--text)' }
+            : { background: meta(n.jenis).bg, color: meta(n.jenis).color }"
         >
           <component :is="meta(n.jenis).icon" :size="20" />
         </span>
 
         <div class="flex-1 min-w-0">
-          <div class="flex items-start gap-2">
-            <p class="font-bold text-[14px] m-0 leading-snug flex-1 min-w-0 truncate">{{ n.judul }}</p>
-            <ChevronRight :size="18" class="text-[var(--mut)] shrink-0 mt-0.5" />
-          </div>
-          <div class="flex items-start gap-2 mt-0.5">
-            <p class="text-[13px] text-[var(--mut)] m-0 flex-1 min-w-0 truncate">{{ preview(n.isi) }}</p>
-            <span class="text-[12px] text-[var(--mut)] shrink-0 tabular-nums">{{ jam(n.dibuat_pada) }}</span>
-          </div>
+          <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ n.judul }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5 truncate">{{ preview(n.isi) }}</p>
+          <p class="text-[11px] text-[var(--mut)] m-0 mt-1">{{ jam(n.dibuat_pada || n.created_at) }}</p>
         </div>
+        <ChevronRight :size="16" class="text-[var(--mut)] shrink-0 opacity-50" />
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
-
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import {
   Megaphone, Wallet, ShieldAlert, ClipboardList,
   Bell, ChevronRight, Images, CalendarDays,
 } from 'lucide-vue-next'
-import { listNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
-import { useNotifBadge } from '@shared/composables/useNotifBadge.js'
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
+import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
+import { listNotifikasi } from '@shared/services/notifikasi.js'
+import { usePush } from '@shared/composables/usePush.js'
 
 const router = useRouter()
 const daftar = ref([])
 const loading = ref(true)
 const err = ref('')
-const { refresh: refreshBadge } = useNotifBadge()
+const pushMsg = ref('')
+const pushMsgOk = ref(true)
+const { supported: pushSupported, status: pushStatus, hasSubscription: hasPushSub, aktifkan: aktifkanPush } = usePush()
 
 const JENIS = {
   pengumuman: { icon: Megaphone, bg: 'rgba(245,158,11,.18)', color: '#D97706' },
@@ -111,10 +131,11 @@ function bukaDetail(n) {
   router.push('/notifikasi/' + n.id)
 }
 
-async function bacaSemua() {
-  await bacaSemuaNotifikasi()
-  await refreshBadge()
-  await load()
+async function onAktifkanPush() {
+  pushMsg.value = ''
+  const res = await aktifkanPush()
+  pushMsgOk.value = !!res.ok
+  pushMsg.value = res.ok ? 'Push berhasil diaktifkan.' : (res.error || 'Gagal')
 }
 
 onMounted(load)

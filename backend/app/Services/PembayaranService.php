@@ -8,10 +8,10 @@ use App\Libraries\AlokasiPembayaran;
  * Pembayaran jalur 1 (pengurus) dan jalur 2 (permintaan warga).
  * Semua mutasi dalam transaksi DB.
  * Alokasi menghormati tagihan_ids (checklist warga) bila ada.
+ * T2: mutasi iuran ke sub pos, bukan kas_transaksi.
  */
 class PembayaranService
 {
-    /** Pastikan kolom tagihan_ids ada di tabel pembayaran (untuk alokasi checklist). */
     public function ensurePembayaranColumns(): void
     {
         $db = \Config\Database::connect();
@@ -22,13 +22,9 @@ class PembayaranService
                 $db->query('ALTER TABLE pembayaran ADD COLUMN tagihan_ids TEXT NULL AFTER catatan');
             }
         } catch (\Throwable $e) {
-            // ignore
         }
     }
 
-    /**
-     * Jalur 1: pengurus catat pembayaran langsung.
-     */
     public function catat(array $data, int $userId): array
     {
         $keluargaId = (int) ($data['keluarga_id'] ?? 0);
@@ -71,7 +67,7 @@ class PembayaranService
         $db->table('pembayaran')->insert($insertBayar);
         $pid = (int) $db->insertID();
 
-        (new KasService())->masukDariPembayaran(
+        (new SubPosService())->masukDariPembayaran(
             $pid,
             $keluargaId,
             $metode,
@@ -106,10 +102,10 @@ class PembayaranService
         return [
             'ok'   => true,
             'data' => [
-                'id'       => $pid,
-                'potongan' => $alok['potongan'],
-                'sisaBayar'=> $alok['sisaBayar'],
-                'ringkasan'=> $tagihanSvc->ringkasanKeluarga($keluargaId),
+                'id'        => $pid,
+                'potongan'  => $alok['potongan'],
+                'sisaBayar' => $alok['sisaBayar'],
+                'ringkasan' => $tagihanSvc->ringkasanKeluarga($keluargaId),
             ],
         ];
     }
@@ -121,28 +117,61 @@ class PembayaranService
             return ['ok' => false, 'message' => 'Nominal transfer wajib.'];
         }
         $db = \Config\Database::connect();
-        $ada = $db->table('pembayaran_permintaan')
+        // Blokir hanya jika ada overlap tagihan_ids dengan permintaan menunggu
+        $pending = $db->table('pembayaran_permintaan')
             ->where('keluarga_id', $keluargaId)
             ->where('status', 'menunggu')
-            ->countAllResults();
-        if ($ada > 0) {
-            return ['ok' => false, 'message' => 'Masih ada permintaan menunggu. Tunggu konfirmasi atau hubungi pengurus.'];
+            ->get()
+            ->getResultArray();
+        $newIds = [];
+        if (!empty($data['tagihan_ids']) && is_array($data['tagihan_ids'])) {
+            $newIds = array_map('intval', $data['tagihan_ids']);
+        } elseif (!empty($data['tagihan_ids']) && is_string($data['tagihan_ids'])) {
+            $decoded = json_decode($data['tagihan_ids'], true);
+            if (is_array($decoded)) {
+                $newIds = array_map('intval', $decoded);
+            }
+        }
+        $newIds = array_values(array_filter($newIds, static fn ($n) => $n > 0));
+        if ($pending) {
+            $locked = [];
+            foreach ($pending as $pr) {
+                $raw = $pr['tagihan_ids'] ?? null;
+                if (is_string($raw) && $raw !== '') {
+                    $d = json_decode($raw, true);
+                    if (is_array($d)) {
+                        foreach ($d as $x) {
+                            $locked[(int) $x] = true;
+                        }
+                    }
+                }
+            }
+            if ($newIds) {
+                foreach ($newIds as $nid) {
+                    if (!empty($locked[$nid])) {
+                        return ['ok' => false, 'message' => 'Sebagian tagihan masih menunggu konfirmasi. Pilih jenis lain atau tunggu pengurus.'];
+                    }
+                }
+            } elseif ($locked) {
+                // permintaan baru tanpa tagihan_ids tapi masih ada pending ber-tagihan — izinkan
+            } elseif (count($pending) > 0 && !$newIds) {
+                // pending tanpa tagihan_ids (legacy): tetap blokir ajukan tanpa daftar tagihan
+                return ['ok' => false, 'message' => 'Masih ada permintaan menunggu. Tunggu konfirmasi atau hubungi pengurus.'];
+            }
         }
 
         $buktiPath = $data['bukti_file'] ?? null;
-
-        // Pastikan kolom opsional metode rekening ada
         (new RekeningPembayaranService())->ensureTable();
 
         $insert = [
-            'keluarga_id'       => $keluargaId,
-            'diajukan_oleh'     => $userId,
-            'nominal_diajukan'  => $nominal,
-            'nama_pengirim'     => $data['nama_pengirim'] ?? null,
-            'bank_pengirim'     => $data['bank_pengirim'] ?? null,
-            'bukti_file'        => $buktiPath,
-            'diajukan_pada'     => date('Y-m-d H:i:s'),
-            'status'            => 'menunggu',
+            'keluarga_id'      => $keluargaId,
+            'diajukan_oleh'    => $userId,
+            'nominal_diajukan' => $nominal,
+            'nama_pengirim'    => $data['nama_pengirim'] ?? null,
+            'bank_pengirim'    => $data['bank_pengirim'] ?? null,
+            'bukti_file'       => $buktiPath,
+            'diajukan_pada'    => date('Y-m-d H:i:s'),
+            'status'           => 'menunggu',
         ];
         if (!empty($data['metode_rekening'])) {
             $insert['metode_rekening'] = $data['metode_rekening'];
@@ -181,21 +210,21 @@ class PembayaranService
         return array_map(static function ($r) {
             $nom = (int) $r['nominal_diajukan'];
             return [
-                'id'               => (int) $r['id'],
-                'keluarga_id'      => (int) $r['keluarga_id'],
-                'alamat'           => $r['blok_nama'] . '-' . $r['nomor'] . ($r['akhiran'] ?? ''),
-                'nama'             => $r['nama_kepala'] ?? null,
-                'nama_kepala'      => $r['nama_kepala'] ?? null,
-                'nominal_diajukan' => $nom,
-                'nominal'          => $nom,
-                'nama_pengirim'    => $r['nama_pengirim'],
-                'bank_pengirim'    => $r['bank_pengirim'],
-                'bukti_file'       => $r['bukti_file'],
-                'diajukan_pada'    => $r['diajukan_pada'],
-                'status'           => $r['status'],
-                'alasan_tolak'     => $r['alasan_tolak'],
+                'id'                   => (int) $r['id'],
+                'keluarga_id'          => (int) $r['keluarga_id'],
+                'alamat'               => $r['blok_nama'] . '-' . $r['nomor'] . ($r['akhiran'] ?? ''),
+                'nama'                 => $r['nama_kepala'] ?? null,
+                'nama_kepala'          => $r['nama_kepala'] ?? null,
+                'nominal_diajukan'     => $nom,
+                'nominal'              => $nom,
+                'nama_pengirim'        => $r['nama_pengirim'],
+                'bank_pengirim'        => $r['bank_pengirim'],
+                'bukti_file'           => $r['bukti_file'],
+                'diajukan_pada'        => $r['diajukan_pada'],
+                'status'               => $r['status'],
+                'alasan_tolak'         => $r['alasan_tolak'],
                 'nominal_dikonfirmasi' => $r['nominal_dikonfirmasi'] ? (int) $r['nominal_dikonfirmasi'] : null,
-                'tagihan_ids'      => $r['tagihan_ids'] ?? null,
+                'tagihan_ids'          => $r['tagihan_ids'] ?? null,
             ];
         }, $rows);
     }
@@ -237,7 +266,6 @@ class PembayaranService
         $this->ensurePembayaranColumns();
         $tagihanSvc = new TagihanService();
         $ring = $tagihanSvc->ringkasanKeluarga($keluargaId);
-        // Checklist warga dari permintaan; pengurus bisa override via data['tagihan_ids']
         $hanyaIds = AlokasiPembayaran::parseIds($data['tagihan_ids'] ?? ($row['tagihan_ids'] ?? null));
         $alok = AlokasiPembayaran::alokasi($ring['tagihan'], $nominal, $hanyaIds);
 
@@ -258,7 +286,7 @@ class PembayaranService
         $db->table('pembayaran')->insert($insertBayar);
         $pid = (int) $db->insertID();
 
-        (new KasService())->masukDariPembayaran(
+        (new SubPosService())->masukDariPembayaran(
             $pid,
             $keluargaId,
             'transfer',
@@ -367,6 +395,7 @@ class PembayaranService
             'dibatalkan_pada' => date('Y-m-d H:i:s'),
             'alasan_batal'    => $alasan,
         ]);
+        (new SubPosService())->batalkanDariPembayaran($id, $userId);
         (new KasService())->batalkanDariPembayaran($id, $userId);
         $db->transComplete();
 

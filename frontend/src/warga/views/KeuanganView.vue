@@ -38,7 +38,7 @@
     <template v-else>
       <div
         class="rounded-[20px] p-5 text-white mb-5 relative overflow-hidden"
-        style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #22B863, #0F9D4E 55%, #0B8442)"
+        style="background: radial-gradient(110% 100% at 100% 0%, rgba(255,255,255,.28), transparent 55%), linear-gradient(145deg, #C084FC, #A855F7 55%, #7C3AED)"
       >
         <div class="relative z-10">
           <div class="flex items-center justify-between gap-2 mb-1.5">
@@ -57,15 +57,15 @@
           </div>
 
           <div class="grid grid-cols-2 gap-2 mt-4">
-            <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white/20">
-              <ArrowDownLeft :size="16" class="text-emerald-200 shrink-0" />
-              <span class="text-[13px] font-bold text-emerald-100 truncate">
+            <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white">
+              <ArrowDownLeft :size="16" class="shrink-0" style="color: #16A34A" />
+              <span class="text-[13px] font-bold truncate" style="color: #16A34A">
                 {{ formatRp(totalMasuk) }}
               </span>
             </div>
-            <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white/20">
-              <ArrowUpRight :size="16" class="text-red-200 shrink-0" />
-              <span class="text-[13px] font-bold text-red-100 truncate">
+            <div class="flex items-center gap-2 min-h-[40px] px-3 rounded-full bg-white">
+              <ArrowUpRight :size="16" class="shrink-0" style="color: #F87171" />
+              <span class="text-[13px] font-bold truncate" style="color: #F87171">
                 {{ formatRp(totalKeluar) }}
               </span>
             </div>

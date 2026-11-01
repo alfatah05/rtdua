@@ -2,15 +2,27 @@
   <div>
     <AppBackHeader title="Notifikasi" />
 
-    <div class="flex justify-end px-1 mb-2">
-      <button
-        type="button"
-        class="text-[13px] font-semibold text-[var(--g)] disabled:opacity-50"
-        :disabled="loading || !items.length"
-        @click="onBacaSemua"
-      >
-        Tandai semua dibaca
-      </button>
+    <!-- Card aktifkan: muncul jika perangkat ini belum punya subscription -->
+    <div
+      v-if="pushSupported && !hasPushSub"
+      class="mb-3 rounded-[14px] border border-[var(--line)] bg-[var(--card)] px-4 py-3"
+    >
+      <p class="font-bold text-[14px] m-0">Notifikasi perangkat</p>
+      <p class="text-[12px] text-[var(--mut)] m-0 mt-0.5 leading-snug">
+        <template v-if="pushStatus === 'denied'">Izin ditolak. Aktifkan notifikasi di pengaturan browser/HP.</template>
+        <template v-else>Aktifkan agar notifikasi di halaman ini juga muncul sebagai push PWA di HP ini.</template>
+      </p>
+      <div class="flex gap-2 mt-2.5">
+        <button
+          type="button"
+          class="flex-1 min-h-[40px] rounded-full bg-[var(--g)] text-white text-[13px] font-bold disabled:opacity-50"
+          :disabled="pushStatus === 'loading' || pushStatus === 'denied'"
+          @click="onAktifkanPush"
+        >
+          {{ pushStatus === 'loading' ? 'Mengaktifkan…' : 'Aktifkan push' }}
+        </button>
+      </div>
+      <p v-if="pushMsg" class="text-[12px] m-0 mt-2" :class="pushMsgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ pushMsg }}</p>
     </div>
 
     <AppPageSpinner v-if="loading" />
@@ -19,22 +31,26 @@
     <div v-else>
       <div v-for="(group, hari) in grouped" :key="hari" class="mb-4">
         <h2 class="text-[13px] font-bold text-[var(--mut)] mb-1 px-2">{{ hari }}</h2>
-        <div class="px-1 space-y-0.5">
+        <div class="overflow-hidden">
           <button
             v-for="n in group"
             :key="n.id"
             type="button"
-            class="w-full flex flex-row items-start gap-3 px-2 py-3 rounded-[12px] text-left"
-            :class="!n.dibaca ? 'bg-[var(--ok)]/40' : ''"
+            class="w-full flex flex-row items-center gap-3 px-3 py-3.5 text-left transition active:bg-[var(--search)]"
             @click="onTap(n)"
           >
-            <div v-if="!n.dibaca" class="w-2 h-2 rounded-full bg-[var(--g)] mt-2 shrink-0"></div>
-            <div v-else class="w-2 shrink-0"></div>
+            <div
+              class="w-11 h-11 rounded-full grid place-items-center shrink-0"
+              :class="n.dibaca ? 'bg-[var(--card2)] text-[var(--text)]' : 'bg-[var(--gd)] text-[var(--gm)]'"
+            >
+              <Bell :size="20" />
+            </div>
             <div class="min-w-0 flex-1">
-              <p class="font-bold text-[15px] m-0 leading-tight">{{ n.judul }}</p>
-              <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ n.isi }}</p>
+              <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ n.judul }}</p>
+              <p class="text-[13px] text-[var(--mut)] m-0 mt-0.5 truncate">{{ previewIsi(n.isi) }}</p>
               <p class="text-[12px] text-[var(--mut)] m-0 mt-1">{{ formatWaktu(n.dibuat_pada) }}</p>
             </div>
+            <ChevronRight :size="16" class="text-[var(--mut)] shrink-0 opacity-50" />
           </button>
         </div>
       </div>
@@ -49,7 +65,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
-import { listNotifikasi, bacaNotifikasi, bacaSemuaNotifikasi } from '@shared/services/notifikasi.js'
+import { Bell, ChevronRight } from 'lucide-vue-next'
+import { listNotifikasi, bacaNotifikasi } from '@shared/services/notifikasi.js'
+import { usePush } from '@shared/composables/usePush.js'
 
 const router = useRouter()
 const loading = ref(true)
@@ -77,6 +95,11 @@ function labelHari(ts) {
   if (same(d, today)) return 'Hari ini'
   if (same(d, yday)) return 'Kemarin'
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function previewIsi(isi) {
+  const t = String(isi || '').replace(/\s+/g, ' ').trim()
+  return t.length > 80 ? t.slice(0, 79) + '…' : t
 }
 
 function formatWaktu(ts) {
@@ -108,9 +131,15 @@ async function onTap(n) {
   }
 }
 
-async function onBacaSemua() {
-  await bacaSemuaNotifikasi()
-  items.value = items.value.map((n) => ({ ...n, dibaca: true }))
+const { supported: pushSupported, status: pushStatus, hasSubscription: hasPushSub, aktifkan: aktifkanPush } = usePush()
+const pushMsg = ref('')
+const pushMsgOk = ref(true)
+
+async function onAktifkanPush() {
+  pushMsg.value = ''
+  const res = await aktifkanPush()
+  pushMsgOk.value = !!res.ok
+  pushMsg.value = res.ok ? 'Push berhasil diaktifkan.' : (res.error || 'Gagal')
 }
 
 onMounted(load)

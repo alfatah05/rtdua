@@ -48,14 +48,13 @@ const sideItems = [
   { to: '/aktivitas', label: 'Aktivitas', icon: Activity },
 ]
 
-/** Bottom nav hanya di tab utama — form/aksi disembunyikan (design system). */
+/** Bottom nav hanya di tab utama — form/aksi/Menu disembunyikan (child page). */
 const MAIN_TABS = new Set([
   '/',
   '/warga',
   '/keuangan',
   '/aktivitas',
   '/profil',
-  '/lainnya',
   '/notifikasi',
   '/ronda',
 ])

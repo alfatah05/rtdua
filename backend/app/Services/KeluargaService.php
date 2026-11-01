@@ -23,11 +23,18 @@ class KeluargaService
             $q->where('k.blok_id', (int) $filter['blok_id']);
         }
         if (!empty($filter['q'])) {
-            $s = $filter['q'];
+            $s = trim((string) $filter['q']);
+            $like = '%' . $s . '%';
             $q->groupStart()
                 ->like('k.nomor', $s)
                 ->orLike('k.akhiran', $s)
                 ->orLike('b.nama', $s)
+                ->orLike('k.alamat', $s)
+                ->orWhere(
+                    'EXISTS (SELECT 1 FROM warga w WHERE w.keluarga_id = k.id AND w.status = \'aktif\' AND w.nama LIKE ' . $db->escape($like) . ')',
+                    null,
+                    false
+                )
                 ->groupEnd();
         }
 
@@ -38,11 +45,15 @@ class KeluargaService
         }
 
         if (!empty($filter['q'])) {
-            $s = mb_strtolower($filter['q']);
-            $out = array_values(array_filter($out, static function ($k) use ($s) {
-                return str_contains(mb_strtolower($k['nama'] ?? ''), $s)
-                    || str_contains(mb_strtolower($k['alamat'] ?? ''), $s);
-            }));
+            $s = mb_strtolower(trim((string) $filter['q']));
+            usort($out, static function ($a, $b) use ($s) {
+                $an = str_contains(mb_strtolower($a['nama'] ?? ''), $s) ? 0 : 1;
+                $bn = str_contains(mb_strtolower($b['nama'] ?? ''), $s) ? 0 : 1;
+                if ($an !== $bn) {
+                    return $an - $bn;
+                }
+                return strcmp($a['alamat'] ?? '', $b['alamat'] ?? '');
+            });
         }
 
         if (!empty($filter['belum_lengkap'])) {
@@ -52,6 +63,80 @@ class KeluargaService
             $out = array_values(array_filter($out, static fn ($k) => $k['belum_ganti_pin']));
         }
 
+        return $out;
+    }
+
+
+    /**
+     * Cari anggota aktif by nama (primary) atau alamat/blok/nomor.
+     * Dipakai UI angkat pengurus (floating search).
+     * Query raw agar stabil di shared hosting (hindari groupStart/orLike CI4).
+     */
+    public function cariAnggotaAktif(string $q, int $limit = 40): array
+    {
+        $q = trim($q);
+        if (mb_strlen($q) < 2) {
+            return [];
+        }
+        $db = \Config\Database::connect();
+        $limit = max(1, min(80, (int) $limit));
+        $like = '%' . $db->escapeLikeString($q) . '%';
+
+        $sql = "SELECT w.id, w.nama, w.hubungan, w.keluarga_id,
+                       k.nomor, k.akhiran, b.nama AS blok_nama
+                FROM warga w
+                INNER JOIN keluarga k ON k.id = w.keluarga_id
+                LEFT JOIN blok b ON b.id = k.blok_id
+                WHERE w.status = 'aktif'
+                  AND k.status = 'aktif'
+                  AND (
+                        w.nama LIKE ? ESCAPE '!'
+                     OR IFNULL(b.nama, '') LIKE ? ESCAPE '!'
+                     OR CAST(k.nomor AS CHAR) LIKE ? ESCAPE '!'
+                     OR IFNULL(k.akhiran, '') LIKE ? ESCAPE '!'
+                     OR IFNULL(k.alamat, '') LIKE ? ESCAPE '!'
+                     OR CONCAT(IFNULL(b.nama,''), '-', k.nomor, IFNULL(k.akhiran,'')) LIKE ? ESCAPE '!'
+                  )
+                ORDER BY w.nama ASC
+                LIMIT {$limit}";
+
+        try {
+            $rows = $db->query($sql, [$like, $like, $like, $like, $like, $like])->getResultArray();
+        } catch (\Throwable $e) {
+            // fallback Query Builder sederhana (nama saja)
+            $rows = $db->table('warga w')
+                ->select('w.id, w.nama, w.hubungan, w.keluarga_id, k.nomor, k.akhiran, b.nama as blok_nama')
+                ->join('keluarga k', 'k.id = w.keluarga_id')
+                ->join('blok b', 'b.id = k.blok_id', 'left')
+                ->where('w.status', 'aktif')
+                ->where('k.status', 'aktif')
+                ->like('w.nama', $q)
+                ->orderBy('w.nama', 'ASC')
+                ->limit($limit)
+                ->get()
+                ->getResultArray();
+        }
+
+        $out = [];
+        $s = mb_strtolower($q);
+        foreach ($rows as $r) {
+            $alamat = ($r['blok_nama'] ?? '') . '-' . ($r['nomor'] ?? '') . ($r['akhiran'] ?? '');
+            $out[] = [
+                'id'          => (int) $r['id'],
+                'nama'        => $r['nama'],
+                'hubungan'    => $r['hubungan'],
+                'keluarga_id' => (int) $r['keluarga_id'],
+                'alamat'      => $alamat,
+            ];
+        }
+        usort($out, static function ($a, $b) use ($s) {
+            $an = str_contains(mb_strtolower($a['nama'] ?? ''), $s) ? 0 : 1;
+            $bn = str_contains(mb_strtolower($b['nama'] ?? ''), $s) ? 0 : 1;
+            if ($an !== $bn) {
+                return $an - $bn;
+            }
+            return strcmp($a['nama'] ?? '', $b['nama'] ?? '');
+        });
         return $out;
     }
 

@@ -1,17 +1,19 @@
 <?php
 /**
  * Thin proxy — pengurus
- * Struktur: .../pengurus-dev.../api  → naik 4 = FTP root → rt-app
+ * BACKEND_DIR diganti saat deploy: rt-app-dev (dev) atau rt-app (prod)
  */
 header('Content-Type: application/json; charset=utf-8');
 
 $_SERVER['HTTP_X_APP_SIDE'] = 'pengurus';
 
+$backendDir = getenv('RT_BACKEND_DIR') ?: 'rt-app';
+
 $candidates = [
-    dirname(__DIR__, 4) . '/rt-app/public/index.php',
-    dirname(__DIR__, 3) . '/rt-app/public/index.php',
-    dirname(__DIR__, 5) . '/rt-app/public/index.php',
-    dirname(__DIR__, 2) . '/rt-app/public/index.php',
+    dirname(__DIR__, 4) . '/' . $backendDir . '/public/index.php',
+    dirname(__DIR__, 3) . '/' . $backendDir . '/public/index.php',
+    dirname(__DIR__, 5) . '/' . $backendDir . '/public/index.php',
+    dirname(__DIR__, 2) . '/' . $backendDir . '/public/index.php',
 ];
 
 $backend = null;
@@ -28,17 +30,17 @@ if ($backend === null) {
     http_response_code(503);
     echo json_encode([
         'ok' => false,
-        'message' => 'rt-app tidak ketemu',
+        'message' => $backendDir . ' tidak ketemu',
         'side' => 'pengurus',
+        'backend_dir' => $backendDir,
         '__DIR__' => __DIR__,
         'tried' => $tried,
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     exit;
 }
 
-$root = dirname($backend, 2); // .../rt-app
+$root = dirname($backend, 2);
 $boot = $root . '/vendor/codeigniter4/framework/system/Boot.php';
-$pathsFile = $root . '/app/Config/Paths.php';
 
 if (isset($_GET['debug'])) {
     echo json_encode([
@@ -46,9 +48,8 @@ if (isset($_GET['debug'])) {
         'message' => 'path ketemu',
         'backend' => $backend,
         'side' => 'pengurus',
+        'backend_dir' => $backendDir,
         'vendor_boot' => is_file($boot),
-        'paths_php' => is_file($pathsFile),
-        'paths_system_hint' => 'harus vendor/codeigniter4/framework/system',
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     exit;
 }

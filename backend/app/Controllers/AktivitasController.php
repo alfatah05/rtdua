@@ -10,14 +10,18 @@ use CodeIgniter\Controller;
 
 class AktivitasController extends Controller
 {
-    public function index()
+    private function requirePengurus()
     {
         $side = SideContext::fromRequest();
         if ($side !== 'pengurus') {
-            return ApiResponse::fail('Forbidden', 403);
+            return null;
         }
-        $user = (new AuthService())->current($side);
-        if (!$user) {
+        return (new AuthService())->current($side);
+    }
+
+    public function index()
+    {
+        if (!$this->requirePengurus()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
         $filter = [
@@ -26,5 +30,17 @@ class AktivitasController extends Controller
             'limit' => $this->request->getGet('limit'),
         ];
         return ApiResponse::ok((new AktivitasService())->list($filter));
+    }
+
+    public function detail($id)
+    {
+        if (!$this->requirePengurus()) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $row = (new AktivitasService())->detail((int) $id);
+        if (!$row) {
+            return ApiResponse::fail('Aktivitas tidak ditemukan', 404);
+        }
+        return ApiResponse::ok($row);
     }
 }

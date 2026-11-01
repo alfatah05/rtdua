@@ -3,78 +3,65 @@ import * as real from './keuangan.real.js'
 import { mockTagihan, mockKasSaldo } from '../mock/keuangan.js'
 import { alokasiPembayaran } from '../utils/alokasiPembayaran.js'
 
-const impl = () => (USE_MOCK.keuangan ? null : real)
-
-async function mockDaftarIuran() {
-  return {
-    ok: true,
-    data: [
-      { keluarga_id: 1, nama: 'Budi', alamat: 'AB2-22', total: 50000, status: 'belum_lunas', menunggak: false },
-      { keluarga_id: 2, nama: 'Siti', alamat: 'AB2-22a', total: 0, status: 'lunas', menunggak: false },
-      { keluarga_id: 3, nama: 'Andi', alamat: 'AB1-5', total: 70000, status: 'menunggak', menunggak: true },
-    ],
-  }
-}
-
-async function mockRingkasan(keluargaId) {
-  const tagihan = mockTagihan.filter((t) => t.keluarga_id === Number(keluargaId))
-  const total = tagihan.reduce((s, t) => s + (t.sisa || 0), 0)
-  return {
-    ok: true,
-    data: {
-      keluarga_id: Number(keluargaId),
-      total,
-      status: total === 0 ? 'lunas' : 'belum_lunas',
-      menunggak: false,
-      tagihan,
-      pembayaran: [],
-    },
-  }
-}
-
 export function daftarIuran(params) {
-  return USE_MOCK.keuangan ? mockDaftarIuran() : real.daftarIuran(params)
+  return USE_MOCK.keuangan
+    ? Promise.resolve({ ok: true, data: mockTagihan })
+    : real.daftarIuran(params)
 }
-export function ringkasanKeluarga(id) {
-  return USE_MOCK.keuangan ? mockRingkasan(id) : real.ringkasanKeluarga(id)
+
+export function ringkasanKeluarga(keluargaId) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: {} }) : real.ringkasanKeluarga(keluargaId)
 }
+
 export function pratinjauAlokasi(keluargaId, nominal) {
   if (USE_MOCK.keuangan) {
-    const tagihan = mockTagihan.filter((t) => t.keluarga_id === Number(keluargaId))
-    return Promise.resolve({ ok: true, data: alokasiPembayaran(tagihan, nominal) })
+    return Promise.resolve({ ok: true, data: alokasiPembayaran([], nominal) })
   }
   return real.pratinjauAlokasi(keluargaId, nominal)
 }
+
 export function catatPembayaran(payload) {
-  return USE_MOCK.keuangan
-    ? Promise.resolve({ ok: true, data: { id: 1 } })
-    : real.catatPembayaran(payload)
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1 } }) : real.catatPembayaran(payload)
 }
+
 export function batalkanPembayaran(id, alasan) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.batalkanPembayaran(id, alasan)
 }
+
 export function listPermintaan(status) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listPermintaan(status)
 }
+
 export function konfirmasiPermintaan(id, payload) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.konfirmasiPermintaan(id, payload)
 }
+
 export function tolakPermintaan(id, alasan) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.tolakPermintaan(id, alasan)
 }
+
 export function saldoKas() {
   return USE_MOCK.keuangan
     ? Promise.resolve({ ok: true, data: { saldo: mockKasSaldo } })
     : real.saldoKas()
 }
+
 export function listKas(params) {
   return USE_MOCK.keuangan
-    ? Promise.resolve({ ok: true, data: { saldo: mockKasSaldo, items: [] } })
+    ? Promise.resolve({ ok: true, data: { saldo: mockKasSaldo, items: [], pos: [] } })
     : real.listKas(params)
 }
+
 export function tambahKas(payload) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1 } }) : real.tambahKas(payload)
 }
+
+export function getKasDetail(id) {
+  return USE_MOCK.keuangan
+    ? Promise.resolve({ ok: false, error: 'Mock' })
+    : real.getKasDetail(id)
+}
+
 export function batalkanKas(id, alasan) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.batalkanKas(id, alasan)
 }
@@ -105,7 +92,7 @@ export function buatIuranKhusus(payload) {
 }
 export function buatTagihanKhususKeluarga(keluargaId, payload) {
   return USE_MOCK.keuangan
-    ? Promise.resolve({ ok: true, data: { tagihan_id: 1 } })
+    ? Promise.resolve({ ok: true, data: { id: 1 } })
     : real.buatTagihanKhususKeluarga(keluargaId, payload)
 }
 export function ubahTagihanKhusus(tagihanId, payload) {
@@ -118,19 +105,28 @@ export function hapusTagihanKhusus(tagihanId, alasan) {
     ? Promise.resolve({ ok: true })
     : real.hapusTagihanKhusus(tagihanId, alasan)
 }
+export function ubahIuranKhusus(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.ubahIuranKhusus(id, payload)
+}
+export function batalkanIuranKhusus(id, alasan) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.batalkanIuranKhusus(id, alasan)
+}
+
 export function laporan(bulan) {
   return USE_MOCK.keuangan
-    ? Promise.resolve({ ok: true, data: { bulan, total_masuk: 0, total_keluar: 0, transaksi: [] } })
+    ? Promise.resolve({ ok: true, data: { bulan, saldo_keseluruhan: mockKasSaldo, total_masuk: 0, total_keluar: 0, per_kategori: {}, transaksi: [], rekap_iuran: [] } })
     : real.laporan(bulan)
 }
+
 export function ubahNominal(payload) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.ubahNominal(payload)
 }
 export function pastikanTagihanKas(periode) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { dibuat: 0 } }) : real.pastikanTagihanKas(periode)
 }
+
 export function portalRingkasan() {
-  return USE_MOCK.keuangan ? mockRingkasan(1) : real.portalRingkasan()
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: {} }) : real.portalRingkasan()
 }
 export function portalAjukanTransfer(payload) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1 } }) : real.portalAjukanTransfer(payload)
@@ -142,6 +138,11 @@ export function portalKas(bulan) {
   return USE_MOCK.keuangan
     ? Promise.resolve({ ok: true, data: { saldo: mockKasSaldo, items: [] } })
     : real.portalKas(bulan)
+}
+export function portalStatusIuranWarga() {
+  return USE_MOCK.keuangan
+    ? Promise.resolve({ ok: true, data: [] })
+    : real.portalStatusIuranWarga()
 }
 
 export function listRekening() {
@@ -176,4 +177,25 @@ export function terapkanKomponenBulanIni() {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { dibuat: 0 } }) : real.terapkanKomponenBulanIni()
 }
 
-void impl
+// ---- Sub pos (T4) ----
+export function listSubPos(params) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listSubPos(params || {})
+}
+export function detailSubPos(id) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: null }) : real.detailSubPos(id)
+}
+export function listSubPosMutasi(id, params) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { sub_pos: null, items: [] } }) : real.listSubPosMutasi(id, params || {})
+}
+export function subPosMasuk(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: {} }) : real.subPosMasuk(id, payload)
+}
+export function subPosKeluar(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: {} }) : real.subPosKeluar(id, payload)
+}
+export function subPosAlokasi(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: {} }) : real.subPosAlokasi(id, payload)
+}
+export function subPosBatalMutasi(mutasiId, alasan) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.subPosBatalMutasi(mutasiId, alasan)
+}

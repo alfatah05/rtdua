@@ -7,7 +7,7 @@
         type="button"
         class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
         :class="pressedKey === 'talim' ? 'is-pressed' : ''"
-        style="background: linear-gradient(105deg, #0EA5E9 0%, #0369A1 100%)"
+        style="background: #0EA5E9"
         @click="goTo('/talim/jadwal', 'talim')"
       >
         <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
@@ -17,7 +17,28 @@
           <div class="flex-1 min-w-0 py-2.5">
             <p class="text-[15px] font-bold m-0 leading-tight text-white truncate">Ta'lim</p>
             <p class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-white/85 truncate">
-              Jadwal kajian &amp; kegiatan
+              Jadwal kajian & kegiatan
+            </p>
+          </div>
+          <ChevronRight :size="18" class="shrink-0 text-white/70" />
+        </div>
+      </button>
+
+      <button
+        type="button"
+        class="menu-row w-full text-left relative overflow-hidden touch-manipulation will-change-transform"
+        :class="pressedKey === 'phbi' ? 'is-pressed' : ''"
+        style="background: #8B5CF6"
+        @click="goTo('/talim/phbi', 'phbi')"
+      >
+        <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-[64px]">
+          <div class="w-11 h-11 rounded-[14px] grid place-items-center shrink-0 bg-white/20 text-white">
+            <CalendarDays :size="22" />
+          </div>
+          <div class="flex-1 min-w-0 py-2.5">
+            <p class="text-[15px] font-bold m-0 leading-tight text-white truncate">PHBI</p>
+            <p class="text-[13px] font-semibold m-0 mt-0.5 leading-tight text-white/85 truncate">
+              Peringatan hari besar Islam
             </p>
           </div>
           <ChevronRight :size="18" class="shrink-0 text-white/70" />
@@ -27,7 +48,7 @@
       <div
         class="menu-row overflow-hidden"
         :class="pressedKey === 'bazis' ? 'is-pressed' : ''"
-        style="background: linear-gradient(105deg, #059669 0%, #047857 100%)"
+        style="background: #059669"
       >
         <button
           type="button"
@@ -81,7 +102,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookOpen, HandCoins, ChevronDown, ChevronRight } from 'lucide-vue-next'
+import { BookOpen, HandCoins, ChevronDown, ChevronRight, CalendarDays } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { getBazis } from '@shared/services/konten.js'
 
@@ -163,7 +184,6 @@ onMounted(() => {
 }
 :global(html[data-mode="dark"]) .menu-row {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  filter: brightness(0.82) saturate(0.9);
 }
 :global(html:not([data-mode="dark"])) .menu-row {
   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.12);

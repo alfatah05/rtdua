@@ -1,22 +1,26 @@
 <template>
   <div>
-    <AppMainHeader show-profil />
-    <h1 class="text-[20px] font-extrabold m-0 mb-4">Lainnya</h1>
+    <AppBackHeader title="Menu" />
 
-    <div v-for="group in visibleGroups" :key="group.title" class="mb-6">
-      <h2 class="text-[13px] font-bold text-[var(--mut)] mb-2 px-1">{{ group.title }}</h2>
-      <div class="grid grid-cols-4 gap-3">
+    <div v-for="g in visibleGroups" :key="g.title" class="mb-6">
+      <p class="text-[15px] font-bold text-[var(--text)] m-0 mb-3 px-0.5">{{ g.title }}</p>
+      <div class="grid grid-cols-4 gap-x-2 gap-y-4">
         <button
-          v-for="item in group.items"
-          :key="item.label"
+          v-for="m in g.items"
+          :key="m.to + m.label"
           type="button"
-          class="flex flex-col items-center gap-1.5 text-center"
-          @click="$router.push(item.to)"
+          class="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+          @click="$router.push(m.to)"
         >
-          <span class="w-12 h-12 rounded-full grid place-items-center" :style="{ background: item.bg, color: item.color }">
-            <component :is="item.icon" :size="20" />
+          <span
+            class="w-14 h-14 rounded-[18px] grid place-items-center text-white shrink-0"
+            :style="{ background: m.bg }"
+          >
+            <component :is="m.icon" :size="24" :stroke-width="2" />
           </span>
-          <span class="text-[11px] font-semibold leading-tight">{{ item.label }}</span>
+          <span class="text-[11px] font-semibold leading-tight text-center text-[var(--text)] px-0.5">
+            {{ m.label }}
+          </span>
         </button>
       </div>
     </div>
@@ -26,65 +30,93 @@
 <script setup>
 import { computed } from 'vue'
 import {
-  Banknote, ArrowDownLeft, ArrowUpRight, FileText, ClipboardList, Settings2, CreditCard,
-  UserPlus, ScanLine, Download, Shield, Megaphone, Images, Network, Users, Settings, Wallet, Baby, BookOpen, Leaf, HandCoins,
+  Banknote, FileText, Wallet, Settings2, CreditCard, Layers,
+  UserPlus, ScanLine, Download, Shield,
+  Megaphone, ClipboardList, Baby, BookOpen, Leaf, Trophy, Bike, Fish,
+  Swords, Activity, CalendarDays, Building2, Ambulance, HandCoins, Gift,
+  Images, Network, Settings, Users,
 } from 'lucide-vue-next'
-import AppMainHeader from '@shared/components/AppMainHeader.vue'
+import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { useAuth } from '@shared/composables/useAuth.js'
+import { MENU } from '@shared/constants/menuColors.js'
 
-const { isKetua } = useAuth()
+const { user } = useAuth()
+const isKetua = computed(() => user.value?.role === 'ketua' || user.value?.is_developer)
 
 const groups = [
   {
     title: 'Keuangan',
     items: [
-      { label: 'Catat iuran', icon: Banknote, to: '/keuangan/catat', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Kas masuk', icon: ArrowDownLeft, to: '/keuangan/kas-masuk', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Kas keluar', icon: ArrowUpRight, to: '/keuangan/kas-keluar', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Iuran', icon: ClipboardList, to: '/keuangan/iuran', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Iuran khusus', icon: Banknote, to: '/keuangan/iuran-khusus', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Pos kas', icon: Wallet, to: '/keuangan/pos-kas', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Tarif iuran', icon: Settings2, to: '/pengaturan-warga', bg: 'rgba(16,185,129,.18)', color: '#059669' },
-      { label: 'Rekening bayar', icon: CreditCard, to: '/rekening-pembayaran', bg: 'rgba(16,185,129,.18)', color: '#059669' },
+      { label: 'Tagihan warga', icon: Banknote, to: '/keuangan/catat', bg: MENU.catatIuran },
+      { label: 'Laporan', icon: FileText, to: '/keuangan/laporan', bg: MENU.laporan },
+      { label: 'Iuran khusus', icon: Banknote, to: '/keuangan/iuran-khusus', bg: MENU.iuranKhusus },
+      { label: 'Pos kas', icon: Wallet, to: '/keuangan/pos-kas', bg: MENU.posKas },
+      { label: 'Sub pos', icon: Layers, to: '/keuangan/sub-pos', bg: MENU.subPos },
+      { label: 'Tarif iuran', icon: Settings2, to: '/pengaturan-warga', bg: MENU.tarifIuran },
+      { label: 'Rekening', icon: CreditCard, to: '/rekening-pembayaran', bg: MENU.rekening },
     ],
   },
   {
     title: 'Warga',
     items: [
-      { label: 'Tambah keluarga', icon: UserPlus, to: '/warga/tambah', bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
-      { label: 'Scan KK', icon: ScanLine, to: '/warga/scan-kk', bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
-      { label: 'Ekspor', icon: Download, to: '/warga/ekspor', bg: 'rgba(6,182,212,.18)', color: '#0891B2' },
+      { label: 'Tambah', icon: UserPlus, to: '/warga/tambah', bg: MENU.tambahKeluarga },
+      { label: 'Scan KK', icon: ScanLine, to: '/warga/scan-kk', bg: MENU.scanKk },
+      { label: 'Ekspor', icon: Download, to: '/warga/ekspor', bg: MENU.ekspor },
     ],
   },
   {
     title: 'Ronda',
     items: [
-      { label: 'Jadwal ronda', icon: Shield, to: '/ronda', bg: 'rgba(59,130,246,.18)', color: '#2563EB' },
+      { label: 'Jadwal ronda', icon: Shield, to: '/ronda', bg: MENU.ronda },
     ],
   },
   {
     title: 'Konten warga',
     items: [
-      { label: 'Pengumuman', icon: Megaphone, to: '/konten/pengumuman', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
-      { label: 'Program RT', icon: ClipboardList, to: '/konten/program', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
-      { label: 'Posyandu', icon: Baby, to: '/konten/posyandu', bg: 'rgba(249,115,22,.18)', color: '#EA580C' },
-      { label: 'Pengajian', icon: BookOpen, to: '/konten/pengajian', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
-      { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: 'rgba(34,184,99,.18)', color: '#0B8442' },
-      { label: 'Bazis', icon: HandCoins, to: '/konten/bazis', bg: 'rgba(5,150,105,.18)', color: '#047857' },
-      { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
-      { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: 'rgba(168,85,247,.18)', color: '#7C3AED' },
+      { label: 'Pengumuman', icon: Megaphone, to: '/konten/pengumuman', bg: MENU.pengumuman },
+      { label: 'Program RT', icon: ClipboardList, to: '/konten/program', bg: MENU.program },
+      { label: 'Galeri', icon: Images, to: '/konten/galeri', bg: MENU.galeri },
+      { label: 'Struktur', icon: Network, to: '/konten/struktur', bg: MENU.struktur },
+      { label: 'Reward', icon: Gift, to: '/reward', bg: MENU.reward },
+      { label: 'RW', icon: Building2, to: '/konten/rw', bg: MENU.rw },
+      { label: 'Ambulance', icon: Ambulance, to: '/konten/ambulance', bg: MENU.ambulance },
+    ],
+  },
+  {
+    title: 'Komunitas',
+    items: [
+      { label: 'Bulutangkis', icon: Trophy, to: '/konten/bulutangkis', bg: MENU.bulutangkis },
+      { label: 'Gowes', icon: Bike, to: '/konten/gowes', bg: MENU.gowes },
+      { label: 'Mancing', icon: Fish, to: '/konten/mancing', bg: MENU.mancing },
+      { label: 'Pencak silat', icon: Swords, to: '/konten/silat', bg: MENU.silat },
+      { label: 'Senam', icon: Activity, to: '/konten/senam', bg: MENU.senam },
+    ],
+  },
+  {
+    title: 'Kader RT 002',
+    items: [
+      { label: 'Posyandu', icon: Baby, to: '/konten/posyandu', bg: MENU.posyandu },
+      { label: 'Pengajian', icon: BookOpen, to: '/konten/pengajian', bg: MENU.pengajian },
+      { label: 'Lingkungan', icon: Leaf, to: '/konten/lingkungan', bg: MENU.lingkungan },
+    ],
+  },
+  {
+    title: 'DKM',
+    items: [
+      { label: "Ta'lim", icon: BookOpen, to: '/konten/talim', bg: MENU.talim },
+      { label: 'PHBI', icon: CalendarDays, to: '/konten/phbi', bg: MENU.phbi },
+      { label: 'Bazis', icon: HandCoins, to: '/konten/bazis', bg: MENU.bazis },
     ],
   },
   {
     title: 'Sistem',
     ketuaOnly: true,
     items: [
-      { label: 'Pengaturan', icon: Settings, to: '/pengaturan-aplikasi', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
-      { label: 'Kelola pengurus', icon: Users, to: '/kelola-pengurus', bg: 'rgba(107,114,128,.18)', color: '#4B5563' },
+      { label: 'Pengaturan', icon: Settings, to: '/pengaturan-aplikasi', bg: MENU.pengaturan },
+      { label: 'Pengurus', icon: Users, to: '/kelola-pengurus', bg: MENU.kelolaPengurus },
     ],
   },
 ]
 
-const visibleGroups = computed(() => groups.filter(g => !g.ketuaOnly || isKetua.value))
+const visibleGroups = computed(() => groups.filter((g) => !g.ketuaOnly || isKetua.value))
 </script>

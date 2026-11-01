@@ -46,7 +46,7 @@ class AuthController extends ResourceController
             ], 'Login berhasil');
         } catch (\Throwable $e) {
             log_message('error', 'Auth login: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
-            return ApiResponse::fail('Server error: ' . $e->getMessage(), 500);
+            return ApiResponse::fail('Terjadi kesalahan server.', 500);
         }
     }
 
@@ -58,7 +58,7 @@ class AuthController extends ResourceController
             return ApiResponse::ok(null, 'Logout berhasil');
         } catch (\Throwable $e) {
             log_message('error', 'Auth logout: ' . $e->getMessage());
-            return ApiResponse::fail('Server error: ' . $e->getMessage(), 500);
+            return ApiResponse::fail('Terjadi kesalahan server.', 500);
         }
     }
 
@@ -73,7 +73,7 @@ class AuthController extends ResourceController
             return ApiResponse::ok(['user' => $user, 'side' => $side]);
         } catch (\Throwable $e) {
             log_message('error', 'Auth me: ' . $e->getMessage());
-            return ApiResponse::fail('Server error: ' . $e->getMessage(), 500);
+            return ApiResponse::fail('Terjadi kesalahan server.', 500);
         }
     }
 
@@ -95,7 +95,7 @@ class AuthController extends ResourceController
             return ApiResponse::ok(null, $result['message']);
         } catch (\Throwable $e) {
             log_message('error', 'Auth changeCredential: ' . $e->getMessage());
-            return ApiResponse::fail('Server error: ' . $e->getMessage(), 500);
+            return ApiResponse::fail('Terjadi kesalahan server.', 500);
         }
     }
 
@@ -115,7 +115,7 @@ class AuthController extends ResourceController
                 : ApiResponse::fail($res['message'], 422);
         } catch (\Throwable $e) {
             log_message('error', 'Auth updateFoto: ' . $e->getMessage());
-            return ApiResponse::fail('Server error', 500);
+            return ApiResponse::fail('Terjadi kesalahan server.', 500);
         }
     }
 
@@ -140,7 +140,7 @@ class AuthController extends ResourceController
             return ApiResponse::ok(['user' => $res['data']], 'Profil disimpan');
         } catch (\Throwable $e) {
             log_message('error', 'Auth updateProfil: ' . $e->getMessage());
-            return ApiResponse::fail('Server error: ' . $e->getMessage(), 500);
+            return ApiResponse::fail('Terjadi kesalahan server.', 500);
         }
     }
 }

@@ -79,6 +79,11 @@ class IuranKhususService
             return ['ok' => false, 'message' => 'Gagal membuat iuran khusus.'];
         }
 
+        try {
+            (new SubPosService())->ensureKhusus($nama, $iid);
+        } catch (\Throwable $e) {
+        }
+
         (new AuditService())->log('buat_iuran_khusus', 'iuran_khusus', $iid, null, [
             'nama'    => $nama,
             'periode' => $periode,
@@ -139,9 +144,6 @@ class IuranKhususService
         return ['ok' => true];
     }
 
-    /**
-     * Tagihan khusus untuk SATU keluarga (bukan broadcast semua KK).
-     */
     public function buatPerKeluarga(int $keluargaId, array $data, int $userId): array
     {
         if ($keluargaId < 1) {
@@ -194,6 +196,11 @@ class IuranKhususService
             return ['ok' => false, 'message' => 'Gagal membuat tagihan khusus.'];
         }
 
+        try {
+            (new SubPosService())->ensureKhusus($nama, $iid);
+        } catch (\Throwable $e) {
+        }
+
         (new AuditService())->log(
             'buat_tagihan_khusus_keluarga',
             'iuran_tagihan',
@@ -224,9 +231,6 @@ class IuranKhususService
         ];
     }
 
-    /**
-     * Ubah tagihan khusus per keluarga (judul, nominal, periode) via id iuran_tagihan.
-     */
     public function ubahByTagihan(int $tagihanId, array $data, int $userId): array
     {
         if ($tagihanId < 1) {
@@ -293,6 +297,13 @@ class IuranKhususService
             $userId
         );
 
+        // T6: judul sub pos ikut master (identitas via ref_id), tidak buat sub pos baru
+        try {
+            (new SubPosService())->sinkronJudulKhusus($iid, $nama);
+        } catch (\Throwable $e) {
+            // non-fatal
+        }
+
         return [
             'ok'   => true,
             'data' => [
@@ -306,9 +317,6 @@ class IuranKhususService
         ];
     }
 
-    /**
-     * Soft-hapus tagihan khusus per keluarga (batal tagihan + master bila hanya 1 KK).
-     */
     public function hapusByTagihan(int $tagihanId, string $alasan, int $userId): array
     {
         $alasan = trim($alasan);
