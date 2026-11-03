@@ -304,11 +304,7 @@ function dalamJendelaJam() {
   return now.getTime() >= mulai.getTime() - tol && now.getTime() <= selesai.getTime() + tol
 }
 
-const bisaAbsen = computed(() => {
-  if (!malam.value || malam.value.terkunci) return false
-  if (!rowSaya.value || statusSaya.value === 'hadir') return false
-  return dalamJendelaJam()
-})
+const bisaAbsen = computed(() => false) // absen hanya pengurus
 
 function jamLabel(j) {
   if (!j) return '—'

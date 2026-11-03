@@ -85,9 +85,13 @@ export async function generateBulan(payload) {
   }
 }
 
-export async function absenManual(payload) {
+export async function absenManual(malamIdOrPayload, keluargaId) {
   try {
-    const res = await api('/ronda/absen-manual', { method: 'POST', body: payload })
+    const body =
+      malamIdOrPayload && typeof malamIdOrPayload === 'object'
+        ? malamIdOrPayload
+        : { malam_id: malamIdOrPayload, keluarga_id: keluargaId }
+    const res = await api('/ronda/absen-manual', { method: 'POST', body })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }

@@ -1,9 +1,9 @@
 <template>
   <div>
-    <AppBackHeader title="Denda ronda" />
+    <AppBackHeader title="Pengganti kehadiran" />
 
     <p class="text-[13px] text-[var(--mut)] m-0 mb-4">
-      Terbitkan denda untuk keluarga yang bertugas di bulan lalu tetapi tidak absen.
+      Terbitkan pengganti kehadiran untuk keluarga yang bertugas di bulan lalu tetapi tidak absen.
       Setelah diterbitkan, absensi bulan tersebut terkunci.
     </p>
 
@@ -27,7 +27,7 @@
       :disabled="busy"
       @click="jalankan"
     >
-      {{ busy ? 'Memproses…' : 'Terbitkan denda' }}
+      {{ busy ? 'Memproses…' : 'Terbitkan' }}
     </button>
 
     <p v-if="msg" class="text-[13px] text-center" :class="msgOk ? 'text-[var(--g)]' : 'text-red-600'">{{ msg }}</p>
@@ -63,9 +63,9 @@ async function jalankan() {
   msgOk.value = !!res.ok
   if (res.ok) {
     const d = res.data || {}
-    msg.value = `Denda terbit: ${d.denda ?? 0} keluarga · total Rp ${(d.total_nominal ?? 0).toLocaleString('id-ID')} (Rp ${(d.nominal_satuan ?? 0).toLocaleString('id-ID')}/kali)`
+    msg.value = `Pengganti terbit: ${d.denda ?? 0} keluarga · total Rp ${(d.total_nominal ?? 0).toLocaleString('id-ID')} (Rp ${(d.nominal_satuan ?? 0).toLocaleString('id-ID')}/kali)`
   } else {
-    msg.value = res.error || 'Gagal terbitkan denda'
+    msg.value = res.error || 'Gagal terbitkan'
   }
 }
 </script>

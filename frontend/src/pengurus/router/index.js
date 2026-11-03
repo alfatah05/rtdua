@@ -50,6 +50,7 @@ import PlaceholderView from '../views/PlaceholderView.vue'
 import RondaJadwalTetapView from '../views/RondaJadwalTetapView.vue'
 import RondaTemplateCardView from '../views/RondaTemplateCardView.vue'
 import RondaDendaView from '../views/RondaDendaView.vue'
+import RondaAbsenView from '../views/RondaAbsenView.vue'
 import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
 import ProgramFormView from '../views/ProgramFormView.vue'
 import KaderKontenListView from '../views/KaderKontenListView.vue'
@@ -176,6 +177,7 @@ const routes = [
       { path: 'ronda/jadwal-tetap', component: RondaJadwalTetapView },
       { path: 'ronda/jadwal-tetap/card/:id', component: RondaTemplateCardView },
       { path: 'ronda/jadwal-khusus', component: RondaJadwalKhususView },
+      { path: 'ronda/absen', component: RondaAbsenView },
       { path: 'ronda/denda', component: RondaDendaView },
 
       { path: 'pengaturan-warga', component: PengaturanWargaView },

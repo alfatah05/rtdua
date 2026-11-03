@@ -163,17 +163,8 @@ class RondaController extends Controller
 
     public function absenWarga()
     {
-        $user = $this->requireLogin();
-        if (!$user || empty($user['keluarga_id'])) {
-            return ApiResponse::fail('Unauthorized', 401);
-        }
-        $json = $this->request->getJSON(true) ?? [];
-        $res = (new RondaService())->absenWarga(
-            (int) ($json['malam_id'] ?? 0),
-            (int) $user['keluarga_id'],
-            $json['foto'] ?? null
-        );
-        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Absen berhasil') : ApiResponse::fail($res['message'], 422);
+        // Absensi hanya oleh pengurus (absen-manual). Endpoint warga dinonaktifkan.
+        return ApiResponse::fail('Absensi hanya dilakukan oleh pengurus.', 403);
     }
 
     public function gantiKeluarga($malamId)

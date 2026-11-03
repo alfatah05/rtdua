@@ -39,7 +39,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-1.5 text-center mb-5">
+    <div class="grid grid-cols-4 gap-1 text-center mb-5">
       <button
         v-for="a in aksi"
         :key="a.label"
@@ -50,7 +50,7 @@
         <span class="w-12 h-12 rounded-[16px] grid place-items-center text-white" :style="{ background: a.bg }">
           <component :is="a.icon" :size="20" />
         </span>
-        <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>
+        <span class="text-[10px] font-semibold leading-tight px-0.5">{{ a.label }}</span>
       </button>
     </div>
 
@@ -125,7 +125,7 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Calendar, List, Banknote, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { Calendar, List, Banknote, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-vue-next'
 import { MENU } from '@shared/constants/menuColors.js'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { kalenderRonda, malamTerdekat, detailMalam, listJadwalTetap, listJadwalKhusus } from '@shared/services/ronda.js'
@@ -154,7 +154,8 @@ const bulanLabel = computed(() => {
 const aksi = [
   { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap', bg: MENU.ronda },
   { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: MENU.ronda },
-  { label: 'Denda', icon: Banknote, to: '/ronda/denda', bg: MENU.kasKeluar },
+  { label: 'Absen', icon: CheckCircle2, to: '/ronda/absen', bg: MENU.ronda },
+  { label: 'Pengganti kehadiran', icon: Banknote, to: '/ronda/denda', bg: MENU.kasKeluar },
 ]
 
 function weekIndex(d) {
