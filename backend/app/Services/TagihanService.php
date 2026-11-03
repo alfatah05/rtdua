@@ -273,16 +273,6 @@ class TagihanService
             return false;
         }
 
-        $ada = $db->table('iuran_tagihan')
-            ->where('keluarga_id', $keluargaId)
-            ->where('periode', $periode)
-            ->where('jenis', 'kas')
-            ->where('dibatalkan', 0)
-            ->countAllResults();
-        if ($ada > 0) {
-            return false;
-        }
-
         $peng = $db->table('pengaturan')->where('id', 1)->get()->getRowArray();
         $nominal = $nominalOverride !== null
             ? max(0, $nominalOverride)
@@ -304,6 +294,25 @@ class TagihanService
                 } catch (\Throwable $e2) {
                 }
             }
+        }
+
+        $existing = $db->table('iuran_tagihan')
+            ->where('keluarga_id', $keluargaId)
+            ->where('periode', $periode)
+            ->where('jenis', 'kas')
+            ->where('dibatalkan', 0)
+            ->get()
+            ->getRowArray();
+
+        if ($existing) {
+            // Tagihan sudah ada: sinkronkan nominal ke tarif/rincian komponen
+            // agar tidak stuck di nilai lama (mis. 50000)
+            if ($nominal > 0 && (int) ($existing['nominal'] ?? 0) !== $nominal) {
+                $db->table('iuran_tagihan')
+                    ->where('id', (int) $existing['id'])
+                    ->update(['nominal' => $nominal]);
+            }
+            return false;
         }
 
         $db->table('iuran_tagihan')->insert([
