@@ -181,6 +181,15 @@ export function terapkanKomponenBulanIni() {
 export function listSubPos(params) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listSubPos(params || {})
 }
+export function buatSubPos(payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1 } }) : real.buatSubPos(payload)
+}
+export function ubahSubPos(id, payload) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: {} }) : real.ubahSubPos(id, payload)
+}
+export function hapusSubPos(id) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true }) : real.hapusSubPos(id)
+}
 export function detailSubPos(id) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: null }) : real.detailSubPos(id)
 }

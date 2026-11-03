@@ -578,6 +578,39 @@ class KeuanganController extends Controller
         return ApiResponse::ok((new SubPosService())->list($aktifSaja));
     }
 
+
+    public function buatSubPos()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new SubPosService())->buat($json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Sub pos dibuat') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function ubahSubPos($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $res = (new SubPosService())->ubah((int) $id, $json, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Sub pos diubah') : ApiResponse::fail($res['message'], 422);
+    }
+
+    public function hapusSubPos($id)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $res = (new SubPosService())->hapus((int) $id, (int) $user['id']);
+        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Sub pos dihapus') : ApiResponse::fail($res['message'], 422);
+    }
+
     public function detailSubPos($id)
     {
         $user = $this->requirePengurus();

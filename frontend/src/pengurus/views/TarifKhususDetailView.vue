@@ -91,6 +91,11 @@
         <input v-model="form.nama" type="text" class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3" placeholder="Keamanan, Kebersihan, …" />
         <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Nominal / bulan</label>
         <input v-model="form.nominal" type="text" inputmode="numeric" class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3" placeholder="15000" />
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Sub pos tujuan</label>
+        <select v-model="form.sub_pos_id" class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3 text-[14px]">
+          <option value="">— Pilih sub pos —</option>
+          <option v-for="sp in subPosList" :key="sp.id" :value="String(sp.id)">{{ sp.judul }}</option>
+        </select>
         <p v-if="formErr" class="text-[13px] text-red-600 text-center mb-2">{{ formErr }}</p>
         <button type="button" class="w-full min-h-12 rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50" :disabled="formSaving" @click="simpanKomponen">{{ formSaving ? 'Menyimpan…' : 'Simpan' }}</button>
       </div>
@@ -172,7 +177,7 @@ import { Search, Home, PlusCircle, Pencil, Trash2, ChevronLeft } from 'lucide-vu
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import {
-  detailTarifIuran, ubahTarifIuran, hapusTarifKhusus, buatIuranKomponen, ubahIuranKomponen,
+  detailTarifIuran, ubahTarifIuran, hapusTarifKhusus, buatIuranKomponen, ubahIuranKomponen, listSubPos,
   hapusIuranKomponen, listIuranKomponen, setAnggotaTarif, hapusAnggotaTarif, mapKeluargaTarif,
 } from '@shared/services/keuangan.js'
 import { listKeluarga } from '@shared/services/warga.js'
@@ -192,7 +197,8 @@ const bulanIni = new Date().toISOString().slice(0, 7)
 const showKomponenForm = ref(false)
 const formSaving = ref(false)
 const formErr = ref('')
-const form = ref({ id: null, nama: '', nominal: '' })
+const form = ref({ id: null, nama: '', nominal: '', sub_pos_id: '' })
+const subPosList = ref([])
 
 const showSalin = ref(false)
 const utamaKomponen = ref([])
@@ -228,9 +234,18 @@ function inisial(nama) {
   return (p[0][0] + p[p.length - 1][0]).toUpperCase()
 }
 
+async function loadSubPos() {
+  const sp = await listSubPos()
+  if (sp.ok) {
+    const raw = Array.isArray(sp.data) ? sp.data : (sp.data?.items || [])
+    subPosList.value = raw.filter((x) => x.aktif !== false && x.jenis === 'komponen')
+  }
+}
+
 async function load() {
   loading.value = true
   err.value = ''
+  loadSubPos()
   const res = await detailTarifIuran(tarifId.value)
   loading.value = false
   if (!res.ok) { err.value = res.error || 'Gagal memuat'; return }
@@ -280,8 +295,8 @@ async function hapusTarif() {
 function openKomponenForm(row) {
   formErr.value = ''
   form.value = row
-    ? { id: row.id, nama: row.nama || '', nominal: String(row.nominal || '') }
-    : { id: null, nama: '', nominal: '' }
+    ? { id: row.id, nama: row.nama || '', nominal: String(row.nominal || ''), sub_pos_id: row.sub_pos_id ? String(row.sub_pos_id) : '' }
+    : { id: null, nama: '', nominal: '', sub_pos_id: '' }
   showKomponenForm.value = true
 }
 
@@ -291,10 +306,12 @@ async function simpanKomponen() {
   const nominal = toNum(form.value.nominal)
   if (!nama) { formErr.value = 'Nama wajib'; return }
   if (nominal < 1) { formErr.value = 'Nominal wajib'; return }
+  const subPosId = Number(form.value.sub_pos_id || 0)
+  if (subPosId < 1) { formErr.value = 'Pilih sub pos tujuan'; return }
   formSaving.value = true
   const res = form.value.id
-    ? await ubahIuranKomponen(form.value.id, { nama, nominal })
-    : await buatIuranKomponen({ nama, nominal, tarif_id: tarifId.value })
+    ? await ubahIuranKomponen(form.value.id, { nama, nominal, sub_pos_id: subPosId })
+    : await buatIuranKomponen({ nama, nominal, tarif_id: tarifId.value, sub_pos_id: subPosId })
   formSaving.value = false
   if (!res.ok) { formErr.value = res.error || 'Gagal'; return }
   showKomponenForm.value = false
@@ -311,7 +328,7 @@ async function hapusKomponen(c) {
 }
 
 async function salinKomponen(c) {
-  const res = await buatIuranKomponen({ nama: c.nama, nominal: c.nominal, tarif_id: tarifId.value })
+  const res = await buatIuranKomponen({ nama: c.nama, nominal: c.nominal, tarif_id: tarifId.value, sub_pos_id: c.sub_pos_id || undefined })
   if (!res.ok) { error(res.error || 'Gagal salin'); return }
   success('Disalin: ' + c.nama)
   showSalin.value = false

@@ -11,7 +11,25 @@ class IuranKomponenService
     public function ensureTable(): void
     {
         $db = \Config\Database::connect();
-        $db->query("CREATE TABLE IF NOT EXISTS iuran_komponen (\n            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n            nama VARCHAR(120) NOT NULL,\n            nominal INT UNSIGNED NOT NULL DEFAULT 0,\n            urutan INT NOT NULL DEFAULT 0,\n            aktif TINYINT(1) NOT NULL DEFAULT 1,\n            created_at DATETIME NULL,\n            updated_at DATETIME NULL,\n            INDEX idx_aktif_urutan (aktif, urutan)\n        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $db->query("CREATE TABLE IF NOT EXISTS iuran_komponen (\n            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,\n            nama VARCHAR(120) NOT NULL,\n            nominal INT UNSIGNED NOT NULL DEFAULT 0,\n            urutan INT NOT NULL DEFAULT 0,\n            aktif TINYINT(1) NOT NULL DEFAULT 1,\n            sub_pos_id INT UNSIGNED DEFAULT NULL,\n            created_at DATETIME NULL,\n            updated_at DATETIME NULL,\n            INDEX idx_aktif_urutan (aktif, urutan)\n        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Migrasi: kolom link ke sub pos (buat sub pos dulu, lalu arahkan komponen)
+        try {
+            if (!$db->fieldExists('sub_pos_id', 'iuran_komponen')) {
+                $db->query('ALTER TABLE iuran_komponen ADD COLUMN sub_pos_id INT UNSIGNED DEFAULT NULL AFTER aktif');
+            }
+        } catch (\Throwable $e) {
+        }
+        // Isi sub_pos_id dari sub_pos.ref_id lama bila masih kosong
+        try {
+            $db->query(
+                "UPDATE iuran_komponen ik
+                 INNER JOIN sub_pos sp ON sp.jenis = 'komponen' AND sp.ref_id = ik.id
+                 SET ik.sub_pos_id = sp.id
+                 WHERE ik.sub_pos_id IS NULL OR ik.sub_pos_id = 0"
+            );
+        } catch (\Throwable $e) {
+        }
 
         $n = (int) $db->table('iuran_komponen')->countAllResults();
         if ($n === 0) {
@@ -68,12 +86,13 @@ class IuranKomponenService
     {
         return array_map(static function ($r) {
             return [
-                'id'       => (int) $r['id'],
-                'tarif_id' => isset($r['tarif_id']) ? (int) $r['tarif_id'] : null,
-                'nama'     => $r['nama'],
-                'nominal'  => (int) $r['nominal'],
-                'urutan'   => (int) $r['urutan'],
-                'aktif'    => (bool) $r['aktif'],
+                'id'         => (int) $r['id'],
+                'tarif_id'   => isset($r['tarif_id']) ? (int) $r['tarif_id'] : null,
+                'nama'       => $r['nama'],
+                'nominal'    => (int) $r['nominal'],
+                'urutan'     => (int) $r['urutan'],
+                'aktif'      => (bool) $r['aktif'],
+                'sub_pos_id' => !empty($r['sub_pos_id']) ? (int) $r['sub_pos_id'] : null,
             ];
         }, $rows);
     }
@@ -128,11 +147,21 @@ class IuranKomponenService
         } catch (\Throwable $e) {
             $tarifId = 0;
         }
+        $subPosId = (int) ($data['sub_pos_id'] ?? 0);
+        if ($subPosId < 1) {
+            return ['ok' => false, 'message' => 'Pilih sub pos tujuan untuk komponen ini.'];
+        }
+        $sp = $db->table('sub_pos')->where('id', $subPosId)->where('aktif', 1)->get()->getRowArray();
+        if (!$sp) {
+            return ['ok' => false, 'message' => 'Sub pos tidak ditemukan atau nonaktif. Buat sub pos dulu di menu Sub pos.'];
+        }
+
         $insert = [
             'nama'       => $nama,
             'nominal'    => $nominal,
             'urutan'     => $urutan,
             'aktif'      => 1,
+            'sub_pos_id' => $subPosId,
             'created_at' => $now,
             'updated_at' => $now,
         ];
@@ -151,17 +180,14 @@ class IuranKomponenService
         } catch (\Throwable $e) {
             $total = $this->syncNominalKas();
         }
-        try {
-            (new SubPosService())->ensureKomponen($id, $nama, true);
-        } catch (\Throwable $e) {
-        }
         (new AuditService())->log('tambah_iuran_komponen', 'iuran_komponen', $id, null, [
             'nama' => $nama,
             'nominal' => $nominal,
             'tarif_id' => $tarifId,
+            'sub_pos_id' => $subPosId,
             'total_kas' => $total,
         ], 'pengguna', true, $userId);
-        return ['ok' => true, 'data' => ['id' => $id, 'total' => $total, 'tarif_id' => $tarifId]];
+        return ['ok' => true, 'data' => ['id' => $id, 'total' => $total, 'tarif_id' => $tarifId, 'sub_pos_id' => $subPosId]];
     }
 
     public function update(int $id, array $data, int $userId): array
@@ -190,14 +216,19 @@ class IuranKomponenService
         if (array_key_exists('aktif', $data)) {
             $update['aktif'] = !empty($data['aktif']) ? 1 : 0;
         }
+        if (array_key_exists('sub_pos_id', $data)) {
+            $subPosId = (int) $data['sub_pos_id'];
+            if ($subPosId < 1) {
+                return ['ok' => false, 'message' => 'Pilih sub pos tujuan.'];
+            }
+            $sp = $db->table('sub_pos')->where('id', $subPosId)->where('aktif', 1)->get()->getRowArray();
+            if (!$sp) {
+                return ['ok' => false, 'message' => 'Sub pos tidak ditemukan atau nonaktif.'];
+            }
+            $update['sub_pos_id'] = $subPosId;
+        }
         $db->table('iuran_komponen')->where('id', $id)->update($update);
         $total = $this->syncNominalKas();
-        try {
-            $namaBaru = $update['nama'] ?? $row['nama'];
-            $aktifBaru = array_key_exists('aktif', $update) ? ((int) $update['aktif'] === 1) : ((int) $row['aktif'] === 1);
-            (new SubPosService())->ensureKomponen($id, (string) $namaBaru, $aktifBaru);
-        } catch (\Throwable $e) {
-        }
         (new AuditService())->log('ubah_iuran_komponen', 'iuran_komponen', $id, $row, $update, 'pengguna', true, $userId);
         return ['ok' => true, 'data' => ['total' => $total]];
     }
@@ -212,10 +243,6 @@ class IuranKomponenService
         }
         $db->table('iuran_komponen')->where('id', $id)->delete();
         $total = $this->syncNominalKas();
-        try {
-            (new SubPosService())->ensureKomponen($id, (string) $row['nama'], false);
-        } catch (\Throwable $e) {
-        }
         (new AuditService())->log('hapus_iuran_komponen', 'iuran_komponen', $id, $row, null, 'pengguna', true, $userId);
         return ['ok' => true, 'data' => ['total' => $total]];
     }

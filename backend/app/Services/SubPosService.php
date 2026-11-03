@@ -8,7 +8,8 @@ namespace App\Services;
  * T2: masukDariPembayaran + batalkanDariPembayaran.
  * T3: catatMasuk/Keluar, alokasiKePosKas, listMutasi, batalkanMutasi.
  * T6: rekapBulan, ensureKhusus stabil (ref_id), split hanya komponen aktif.
- * Nama komponen sama = 1 sub pos (share antar tarif utama/khusus).
+ * Komponen iuran di-link manual ke sub pos (sub_pos_id di iuran_komponen).
+ * Sub pos bisa dibuat/diubah/dihapus dari UI (jenis komponen).
  */
 class SubPosService
 {
@@ -30,14 +31,7 @@ class SubPosService
         $this->ensureTable();
         $this->ensureDenda();
         $db = \Config\Database::connect();
-        try {
-            $komp = $db->table('iuran_komponen')->get()->getResultArray();
-            foreach ($komp as $k) {
-                $this->ensureKomponen((int) $k['id'], (string) $k['nama'], !empty($k['aktif']));
-            }
-            try { $this->konsolidasiKomponenByJudul(); } catch (\Throwable $e) {}
-        } catch (\Throwable $e) {
-        }
+        // Komponen tidak di-auto-create lagi — pengurus buat sub pos lalu link dari komponen.
         try {
             $khusus = $db->table('iuran_khusus')->select('id, nama')->get()->getResultArray();
             foreach ($khusus as $k) {
@@ -322,6 +316,117 @@ class SubPosService
         ]);
     }
 
+
+    /**
+     * Buat sub pos manual (untuk ditautkan ke komponen iuran).
+     * Jenis default: komponen. Judul unik disarankan.
+     */
+    public function buat(array $data, int $userId): array
+    {
+        $this->ensureTable();
+        $judul = trim((string) ($data['judul'] ?? ''));
+        if ($judul === '') {
+            return ['ok' => false, 'message' => 'Nama sub pos wajib.'];
+        }
+        $judul = mb_substr($judul, 0, 255);
+        $db = \Config\Database::connect();
+        $dup = $db->table('sub_pos')
+            ->where('jenis', self::JENIS_KOMPONEN)
+            ->where('judul', $judul)
+            ->countAllResults();
+        if ($dup > 0) {
+            return ['ok' => false, 'message' => 'Sudah ada sub pos dengan nama itu.'];
+        }
+        $now = date('Y-m-d H:i:s');
+        $db->table('sub_pos')->insert([
+            'jenis' => self::JENIS_KOMPONEN,
+            'ref_id' => null,
+            'judul' => $judul,
+            'aktif' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $id = (int) $db->insertID();
+        (new AuditService())->log('sub_pos_buat', 'sub_pos', $id, null, ['judul' => $judul], 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => $this->detail($id)];
+    }
+
+    public function ubah(int $id, array $data, int $userId): array
+    {
+        $this->ensureTable();
+        $db = \Config\Database::connect();
+        $row = $db->table('sub_pos')->where('id', $id)->get()->getRowArray();
+        if (!$row) {
+            return ['ok' => false, 'message' => 'Sub pos tidak ditemukan.'];
+        }
+        if ((string) ($row['jenis'] ?? '') === self::JENIS_DENDA) {
+            return ['ok' => false, 'message' => 'Sub pos denda tidak boleh diubah dari sini.'];
+        }
+        $update = ['updated_at' => date('Y-m-d H:i:s')];
+        if (array_key_exists('judul', $data)) {
+            $judul = trim((string) $data['judul']);
+            if ($judul === '') {
+                return ['ok' => false, 'message' => 'Nama wajib.'];
+            }
+            $judul = mb_substr($judul, 0, 255);
+            $dup = $db->table('sub_pos')
+                ->where('jenis', $row['jenis'])
+                ->where('judul', $judul)
+                ->where('id !=', $id)
+                ->countAllResults();
+            if ($dup > 0) {
+                return ['ok' => false, 'message' => 'Nama sub pos sudah dipakai.'];
+            }
+            $update['judul'] = $judul;
+        }
+        if (array_key_exists('aktif', $data)) {
+            $update['aktif'] = !empty($data['aktif']) ? 1 : 0;
+        }
+        if (count($update) < 2) {
+            return ['ok' => false, 'message' => 'Tidak ada perubahan.'];
+        }
+        $db->table('sub_pos')->where('id', $id)->update($update);
+        (new AuditService())->log('sub_pos_ubah', 'sub_pos', $id, $row, $update, 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => $this->detail($id)];
+    }
+
+    /**
+     * Hapus sub pos. Gagal jika masih tertaut komponen, atau ada mutasi/saldo.
+     */
+    public function hapus(int $id, int $userId): array
+    {
+        $this->ensureTable();
+        $db = \Config\Database::connect();
+        $row = $db->table('sub_pos')->where('id', $id)->get()->getRowArray();
+        if (!$row) {
+            return ['ok' => false, 'message' => 'Sub pos tidak ditemukan.'];
+        }
+        if ((string) ($row['jenis'] ?? '') === self::JENIS_DENDA) {
+            return ['ok' => false, 'message' => 'Sub pos denda tidak boleh dihapus.'];
+        }
+        try {
+            if ($db->fieldExists('sub_pos_id', 'iuran_komponen')) {
+                $linked = (int) $db->table('iuran_komponen')->where('sub_pos_id', $id)->countAllResults();
+                if ($linked > 0) {
+                    return ['ok' => false, 'message' => 'Masih dipakai ' . $linked . ' komponen iuran. Lepas tautan dulu.'];
+                }
+            }
+        } catch (\Throwable $e) {
+        }
+        $saldo = $this->saldo($id);
+        if ($saldo !== 0) {
+            return ['ok' => false, 'message' => 'Saldo masih ' . $saldo . '. Kosongkan dulu (alokasi/keluar) sebelum hapus.'];
+        }
+        $mutasi = (int) $db->table('sub_pos_mutasi')->where('sub_pos_id', $id)->where('dibatalkan', 0)->countAllResults();
+        if ($mutasi > 0) {
+            return ['ok' => false, 'message' => 'Masih ada riwayat mutasi. Batalkan mutasi atau biarkan nonaktif saja.'];
+        }
+        $db->table('sub_pos_mutasi')->where('sub_pos_id', $id)->delete();
+        $db->table('sub_pos')->where('id', $id)->delete();
+        (new AuditService())->log('sub_pos_hapus', 'sub_pos', $id, $row, null, 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => ['id' => $id]];
+    }
+
     public function catatMasuk(int $subPosId, array $data, int $userId): array
     {
         $this->ensureTable();
@@ -514,24 +619,30 @@ class SubPosService
         $svc = new IuranKomponenService();
         $svc->ensureTable();
         $komp = $svc->list(true);
-        if (!$komp) {
-            $sp = $this->ensureKomponen(0, 'Kas umum', true);
-            $id = (int) ($sp['id'] ?? 0);
-            return $id > 0 ? [$id => $nominal] : [];
-        }
         $weights = [];
         $totalW = 0;
         foreach ($komp as $k) {
+            $spId = (int) ($k['sub_pos_id'] ?? 0);
+            if ($spId < 1) {
+                // fallback lama: cari sub_pos by ref_id komponen
+                try {
+                    $row = \Config\Database::connect()->table('sub_pos')
+                        ->where('jenis', self::JENIS_KOMPONEN)
+                        ->where('ref_id', (int) $k['id'])
+                        ->get()->getRowArray();
+                    $spId = $row ? (int) $row['id'] : 0;
+                } catch (\Throwable $e) {
+                    $spId = 0;
+                }
+            }
+            if ($spId < 1) {
+                continue;
+            }
             $w = (int) ($k['nominal'] ?? 0);
             if ($w < 1) {
                 $w = 1;
             }
-            $sp = $this->ensureKomponen((int) $k['id'], (string) $k['nama'], true);
-            $spId = (int) ($sp['id'] ?? 0);
-            if ($spId < 1) {
-                continue;
-            }
-            $weights[$spId] = $w;
+            $weights[$spId] = ($weights[$spId] ?? 0) + $w;
             $totalW += $w;
         }
         if ($totalW < 1 || !$weights) {

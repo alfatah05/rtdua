@@ -441,6 +441,33 @@ export async function listSubPos(params = {}) {
   }
 }
 
+export async function buatSubPos(payload) {
+  try {
+    const res = await api('/keuangan/sub-pos', { method: 'POST', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function ubahSubPos(id, payload) {
+  try {
+    const res = await api('/keuangan/sub-pos/' + id, { method: 'PUT', body: payload })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function hapusSubPos(id) {
+  try {
+    const res = await api('/keuangan/sub-pos/' + id, { method: 'DELETE' })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function detailSubPos(id) {
   try {
     const res = await api('/keuangan/sub-pos/' + id)

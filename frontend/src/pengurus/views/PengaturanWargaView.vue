@@ -44,6 +44,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-[14px] font-semibold m-0 truncate">{{ c.nama }}</p>
+              <p class="text-[11px] text-[var(--mut)] m-0 truncate">{{ labelSubPos(c.sub_pos_id) }}</p>
               <div class="flex gap-2 mt-0.5">
                 <button type="button" class="text-[12px] font-semibold text-[var(--g)]" @click="openForm(c)">Ubah</button>
                 <button type="button" class="text-[12px] font-semibold text-red-600" @click="hapus(c)">Hapus</button>
@@ -154,6 +155,17 @@
           class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3"
           placeholder="15000"
         />
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Sub pos tujuan</label>
+        <select
+          v-model="form.sub_pos_id"
+          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-1 text-[14px]"
+        >
+          <option value="">— Pilih sub pos —</option>
+          <option v-for="sp in subPosList" :key="sp.id" :value="String(sp.id)">{{ sp.judul }}</option>
+        </select>
+        <p class="text-[11px] text-[var(--mut)] m-0 mb-3">
+          Buat sub pos dulu di menu Keuangan → Sub pos, lalu pilih di sini.
+        </p>
         <p v-if="formErr" class="text-[13px] text-red-600 text-center mb-2">{{ formErr }}</p>
         <button
           type="button"
@@ -200,7 +212,8 @@ const msgOk = ref(true)
 const showForm = ref(false)
 const formSaving = ref(false)
 const formErr = ref('')
-const form = ref({ id: null, nama: '', nominal: '' })
+const form = ref({ id: null, nama: '', nominal: '', sub_pos_id: '' })
+const subPosList = ref([])
 const bulanIni = new Date().toISOString().slice(0, 7)
 
 function rp(n) {
@@ -214,7 +227,7 @@ function toNum(v) {
 async function load() {
   loading.value = true
   err.value = ''
-  const [res, tr] = await Promise.all([listIuranKomponen(), listTarifIuran()])
+  const [res, tr, sp] = await Promise.all([listIuranKomponen(), listTarifIuran(), listSubPos()])
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
@@ -226,6 +239,10 @@ async function load() {
   if (tr.ok) {
     const all = Array.isArray(tr.data?.items) ? tr.data.items : []
     tarifKhusus.value = all.filter((x) => !x.is_utama)
+  }
+  if (sp.ok) {
+    const raw = Array.isArray(sp.data) ? sp.data : (sp.data?.items || [])
+    subPosList.value = raw.filter((x) => x.aktif !== false && x.jenis === 'komponen')
   }
 }
 
@@ -245,12 +262,23 @@ async function buatTarif() {
   else await load()
 }
 
+function labelSubPos(id) {
+  if (!id) return 'Belum tertaut sub pos'
+  const sp = subPosList.value.find((x) => Number(x.id) === Number(id))
+  return sp ? ('Sub pos: ' + sp.judul) : ('Sub pos #' + id)
+}
+
 function openForm(row) {
   formErr.value = ''
   if (row) {
-    form.value = { id: row.id, nama: row.nama || '', nominal: String(row.nominal || '') }
+    form.value = {
+      id: row.id,
+      nama: row.nama || '',
+      nominal: String(row.nominal || ''),
+      sub_pos_id: row.sub_pos_id ? String(row.sub_pos_id) : '',
+    }
   } else {
-    form.value = { id: null, nama: '', nominal: '' }
+    form.value = { id: null, nama: '', nominal: '', sub_pos_id: '' }
   }
   showForm.value = true
 }
@@ -267,10 +295,15 @@ async function simpan() {
     formErr.value = 'Nominal wajib'
     return
   }
+  const subPosId = Number(form.value.sub_pos_id || 0)
+  if (subPosId < 1) {
+    formErr.value = 'Pilih sub pos tujuan'
+    return
+  }
   formSaving.value = true
   const res = form.value.id
-    ? await ubahIuranKomponen(form.value.id, { nama, nominal })
-    : await buatIuranKomponen({ nama, nominal })
+    ? await ubahIuranKomponen(form.value.id, { nama, nominal, sub_pos_id: subPosId })
+    : await buatIuranKomponen({ nama, nominal, sub_pos_id: subPosId })
   formSaving.value = false
   if (!res.ok) {
     formErr.value = res.error || 'Gagal simpan'
