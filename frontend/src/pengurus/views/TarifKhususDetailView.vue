@@ -38,10 +38,7 @@
         </template>
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">Belum ada komponen. Ketuk + untuk menambah.</p>
       </div>
-
-      <button v-if="utamaKomponen.length" type="button" class="w-full min-h-[40px] rounded-full border border-[var(--line)] text-[13px] font-semibold text-[var(--g)] mb-5" @click="showSalin = true">Salin komponen dari tarif utama</button>
-
-      <div class="flex items-center justify-between mb-1 px-1">
+<div class="flex items-center justify-between mb-1 px-1">
         <h2 class="text-[15px] font-bold m-0">Keluarga</h2>
         <span class="text-[13px] text-[var(--mut)]">{{ (detail.anggota || []).length }} Keluarga</span>
       </div>
@@ -98,22 +95,6 @@
         </select>
         <p v-if="formErr" class="text-[13px] text-red-600 text-center mb-2">{{ formErr }}</p>
         <button type="button" class="w-full min-h-12 rounded-full bg-[var(--g)] text-white font-bold disabled:opacity-50" :disabled="formSaving" @click="simpanKomponen">{{ formSaving ? 'Menyimpan…' : 'Simpan' }}</button>
-      </div>
-    </div>
-
-    <div v-if="showSalin" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40" @click.self="showSalin = false">
-      <div class="w-full max-w-[560px] max-h-[70vh] flex flex-col rounded-t-[24px] bg-[var(--bg)] p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))]">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-[17px] font-extrabold m-0">Salin dari utama</h2>
-          <button type="button" class="text-[13px] font-semibold text-[var(--mut)]" @click="showSalin = false">Tutup</button>
-        </div>
-        <div class="overflow-y-auto flex-1">
-          <button v-for="c in utamaKomponen" :key="c.id" type="button" class="w-full flex items-center gap-3 py-2.5 text-left" style="padding-left: 10px; padding-right: 10px" @click="salinKomponen(c)">
-            <div class="w-9 h-9 rounded-full grid place-items-center shrink-0" style="background: rgba(59,130,246,.16); color: #2563EB"><Home :size="16" /></div>
-            <span class="flex-1 text-[14px] font-semibold">{{ c.nama }}</span>
-            <span class="text-[14px] font-bold tabular-nums">{{ rp(c.nominal) }}</span>
-          </button>
-        </div>
       </div>
     </div>
 
@@ -178,7 +159,7 @@ import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import {
   detailTarifIuran, ubahTarifIuran, hapusTarifKhusus, buatIuranKomponen, ubahIuranKomponen, listSubPos,
-  hapusIuranKomponen, listIuranKomponen, setAnggotaTarif, hapusAnggotaTarif, mapKeluargaTarif,
+  hapusIuranKomponen, setAnggotaTarif, hapusAnggotaTarif, mapKeluargaTarif,
 } from '@shared/services/keuangan.js'
 import { listKeluarga } from '@shared/services/warga.js'
 import { useToast } from '@shared/composables/useToast.js'
@@ -200,8 +181,6 @@ const formErr = ref('')
 const form = ref({ id: null, nama: '', nominal: '', sub_pos_id: '' })
 const subPosList = ref([])
 
-const showSalin = ref(false)
-const utamaKomponen = ref([])
 
 const showPilih = ref(false)
 const q = ref('')
@@ -253,12 +232,6 @@ async function load() {
   if (detail.value?.is_utama) router.replace('/pengaturan-warga')
 }
 
-async function loadUtamaKomponen() {
-  const res = await listIuranKomponen()
-  if (res.ok) {
-    utamaKomponen.value = Array.isArray(res.data?.items) ? res.data.items.filter((i) => i.aktif !== false) : []
-  }
-}
 
 const showRename = ref(false)
 const renameNama = ref('')
@@ -327,13 +300,6 @@ async function hapusKomponen(c) {
   await load()
 }
 
-async function salinKomponen(c) {
-  const res = await buatIuranKomponen({ nama: c.nama, nominal: c.nominal, tarif_id: tarifId.value, sub_pos_id: c.sub_pos_id || undefined })
-  if (!res.ok) { error(res.error || 'Gagal salin'); return }
-  success('Disalin: ' + c.nama)
-  showSalin.value = false
-  await load()
-}
 
 async function openPilihKeluarga() {
   q.value = ''
@@ -384,6 +350,5 @@ async function keluarkan(a) {
 
 onMounted(async () => {
   await load()
-  await loadUtamaKomponen()
 })
 </script>
