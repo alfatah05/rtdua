@@ -338,6 +338,11 @@ class TarifIuranService
         $ids = array_values(array_unique(array_filter(array_map('intval', $keluargaIds), static fn ($x) => $x > 0)));
         $now = date('Y-m-d H:i:s');
 
+        // Catat anggota lama (yang akan dilepas) supaya nominal mereka balik ke tarif utama
+        $oldRows = $db->table('tarif_iuran_keluarga')->select('keluarga_id')->where('tarif_id', $tarifId)->get()->getResultArray();
+        $oldIds = array_map(static fn ($r) => (int) $r['keluarga_id'], $oldRows);
+        $dilepas = array_values(array_diff($oldIds, $ids));
+
         // Hapus assign lama untuk tarif ini, lalu set ulang
         $db->table('tarif_iuran_keluarga')->where('tarif_id', $tarifId)->delete();
 
@@ -355,14 +360,19 @@ class TarifIuranService
             ]);
         }
 
+        // Real-time: selalu sinkron nominal tagihan bulan ini ke total rincian
         $nApply = 0;
-        if ($terapkanBulanIni) {
-            $nApply = $this->terapkanNominalKeBulanIniUntukTarif($tarifId);
+        foreach ($ids as $kid) {
+            $nApply += $this->terapkanNominalKeBulanIniUntukKeluarga($kid);
+        }
+        foreach ($dilepas as $kid) {
+            $nApply += $this->terapkanNominalKeBulanIniUntukKeluarga($kid);
         }
 
         (new AuditService())->log('set_anggota_tarif', 'tarif_iuran', $tarifId, null, [
             'keluarga_ids' => $ids,
-            'terapkan_bulan_ini' => $terapkanBulanIni,
+            'dilepas' => $dilepas,
+            'terapkan_bulan_ini' => true,
             'diterapkan' => $nApply,
         ], 'pengguna', true, $userId);
 
@@ -396,10 +406,8 @@ class TarifIuranService
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
         }
-        $n = 0;
-        if ($terapkanBulanIni) {
-            $n = $this->terapkanNominalKeBulanIniUntukKeluarga($keluargaId);
-        }
+        // Real-time: selalu sinkron nominal bulan ini
+        $n = $this->terapkanNominalKeBulanIniUntukKeluarga($keluargaId);
         return ['ok' => true, 'data' => ['diterapkan' => $n]];
     }
 
@@ -411,12 +419,11 @@ class TarifIuranService
             ->where('tarif_id', $tarifId)
             ->where('keluarga_id', $keluargaId)
             ->delete();
-        $n = 0;
-        if ($terapkanBulanIni) {
-            $n = $this->terapkanNominalKeBulanIniUntukKeluarga($keluargaId);
-        }
+        // Real-time: balik ke tarif utama / nominal baru
+        $n = $this->terapkanNominalKeBulanIniUntukKeluarga($keluargaId);
         (new AuditService())->log('hapus_anggota_tarif', 'tarif_iuran', $tarifId, null, [
             'keluarga_id' => $keluargaId,
+            'diterapkan' => $n,
         ], 'pengguna', true, $userId);
         return ['ok' => true, 'data' => ['diterapkan' => $n]];
     }

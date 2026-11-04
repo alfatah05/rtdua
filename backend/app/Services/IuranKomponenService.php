@@ -114,6 +114,66 @@ class IuranKomponenService
         }
     }
 
+
+    /**
+     * Sinkron nominal tagihan kas bulan berjalan agar selalu = total rincian komponen tarif.
+     * - tarif utama: semua keluarga yang TIDAK di tarif khusus
+     * - tarif khusus: semua keluarga yang assigned ke tarif itu
+     */
+    public function applyNominalTarifKeBulanIni(int $tarifId): int
+    {
+        $bulan = date('Y-m');
+        $db = \Config\Database::connect();
+        $tarifSvc = new TarifIuranService();
+        $tagihan = new TagihanService();
+
+        $tarifId = (int) $tarifId;
+        if ($tarifId < 1) {
+            $tarifId = $tarifSvc->idUtama();
+        }
+
+        $isUtama = false;
+        try {
+            $row = $db->table('tarif_iuran')->where('id', $tarifId)->get()->getRowArray();
+            $isUtama = $row && (int) ($row['is_utama'] ?? 0) === 1;
+        } catch (\Throwable $e) {
+            $isUtama = ($tarifId === $tarifSvc->idUtama());
+        }
+
+        $keluargaIds = [];
+        if ($isUtama) {
+            // Semua keluarga aktif yang tidak ada di tarif khusus
+            $assigned = $db->table('tarif_iuran_keluarga')->select('keluarga_id')->get()->getResultArray();
+            $exclude = array_map(static fn ($r) => (int) $r['keluarga_id'], $assigned);
+            $all = $db->table('keluarga')->select('id')->where('status', 'aktif')->get()->getResultArray();
+            foreach ($all as $k) {
+                $kid = (int) $k['id'];
+                if (!in_array($kid, $exclude, true)) {
+                    $keluargaIds[] = $kid;
+                }
+            }
+        } else {
+            $rows = $db->table('tarif_iuran_keluarga')->select('keluarga_id')->where('tarif_id', $tarifId)->get()->getResultArray();
+            foreach ($rows as $r) {
+                $keluargaIds[] = (int) $r['keluarga_id'];
+            }
+        }
+
+        $n = 0;
+        foreach ($keluargaIds as $kid) {
+            $nominal = $tarifSvc->nominalUntukKeluarga($kid);
+            $tagihan->pastikanTagihanKasKeluarga($kid, $bulan, $nominal);
+            $db->table('iuran_tagihan')
+                ->where('keluarga_id', $kid)
+                ->where('periode', $bulan)
+                ->where('jenis', 'kas')
+                ->where('dibatalkan', 0)
+                ->update(['nominal' => $nominal]);
+            $n++;
+        }
+        return $n;
+    }
+
     public function syncNominalKas(): int
     {
         $total = $this->totalAktif();
@@ -180,14 +240,23 @@ class IuranKomponenService
         } catch (\Throwable $e) {
             $total = $this->syncNominalKas();
         }
+        // Real-time: nominal tagihan bulan ini ikut total rincian tarif
+        $diterapkan = 0;
+        try {
+            $diterapkan = $this->applyNominalTarifKeBulanIni($tarifId > 0 ? $tarifId : (new TarifIuranService())->idUtama());
+        } catch (\Throwable $e) {
+            log_message('error', 'applyNominalTarifKeBulanIni (create): ' . $e->getMessage());
+        }
+
         (new AuditService())->log('tambah_iuran_komponen', 'iuran_komponen', $id, null, [
             'nama' => $nama,
             'nominal' => $nominal,
             'tarif_id' => $tarifId,
             'sub_pos_id' => $subPosId,
             'total_kas' => $total,
+            'diterapkan_bulan_ini' => $diterapkan,
         ], 'pengguna', true, $userId);
-        return ['ok' => true, 'data' => ['id' => $id, 'total' => $total, 'tarif_id' => $tarifId, 'sub_pos_id' => $subPosId]];
+        return ['ok' => true, 'data' => ['id' => $id, 'total' => $total, 'tarif_id' => $tarifId, 'sub_pos_id' => $subPosId, 'diterapkan_bulan_ini' => $diterapkan]];
     }
 
     public function update(int $id, array $data, int $userId): array
@@ -228,9 +297,35 @@ class IuranKomponenService
             $update['sub_pos_id'] = $subPosId;
         }
         $db->table('iuran_komponen')->where('id', $id)->update($update);
-        $total = $this->syncNominalKas();
+
+        $tarifId = (int) ($row['tarif_id'] ?? 0);
+        try {
+            $tarifSvc = new TarifIuranService();
+            if ($tarifId < 1) {
+                $tarifId = $tarifSvc->idUtama();
+            }
+            // Utama: sync pengaturan.nominal_kas; khusus: total hanya di tarif itu
+            if ($tarifId === $tarifSvc->idUtama()) {
+                $total = $this->syncNominalKas();
+            } else {
+                $total = $tarifSvc->totalTarif($tarifId, true);
+            }
+        } catch (\Throwable $e) {
+            $total = $this->syncNominalKas();
+            $tarifId = 0;
+        }
+
+        // Real-time: nominal tagihan bulan ini = total rincian
+        $diterapkan = 0;
+        try {
+            $diterapkan = $this->applyNominalTarifKeBulanIni($tarifId > 0 ? $tarifId : (new TarifIuranService())->idUtama());
+        } catch (\Throwable $e) {
+            log_message('error', 'applyNominalTarifKeBulanIni (update): ' . $e->getMessage());
+        }
+
+        $update['diterapkan_bulan_ini'] = $diterapkan;
         (new AuditService())->log('ubah_iuran_komponen', 'iuran_komponen', $id, $row, $update, 'pengguna', true, $userId);
-        return ['ok' => true, 'data' => ['total' => $total]];
+        return ['ok' => true, 'data' => ['total' => $total, 'diterapkan_bulan_ini' => $diterapkan]];
     }
 
     public function delete(int $id, int $userId): array
@@ -241,10 +336,33 @@ class IuranKomponenService
         if (!$row) {
             return ['ok' => false, 'message' => 'Komponen tidak ditemukan.'];
         }
+        $tarifId = (int) ($row['tarif_id'] ?? 0);
         $db->table('iuran_komponen')->where('id', $id)->delete();
-        $total = $this->syncNominalKas();
-        (new AuditService())->log('hapus_iuran_komponen', 'iuran_komponen', $id, $row, null, 'pengguna', true, $userId);
-        return ['ok' => true, 'data' => ['total' => $total]];
+
+        try {
+            $tarifSvc = new TarifIuranService();
+            if ($tarifId < 1) {
+                $tarifId = $tarifSvc->idUtama();
+            }
+            if ($tarifId === $tarifSvc->idUtama()) {
+                $total = $this->syncNominalKas();
+            } else {
+                $total = $tarifSvc->totalTarif($tarifId, true);
+            }
+        } catch (\Throwable $e) {
+            $total = $this->syncNominalKas();
+            $tarifId = 0;
+        }
+
+        $diterapkan = 0;
+        try {
+            $diterapkan = $this->applyNominalTarifKeBulanIni($tarifId > 0 ? $tarifId : (new TarifIuranService())->idUtama());
+        } catch (\Throwable $e) {
+            log_message('error', 'applyNominalTarifKeBulanIni (delete): ' . $e->getMessage());
+        }
+
+        (new AuditService())->log('hapus_iuran_komponen', 'iuran_komponen', $id, $row, ['diterapkan_bulan_ini' => $diterapkan], 'pengguna', true, $userId);
+        return ['ok' => true, 'data' => ['total' => $total, 'diterapkan_bulan_ini' => $diterapkan]];
     }
 
     public function terapkanBulanIni(int $userId): array

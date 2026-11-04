@@ -305,9 +305,9 @@ class TagihanService
             ->getRowArray();
 
         if ($existing) {
-            // Tagihan sudah ada: sinkronkan nominal ke tarif/rincian komponen
-            // agar tidak stuck di nilai lama (mis. 50000)
-            if ($nominal > 0 && (int) ($existing['nominal'] ?? 0) !== $nominal) {
+            // Tagihan sudah ada: SELALU sinkronkan nominal ke tarif/rincian komponen
+            // agar total di warga selalu = jumlah rincian (bukan angka terpisah yang stale)
+            if ((int) ($existing['nominal'] ?? 0) !== $nominal) {
                 $db->table('iuran_tagihan')
                     ->where('id', (int) $existing['id'])
                     ->update(['nominal' => $nominal]);
