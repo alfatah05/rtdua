@@ -39,6 +39,12 @@
             {{ formatHari(selectedTanggal) }}
             <template v-if="selectedDetail"> · {{ jamLabel(selectedDetail.jam_mulai) }}–{{ jamLabel(selectedDetail.jam_selesai) }}</template>
           </p>
+          <p v-if="selectedDetail?.terkunci" class="text-[12px] text-amber-600 m-0 mt-1 font-semibold">
+            Bulan terkunci — pengganti kehadiran sudah diterbitkan
+          </p>
+          <p v-else-if="selectedDetail && !bolehAbsen" class="text-[12px] text-[var(--mut)] m-0 mt-1">
+            Absen bisa dilakukan mulai tanggal ronda
+          </p>
         </div>
       </div>
 
@@ -64,20 +70,21 @@
             </div>
           </div>
           <button
-            v-if="k.status === 'hadir' && k.absen?.id && !selectedDetail.terkunci"
+            v-if="k.status === 'hadir' && k.absen?.id && bolehAbsen"
             type="button"
             class="shrink-0 min-h-[36px] px-3 rounded-full text-[12px] font-bold text-red-600 bg-red-500/10 active:scale-95 disabled:opacity-50"
             :disabled="busy"
             @click="onBatal(k)"
           >Batalkan</button>
           <button
-            v-else-if="k.status !== 'hadir' && !selectedDetail.terkunci"
+            v-else-if="k.status !== 'hadir' && bolehAbsen"
             type="button"
             class="shrink-0 min-h-[36px] px-3 rounded-full text-[12px] font-bold text-white bg-[var(--g)] active:scale-95 disabled:opacity-50"
             :disabled="busy || !selectedDetail.id"
             @click="onAbsen(k)"
           >Absen</button>
           <span v-else-if="selectedDetail.terkunci" class="text-[11px] text-[var(--mut)] shrink-0">Terkunci</span>
+          <span v-else-if="!bolehAbsen && k.status !== 'hadir'" class="text-[11px] text-[var(--mut)] shrink-0">Belum waktunya</span>
         </div>
         <p v-if="!(selectedDetail.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0 py-1">Belum ada keluarga bertugas</p>
       </template>
@@ -111,6 +118,18 @@ const calYm = ref((() => {
 const selectedTanggal = ref('')
 const selectedDetail = ref(null)
 const selectedLoading = ref(false)
+
+/** Absen aktif hanya jika tanggal sudah tiba/lewat dan bulan belum dikunci (pengganti kehadiran belum terbit). */
+const bolehAbsen = computed(() => {
+  const d = selectedDetail.value
+  if (!d) return false
+  if (d.terkunci || d.bulan_terkunci) return false
+  if (d.boleh_hadir === false) return false
+  if (d.boleh_hadir === true) return true
+  const tgl = d.tanggal || selectedTanggal.value
+  if (!tgl) return false
+  return tgl <= todayStr()
+})
 const hariTetap = ref([false, false, false, false, false, false, false])
 const khususSet = ref({})
 const busy = ref(false)
@@ -257,6 +276,13 @@ async function onAbsen(k) {
   if (!selectedDetail.value?.id) {
     msgOk.value = false
     msg.value = 'Malam ronda belum terbentuk. Buka kelola malam dulu jika perlu.'
+    return
+  }
+  if (!bolehAbsen.value) {
+    msgOk.value = false
+    msg.value = selectedDetail.value?.terkunci
+      ? 'Bulan terkunci (pengganti kehadiran sudah diterbitkan).'
+      : 'Belum bisa absen: tanggal ronda belum tiba.'
     return
   }
   busy.value = true

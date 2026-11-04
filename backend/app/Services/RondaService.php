@@ -31,6 +31,56 @@ class RondaService
         }
     }
 
+
+    private function ensureAbsenSchema(): void
+    {
+        $db = \Config\Database::connect();
+        $db->query("CREATE TABLE IF NOT EXISTS ronda_absen (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            malam_id INT UNSIGNED NOT NULL,
+            keluarga_id INT UNSIGNED NOT NULL,
+            via VARCHAR(16) NOT NULL DEFAULT 'manual',
+            foto VARCHAR(255) NULL DEFAULT NULL,
+            created_at DATETIME NULL,
+            UNIQUE KEY uq_malam_keluarga (malam_id, keluarga_id),
+            KEY idx_malam (malam_id),
+            KEY idx_keluarga (keluarga_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Migrasi: kolom via mungkin belum ada di DB lama
+        try {
+            $cols = $db->query("SHOW COLUMNS FROM ronda_absen LIKE 'via'")->getResultArray();
+            if (!$cols) {
+                $db->query("ALTER TABLE ronda_absen ADD COLUMN via VARCHAR(16) NOT NULL DEFAULT 'manual' AFTER keluarga_id");
+            }
+        } catch (\Throwable $e) {
+        }
+        try {
+            $cols = $db->query("SHOW COLUMNS FROM ronda_absen LIKE 'foto'")->getResultArray();
+            if (!$cols) {
+                $db->query("ALTER TABLE ronda_absen ADD COLUMN foto VARCHAR(255) NULL DEFAULT NULL AFTER via");
+            }
+        } catch (\Throwable $e) {
+        }
+        try {
+            $cols = $db->query("SHOW COLUMNS FROM ronda_absen LIKE 'created_at'")->getResultArray();
+            if (!$cols) {
+                $db->query("ALTER TABLE ronda_absen ADD COLUMN created_at DATETIME NULL");
+            }
+        } catch (\Throwable $e) {
+        }
+    }
+
+    private function isBulanTerkunci(string $tanggal): bool
+    {
+        if (!preg_match('/^\d{4}-\d{2}/', $tanggal)) {
+            return false;
+        }
+        $periode = substr($tanggal, 0, 7);
+        $db = \Config\Database::connect();
+        return (bool) $db->table('ronda_kunci_bulan')->where('periode', $periode)->get()->getRowArray();
+    }
+
     public function jumlahMingguTemplate(): int
     {
         $this->ensureTemplateTables();
@@ -586,6 +636,7 @@ class RondaService
             }
         }
 
+        $this->ensureAbsenSchema();
         $absenRows = $db->table('ronda_absen')->where('malam_id', $mid)->get()->getResultArray();
         $absenByKel = [];
         foreach ($absenRows as $a) {
@@ -625,6 +676,9 @@ class RondaService
             }
         }
 
+        // Boleh absen hanya jika tanggal sudah tiba/lewat DAN bulan belum dikunci (pengganti kehadiran belum terbit)
+        $bolehHadir = !$terkunci && $tanggal <= date('Y-m-d');
+
         return [
             'id' => $mid,
             'tanggal' => $tanggal,
@@ -635,6 +689,7 @@ class RondaService
             'keluarga' => $keluargaOut,
             'terkunci' => $terkunci,
             'bulan_terkunci' => $terkunci,
+            'boleh_hadir' => $bolehHadir,
         ];
     }
 
@@ -685,10 +740,22 @@ class RondaService
         if ($malamId < 1 || $keluargaId < 1) {
             return ['ok' => false, 'message' => 'Data tidak valid.'];
         }
+        $this->ensureAbsenSchema();
         $db = \Config\Database::connect();
+        $m = $db->table('ronda_malam')->where('id', $malamId)->get()->getRowArray();
+        if (!$m) {
+            return ['ok' => false, 'message' => 'Malam ronda tidak ditemukan.'];
+        }
+        $tanggal = (string) ($m['tanggal'] ?? '');
+        if ($tanggal > date('Y-m-d')) {
+            return ['ok' => false, 'message' => 'Belum bisa absen: tanggal ronda belum tiba.'];
+        }
+        if ($this->isBulanTerkunci($tanggal)) {
+            return ['ok' => false, 'message' => 'Bulan ini terkunci (pengganti kehadiran sudah diterbitkan).'];
+        }
         $exist = $db->table('ronda_absen')->where('malam_id', $malamId)->where('keluarga_id', $keluargaId)->get()->getRowArray();
         if ($exist) {
-            return ['ok' => true];
+            return ['ok' => true, 'data' => ['id' => (int) $exist['id']]];
         }
         $db->table('ronda_absen')->insert([
             'malam_id' => $malamId,
@@ -696,7 +763,7 @@ class RondaService
             'via' => 'manual',
             'created_at' => date('Y-m-d H:i:s'),
         ]);
-        return ['ok' => true];
+        return ['ok' => true, 'data' => ['id' => (int) $db->insertID()]];
     }
 
     public function absenWarga(int $malamId, int $keluargaId, string $foto): array
@@ -704,10 +771,18 @@ class RondaService
         if ($malamId < 1 || $keluargaId < 1) {
             return ['ok' => false, 'message' => 'Data tidak valid.'];
         }
+        $this->ensureAbsenSchema();
         $db = \Config\Database::connect();
         $m = $db->table('ronda_malam')->where('id', $malamId)->get()->getRowArray();
         if (!$m) {
             return ['ok' => false, 'message' => 'Malam tidak ditemukan.'];
+        }
+        $tanggal = (string) ($m['tanggal'] ?? '');
+        if ($tanggal > date('Y-m-d')) {
+            return ['ok' => false, 'message' => 'Belum bisa absen: tanggal ronda belum tiba.'];
+        }
+        if ($this->isBulanTerkunci($tanggal)) {
+            return ['ok' => false, 'message' => 'Bulan ini terkunci (pengganti kehadiran sudah diterbitkan).'];
         }
         $exist = $db->table('ronda_absen')->where('malam_id', $malamId)->where('keluarga_id', $keluargaId)->get()->getRowArray();
         if ($exist) {
@@ -725,7 +800,17 @@ class RondaService
 
     public function batalkanAbsen(int $absenId, int $userId): array
     {
+        $this->ensureAbsenSchema();
         $db = \Config\Database::connect();
+        $row = $db->table('ronda_absen')->where('id', $absenId)->get()->getRowArray();
+        if (!$row) {
+            return ['ok' => false, 'message' => 'Absen tidak ditemukan.'];
+        }
+        $malam = $db->table('ronda_malam')->where('id', (int) $row['malam_id'])->get()->getRowArray();
+        $tanggal = (string) ($malam['tanggal'] ?? '');
+        if ($tanggal && $this->isBulanTerkunci($tanggal)) {
+            return ['ok' => false, 'message' => 'Bulan ini terkunci; absen tidak bisa dibatalkan.'];
+        }
         $db->table('ronda_absen')->where('id', $absenId)->delete();
         return ['ok' => true];
     }
