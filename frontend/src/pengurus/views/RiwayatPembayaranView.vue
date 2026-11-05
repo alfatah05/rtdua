@@ -52,7 +52,7 @@
         type="button"
         class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
         :class="p.dibatalkan ? 'opacity-55' : ''"
-        @click="$router.push('/keuangan/tagihan/' + p.keluarga_id)"
+        @click="$router.push('/keuangan/riwayat-pembayaran/' + p.id)"
       >
         <div
           class="w-10 h-10 rounded-full grid place-items-center shrink-0"

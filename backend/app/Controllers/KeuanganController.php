@@ -76,6 +76,16 @@ class KeuanganController extends Controller
     // ---- Pembayaran ----
 
 
+    public function detailPembayaran($id)
+    {
+        $this->requirePengurus();
+        $data = (new PembayaranService())->detail((int) $id);
+        if (!$data) {
+            return ApiResponse::fail('Pembayaran tidak ditemukan', 404);
+        }
+        return ApiResponse::ok($data);
+    }
+
     public function listPembayaran()
     {
         $this->requirePengurus();

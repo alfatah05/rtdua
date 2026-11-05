@@ -51,6 +51,16 @@ export async function listPembayaran(params = {}) {
   }
 }
 
+export async function detailPembayaran(id) {
+  try {
+    const res = await api('/keuangan/pembayaran/' + id)
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+
 export async function catatPembayaran(payload) {
   try {
     const res = await api('/keuangan/pembayaran', { method: 'POST', body: payload })

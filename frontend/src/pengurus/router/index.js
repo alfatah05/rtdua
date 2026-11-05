@@ -20,6 +20,7 @@ import TagihanDetailView from '../views/TagihanDetailView.vue'
 import CatatBayarView from '../views/CatatBayarView.vue'
 import CatatIuranPilihView from '../views/CatatIuranPilihView.vue'
 import RiwayatPembayaranView from '../views/RiwayatPembayaranView.vue'
+import RiwayatPembayaranDetailView from '../views/RiwayatPembayaranDetailView.vue'
 import PermintaanDetailView from '../views/PermintaanDetailView.vue'
 import KasFormView from '../views/KasFormView.vue'
 import LaporanView from '../views/LaporanView.vue'
@@ -110,6 +111,7 @@ const routes = [
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
       { path: 'keuangan/catat', component: CatatIuranPilihView },
       { path: 'keuangan/riwayat-pembayaran', component: RiwayatPembayaranView },
+      { path: 'keuangan/riwayat-pembayaran/:id', component: RiwayatPembayaranDetailView },
       { path: 'keuangan/pos-kas', component: PosKasView },
       { path: 'keuangan/sub-pos', component: SubPosView },
       { path: 'keuangan/sub-pos/:id', component: SubPosDetailView },

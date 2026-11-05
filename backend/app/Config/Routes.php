@@ -77,6 +77,7 @@ $routes->get('keuangan/tarif-iuran/(:num)/komponen', 'KeuanganController::listKo
 
 $routes->post('keuangan/pastikan-tagihan-kas', 'KeuanganController::pastikanTagihanKas', ['filter' => 'auth']);
 $routes->get('keuangan/pembayaran', 'KeuanganController::listPembayaran', ['filter' => 'auth']);
+$routes->get('keuangan/pembayaran/(:num)', 'KeuanganController::detailPembayaran/$1', ['filter' => 'auth']);
 $routes->post('keuangan/pembayaran', 'KeuanganController::catatPembayaran', ['filter' => 'auth']);
 $routes->post('keuangan/pembayaran/(:num)/batal', 'KeuanganController::batalkanPembayaran/$1', ['filter' => 'auth']);
 $routes->post('keuangan/denda/(:num)/batal', 'KeuanganController::batalkanDenda/$1', ['filter' => 'auth']);
