@@ -815,6 +815,37 @@ class RondaService
         return ['ok' => true];
     }
 
+
+    public function getNominalDendaRonda(): int
+    {
+        $db = \Config\Database::connect();
+        $row = $db->table('pengaturan')->where('id', 1)->get()->getRowArray();
+        $n = (int) ($row['denda_ronda'] ?? 0);
+        return $n > 0 ? $n : 25000;
+    }
+
+    public function setNominalDendaRonda(int $nominal, int $userId): array
+    {
+        $nominal = max(0, $nominal);
+        $db = \Config\Database::connect();
+        $before = $db->table('pengaturan')->where('id', 1)->get()->getRowArray();
+        $db->table('pengaturan')->where('id', 1)->update([
+            'denda_ronda' => $nominal,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        (new AuditService())->log(
+            'ubah_denda_ronda',
+            'pengaturan',
+            1,
+            ['denda_ronda' => $before['denda_ronda'] ?? null],
+            ['denda_ronda' => $nominal],
+            'pengguna',
+            true,
+            $userId
+        );
+        return ['ok' => true, 'data' => ['denda_ronda' => $nominal]];
+    }
+
     public function terbitkanDenda(string $periodeLalu, string $periodeTagihan): array
     {
         $db = \Config\Database::connect();
@@ -825,11 +856,7 @@ class RondaService
         if ($locked) {
             return ['ok' => false, 'message' => 'Periode sudah dikunci.'];
         }
-        $settings = $db->table('pengaturan')->where('kunci', 'denda_ronda')->get()->getRowArray();
-        $nominal = (int) ($settings['nilai'] ?? 25000);
-        if ($nominal < 1) {
-            $nominal = 25000;
-        }
+        $nominal = $this->getNominalDendaRonda();
         $start = $periodeLalu . '-01';
         $end = date('Y-m-t', strtotime($start));
         $malams = $db->table('ronda_malam')->where('tanggal >=', $start)->where('tanggal <=', $end)->get()->getResultArray();

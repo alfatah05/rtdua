@@ -2,15 +2,14 @@ import { ref, onMounted } from 'vue'
 
 const mode = ref('light')
 
-/** Samakan dengan --bg di main.css */
-const BAR = {
-  light: '#FFFFFF',
-  dark: '#111314',
-}
+/**
+ * Warna system bar (status bar atas + navigation bar bawah di Android).
+ * Selalu #000000 agar nav bar HP hitam, tidak ikut putih/mode light.
+ */
+const SYSTEM_BAR = '#000000'
 
-/** Warna status bar (atas). Mengikuti --bg light/dark. */
-function setSystemBarColor(value) {
-  const color = BAR[value] || BAR.light
+function setSystemBarColor(_value) {
+  const color = SYSTEM_BAR
 
   let meta = document.querySelector('meta[name="theme-color"]:not([media])')
   if (!meta) {
@@ -21,9 +20,7 @@ function setSystemBarColor(value) {
   meta.setAttribute('content', color)
 
   document.querySelectorAll('meta[name="theme-color"][media]').forEach((el) => {
-    const m = (el.getAttribute('media') || '').toLowerCase()
-    if (m.includes('dark')) el.setAttribute('content', BAR.dark)
-    else el.setAttribute('content', BAR.light)
+    el.setAttribute('content', color)
   })
 
   let apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
@@ -32,7 +29,8 @@ function setSystemBarColor(value) {
     apple.setAttribute('name', 'apple-mobile-web-app-status-bar-style')
     document.head.appendChild(apple)
   }
-  apple.setAttribute('content', value === 'dark' ? 'black' : 'default')
+  // black = bar hitam (teks putih); konsisten untuk light & dark
+  apple.setAttribute('content', 'black')
 }
 
 function applyMode(value) {

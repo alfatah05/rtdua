@@ -188,6 +188,9 @@ $routes->post('ronda/absen', 'RondaController::absenWarga', ['filter' => 'auth']
 $routes->post('ronda/malam/(:num)/ganti-keluarga', 'RondaController::gantiKeluarga/$1', ['filter' => 'auth']);
 $routes->post('ronda/absen/(:num)/batal', 'RondaController::batalkanAbsen/$1', ['filter' => 'auth']);
 $routes->post('ronda/terbitkan-denda', 'RondaController::terbitkanDenda', ['filter' => 'auth']);
+$routes->get('ronda/denda', 'RondaController::getDenda', ['filter' => 'auth']);
+$routes->put('ronda/denda', 'RondaController::setDenda', ['filter' => 'auth']);
+$routes->post('ronda/denda', 'RondaController::setDenda', ['filter' => 'auth']);
 $routes->post('ronda/hapus-jadwal', 'RondaController::hapusJadwal', ['filter' => 'auth']);
 
 

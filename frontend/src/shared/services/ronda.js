@@ -184,3 +184,26 @@ export async function ubahNamaGroupCard(cardId, namaGroup) {
     return { ok: false, error: e.message }
   }
 }
+
+
+/** Tarif denda / pengganti kehadiran (Rp per ketidakhadiran). */
+export async function getDendaRonda() {
+  try {
+    const res = await api('/ronda/denda')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function setDendaRonda(nominal) {
+  try {
+    const res = await api('/ronda/denda', {
+      method: 'PUT',
+      body: { denda_ronda: Number(nominal) || 0 },
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}

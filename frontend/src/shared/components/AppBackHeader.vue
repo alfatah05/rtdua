@@ -67,7 +67,7 @@ const PARENT_BY_ROUTE = {
   'data-keluarga-edit': '/data-keluarga',
   'pengumuman': '/',
   'pengumuman-detail': '/pengumuman',
-  'rincian-iuran': '/keuangan',
+  'rincian-iuran': '/',
   'transfer': '/rincian-iuran',
   'bayar': '/rincian-iuran',
   'bayar-detail': '/bayar',
@@ -164,13 +164,31 @@ function resolveParent() {
   if (path.startsWith('/posyandu/pengajian/')) return '/posyandu/pengajian'
   if (path.startsWith('/posyandu/lingkungan/')) return '/posyandu/lingkungan'
   if (path.startsWith('/bayar')) return '/rincian-iuran'
-  if (path === '/rincian-iuran') return '/keuangan'
+  if (path === '/rincian-iuran') return '/'
   if (path === '/keuangan' || path === '/ronda' || path === '/pengumuman') return '/'
   return '/'
 }
 
+/**
+ * Back bertahap: utamakan history (satu langkah), fallback ke parent map.
+ * Rincian iuran biasanya dari beranda → parent = '/', bukan /keuangan.
+ */
 function goBack() {
+  if (props.to != null && props.to !== '') {
+    router.replace(props.to)
+    return
+  }
+  try {
+    if (typeof window !== 'undefined' && window.history.state && window.history.state.back != null) {
+      router.back()
+      return
+    }
+  } catch (e) {}
   const parent = resolveParent()
-  router.replace(parent)
+  if (parent && parent !== route.fullPath && parent !== route.path) {
+    router.replace(parent)
+    return
+  }
+  router.replace('/')
 }
 </script>
