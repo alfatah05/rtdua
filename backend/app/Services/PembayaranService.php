@@ -400,7 +400,9 @@ class PembayaranService
 
         $bulan = trim((string) ($filter['bulan'] ?? ''));
         if ($bulan !== '' && preg_match('/^\d{4}-\d{2}$/', $bulan)) {
-            $q->like('p.tanggal_bayar', $bulan, 'after');
+            // tanggal_bayar bertipe DATE — filter prefix YYYY-MM
+            $q->where('p.tanggal_bayar >=', $bulan . '-01')
+                ->where('p.tanggal_bayar <', date('Y-m-d', strtotime($bulan . '-01 +1 month')));
         }
 
         $limit = (int) ($filter['limit'] ?? 100);

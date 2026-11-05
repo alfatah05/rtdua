@@ -15,25 +15,35 @@
       </div>
     </div>
 
-    <div class="flex gap-2 mb-3 px-1 overflow-x-auto">
+    <div class="flex gap-2 mb-3 px-1 items-center">
       <button
         type="button"
         class="h-9 px-3 rounded-full text-[12px] font-semibold shrink-0 border"
-        :class="!bulan ? 'bg-[var(--g)] text-white border-[var(--g)]' : 'bg-[var(--card)] border-[var(--line)]'"
-        @click="setBulan('')"
+        :class="modeSemua ? 'bg-[var(--g)] text-white border-[var(--g)]' : 'bg-[var(--card)] border-[var(--line)]'"
+        @click="pilihSemua"
       >
         Semua
       </button>
+
       <button
-        v-for="b in bulanOptions"
-        :key="b.value"
         type="button"
-        class="h-9 px-3 rounded-full text-[12px] font-semibold shrink-0 border"
-        :class="bulan === b.value ? 'bg-[var(--g)] text-white border-[var(--g)]' : 'bg-[var(--card)] border-[var(--line)]'"
-        @click="setBulan(b.value)"
+        class="h-9 px-3 rounded-full text-[12px] font-semibold shrink-0 border inline-flex items-center gap-1.5"
+        :class="!modeSemua ? 'bg-[var(--g)] text-white border-[var(--g)]' : 'bg-[var(--card)] border-[var(--line)]'"
+        @click="bukaPickerBulan"
       >
-        {{ b.label }}
+        <Calendar :size="14" />
+        <span>{{ labelBulanAktif }}</span>
       </button>
+
+      <!-- input month tersembunyi: dibuka lewat pill -->
+      <input
+        ref="bulanInput"
+        v-model="bulan"
+        type="month"
+        class="sr-only absolute opacity-0 w-0 h-0 pointer-events-none"
+        tabindex="-1"
+        @change="onBulanChange"
+      />
     </div>
 
     <label class="flex items-center gap-2 px-2 mb-3 text-[13px] text-[var(--mut)]">
@@ -56,10 +66,9 @@
       >
         <div
           class="w-10 h-10 rounded-full grid place-items-center shrink-0"
-          :class="p.dibatalkan ? 'bg-red-500/15 text-red-600' : 'bg-emerald-500/15 text-emerald-600'"
+          :class="iconWrapClass(p)"
         >
-          <History v-if="p.dibatalkan" :size="18" />
-          <Check v-else :size="18" />
+          <component :is="iconFor(p)" :size="18" />
         </div>
         <div class="flex-1 min-w-0">
           <p class="font-bold text-[15px] m-0 leading-tight truncate">
@@ -71,7 +80,10 @@
           </p>
         </div>
         <div class="text-right shrink-0">
-          <p class="font-bold text-[15px] m-0 tabular-nums" :class="p.dibatalkan ? 'line-through text-[var(--mut)]' : 'text-[var(--g)]'">
+          <p
+            class="font-bold text-[15px] m-0 tabular-nums"
+            :class="p.dibatalkan ? 'line-through text-[var(--mut)]' : 'text-[var(--g)]'"
+          >
             {{ formatRp(p.nominal) }}
           </p>
           <p v-if="p.dicatat_nama" class="text-[11px] text-[var(--mut)] m-0 mt-0.5 truncate max-w-[100px]">
@@ -84,8 +96,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { Search, Check, History } from 'lucide-vue-next'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { Search, Calendar, Banknote, ArrowLeftRight, History } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
@@ -93,24 +105,21 @@ import { formatRp } from '@shared/utils/format.js'
 import { listPembayaran } from '@shared/services/keuangan.js'
 
 const q = ref('')
+const modeSemua = ref(false)
 const bulan = ref(currentBulan())
 const includeBatal = ref(false)
 const loading = ref(true)
 const err = ref('')
 const items = ref([])
+const bulanInput = ref(null)
 
-const bulanOptions = computed(() => {
-  const out = []
-  const now = new Date()
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const value = `${y}-${m}`
-    const label = d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
-    out.push({ value, label })
-  }
-  return out
+const labelBulanAktif = computed(() => {
+  if (modeSemua.value || !bulan.value) return 'Pilih bulan'
+  const [y, m] = String(bulan.value).split('-')
+  if (!y || !m) return bulan.value
+  const d = new Date(Number(y), Number(m) - 1, 1)
+  if (Number.isNaN(d.getTime())) return bulan.value
+  return d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
 })
 
 function currentBulan() {
@@ -118,9 +127,55 @@ function currentBulan() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function setBulan(v) {
-  bulan.value = v
+function pilihSemua() {
+  modeSemua.value = true
   load()
+}
+
+async function bukaPickerBulan() {
+  modeSemua.value = false
+  if (!bulan.value) bulan.value = currentBulan()
+  await nextTick()
+  const el = bulanInput.value
+  if (!el) {
+    load()
+    return
+  }
+  try {
+    if (typeof el.showPicker === 'function') {
+      el.showPicker()
+    } else {
+      el.focus()
+      el.click()
+    }
+  } catch {
+    el.focus()
+    el.click()
+  }
+  // jika browser tidak memicu change (sudah nilai sama), tetap reload filter bulan
+  load()
+}
+
+function onBulanChange() {
+  modeSemua.value = false
+  load()
+}
+
+function isTransfer(p) {
+  const m = String(p?.metode || '').toLowerCase()
+  return m === 'transfer' || m === 'qris' || !!p?.permintaan_id
+}
+
+function iconFor(p) {
+  if (p.dibatalkan) return History
+  if (isTransfer(p)) return ArrowLeftRight
+  return Banknote
+}
+
+function iconWrapClass(p) {
+  if (p.dibatalkan) return 'bg-red-500/15 text-red-600'
+  if (isTransfer(p)) return 'bg-sky-500/15 text-sky-600'
+  return 'bg-emerald-500/15 text-emerald-600'
 }
 
 function formatTanggal(t) {
@@ -145,12 +200,15 @@ watch(q, () => {
 async function load() {
   loading.value = true
   err.value = ''
-  const res = await listPembayaran({
-    bulan: bulan.value || undefined,
+  const params = {
     q: q.value.trim() || undefined,
     include_batal: includeBatal.value || undefined,
     limit: 200,
-  })
+  }
+  if (!modeSemua.value && bulan.value) {
+    params.bulan = bulan.value
+  }
+  const res = await listPembayaran(params)
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat riwayat.'
