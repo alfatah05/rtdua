@@ -2,14 +2,19 @@ import { ref, onMounted } from 'vue'
 
 const mode = ref('light')
 
-/**
- * Warna system bar (status bar atas + navigation bar bawah di Android).
- * Selalu #000000 agar nav bar HP hitam, tidak ikut putih/mode light.
- */
-const SYSTEM_BAR = '#000000'
+/** Warna status bar (atas) — ikut --bg aplikasi */
+const STATUS_BAR = {
+  light: '#FFFFFF',
+  dark: '#111314',
+}
 
-function setSystemBarColor(_value) {
-  const color = SYSTEM_BAR
+/**
+ * Status bar (notif bar HP) mengikuti theme app.
+ * Navbar sistem bawah di-handle lewat CSS (html/body #000 + safe-area).
+ */
+function setSystemBarColor(value) {
+  const v = value === 'dark' ? 'dark' : 'light'
+  const color = STATUS_BAR[v]
 
   let meta = document.querySelector('meta[name="theme-color"]:not([media])')
   if (!meta) {
@@ -20,7 +25,9 @@ function setSystemBarColor(_value) {
   meta.setAttribute('content', color)
 
   document.querySelectorAll('meta[name="theme-color"][media]').forEach((el) => {
-    el.setAttribute('content', color)
+    const m = (el.getAttribute('media') || '').toLowerCase()
+    if (m.includes('dark')) el.setAttribute('content', STATUS_BAR.dark)
+    else el.setAttribute('content', STATUS_BAR.light)
   })
 
   let apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
@@ -29,8 +36,8 @@ function setSystemBarColor(_value) {
     apple.setAttribute('name', 'apple-mobile-web-app-status-bar-style')
     document.head.appendChild(apple)
   }
-  // black = bar hitam (teks putih); konsisten untuk light & dark
-  apple.setAttribute('content', 'black')
+  // default = status bar terang (ikon gelap) di light mode
+  apple.setAttribute('content', v === 'dark' ? 'black' : 'default')
 }
 
 function applyMode(value) {
@@ -68,7 +75,6 @@ export function useTheme() {
   onMounted(() => {
     const attr = document.documentElement.getAttribute('data-mode')
     if (attr === 'dark' || attr === 'light') {
-      // Sinkron ref dengan DOM (early init hanya set attribute, bukan ref)
       mode.value = attr
       setSystemBarColor(attr)
     } else {
