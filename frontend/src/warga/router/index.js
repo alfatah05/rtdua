@@ -3,6 +3,7 @@ import { useAuth } from '@shared/composables/useAuth.js'
 import { resolvePageTransition, syncHistoryPosition } from '@shared/composables/usePageTransition.js'
 import MainLayout from '../layouts/MainLayout.vue'
 import LoginView from '../views/LoginView.vue'
+import DownloadView from '../views/DownloadView.vue'
 import HomeView from '../views/HomeView.vue'
 import WargaView from '../views/WargaView.vue'
 import WargaDetailView from '../views/WargaDetailView.vue'
@@ -59,6 +60,7 @@ import RewardDetailView from '../views/RewardDetailView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
+  { path: '/download', name: 'download', component: DownloadView, meta: { public: true } },
   {
     path: '/',
     component: MainLayout,
@@ -68,7 +70,6 @@ const routes = [
       { path: 'warga/:id', name: 'warga-detail', component: WargaDetailView },
       { path: 'keuangan', name: 'keuangan', component: KeuanganView },
       { path: 'profil', name: 'profil', component: ProfilView, meta: { mainTab: true } },
-
       { path: 'data-keluarga', name: 'data-keluarga', component: DataKeluargaView },
       { path: 'data-keluarga/tambah', name: 'data-keluarga-tambah', component: TambahAnggotaView },
       { path: 'data-keluarga/edit', name: 'data-keluarga-edit', component: EditAnggotaView },
