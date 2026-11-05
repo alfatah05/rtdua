@@ -43,19 +43,23 @@
   color-scheme: dark;
 }
 
+/*
+ * Area di belakang system navigation bar (bawah) = hitam.
+ * Konten app (#app) = --bg. Status bar (atas) = theme-color di useTheme.
+ */
 html {
   font-size: 16px;
   scroll-padding-top: env(safe-area-inset-top, 0px);
-  background: var(--bg);
-  background-color: var(--bg);
+  background: #000000;
+  background-color: #000000;
   min-height: 100%;
   min-height: 100dvh;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  background-color: var(--bg);
+  background: #000000;
+  background-color: #000000;
   color: var(--text);
   font-family: "Plus Jakarta Sans", system-ui, sans-serif;
   font-weight: 500;
@@ -69,9 +73,11 @@ body {
 }
 
 #app {
-  min-height: 100%;
-  min-height: 100dvh;
+  /* tinggi konten di atas system nav; strip hitam body terlihat di bawah */
+  min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
+  min-height: calc(100svh - env(safe-area-inset-bottom, 0px));
   background: var(--bg);
+  background-color: var(--bg);
 }
 
 :focus-visible {
