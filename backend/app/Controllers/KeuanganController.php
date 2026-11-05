@@ -75,6 +75,19 @@ class KeuanganController extends Controller
 
     // ---- Pembayaran ----
 
+
+    public function listPembayaran()
+    {
+        $this->requirePengurus();
+        $filter = [
+            'bulan' => $this->request->getGet('bulan'),
+            'q' => $this->request->getGet('q'),
+            'include_batal' => $this->request->getGet('include_batal'),
+            'limit' => $this->request->getGet('limit'),
+        ];
+        return ApiResponse::ok((new PembayaranService())->listRiwayat($filter));
+    }
+
     public function catatPembayaran()
     {
         $user = $this->requirePengurus();

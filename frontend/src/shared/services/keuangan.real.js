@@ -36,6 +36,21 @@ export async function pratinjauAlokasi(keluargaId, nominal) {
   }
 }
 
+export async function listPembayaran(params = {}) {
+  try {
+    const q = new URLSearchParams()
+    if (params.bulan) q.set('bulan', params.bulan)
+    if (params.q) q.set('q', params.q)
+    if (params.include_batal) q.set('include_batal', '1')
+    if (params.limit) q.set('limit', String(params.limit))
+    const qs = q.toString()
+    const res = await api('/keuangan/pembayaran' + (qs ? '?' + qs : ''))
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
 export async function catatPembayaran(payload) {
   try {
     const res = await api('/keuangan/pembayaran', { method: 'POST', body: payload })

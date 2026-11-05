@@ -49,6 +49,14 @@
       </div>
       <button
         type="button"
+        class="h-11 w-11 rounded-full grid place-items-center shrink-0 border border-[var(--line)] bg-[var(--card)] text-[var(--tx)]"
+        title="Riwayat pembayaran"
+        @click="$router.push('/keuangan/riwayat-pembayaran')"
+      >
+        <History :size="18" />
+      </button>
+      <button
+        type="button"
         class="h-11 px-4 rounded-full text-[13px] font-semibold shrink-0 bg-[var(--g)] text-white"
         @click="$router.push('/keuangan/catat')"
       >
@@ -88,7 +96,7 @@
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, computed, onMounted } from 'vue'
-import { Banknote, ChevronRight, Search } from 'lucide-vue-next'
+import { Banknote, ChevronRight, Search, History } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import EmptyState from '@shared/components/EmptyState.vue'
 import { formatRp } from '@shared/utils/format.js'

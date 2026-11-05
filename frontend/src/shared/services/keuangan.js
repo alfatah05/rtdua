@@ -20,6 +20,10 @@ export function pratinjauAlokasi(keluargaId, nominal) {
   return real.pratinjauAlokasi(keluargaId, nominal)
 }
 
+export function listPembayaran(params) {
+  return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: [] }) : real.listPembayaran(params || {})
+}
+
 export function catatPembayaran(payload) {
   return USE_MOCK.keuangan ? Promise.resolve({ ok: true, data: { id: 1 } }) : real.catatPembayaran(payload)
 }
