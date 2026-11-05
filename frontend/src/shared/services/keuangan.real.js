@@ -39,8 +39,9 @@ export async function pratinjauAlokasi(keluargaId, nominal) {
 export async function listPembayaran(params = {}) {
   try {
     const q = new URLSearchParams()
-    if (params.bulan) q.set('bulan', params.bulan)
-    if (params.q) q.set('q', params.q)
+    const bulan = params.bulan != null ? String(params.bulan).trim() : ''
+    if (bulan) q.set('bulan', bulan)
+    if (params.q) q.set('q', String(params.q).trim())
     if (params.include_batal) q.set('include_batal', '1')
     if (params.limit) q.set('limit', String(params.limit))
     const qs = q.toString()

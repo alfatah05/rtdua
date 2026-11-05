@@ -89,8 +89,9 @@ class KeuanganController extends Controller
     public function listPembayaran()
     {
         $this->requirePengurus();
+        $bulan = $this->request->getGet('bulan');
         $filter = [
-            'bulan' => $this->request->getGet('bulan'),
+            'bulan' => is_string($bulan) ? trim($bulan) : $bulan,
             'q' => $this->request->getGet('q'),
             'include_batal' => $this->request->getGet('include_batal'),
             'limit' => $this->request->getGet('limit'),

@@ -29,21 +29,11 @@
         type="button"
         class="h-9 px-3 rounded-full text-[12px] font-semibold shrink-0 border inline-flex items-center gap-1.5"
         :class="!modeSemua ? 'bg-[var(--g)] text-white border-[var(--g)]' : 'bg-[var(--card)] border-[var(--line)]'"
-        @click="bukaPickerBulan"
+        @click="showBulanSheet = true"
       >
         <Calendar :size="14" />
         <span>{{ labelBulanAktif }}</span>
       </button>
-
-      <!-- input month tersembunyi: dibuka lewat pill -->
-      <input
-        ref="bulanInput"
-        v-model="bulan"
-        type="month"
-        class="sr-only absolute opacity-0 w-0 h-0 pointer-events-none"
-        tabindex="-1"
-        @change="onBulanChange"
-      />
     </div>
 
     <label class="flex items-center gap-2 px-2 mb-3 text-[13px] text-[var(--mut)]">
@@ -92,11 +82,50 @@
         </div>
       </button>
     </div>
+
+    <!-- Sheet pilih bulan -->
+    <Teleport to="body">
+      <div
+        v-if="showBulanSheet"
+        class="fixed inset-0 z-[80] flex flex-col justify-end"
+        @click.self="showBulanSheet = false"
+      >
+        <div class="absolute inset-0 bg-black/40" @click="showBulanSheet = false" />
+        <div class="relative bg-[var(--card)] rounded-t-[20px] max-h-[70vh] flex flex-col shadow-xl">
+          <div class="flex items-center justify-between px-4 pt-4 pb-2">
+            <p class="font-bold text-[16px] m-0">Pilih bulan</p>
+            <button
+              type="button"
+              class="text-[13px] font-semibold text-[var(--g)] px-2 py-1"
+              @click="showBulanSheet = false"
+            >
+              Tutup
+            </button>
+          </div>
+          <div class="overflow-y-auto px-2 pb-6">
+            <button
+              v-for="b in bulanOptions"
+              :key="b.value"
+              type="button"
+              class="w-full flex items-center justify-between px-3 py-3 rounded-[12px] text-left"
+              :class="!modeSemua && bulan === b.value ? 'bg-[var(--g)]/10' : 'active:bg-[var(--search)]'"
+              @click="pilihBulan(b.value)"
+            >
+              <span class="font-semibold text-[14px]">{{ b.label }}</span>
+              <span
+                v-if="!modeSemua && bulan === b.value"
+                class="text-[12px] font-bold text-[var(--g)]"
+              >Aktif</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Search, Calendar, Banknote, ArrowLeftRight, History } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
@@ -111,15 +140,34 @@ const includeBatal = ref(false)
 const loading = ref(true)
 const err = ref('')
 const items = ref([])
-const bulanInput = ref(null)
+const showBulanSheet = ref(false)
+
+const bulanOptions = computed(() => {
+  const out = []
+  const now = new Date()
+  // 24 bulan ke belakang
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    out.push({
+      value: `${y}-${m}`,
+      label: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+    })
+  }
+  return out
+})
 
 const labelBulanAktif = computed(() => {
-  if (modeSemua.value || !bulan.value) return 'Pilih bulan'
-  const [y, m] = String(bulan.value).split('-')
-  if (!y || !m) return bulan.value
-  const d = new Date(Number(y), Number(m) - 1, 1)
-  if (Number.isNaN(d.getTime())) return bulan.value
-  return d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+  if (modeSemua.value) return 'Pilih bulan'
+  const found = bulanOptions.value.find((b) => b.value === bulan.value)
+  if (found) {
+    // singkat: Nov 2026
+    const [y, m] = bulan.value.split('-')
+    const d = new Date(Number(y), Number(m) - 1, 1)
+    return d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })
+  }
+  return bulan.value || 'Pilih bulan'
 })
 
 function currentBulan() {
@@ -129,35 +177,14 @@ function currentBulan() {
 
 function pilihSemua() {
   modeSemua.value = true
+  showBulanSheet.value = false
   load()
 }
 
-async function bukaPickerBulan() {
+function pilihBulan(value) {
+  bulan.value = value
   modeSemua.value = false
-  if (!bulan.value) bulan.value = currentBulan()
-  await nextTick()
-  const el = bulanInput.value
-  if (!el) {
-    load()
-    return
-  }
-  try {
-    if (typeof el.showPicker === 'function') {
-      el.showPicker()
-    } else {
-      el.focus()
-      el.click()
-    }
-  } catch {
-    el.focus()
-    el.click()
-  }
-  // jika browser tidak memicu change (sudah nilai sama), tetap reload filter bulan
-  load()
-}
-
-function onBulanChange() {
-  modeSemua.value = false
+  showBulanSheet.value = false
   load()
 }
 
@@ -191,6 +218,16 @@ function labelMetode(m) {
   return map[k] || (m || 'Tunai')
 }
 
+/** Cadangan filter di client jika backend tidak memfilter */
+function filterClient(list) {
+  let out = Array.isArray(list) ? list.slice() : []
+  if (!modeSemua.value && bulan.value) {
+    const prefix = String(bulan.value) // YYYY-MM
+    out = out.filter((p) => String(p.tanggal_bayar || '').startsWith(prefix))
+  }
+  return out
+}
+
 let searchTimer = null
 watch(q, () => {
   clearTimeout(searchTimer)
@@ -203,10 +240,11 @@ async function load() {
   const params = {
     q: q.value.trim() || undefined,
     include_batal: includeBatal.value || undefined,
-    limit: 200,
+    limit: 500,
   }
+  // kirim bulan hanya jika mode filter bulan aktif
   if (!modeSemua.value && bulan.value) {
-    params.bulan = bulan.value
+    params.bulan = String(bulan.value).trim()
   }
   const res = await listPembayaran(params)
   loading.value = false
@@ -215,7 +253,7 @@ async function load() {
     items.value = []
     return
   }
-  items.value = res.data || []
+  items.value = filterClient(res.data || [])
 }
 
 onMounted(load)
