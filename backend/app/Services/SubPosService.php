@@ -263,7 +263,8 @@ class SubPosService
                 continue;
             }
             if ($jenis === 'kas') {
-                foreach ($this->splitKasKeKomponen($jumlah) as $spId => $nom) {
+                // Split menurut komponen tarif KELUARGA yang bayar (utama / khusus)
+                foreach ($this->splitKasKeKomponen($jumlah, $keluargaId) as $spId => $nom) {
                     $agregat[$spId] = ($agregat[$spId] ?? 0) + $nom;
                 }
             } elseif ($jenis === 'khusus') {
@@ -283,10 +284,14 @@ class SubPosService
             }
         }
         if ($sisaBayar > 0) {
-            foreach ($this->splitKasKeKomponen($sisaBayar) as $spId => $nom) {
+            foreach ($this->splitKasKeKomponen($sisaBayar, $keluargaId) as $spId => $nom) {
                 $agregat[$spId] = ($agregat[$spId] ?? 0) + $nom;
             }
         }
+        $labelBayar = $this->labelPembayar($keluargaId);
+        $ketDasar = $labelBayar !== ''
+            ? ('Pembayaran dari ' . $labelBayar)
+            : ('Pembayaran #' . $pembayaranId);
         $now = date('Y-m-d H:i:s');
         foreach ($agregat as $spId => $nominal) {
             $nominal = (int) $nominal;
@@ -295,7 +300,7 @@ class SubPosService
             }
             $db->table('sub_pos_mutasi')->insert([
                 'sub_pos_id' => (int) $spId, 'tipe' => 'masuk', 'nominal' => $nominal,
-                'tanggal' => $tanggal, 'keterangan' => 'Otomatis dari pembayaran #' . $pembayaranId,
+                'tanggal' => $tanggal, 'keterangan' => $ketDasar,
                 'pembayaran_id' => $pembayaranId, 'dicatat_oleh' => $userId, 'dibatalkan' => 0, 'created_at' => $now,
             ]);
         }
@@ -611,14 +616,30 @@ class SubPosService
         return ['ok' => true, 'data' => ['sub_pos_id' => (int) $row['sub_pos_id'], 'saldo' => $this->saldo((int) $row['sub_pos_id'])]];
     }
 
-    private function splitKasKeKomponen(int $nominal): array
+    private function splitKasKeKomponen(int $nominal, int $keluargaId = 0): array
     {
         if ($nominal < 1) {
             return [];
         }
         $svc = new IuranKomponenService();
         $svc->ensureTable();
-        $komp = $svc->list(true);
+
+        // Komponen sesuai tarif keluarga — jangan selalu tarif utama
+        $komp = [];
+        try {
+            if ($keluargaId > 0) {
+                $tarifId = (new TarifIuranService())->tarifIdUntukKeluarga($keluargaId);
+                if ($tarifId > 0) {
+                    $komp = $svc->listByTarif($tarifId, true);
+                }
+            }
+        } catch (\Throwable $e) {
+            $komp = [];
+        }
+        if (!$komp) {
+            $komp = $svc->list(true);
+        }
+
         $weights = [];
         $totalW = 0;
         foreach ($komp as $k) {
@@ -661,6 +682,51 @@ class SubPosService
             }
         }
         return $out;
+    }
+
+
+
+    /** Label pembayar: "Blok-Nomor · Nama kepala" */
+    private function labelPembayar(int $keluargaId): string
+    {
+        if ($keluargaId < 1) {
+            return '';
+        }
+        try {
+            $db = \Config\Database::connect();
+            $k = $db->table('keluarga k')
+                ->select('k.nomor, k.akhiran, b.nama as blok')
+                ->join('blok b', 'b.id = k.blok_id', 'left')
+                ->where('k.id', $keluargaId)
+                ->get()->getRowArray();
+            if (!$k) {
+                return '';
+            }
+            $alamat = trim((string) ($k['blok'] ?? '')) . '-' . trim((string) ($k['nomor'] ?? '')) . trim((string) ($k['akhiran'] ?? ''));
+            $nama = '';
+            $warga = $db->table('warga')
+                ->select('nama, hubungan')
+                ->where('keluarga_id', $keluargaId)
+                ->where('status', 'aktif')
+                ->orderBy('id', 'ASC')
+                ->get()->getResultArray();
+            foreach ($warga as $w) {
+                $hub = strtolower((string) ($w['hubungan'] ?? ''));
+                if (str_contains($hub, 'kepala')) {
+                    $nama = trim((string) ($w['nama'] ?? ''));
+                    break;
+                }
+            }
+            if ($nama === '' && $warga) {
+                $nama = trim((string) ($warga[0]['nama'] ?? ''));
+            }
+            if ($alamat !== '' && $nama !== '') {
+                return $alamat . ' · ' . $nama;
+            }
+            return $alamat !== '' ? $alamat : $nama;
+        } catch (\Throwable $e) {
+            return '';
+        }
     }
 
     private function infoKhususDariTagihan(int $tagihanId): array
