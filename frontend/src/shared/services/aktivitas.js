@@ -24,10 +24,21 @@ const mockList = [
 
 export async function listAktivitas(params = {}) {
   if (USE_MOCK.aktivitas) {
-    return { ok: true, data: mockList }
+    let data = mockList
+    const b = params.bulan != null ? Number(params.bulan) : 0
+    const t = params.tahun != null ? String(params.tahun) : ''
+    if (b >= 1 && b <= 12 && t) {
+      const prefix = `${t}-${String(b).padStart(2, '0')}`
+      data = mockList.filter((x) => String(x.waktu || '').startsWith(prefix))
+    }
+    return { ok: true, data }
   }
   try {
-    const qs = new URLSearchParams(params).toString()
+    const q = new URLSearchParams()
+    if (params.bulan != null && params.bulan !== '') q.set('bulan', String(params.bulan))
+    if (params.tahun != null && params.tahun !== '') q.set('tahun', String(params.tahun))
+    if (params.limit != null) q.set('limit', String(params.limit))
+    const qs = q.toString()
     const res = await api('/aktivitas' + (qs ? '?' + qs : ''))
     return { ok: true, data: res.data }
   } catch (e) {

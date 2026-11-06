@@ -4,14 +4,16 @@
 
     <div class="flex gap-2 mb-3">
       <select
-        v-model="bulan"
-        class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] outline-none appearance-none"
+        v-model.number="bulan"
+        @change="load"
+        class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] border-0 outline-none ring-0 shadow-none appearance-none focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none"
       >
         <option v-for="b in daftarBulan" :key="b.v" :value="b.v">{{ b.l }}</option>
       </select>
       <select
         v-model="tahun"
-        class="w-28 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] outline-none appearance-none"
+        @change="load"
+        class="w-28 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] border-0 outline-none ring-0 shadow-none appearance-none focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none"
       >
         <option v-for="t in daftarTahun" :key="t" :value="t">{{ t }}</option>
       </select>
@@ -118,12 +120,27 @@ const filtered = computed(() =>
   (items.value || []).filter((a) => kategoriAktivitas(a) === tab.value)
 )
 
+function inSelectedMonth(act) {
+  const w = String(act?.waktu || '')
+  if (w.length < 7) return false
+  const b = Number(bulan.value)
+  const t = String(tahun.value)
+  const prefix = `${t}-${String(b).padStart(2, '0')}`
+  return w.startsWith(prefix)
+}
+
 async function load() {
   loading.value = true
-  const res = await listAktivitas({ bulan: bulan.value, tahun: tahun.value })
+  const res = await listAktivitas({
+    bulan: Number(bulan.value),
+    tahun: String(tahun.value),
+    limit: 200,
+  })
   loading.value = false
   if (res.ok) {
-    items.value = res.data || []
+    // Cadangan filter client jika backend belum ter-deploy / gagal filter
+    const raw = res.data || []
+    items.value = raw.filter(inSelectedMonth)
   } else {
     items.value = []
   }

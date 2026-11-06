@@ -24,10 +24,13 @@ class AktivitasController extends Controller
         if (!$this->requirePengurus()) {
             return ApiResponse::fail('Unauthorized', 401);
         }
+        $bulan = $this->request->getGet('bulan');
+        $tahun = $this->request->getGet('tahun');
+        $limit = $this->request->getGet('limit');
         $filter = [
-            'bulan' => $this->request->getGet('bulan'),
-            'tahun' => $this->request->getGet('tahun'),
-            'limit' => $this->request->getGet('limit'),
+            'bulan' => $bulan !== null && $bulan !== '' ? (int) $bulan : null,
+            'tahun' => $tahun !== null && $tahun !== '' ? (int) $tahun : null,
+            'limit' => $limit !== null && $limit !== '' ? (int) $limit : 200,
         ];
         return ApiResponse::ok((new AktivitasService())->list($filter));
     }

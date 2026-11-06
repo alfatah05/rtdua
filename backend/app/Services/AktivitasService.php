@@ -13,11 +13,17 @@ class AktivitasService
             ->where('a.tampil', 1)
             ->orderBy('a.waktu', 'DESC');
 
-        if (!empty($filter['bulan']) && !empty($filter['tahun'])) {
-            $ym = sprintf('%04d-%02d', (int) $filter['tahun'], (int) $filter['bulan']);
-            $q->like('a.waktu', $ym, 'after');
+        $bulan = (int) ($filter['bulan'] ?? 0);
+        $tahun = (int) ($filter['tahun'] ?? 0);
+        if ($bulan >= 1 && $bulan <= 12 && $tahun >= 2000 && $tahun <= 2100) {
+            // Range eksplisit (lebih andal daripada LIKE)
+            $start = sprintf('%04d-%02d-01 00:00:00', $tahun, $bulan);
+            $endTs = strtotime(sprintf('%04d-%02d-01 +1 month', $tahun, $bulan));
+            $end = date('Y-m-d H:i:s', $endTs);
+            $q->where('a.waktu >=', $start)
+                ->where('a.waktu <', $end);
         }
-        $limit = min(100, max(1, (int) ($filter['limit'] ?? 50)));
+        $limit = min(300, max(1, (int) ($filter['limit'] ?? 200)));
         $rows = $q->limit($limit)->get()->getResultArray();
 
         return array_map(fn ($r) => $this->mapRow($r), $rows);
