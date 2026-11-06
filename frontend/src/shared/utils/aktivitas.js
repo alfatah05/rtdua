@@ -11,6 +11,38 @@ function formatRp(n) {
 }
 
 /** Label manusiawi untuk aksi audit */
+
+/**
+ * Kategori audit untuk tab Aktivitas pengurus.
+ * - keuangan: pembayaran, kas, sub pos, rekening, iuran/tarif
+ * - warga: keluarga, anggota, pindah, PIN
+ * - pengurus: sisanya (pengurus, konten, reward, login, ronda, pengaturan, dll)
+ */
+export function kategoriAktivitas(a) {
+  const aksi = String(a?.aksi || '').toLowerCase()
+  const objek = String(a?.objek || '').toLowerCase()
+
+  const keuanganKeys = [
+    'pembayaran', 'transfer', 'denda', 'kas', 'sub_pos', 'rekening',
+    'iuran', 'tagihan', 'tarif', 'komponen', 'alokasi',
+  ]
+  if (keuanganKeys.some((k) => aksi.includes(k) || objek.includes(k))) {
+    return 'keuangan'
+  }
+
+  const wargaKeys = [
+    'keluarga', 'anggota', 'kepala', 'pindah', 'pin_warga', 'reset_pin',
+  ]
+  if (wargaKeys.some((k) => aksi.includes(k) || objek.includes(k))) {
+    return 'warga'
+  }
+  if (objek === 'users' && (aksi.includes('pin') || aksi.includes('warga'))) {
+    return 'warga'
+  }
+
+  return 'pengurus'
+}
+
 export function labelAksi(a) {
   const aksi = String(a?.aksi || '')
   const s = a?.sesudah || {}
