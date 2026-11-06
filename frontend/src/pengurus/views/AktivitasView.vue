@@ -59,10 +59,16 @@
           <component :is="iconMeta(act.aksi).icon" :size="18" />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ identitasUtama(act) }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5 truncate">
-            {{ labelAksi(act) }}
-            <span v-if="identitasAlamat(act)"> · {{ identitasAlamat(act) }}</span>
+          <!-- Judul utama: Pelaku · Aksi (tebal, menonjol) -->
+          <p class="font-bold text-[15px] m-0 leading-snug">{{ listTitle(act) }}</p>
+          <!-- Sekunder: warga terkait + alamat (kecil) -->
+          <p
+            v-if="namaSubjek(act) || identitasAlamat(act)"
+            class="text-[12px] text-[var(--mut)] m-0 leading-tight mt-0.5 truncate"
+          >
+            <template v-if="namaSubjek(act)">{{ namaSubjek(act) }}</template>
+            <template v-if="namaSubjek(act) && identitasAlamat(act)"> · </template>
+            <template v-if="identitasAlamat(act)">{{ identitasAlamat(act) }}</template>
           </p>
           <p class="text-[12px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ formatWaktu(act.waktu) }}</p>
         </div>
@@ -78,8 +84,8 @@ import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { listAktivitas } from '@shared/services/aktivitas.js'
 import {
-  labelAksi, iconMeta, formatWaktu, kategoriAktivitas,
-  identitasUtama, identitasAlamat,
+  listTitle, labelAksi, iconMeta, formatWaktu, kategoriAktivitas,
+  namaSubjek, identitasAlamat,
 } from '@shared/utils/aktivitas.js'
 import { ChevronRight } from 'lucide-vue-next'
 

@@ -77,7 +77,7 @@ import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { detailAktivitas } from '@shared/services/aktivitas.js'
-import { labelAksi, iconMeta, formatWaktu, formatJsonBlock, identitasUtama } from '@shared/utils/aktivitas.js'
+import { labelAksi, listTitle, iconMeta, formatWaktu, formatJsonBlock } from '@shared/utils/aktivitas.js'
 
 const route = useRoute()
 const loading = ref(true)
@@ -85,12 +85,7 @@ const err = ref('')
 const row = ref(null)
 
 const meta = computed(() => iconMeta(row.value?.aksi))
-const judul = computed(() => {
-  const aksi = labelAksi(row.value)
-  const nama = identitasUtama(row.value)
-  if (nama && nama !== 'Sistem' && !String(aksi).startsWith(nama)) return `${nama} · ${aksi}`
-  return aksi
-})
+const judul = computed(() => listTitle(row.value))
 
 const kategori = computed(() => {
   const a = String(row.value?.aksi || '')

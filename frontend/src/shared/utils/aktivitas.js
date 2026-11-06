@@ -197,21 +197,26 @@ export function iconMeta(aksiRaw) {
 }
 
 /**
- * Nama identitas utama untuk list/detail:
- * prioritaskan kepala keluarga (subjek), baru pelaku.
+ * Judul list/detail: selalu "Pelaku · Aksi"
+ * (pelaku = yang melakukan: warga yang ajukan / pengurus yang konfirmasi).
+ * Nama warga terkait (subjek) + alamat ditampilkan terpisah, sekunder.
  */
-export function identitasUtama(a) {
-  const subjek = String(a?.subjek_nama || '').trim()
-  if (subjek) return subjek
-  // Jangan anggap alamat sebagai "nama"
-  const dariSesudah = String(a?.sesudah?.nama_kepala || a?.sesudah?.nama || '').trim()
-  if (dariSesudah && !looksLikeAlamat(dariSesudah)) return dariSesudah
-  return String(a?.pelaku || 'Sistem').trim() || 'Sistem'
+export function namaPelaku(a) {
+  const p = String(a?.pelaku || '').trim()
+  return p || 'Sistem'
+}
+
+/** Nama kepala/warga terkait aktivitas (bukan pelaku). */
+export function namaSubjek(a) {
+  const s = String(a?.subjek_nama || a?.sesudah?.nama_kepala || a?.sesudah?.nama || '').trim()
+  if (!s || looksLikeAlamat(s)) return ''
+  // jangan duplikat kalau sama dengan pelaku
+  if (s.toLowerCase() === namaPelaku(a).toLowerCase()) return ''
+  return s
 }
 
 export function identitasAlamat(a) {
-  const alamat = String(a?.subjek_alamat || a?.sesudah?.alamat || a?.sebelum?.alamat || '').trim()
-  return alamat || ''
+  return String(a?.subjek_alamat || a?.sesudah?.alamat || a?.sebelum?.alamat || '').trim()
 }
 
 function looksLikeAlamat(v) {
@@ -220,9 +225,14 @@ function looksLikeAlamat(v) {
   return /^[A-Za-z]{1,4}-?\d+[A-Za-z]?$/.test(s) || /\bblok\b/i.test(s)
 }
 
-/** Judul singkat untuk list: "Nama kepala/pelaku · aksi" */
+/** Judul: "Nabil · Mengajukan transfer" */
 export function listTitle(a) {
-  return `${identitasUtama(a)} · ${labelAksi(a)}`
+  return `${namaPelaku(a)} · ${labelAksi(a)}`
+}
+
+/** Alias lama — judul lengkap, bukan nama saja */
+export function identitasUtama(a) {
+  return listTitle(a)
 }
 
 export function formatWaktu(w) {
