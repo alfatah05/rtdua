@@ -196,10 +196,33 @@ export function iconMeta(aksiRaw) {
   return { icon: Activity, bg: 'rgba(100,116,139,.12)', color: '#64748B' }
 }
 
-/** Judul singkat untuk list: "Nama · aksi" */
+/**
+ * Nama identitas utama untuk list/detail:
+ * prioritaskan kepala keluarga (subjek), baru pelaku.
+ */
+export function identitasUtama(a) {
+  const subjek = String(a?.subjek_nama || '').trim()
+  if (subjek) return subjek
+  // Jangan anggap alamat sebagai "nama"
+  const dariSesudah = String(a?.sesudah?.nama_kepala || a?.sesudah?.nama || '').trim()
+  if (dariSesudah && !looksLikeAlamat(dariSesudah)) return dariSesudah
+  return String(a?.pelaku || 'Sistem').trim() || 'Sistem'
+}
+
+export function identitasAlamat(a) {
+  const alamat = String(a?.subjek_alamat || a?.sesudah?.alamat || a?.sebelum?.alamat || '').trim()
+  return alamat || ''
+}
+
+function looksLikeAlamat(v) {
+  const s = String(v || '').trim()
+  if (!s) return false
+  return /^[A-Za-z]{1,4}-?\d+[A-Za-z]?$/.test(s) || /\bblok\b/i.test(s)
+}
+
+/** Judul singkat untuk list: "Nama kepala/pelaku · aksi" */
 export function listTitle(a) {
-  const nama = a?.pelaku || 'Sistem'
-  return `${nama} · ${labelAksi(a)}`
+  return `${identitasUtama(a)} · ${labelAksi(a)}`
 }
 
 export function formatWaktu(w) {

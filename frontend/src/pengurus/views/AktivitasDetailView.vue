@@ -25,8 +25,13 @@
 
       <!-- Info utama -->
       <div class="bg-[var(--card)] border border-[var(--line)] rounded-[20px] p-4 mb-3 space-y-3">
+        <div v-if="row.subjek_nama || row.subjek_alamat">
+          <p class="text-[12px] text-[var(--mut)] m-0 mb-0.5">Warga / keluarga</p>
+          <p class="font-bold text-[15px] m-0">{{ row.subjek_nama || '—' }}</p>
+          <p v-if="row.subjek_alamat" class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ row.subjek_alamat }}</p>
+        </div>
         <div>
-          <p class="text-[12px] text-[var(--mut)] m-0 mb-0.5">Pelaku</p>
+          <p class="text-[12px] text-[var(--mut)] m-0 mb-0.5">Dilakukan oleh</p>
           <p class="font-bold text-[15px] m-0">{{ row.pelaku }}</p>
           <p v-if="row.jabatan" class="text-[13px] text-[var(--mut)] m-0 mt-0.5">{{ row.jabatan }}</p>
         </div>
@@ -72,7 +77,7 @@ import { useRoute } from 'vue-router'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { detailAktivitas } from '@shared/services/aktivitas.js'
-import { labelAksi, iconMeta, formatWaktu, formatJsonBlock } from '@shared/utils/aktivitas.js'
+import { labelAksi, iconMeta, formatWaktu, formatJsonBlock, identitasUtama } from '@shared/utils/aktivitas.js'
 
 const route = useRoute()
 const loading = ref(true)
@@ -80,7 +85,12 @@ const err = ref('')
 const row = ref(null)
 
 const meta = computed(() => iconMeta(row.value?.aksi))
-const judul = computed(() => (row.value ? labelAksi(row.value) : ''))
+const judul = computed(() => {
+  const aksi = labelAksi(row.value)
+  const nama = identitasUtama(row.value)
+  if (nama && nama !== 'Sistem' && !String(aksi).startsWith(nama)) return `${nama} · ${aksi}`
+  return aksi
+})
 
 const kategori = computed(() => {
   const a = String(row.value?.aksi || '')
@@ -129,8 +139,10 @@ const highlights = computed(() => {
     if (s.keterangan) out.push({ label: 'Keterangan', value: s.keterangan })
     if (s.alasan) out.push({ label: 'Alasan', value: s.alasan })
   } else if (a.includes('keluarga') || a.includes('anggota')) {
-    if (s.nama) out.push({ label: 'Nama', value: s.nama })
-    if (s.alamat) out.push({ label: 'Alamat', value: s.alamat })
+    const nm = row.value.subjek_nama || s.nama_kepala || s.nama
+    const al = row.value.subjek_alamat || s.alamat
+    if (nm) out.push({ label: 'Nama', value: nm })
+    if (al) out.push({ label: 'Alamat', value: al })
     if (s.status) out.push({ label: 'Status', value: s.status })
   } else if (a.includes('reward')) {
     if (s.judul) out.push({ label: 'Event', value: s.judul })

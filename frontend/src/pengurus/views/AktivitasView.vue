@@ -59,8 +59,12 @@
           <component :is="iconMeta(act.aksi).icon" :size="18" />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="font-bold text-[15px] m-0 leading-tight">{{ listTitle(act) }}</p>
-          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ formatWaktu(act.waktu) }}</p>
+          <p class="font-bold text-[15px] m-0 leading-tight truncate">{{ identitasUtama(act) }}</p>
+          <p class="text-[13px] text-[var(--mut)] m-0 leading-tight mt-0.5 truncate">
+            {{ labelAksi(act) }}
+            <span v-if="identitasAlamat(act)"> · {{ identitasAlamat(act) }}</span>
+          </p>
+          <p class="text-[12px] text-[var(--mut)] m-0 leading-tight mt-0.5">{{ formatWaktu(act.waktu) }}</p>
         </div>
         <ChevronRight :size="18" class="text-[var(--mut)] shrink-0" />
       </button>
@@ -73,7 +77,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { listAktivitas } from '@shared/services/aktivitas.js'
-import { listTitle, iconMeta, formatWaktu, kategoriAktivitas } from '@shared/utils/aktivitas.js'
+import {
+  labelAksi, iconMeta, formatWaktu, kategoriAktivitas,
+  identitasUtama, identitasAlamat,
+} from '@shared/utils/aktivitas.js'
 import { ChevronRight } from 'lucide-vue-next'
 
 const tabs = [
