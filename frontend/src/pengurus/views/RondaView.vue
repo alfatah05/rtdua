@@ -23,7 +23,7 @@
       <div class="px-4 py-3 space-y-1">
         <AppPageSpinner v-if="malamLoading" class="!py-6" />
         <template v-else-if="malam">
-          <div v-for="k in (malam.keluarga || [])" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-1">
+          <div v-for="k in malamKeluargaTampil" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-1">
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
                 <img v-if="k.foto" :src="mediaUrl(k.foto)" alt="" class="w-full h-full object-cover" />
@@ -34,12 +34,28 @@
             <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
           </div>
           <p v-if="!(malam.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0">Belum ada keluarga bertugas</p>
+          <button
+            v-else-if="malamKeluargaFull.length > 3 && !expandMalam"
+            type="button"
+            class="w-full text-[13px] font-semibold text-[var(--g)] py-2 mt-0.5"
+            @click="expandMalam = true"
+          >
+            Tampilkan semua ({{ malamKeluargaFull.length }})
+          </button>
+          <button
+            v-else-if="malamKeluargaFull.length > 3 && expandMalam"
+            type="button"
+            class="w-full text-[13px] font-semibold text-[var(--mut)] py-2 mt-0.5"
+            @click="expandMalam = false"
+          >
+            Sembunyikan
+          </button>
         </template>
         <p v-else class="text-[13px] text-[var(--mut)] m-0">Belum ada jadwal ronda ke depan</p>
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-1.5 text-center mb-5">
+    <div class="grid grid-cols-4 gap-1 text-center mb-5">
       <button
         v-for="a in aksi"
         :key="a.label"
@@ -50,7 +66,7 @@
         <span class="w-12 h-12 rounded-[16px] grid place-items-center text-white" :style="{ background: a.bg }">
           <component :is="a.icon" :size="20" />
         </span>
-        <span class="text-[11px] font-semibold leading-tight">{{ a.label }}</span>
+        <span class="text-[10px] font-semibold leading-tight px-0.5">{{ a.label }}</span>
       </button>
     </div>
 
@@ -100,7 +116,7 @@
       </div>
       <AppPageSpinner v-if="selectedLoading" class="!py-6" />
       <template v-else-if="selectedDetail">
-        <div v-for="k in (selectedDetail.keluarga || [])" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-2">
+        <div v-for="k in selectedKeluargaTampil" :key="k.keluarga_id" class="flex items-center justify-between gap-3 py-2">
           <div class="flex items-center gap-2.5 min-w-0">
             <div class="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-[var(--card2)] grid place-items-center text-[12px] font-bold text-[var(--gm)]">
               <img v-if="k.foto" :src="mediaUrl(k.foto)" alt="" class="w-full h-full object-cover" />
@@ -111,6 +127,22 @@
           <span class="text-[13px] text-[var(--mut)] shrink-0 text-right">{{ k.alamat }}</span>
         </div>
         <p v-if="!(selectedDetail.keluarga || []).length" class="text-[13px] text-[var(--mut)] m-0 py-1">Belum ada keluarga bertugas</p>
+        <button
+          v-else-if="selectedKeluargaFull.length > 3 && !expandSelected"
+          type="button"
+          class="w-full text-[13px] font-semibold text-[var(--g)] py-2"
+          @click="expandSelected = true"
+        >
+          Tampilkan semua ({{ selectedKeluargaFull.length }})
+        </button>
+        <button
+          v-else-if="selectedKeluargaFull.length > 3 && expandSelected"
+          type="button"
+          class="w-full text-[13px] font-semibold text-[var(--mut)] py-2"
+          @click="expandSelected = false"
+        >
+          Sembunyikan
+        </button>
       </template>
       <div v-else class="py-3 flex flex-col items-center text-center">
         <p class="text-[13px] text-[var(--mut)] m-0 mb-3">Belum ada jadwal ronda di tanggal ini</p>
@@ -125,7 +157,7 @@ import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Calendar, List, Banknote, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { Calendar, List, Banknote, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-vue-next'
 import { MENU } from '@shared/constants/menuColors.js'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import { kalenderRonda, malamTerdekat, detailMalam, listJadwalTetap, listJadwalKhusus } from '@shared/services/ronda.js'
@@ -143,8 +175,23 @@ const calYm = ref((() => {
 const selectedTanggal = ref('')
 const selectedDetail = ref(null)
 const selectedLoading = ref(false)
+const expandMalam = ref(false)
+const expandSelected = ref(false)
 const hariTetap = ref([false, false, false, false, false, false, false])
 const khususSet = ref({})
+
+const malamKeluargaFull = computed(() => malam.value?.keluarga || [])
+const malamKeluargaTampil = computed(() => {
+  const all = malamKeluargaFull.value
+  if (expandMalam.value || all.length <= 3) return all
+  return all.slice(0, 3)
+})
+const selectedKeluargaFull = computed(() => selectedDetail.value?.keluarga || [])
+const selectedKeluargaTampil = computed(() => {
+  const all = selectedKeluargaFull.value
+  if (expandSelected.value || all.length <= 3) return all
+  return all.slice(0, 3)
+})
 
 const bulanLabel = computed(() => {
   const [y, m] = calYm.value.split('-').map(Number)
@@ -154,7 +201,8 @@ const bulanLabel = computed(() => {
 const aksi = [
   { label: 'Jadwal tetap', icon: Calendar, to: '/ronda/jadwal-tetap', bg: MENU.ronda },
   { label: 'Jadwal khusus', icon: List, to: '/ronda/jadwal-khusus', bg: MENU.ronda },
-  { label: 'Denda', icon: Banknote, to: '/ronda/denda', bg: MENU.kasKeluar },
+  { label: 'Absen', icon: CheckCircle2, to: '/ronda/absen', bg: MENU.ronda },
+  { label: 'Pengganti kehadiran', icon: Banknote, to: '/ronda/denda', bg: MENU.kasKeluar },
 ]
 
 function weekIndex(d) {
@@ -270,6 +318,7 @@ function buildDays(kal) {
 
 async function onPickDay(day) {
   if (!day?.date) return
+  expandSelected.value = false
   selectedTanggal.value = day.date
   selectedDetail.value = null
   selectedLoading.value = true
@@ -317,6 +366,7 @@ async function loadKhususSet() {
 
 async function reloadAll() {
   malamLoading.value = true
+  expandMalam.value = false
   await Promise.all([loadHariTetap(), loadKhususSet()])
   const [mRes] = await Promise.all([malamTerdekat(), loadKalender()])
   malamLoading.value = false

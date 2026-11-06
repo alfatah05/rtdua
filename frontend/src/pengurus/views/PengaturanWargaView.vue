@@ -16,10 +16,6 @@
     <AppPageSpinner v-if="loading" />
     <p v-else-if="err" class="text-[13px] text-red-600 text-center py-4">{{ err }}</p>
     <template v-else>
-      <p class="text-[13px] text-[var(--mut)] m-0 mb-4">
-        Pecah iuran tetap bulanan menjadi komponen (keamanan, kebersihan, dll). Total inilah yang ditagihkan ke warga tiap bulan.
-      </p>
-
       <h2 class="text-[15px] font-bold m-0 mb-2">Rincian iuran tetap</h2>
       <div
         class="rounded-[20px] border border-[var(--line)] bg-[var(--card)] shadow-[var(--sh)] mb-4"
@@ -48,6 +44,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-[14px] font-semibold m-0 truncate">{{ c.nama }}</p>
+              <p class="text-[11px] text-[var(--mut)] m-0 truncate">{{ labelSubPos(c.sub_pos_id) }}</p>
               <div class="flex gap-2 mt-0.5">
                 <button type="button" class="text-[12px] font-semibold text-[var(--g)]" @click="openForm(c)">Ubah</button>
                 <button type="button" class="text-[12px] font-semibold text-red-600" @click="hapus(c)">Hapus</button>
@@ -72,6 +69,43 @@
         </template>
         <p v-else class="text-[13px] text-[var(--mut)] text-center py-5 m-0">
           Belum ada komponen. Ketuk + untuk menambah.
+        </p>
+      </div>
+
+      <!-- Tarif khusus — card baris seperti menu beranda warga -->
+      <div class="mt-5 mb-3">
+        <div class="flex items-center justify-between mb-2 px-0.5">
+          <h2 class="text-[15px] font-bold m-0">Tarif khusus</h2>
+          <button type="button" class="text-[13px] font-bold text-[var(--g)]" @click="buatTarif">+ Tarif baru</button>
+        </div>
+        <div class="space-y-2.5">
+          <button
+            v-for="t in tarifKhusus"
+            :key="t.id"
+            type="button"
+            class="menu-row-tarif w-full text-left relative overflow-hidden touch-manipulation"
+            :style="{ background: MENU.iuranKhusus }"
+            @click="$router.push('/tarif-khusus/' + t.id)"
+          >
+            <div class="relative z-10 flex items-center gap-3 px-3.5 min-h-16">
+              <div class="w-11 h-11 rounded-[0.875rem] grid place-items-center shrink-0 bg-white/20 text-white">
+                <Users :size="20" />
+              </div>
+              <div class="flex-1 min-w-0 py-2.5">
+                <p class="text-sm font-bold m-0 leading-tight text-white truncate">{{ t.nama }}</p>
+                <p class="text-xs font-semibold m-0 mt-0.5 leading-tight text-white/85 truncate">
+                  {{ t.jumlah_keluarga || 0 }} Keluarga
+                </p>
+              </div>
+              <div class="shrink-0 text-right pr-1">
+                <p class="text-sm font-extrabold m-0 tabular-nums text-white leading-tight">{{ rp(t.total) }}</p>
+              </div>
+              <ChevronRight :size="16" class="shrink-0 text-white/70" />
+            </div>
+          </button>
+        </div>
+        <p v-if="!tarifKhusus.length" class="text-[13px] text-[var(--mut)] text-center py-6 m-0">
+          Belum ada tarif khusus.
         </p>
       </div>
 
@@ -121,6 +155,17 @@
           class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-3"
           placeholder="15000"
         />
+        <label class="block text-[13px] font-semibold text-[var(--mut)] mb-1">Sub pos tujuan</label>
+        <select
+          v-model="form.sub_pos_id"
+          class="w-full min-h-12 px-4 rounded-full bg-[var(--search)] outline-none mb-1 text-[14px]"
+        >
+          <option value="">— Pilih sub pos —</option>
+          <option v-for="sp in subPosList" :key="sp.id" :value="String(sp.id)">{{ sp.judul }}</option>
+        </select>
+        <p class="text-[11px] text-[var(--mut)] m-0 mb-3">
+          Buat sub pos dulu di menu Keuangan → Sub pos, lalu pilih di sini.
+        </p>
         <p v-if="formErr" class="text-[13px] text-red-600 text-center mb-2">{{ formErr }}</p>
         <button
           type="button"
@@ -137,7 +182,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { PlusCircle, Home } from 'lucide-vue-next'
+import { PlusCircle, Home, Users, ChevronRight } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import {
@@ -146,14 +191,21 @@ import {
   ubahIuranKomponen,
   hapusIuranKomponen,
   terapkanKomponenBulanIni,
+  listTarifIuran,
+  buatTarifKhusus,
+  listSubPos,
 } from '@shared/services/keuangan.js'
 import { useToast } from '@shared/composables/useToast.js'
+import { MENU } from '@shared/constants/menuColors.js'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const { success, error } = useToast()
 const loading = ref(true)
 const err = ref('')
 const items = ref([])
 const total = ref(0)
+const tarifKhusus = ref([])
 const terapkanBulanIni = ref(false)
 const saving = ref(false)
 const msg = ref('')
@@ -161,7 +213,8 @@ const msgOk = ref(true)
 const showForm = ref(false)
 const formSaving = ref(false)
 const formErr = ref('')
-const form = ref({ id: null, nama: '', nominal: '' })
+const form = ref({ id: null, nama: '', nominal: '', sub_pos_id: '' })
+const subPosList = ref([])
 const bulanIni = new Date().toISOString().slice(0, 7)
 
 function rp(n) {
@@ -175,7 +228,7 @@ function toNum(v) {
 async function load() {
   loading.value = true
   err.value = ''
-  const res = await listIuranKomponen()
+  const [res, tr, sp] = await Promise.all([listIuranKomponen(), listTarifIuran(), listSubPos()])
   loading.value = false
   if (!res.ok) {
     err.value = res.error || 'Gagal memuat'
@@ -184,14 +237,49 @@ async function load() {
   const d = res.data || {}
   items.value = Array.isArray(d.items) ? d.items.filter((i) => i.aktif !== false) : []
   total.value = Number(d.total ?? items.value.reduce((s, i) => s + Number(i.nominal || 0), 0))
+  if (tr.ok) {
+    const all = Array.isArray(tr.data?.items) ? tr.data.items : []
+    tarifKhusus.value = all.filter((x) => !x.is_utama)
+  }
+  if (sp.ok) {
+    const raw = Array.isArray(sp.data) ? sp.data : (sp.data?.items || [])
+    subPosList.value = raw.filter((x) => x.aktif !== false && x.jenis === 'komponen')
+  }
+}
+
+async function buatTarif() {
+  const nama = prompt('Nama tarif khusus (contoh: Iuran setengah)')
+  if (nama == null) return
+  const n = String(nama).trim()
+  if (!n) return
+  const res = await buatTarifKhusus({ nama: n })
+  if (!res.ok) {
+    error(res.error || 'Gagal buat tarif')
+    return
+  }
+  success('Tarif dibuat')
+  const id = res.data?.id
+  if (id) router.push('/tarif-khusus/' + id)
+  else await load()
+}
+
+function labelSubPos(id) {
+  if (!id) return 'Belum tertaut sub pos'
+  const sp = subPosList.value.find((x) => Number(x.id) === Number(id))
+  return sp ? ('Sub pos: ' + sp.judul) : ('Sub pos #' + id)
 }
 
 function openForm(row) {
   formErr.value = ''
   if (row) {
-    form.value = { id: row.id, nama: row.nama || '', nominal: String(row.nominal || '') }
+    form.value = {
+      id: row.id,
+      nama: row.nama || '',
+      nominal: String(row.nominal || ''),
+      sub_pos_id: row.sub_pos_id ? String(row.sub_pos_id) : '',
+    }
   } else {
-    form.value = { id: null, nama: '', nominal: '' }
+    form.value = { id: null, nama: '', nominal: '', sub_pos_id: '' }
   }
   showForm.value = true
 }
@@ -208,10 +296,15 @@ async function simpan() {
     formErr.value = 'Nominal wajib'
     return
   }
+  const subPosId = Number(form.value.sub_pos_id || 0)
+  if (subPosId < 1) {
+    formErr.value = 'Pilih sub pos tujuan'
+    return
+  }
   formSaving.value = true
   const res = form.value.id
-    ? await ubahIuranKomponen(form.value.id, { nama, nominal })
-    : await buatIuranKomponen({ nama, nominal })
+    ? await ubahIuranKomponen(form.value.id, { nama, nominal, sub_pos_id: subPosId })
+    : await buatIuranKomponen({ nama, nominal, sub_pos_id: subPosId })
   formSaving.value = false
   if (!res.ok) {
     formErr.value = res.error || 'Gagal simpan'
@@ -257,3 +350,11 @@ async function terapkan() {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.menu-row-tarif {
+  border-radius: 1.125rem;
+  min-height: 4rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+</style>

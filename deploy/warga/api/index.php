@@ -1,7 +1,15 @@
 <?php
 /**
  * Thin proxy — warga
- * Default backend folder: rt-app. Deploy Dev mengganti ke folder backend development.
+ *
+ * Struktur hosting (sejajar):
+ *   {parent}/warga/api/index.php   (file ini)
+ *   {parent}/pengurus/...
+ *   {parent}/rt-app/public/index.php
+ *
+ * Default backend folder: rt-app.
+ * Deploy Dev: sed ganti rt-app → rt-app-dev (nama folder backend dev).
+ * Override: env RT_BACKEND_DIR.
  */
 header('Content-Type: application/json; charset=utf-8');
 
@@ -9,11 +17,15 @@ $_SERVER['HTTP_X_APP_SIDE'] = 'warga';
 
 $backendDir = getenv('RT_BACKEND_DIR') ?: 'rt-app';
 
+// Prioritas: folder sejajar (parent dari warga/pengurus), lalu fallback layout lama
 $candidates = [
-    dirname(__DIR__, 4) . '/' . $backendDir . '/public/index.php',
-    dirname(__DIR__, 3) . '/' . $backendDir . '/public/index.php',
-    dirname(__DIR__, 5) . '/' . $backendDir . '/public/index.php',
+    // {parent}/rt-app/public/index.php  — struktur sejajar (utama)
     dirname(__DIR__, 2) . '/' . $backendDir . '/public/index.php',
+    // fallback layout lebih dalam / lebih dangkal
+    dirname(__DIR__, 3) . '/' . $backendDir . '/public/index.php',
+    dirname(__DIR__, 4) . '/' . $backendDir . '/public/index.php',
+    dirname(__DIR__, 5) . '/' . $backendDir . '/public/index.php',
+    dirname(__DIR__, 1) . '/' . $backendDir . '/public/index.php',
 ];
 
 $backend = null;
@@ -35,6 +47,7 @@ if ($backend === null) {
         'backend_dir' => $backendDir,
         '__DIR__' => __DIR__,
         'tried' => $tried,
+        'hint' => 'Pastikan folder warga, pengurus, dan ' . $backendDir . ' sejajar di parent yang sama',
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     exit;
 }
@@ -50,6 +63,7 @@ if (isset($_GET['debug'])) {
         'side' => 'warga',
         'backend_dir' => $backendDir,
         'vendor_boot' => is_file($boot),
+        'layout' => 'sejajar (dirname 2 = parent warga/pengurus/rt-app)',
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     exit;
 }
@@ -72,5 +86,6 @@ try {
         'message' => 'CI boot error: ' . $e->getMessage(),
         'file' => $e->getFile(),
         'line' => $e->getLine(),
+        'side' => 'warga',
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 }

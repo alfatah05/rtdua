@@ -5,7 +5,7 @@
       <div class="flex items-center gap-2.5 bg-[var(--search)] rounded-full px-[18px] h-12">
         <Search :size="18" class="text-[var(--mut)] shrink-0" />
         <input v-model="q" type="search" placeholder="Cari nama atau blok/nomor rumah"
-          class="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-[var(--text)] placeholder:text-[var(--mut)]" />
+          class="search-input flex-1 min-w-0 bg-transparent outline-none border-0 ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none text-[15px] text-[var(--text)] placeholder:text-[var(--mut)]" />
       </div>
     </div>
     <div class="grid grid-cols-4 gap-2 text-center mb-5">

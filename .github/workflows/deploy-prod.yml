@@ -1,13 +1,18 @@
 name: Deploy Prod
 
 # Manual only → domain PRODUCTION + backend PRODUCTION
-# Frontend: warga.rtdua.my.id , pengurus.rtdua.my.id
+# Frontend: warga / pengurus PROD
 # Backend:  rt-app
 #
-# Secrets (FTP_SERVER / USERNAME / PASSWORD sama seperti sebelumnya):
-#   FTP_SERVER_DIR_WARGA_PROD    → folder warga.rtdua.my.id (BARU)
-#   FTP_SERVER_DIR_PENGURUS_PROD → folder pengurus.rtdua.my.id (BARU)
-#   FTP_SERVER_DIR_BACKEND       → folder rt-app (secret lama, tetap)
+# Deploy via SSH/SFTP (rsync). Secrets:
+#   VPS_SSH_KEY                 → private key (wajib)
+#   FTP_SERVER                  → host VPS
+#   FTP_USERNAME                → user SSH
+#   FTP_SERVER_DIR_WARGA_PROD
+#   FTP_SERVER_DIR_PENGURUS_PROD
+#   FTP_SERVER_DIR_BACKEND
+# Opsional: FTP_PORT (default 22)
+
 on:
   workflow_dispatch:
 
@@ -122,64 +127,103 @@ jobs:
           du -sh dist/warga dist/pengurus dist/rt-app
           test -f dist/rt-app/vendor/codeigniter4/framework/system/Boot.php
 
-      - name: Deploy WARGA PROD (FTP)
+      - name: Setup SSH key (VPS_SSH_KEY)
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          SFTP_HOST: ${{ secrets.FTP_SERVER }}
+          SFTP_PORT: ${{ secrets.FTP_PORT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VPS_SSH_KEY}" ]; then
+            echo "Secret VPS_SSH_KEY kosong" >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          KEY_FILE="$HOME/.ssh/id_deploy"
+          printenv VPS_SSH_KEY > "$KEY_FILE"
+          sed -i 's/\r$//' "$KEY_FILE"
+          if [ -n "$(tail -c1 "$KEY_FILE")" ]; then printf '\n' >> "$KEY_FILE"; fi
+          chmod 600 "$KEY_FILE"
+          PORT="${SFTP_PORT:-22}"
+          if [ -n "${SFTP_HOST}" ]; then
+            ssh-keyscan -p "$PORT" -H "$SFTP_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+            chmod 644 ~/.ssh/known_hosts
+          fi
+          ssh-keygen -y -f "$KEY_FILE" >/dev/null
+          echo "SSH key siap"
+
+      - name: Deploy WARGA PROD (SFTP)
         id: ftp_warga
         continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/warga/
-          server-dir: ${{ secrets.FTP_SERVER_DIR_WARGA_PROD }}
-          dangerous-clean-slate: true
-          timeout: 600000
-          security: loose
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+        env:
+          SFTP_HOST: ${{ secrets.FTP_SERVER }}
+          SFTP_USER: ${{ secrets.FTP_USERNAME }}
+          SFTP_PORT: ${{ secrets.FTP_PORT }}
+          SFTP_DIR: ${{ secrets.FTP_SERVER_DIR_WARGA_PROD }}
+        run: |
+          set -euo pipefail
+          PORT="${SFTP_PORT:-22}"
+          if [ -z "${SFTP_HOST}" ] || [ -z "${SFTP_USER}" ] || [ -z "${SFTP_DIR}" ]; then
+            echo "Secret tidak lengkap (FTP_SERVER / FTP_USERNAME / path dir)" >&2
+            exit 1
+          fi
+          REMOTE_DIR="${SFTP_DIR}"
+          case "$REMOTE_DIR" in
+            */) ;;
+            *) REMOTE_DIR="${REMOTE_DIR}/" ;;
+          esac
+          rsync -az --info=stats2 --delete --exclude='.git' --exclude='.git*' --exclude='node_modules' --exclude='node_modules/***' \
+            -e "ssh -i $HOME/.ssh/id_deploy -p $PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            "./dist/warga/" "${SFTP_USER}@${SFTP_HOST}:${REMOTE_DIR}"
 
-      - name: Deploy PENGURUS PROD (FTP)
+      - name: Deploy PENGURUS PROD (SFTP)
         id: ftp_pengurus
         continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/pengurus/
-          server-dir: ${{ secrets.FTP_SERVER_DIR_PENGURUS_PROD }}
-          dangerous-clean-slate: true
-          timeout: 600000
-          security: loose
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+        env:
+          SFTP_HOST: ${{ secrets.FTP_SERVER }}
+          SFTP_USER: ${{ secrets.FTP_USERNAME }}
+          SFTP_PORT: ${{ secrets.FTP_PORT }}
+          SFTP_DIR: ${{ secrets.FTP_SERVER_DIR_PENGURUS_PROD }}
+        run: |
+          set -euo pipefail
+          PORT="${SFTP_PORT:-22}"
+          if [ -z "${SFTP_HOST}" ] || [ -z "${SFTP_USER}" ] || [ -z "${SFTP_DIR}" ]; then
+            echo "Secret tidak lengkap (FTP_SERVER / FTP_USERNAME / path dir)" >&2
+            exit 1
+          fi
+          REMOTE_DIR="${SFTP_DIR}"
+          case "$REMOTE_DIR" in
+            */) ;;
+            *) REMOTE_DIR="${REMOTE_DIR}/" ;;
+          esac
+          rsync -az --info=stats2 --delete --exclude='.git' --exclude='.git*' --exclude='node_modules' --exclude='node_modules/***' \
+            -e "ssh -i $HOME/.ssh/id_deploy -p $PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            "./dist/pengurus/" "${SFTP_USER}@${SFTP_HOST}:${REMOTE_DIR}"
 
-      - name: Deploy BACKEND rt-app PROD (FTP)
+      - name: Deploy BACKEND rt-app PROD (SFTP)
         id: ftp_backend
         continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/rt-app/
-          server-dir: ${{ secrets.FTP_SERVER_DIR_BACKEND }}
-          dangerous-clean-slate: false
-          timeout: 600000
-          security: loose
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/tests/**
-            **/writable/logs/**
-            **/writable/cache/**
-            **/writable/session/**
-            **/writable/uploads/**
+        env:
+          SFTP_HOST: ${{ secrets.FTP_SERVER }}
+          SFTP_USER: ${{ secrets.FTP_USERNAME }}
+          SFTP_PORT: ${{ secrets.FTP_PORT }}
+          SFTP_DIR: ${{ secrets.FTP_SERVER_DIR_BACKEND }}
+        run: |
+          set -euo pipefail
+          PORT="${SFTP_PORT:-22}"
+          if [ -z "${SFTP_HOST}" ] || [ -z "${SFTP_USER}" ] || [ -z "${SFTP_DIR}" ]; then
+            echo "Secret tidak lengkap (FTP_SERVER / FTP_USERNAME / path dir)" >&2
+            exit 1
+          fi
+          REMOTE_DIR="${SFTP_DIR}"
+          case "$REMOTE_DIR" in
+            */) ;;
+            *) REMOTE_DIR="${REMOTE_DIR}/" ;;
+          esac
+          rsync -az --info=stats2 --exclude='.git' --exclude='.git*' --exclude='node_modules' --exclude='node_modules/***' --exclude='tests' --exclude='tests/***' --exclude='writable/logs/***' --exclude='writable/cache/***' --exclude='writable/session/***' --exclude='writable/uploads/***' --exclude='.env' \
+            -e "ssh -i $HOME/.ssh/id_deploy -p $PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            "./dist/rt-app/" "${SFTP_USER}@${SFTP_HOST}:${REMOTE_DIR}"
 
       - name: Zip cadangan
         if: always()

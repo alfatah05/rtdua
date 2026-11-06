@@ -22,13 +22,17 @@ class PortalKeuanganController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         $ring = (new TagihanService())->ringkasanKeluarga($ctx['keluarga_id']);
-        $komponen = (new \App\Services\IuranKomponenService())->list(true);
+        // Komponen mengikuti tarif keluarga (utama / khusus), bukan selalu tarif utama
+        $tarifId = (new \App\Services\TarifIuranService())->tarifIdUntukKeluarga((int) $ctx['keluarga_id']);
+        $komponen = (new \App\Services\IuranKomponenService())->listByTarif($tarifId, true);
+        $totalKasBulanan = (new \App\Services\TarifIuranService())->nominalUntukKeluarga((int) $ctx['keluarga_id']);
         return ApiResponse::ok([
             'total'      => $ring['total'],
             'status'     => $ring['status'],
             'menunggak'  => $ring['menunggak'],
             'komponen_kas' => $komponen,
-            'total_kas_bulanan' => (new \App\Services\IuranKomponenService())->totalAktif(),
+            'total_kas_bulanan' => $totalKasBulanan,
+            'tarif_id'   => $tarifId,
             'tagihan'    => array_map(static function ($t) {
                 return [
                     'id'      => $t['id'],

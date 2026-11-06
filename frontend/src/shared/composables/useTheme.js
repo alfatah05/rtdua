@@ -2,15 +2,19 @@ import { ref, onMounted } from 'vue'
 
 const mode = ref('light')
 
-/** Samakan dengan --bg di main.css */
-const BAR = {
+/** Warna status bar (atas) — ikut --bg aplikasi */
+const STATUS_BAR = {
   light: '#FFFFFF',
   dark: '#111314',
 }
 
-/** Warna status bar (atas). Mengikuti --bg light/dark. */
+/**
+ * Status bar (notif bar HP) mengikuti theme app.
+ * Navbar sistem bawah di-handle lewat CSS (html/body #000 + safe-area).
+ */
 function setSystemBarColor(value) {
-  const color = BAR[value] || BAR.light
+  const v = value === 'dark' ? 'dark' : 'light'
+  const color = STATUS_BAR[v]
 
   let meta = document.querySelector('meta[name="theme-color"]:not([media])')
   if (!meta) {
@@ -22,8 +26,8 @@ function setSystemBarColor(value) {
 
   document.querySelectorAll('meta[name="theme-color"][media]').forEach((el) => {
     const m = (el.getAttribute('media') || '').toLowerCase()
-    if (m.includes('dark')) el.setAttribute('content', BAR.dark)
-    else el.setAttribute('content', BAR.light)
+    if (m.includes('dark')) el.setAttribute('content', STATUS_BAR.dark)
+    else el.setAttribute('content', STATUS_BAR.light)
   })
 
   let apple = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
@@ -32,7 +36,8 @@ function setSystemBarColor(value) {
     apple.setAttribute('name', 'apple-mobile-web-app-status-bar-style')
     document.head.appendChild(apple)
   }
-  apple.setAttribute('content', value === 'dark' ? 'black' : 'default')
+  // default = status bar terang (ikon gelap) di light mode
+  apple.setAttribute('content', v === 'dark' ? 'black' : 'default')
 }
 
 function applyMode(value) {
@@ -70,7 +75,6 @@ export function useTheme() {
   onMounted(() => {
     const attr = document.documentElement.getAttribute('data-mode')
     if (attr === 'dark' || attr === 'light') {
-      // Sinkron ref dengan DOM (early init hanya set attribute, bukan ref)
       mode.value = attr
       setSystemBarColor(attr)
     } else {

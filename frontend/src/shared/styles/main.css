@@ -43,6 +43,10 @@
   color-scheme: dark;
 }
 
+/*
+ * Area di belakang system navigation bar (bawah) = hitam.
+ * Konten app (#app) = --bg. Status bar (atas) = theme-color di useTheme.
+ */
 html {
   font-size: 16px;
   scroll-padding-top: env(safe-area-inset-top, 0px);
@@ -71,13 +75,36 @@ body {
 #app {
   min-height: 100%;
   min-height: 100dvh;
+  min-height: 100svh;
   background: var(--bg);
+  background-color: var(--bg);
 }
 
 :focus-visible {
   outline: 2px solid var(--gh);
   outline-offset: 2px;
 }
+
+/* Search bar: tanpa outline/border/ring saat focus (warga & pengurus) */
+input[type="search"],
+input[type="search"]:focus,
+input[type="search"]:focus-visible,
+input[type="text"].search-input,
+input[type="text"].search-input:focus,
+input[type="text"].search-input:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-color: transparent !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
 
 :root[data-mode="dark"] button.bg-\[var\(--g\)\],
 :root[data-mode="dark"] a.bg-\[var\(--g\)\] {

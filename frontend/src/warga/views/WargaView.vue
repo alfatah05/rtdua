@@ -11,7 +11,7 @@
         v-model="q"
         type="search"
         placeholder="Cari nama / alamat"
-        class="w-full min-h-12 h-12 pl-12 pr-4 rounded-full bg-[var(--search)] outline-none border-0 focus:outline-none focus:ring-0 focus:border-0 text-[15px]"
+        class="search-input w-full min-h-12 h-12 pl-12 pr-4 rounded-full bg-[var(--search)] outline-none border-0 ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-0 focus:shadow-none text-[15px]"
       />
     </div>
 

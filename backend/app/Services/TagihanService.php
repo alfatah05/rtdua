@@ -273,19 +273,26 @@ class TagihanService
             return false;
         }
 
-        // Nominal benar = total rincian komponen aktif (bukan nominal_kas usang)
         $peng = $db->table('pengaturan')->where('id', 1)->get()->getRowArray();
         $nominal = $nominalOverride !== null
             ? max(0, $nominalOverride)
             : (int) ($peng['nominal_kas'] ?? 0);
 
+        // Prefer nominal sesuai tarif keluarga (utama / khusus)
         if ($nominalOverride === null) {
             try {
-                $totalKomp = (new IuranKomponenService())->totalAktif();
-                if ($totalKomp > 0) {
-                    $nominal = $totalKomp;
+                $nominalTarif = (new TarifIuranService())->nominalUntukKeluarga($keluargaId);
+                if ($nominalTarif >= 0) {
+                    $nominal = $nominalTarif;
                 }
             } catch (\Throwable $e) {
+                try {
+                    $totalKomp = (new IuranKomponenService())->totalAktif();
+                    if ($totalKomp > 0) {
+                        $nominal = $totalKomp;
+                    }
+                } catch (\Throwable $e2) {
+                }
             }
         }
 
@@ -298,9 +305,9 @@ class TagihanService
             ->getRowArray();
 
         if ($existing) {
-            // Tagihan sudah ada: sinkronkan nominal ke rincian komponen
-            // agar tidak stuck di nilai lama (mis. 50000)
-            if ($nominal > 0 && (int) ($existing['nominal'] ?? 0) !== $nominal) {
+            // Tagihan sudah ada: SELALU sinkronkan nominal ke tarif/rincian komponen
+            // agar total di warga selalu = jumlah rincian (bukan angka terpisah yang stale)
+            if ((int) ($existing['nominal'] ?? 0) !== $nominal) {
                 $db->table('iuran_tagihan')
                     ->where('id', (int) $existing['id'])
                     ->update(['nominal' => $nominal]);

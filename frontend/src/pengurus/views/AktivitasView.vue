@@ -3,23 +3,50 @@
     <AppMainHeader show-profil />
 
     <div class="flex gap-2 mb-3">
-      <select v-model="bulan" class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] outline-none appearance-none">
+      <select
+        v-model="bulan"
+        class="flex-1 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] outline-none appearance-none"
+      >
         <option v-for="b in daftarBulan" :key="b.v" :value="b.v">{{ b.l }}</option>
       </select>
-      <select v-model="tahun" class="w-28 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] outline-none appearance-none">
+      <select
+        v-model="tahun"
+        class="w-28 min-h-[44px] px-4 rounded-full bg-[var(--search)] text-[var(--text)] outline-none appearance-none"
+      >
         <option v-for="t in daftarTahun" :key="t" :value="t">{{ t }}</option>
       </select>
     </div>
 
-    <p class="text-[13px] text-[var(--mut)] mb-1 px-2">{{ items.length }} aktivitas</p>
+    <div
+      class="flex p-1 rounded-full bg-[var(--card2)] mb-3"
+      role="tablist"
+      aria-label="Kategori aktivitas"
+    >
+      <button
+        v-for="t in tabs"
+        :key="t.id"
+        type="button"
+        role="tab"
+        class="flex-1 min-h-[40px] rounded-full text-[13px] font-semibold transition"
+        :class="tab === t.id
+          ? 'bg-[var(--card)] text-[var(--text)] shadow-[var(--sh)]'
+          : 'text-[var(--mut)]'"
+        :aria-selected="tab === t.id"
+        @click="tab = t.id"
+      >
+        {{ t.label }}
+      </button>
+    </div>
+
+    <p class="text-[13px] text-[var(--mut)] mb-1 px-2">{{ filtered.length }} aktivitas</p>
 
     <AppPageSpinner v-if="loading" class="!py-8" />
-    <div v-else-if="!items.length" class="px-2 py-8 text-center text-[var(--mut)] text-[14px]">
-      Tidak ada aktivitas di bulan ini
+    <div v-else-if="!filtered.length" class="px-2 py-8 text-center text-[var(--mut)] text-[14px]">
+      Tidak ada aktivitas {{ tabLabel }} di bulan ini
     </div>
     <div v-else class="px-1 space-y-0.5">
       <button
-        v-for="act in items"
+        v-for="act in filtered"
         :key="act.id"
         type="button"
         class="w-full flex flex-row items-center gap-3 px-2 py-3 text-left active:scale-[0.99] transition-transform"
@@ -42,13 +69,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AppMainHeader from '@shared/components/AppMainHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import { listAktivitas } from '@shared/services/aktivitas.js'
-import { listTitle, iconMeta, formatWaktu } from '@shared/utils/aktivitas.js'
+import { listTitle, iconMeta, formatWaktu, kategoriAktivitas } from '@shared/utils/aktivitas.js'
 import { ChevronRight } from 'lucide-vue-next'
 
+const tabs = [
+  { id: 'pengurus', label: 'Pengurus' },
+  { id: 'keuangan', label: 'Keuangan' },
+  { id: 'warga', label: 'Warga' },
+]
+
+const tab = ref('pengurus')
 const now = new Date()
 const bulan = ref(now.getMonth() + 1)
 const tahun = ref(String(now.getFullYear()))
@@ -61,6 +95,15 @@ const daftarBulan = [
 const daftarTahun = [String(now.getFullYear()), String(now.getFullYear() - 1)]
 const items = ref([])
 const loading = ref(true)
+
+const tabLabel = computed(() => {
+  const t = tabs.find((x) => x.id === tab.value)
+  return t ? t.label.toLowerCase() : ''
+})
+
+const filtered = computed(() =>
+  (items.value || []).filter((a) => kategoriAktivitas(a) === tab.value)
+)
 
 async function load() {
   loading.value = true

@@ -1,6 +1,7 @@
 <template>
   <nav
-    class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[560px] bg-[var(--bg)] flex pt-2.5 pb-[calc(14px+env(safe-area-inset-bottom,0px))] z-40"
+    class="fixed left-1/2 -translate-x-1/2 w-full max-w-[560px] bg-[var(--bg)] flex pt-2.5 pb-3.5 z-40"
+    style="bottom: env(safe-area-inset-bottom, 0px)"
     aria-label="Navigasi utama"
   >
     <router-link

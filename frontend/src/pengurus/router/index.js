@@ -19,6 +19,8 @@ import IuranView from '../views/IuranView.vue'
 import TagihanDetailView from '../views/TagihanDetailView.vue'
 import CatatBayarView from '../views/CatatBayarView.vue'
 import CatatIuranPilihView from '../views/CatatIuranPilihView.vue'
+import RiwayatPembayaranView from '../views/RiwayatPembayaranView.vue'
+import RiwayatPembayaranDetailView from '../views/RiwayatPembayaranDetailView.vue'
 import PermintaanDetailView from '../views/PermintaanDetailView.vue'
 import KasFormView from '../views/KasFormView.vue'
 import LaporanView from '../views/LaporanView.vue'
@@ -39,6 +41,7 @@ import StrukturView from '../views/StrukturView.vue'
 import RondaView from '../views/RondaView.vue'
 import RondaMalamView from '../views/RondaMalamView.vue'
 import PengaturanWargaView from '../views/PengaturanWargaView.vue'
+import TarifKhususDetailView from '../views/TarifKhususDetailView.vue'
 import PengaturanAplikasiView from '../views/PengaturanAplikasiView.vue'
 import KelolaPengurusView from '../views/KelolaPengurusView.vue'
 import KonfirmasiTransferView from '../views/KonfirmasiTransferView.vue'
@@ -49,6 +52,7 @@ import PlaceholderView from '../views/PlaceholderView.vue'
 import RondaJadwalTetapView from '../views/RondaJadwalTetapView.vue'
 import RondaTemplateCardView from '../views/RondaTemplateCardView.vue'
 import RondaDendaView from '../views/RondaDendaView.vue'
+import RondaAbsenView from '../views/RondaAbsenView.vue'
 import RondaJadwalKhususView from '../views/RondaJadwalKhususView.vue'
 import ProgramFormView from '../views/ProgramFormView.vue'
 import KaderKontenListView from '../views/KaderKontenListView.vue'
@@ -106,6 +110,8 @@ const routes = [
       { path: 'keuangan/laporan', component: LaporanView },
       { path: 'keuangan/iuran-khusus', component: IuranKhususView },
       { path: 'keuangan/catat', component: CatatIuranPilihView },
+      { path: 'keuangan/riwayat-pembayaran', component: RiwayatPembayaranView },
+      { path: 'keuangan/riwayat-pembayaran/:id', component: RiwayatPembayaranDetailView },
       { path: 'keuangan/pos-kas', component: PosKasView },
       { path: 'keuangan/sub-pos', component: SubPosView },
       { path: 'keuangan/sub-pos/:id', component: SubPosDetailView },
@@ -175,9 +181,11 @@ const routes = [
       { path: 'ronda/jadwal-tetap', component: RondaJadwalTetapView },
       { path: 'ronda/jadwal-tetap/card/:id', component: RondaTemplateCardView },
       { path: 'ronda/jadwal-khusus', component: RondaJadwalKhususView },
+      { path: 'ronda/absen', component: RondaAbsenView },
       { path: 'ronda/denda', component: RondaDendaView },
 
       { path: 'pengaturan-warga', component: PengaturanWargaView },
+      { path: 'tarif-khusus/:id', component: TarifKhususDetailView },
       { path: 'pengaturan-aplikasi', component: PengaturanAplikasiView },
       { path: 'kelola-pengurus', component: KelolaPengurusView },
       { path: 'kelola-pengurus/angkat', component: AngkatPengurusView },

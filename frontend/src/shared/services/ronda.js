@@ -85,9 +85,13 @@ export async function generateBulan(payload) {
   }
 }
 
-export async function absenManual(payload) {
+export async function absenManual(malamIdOrPayload, keluargaId) {
   try {
-    const res = await api('/ronda/absen-manual', { method: 'POST', body: payload })
+    const body =
+      malamIdOrPayload && typeof malamIdOrPayload === 'object'
+        ? malamIdOrPayload
+        : { malam_id: malamIdOrPayload, keluarga_id: keluargaId }
+    const res = await api('/ronda/absen-manual', { method: 'POST', body })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
@@ -174,6 +178,29 @@ export async function ubahNamaGroupCard(cardId, namaGroup) {
     const res = await api('/ronda/template/' + cardId + '/nama', {
       method: 'PUT',
       body: { nama_group: namaGroup },
+    })
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+
+/** Tarif denda / pengganti kehadiran (Rp per ketidakhadiran). */
+export async function getDendaRonda() {
+  try {
+    const res = await api('/ronda/denda')
+    return { ok: true, data: res.data }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+export async function setDendaRonda(nominal) {
+  try {
+    const res = await api('/ronda/denda', {
+      method: 'PUT',
+      body: { denda_ronda: Number(nominal) || 0 },
     })
     return { ok: true, data: res.data }
   } catch (e) {

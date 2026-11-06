@@ -163,17 +163,8 @@ class RondaController extends Controller
 
     public function absenWarga()
     {
-        $user = $this->requireLogin();
-        if (!$user || empty($user['keluarga_id'])) {
-            return ApiResponse::fail('Unauthorized', 401);
-        }
-        $json = $this->request->getJSON(true) ?? [];
-        $res = (new RondaService())->absenWarga(
-            (int) ($json['malam_id'] ?? 0),
-            (int) $user['keluarga_id'],
-            $json['foto'] ?? null
-        );
-        return $res['ok'] ? ApiResponse::ok($res['data'] ?? null, 'Absen berhasil') : ApiResponse::fail($res['message'], 422);
+        // Absensi hanya oleh pengurus (absen-manual). Endpoint warga dinonaktifkan.
+        return ApiResponse::fail('Absensi hanya dilakukan oleh pengurus.', 403);
     }
 
     public function gantiKeluarga($malamId)
@@ -215,6 +206,36 @@ class RondaController extends Controller
             return ApiResponse::fail($res['message'] ?? 'Gagal terbitkan denda', 422);
         }
         return ApiResponse::ok($res, 'Denda diterbitkan');
+    }
+
+
+
+    public function getDenda()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $nominal = (new RondaService())->getNominalDendaRonda();
+        return ApiResponse::ok(['denda_ronda' => $nominal]);
+    }
+
+    public function setDenda()
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+        $json = $this->request->getJSON(true) ?? [];
+        $nominal = (int) ($json['denda_ronda'] ?? $json['nominal'] ?? -1);
+        if ($nominal < 0) {
+            return ApiResponse::fail('Nominal tidak valid.', 422);
+        }
+        $res = (new RondaService())->setNominalDendaRonda($nominal, (int) $user['id']);
+        if (empty($res['ok'])) {
+            return ApiResponse::fail($res['message'] ?? 'Gagal simpan', 422);
+        }
+        return ApiResponse::ok($res['data'], 'Tarif denda disimpan');
     }
 
     public function hapusJadwal()

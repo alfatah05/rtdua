@@ -197,13 +197,21 @@ function bulanDariPeriode(periode) {
 }
 function labelJenisDasar(jenis) {
   if (jenis === 'kas') return 'Iuran'
-  if (jenis === 'denda_ronda') return 'Denda ronda'
+  if (jenis === 'denda_ronda') return 'Pengganti kehadiran ronda'
   if (jenis === 'khusus') return 'Iuran khusus'
   return jenis || 'Tagihan'
 }
 function labelTagihan(t) {
   if (t.jenis === 'khusus' && t.nama) {
     return t.nama
+  }
+  if (t.jenis === 'denda_ronda') {
+    let bln = ''
+    if (t.ref_tanggal) {
+      bln = bulanDariPeriode(String(t.ref_tanggal).slice(0, 7))
+    }
+    if (!bln) bln = bulanDariPeriode(t.periode)
+    return bln ? `Pengganti kehadiran ronda (${bln})` : 'Pengganti kehadiran ronda'
   }
   const jenis = labelJenisDasar(t.jenis)
   const bln = bulanDariPeriode(t.periode)

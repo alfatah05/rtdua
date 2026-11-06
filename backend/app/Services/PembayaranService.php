@@ -376,6 +376,262 @@ class PembayaranService
         return ['ok' => true];
     }
 
+
+
+    /**
+     * Riwayat pembayaran global (pengurus).
+     * Filter: bulan (Y-m), q (nama/alamat), include_batal (0/1), limit.
+     */
+    public function listRiwayat(array $filter = []): array
+    {
+        $this->ensurePembayaranColumns();
+        $db = \Config\Database::connect();
+
+        // Jangan select created_at — kolom di tabel adalah dicatat_pada
+        $q = $db->table('pembayaran p')
+            ->select('p.id, p.keluarga_id, p.tanggal_bayar, p.metode, p.nominal, p.catatan, p.dibatalkan, p.dicatat_oleh, p.dicatat_pada, p.permintaan_id')
+            ->orderBy('p.tanggal_bayar', 'DESC')
+            ->orderBy('p.id', 'DESC');
+
+        $includeBatal = !empty($filter['include_batal']);
+        if (!$includeBatal) {
+            $q->where('p.dibatalkan', 0);
+        }
+
+        $bulan = trim((string) ($filter['bulan'] ?? ''));
+        if ($bulan !== '' && preg_match('/^\d{4}-\d{2}$/', $bulan)) {
+            // Robust untuk DATE / DATETIME / string
+            $q->where("DATE_FORMAT(p.tanggal_bayar, '%Y-%m')", $bulan);
+        }
+
+        $limit = (int) ($filter['limit'] ?? 100);
+        if ($limit < 1) {
+            $limit = 100;
+        }
+        $q->limit(min($limit, 500));
+
+        $rows = $q->get()->getResultArray();
+        if (!$rows) {
+            return [];
+        }
+
+        $keluargaIds = array_values(array_unique(array_filter(array_map(
+            static fn ($r) => (int) ($r['keluarga_id'] ?? 0),
+            $rows
+        ))));
+
+        $kelMap = [];
+        if ($keluargaIds) {
+            $krows = $db->table('keluarga k')
+                ->select('k.id, k.nomor, k.akhiran, b.nama as blok')
+                ->join('blok b', 'b.id = k.blok_id', 'left')
+                ->whereIn('k.id', $keluargaIds)
+                ->get()->getResultArray();
+            foreach ($krows as $k) {
+                $kid = (int) $k['id'];
+                $alamat = trim((string) ($k['blok'] ?? '')) . '-' . trim((string) ($k['nomor'] ?? '')) . trim((string) ($k['akhiran'] ?? ''));
+                $nama = '';
+                try {
+                    $w = $db->table('warga')
+                        ->select('nama, hubungan')
+                        ->where('keluarga_id', $kid)
+                        ->where('status', 'aktif')
+                        ->orderBy('id', 'ASC')
+                        ->get()->getResultArray();
+                    foreach ($w as $row) {
+                        $hub = strtolower((string) ($row['hubungan'] ?? ''));
+                        if (str_contains($hub, 'kepala')) {
+                            $nama = trim((string) ($row['nama'] ?? ''));
+                            break;
+                        }
+                    }
+                    if ($nama === '' && $w) {
+                        $nama = trim((string) ($w[0]['nama'] ?? ''));
+                    }
+                } catch (\Throwable $e) {
+                }
+                $kelMap[$kid] = [
+                    'alamat' => $alamat !== '-' ? $alamat : '',
+                    'nama' => $nama,
+                ];
+            }
+        }
+
+        $userIds = array_values(array_unique(array_filter(array_map(
+            static fn ($r) => (int) ($r['dicatat_oleh'] ?? 0),
+            $rows
+        ))));
+        $userMap = [];
+        if ($userIds) {
+            try {
+                $urows = $db->table('users')->select('id, nama, username')->whereIn('id', $userIds)->get()->getResultArray();
+                foreach ($urows as $u) {
+                    $nm = trim((string) ($u['nama'] ?? ''));
+                    if ($nm === '') {
+                        $nm = trim((string) ($u['username'] ?? ''));
+                    }
+                    $userMap[(int) $u['id']] = $nm;
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        $search = mb_strtolower(trim((string) ($filter['q'] ?? '')));
+        $out = [];
+        foreach ($rows as $r) {
+            $kid = (int) ($r['keluarga_id'] ?? 0);
+            $info = $kelMap[$kid] ?? ['alamat' => '', 'nama' => ''];
+            $alamat = $info['alamat'];
+            $nama = $info['nama'];
+            if ($search !== '') {
+                $hay = mb_strtolower($alamat . ' ' . $nama . ' ' . (string) ($r['catatan'] ?? ''));
+                if (!str_contains($hay, $search)) {
+                    continue;
+                }
+            }
+            $uid = (int) ($r['dicatat_oleh'] ?? 0);
+            $out[] = [
+                'id'            => (int) $r['id'],
+                'keluarga_id'   => $kid,
+                'alamat'        => $alamat,
+                'nama'          => $nama,
+                'tanggal_bayar' => $r['tanggal_bayar'],
+                'metode'        => $r['metode'] ?? 'tunai',
+                'nominal'       => (int) ($r['nominal'] ?? 0),
+                'catatan'       => $r['catatan'] ?? null,
+                'dibatalkan'    => (int) ($r['dibatalkan'] ?? 0) === 1,
+                'dicatat_oleh'  => $uid ?: null,
+                'dicatat_nama'  => $uid && isset($userMap[$uid]) ? $userMap[$uid] : null,
+                'dicatat_pada'  => $r['dicatat_pada'] ?? null,
+                'permintaan_id' => !empty($r['permintaan_id']) ? (int) $r['permintaan_id'] : null,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Detail satu pembayaran (pengurus) + bukti transfer jika dari permintaan warga.
+     */
+    public function detail(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $this->ensurePembayaranColumns();
+        $db = \Config\Database::connect();
+        $r = $db->table('pembayaran')->where('id', $id)->get()->getRowArray();
+        if (!$r) {
+            return null;
+        }
+
+        $kid = (int) ($r['keluarga_id'] ?? 0);
+        $alamat = '';
+        $nama = '';
+        if ($kid > 0) {
+            $k = $db->table('keluarga k')
+                ->select('k.nomor, k.akhiran, b.nama as blok')
+                ->join('blok b', 'b.id = k.blok_id', 'left')
+                ->where('k.id', $kid)
+                ->get()->getRowArray();
+            if ($k) {
+                $alamat = trim((string) ($k['blok'] ?? '')) . '-' . trim((string) ($k['nomor'] ?? '')) . trim((string) ($k['akhiran'] ?? ''));
+                if ($alamat === '-') {
+                    $alamat = '';
+                }
+            }
+            try {
+                $w = $db->table('warga')
+                    ->select('nama, hubungan')
+                    ->where('keluarga_id', $kid)
+                    ->where('status', 'aktif')
+                    ->orderBy('id', 'ASC')
+                    ->get()->getResultArray();
+                foreach ($w as $row) {
+                    $hub = strtolower((string) ($row['hubungan'] ?? ''));
+                    if (str_contains($hub, 'kepala')) {
+                        $nama = trim((string) ($row['nama'] ?? ''));
+                        break;
+                    }
+                }
+                if ($nama === '' && $w) {
+                    $nama = trim((string) ($w[0]['nama'] ?? ''));
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        $uid = (int) ($r['dicatat_oleh'] ?? 0);
+        $dicatatNama = null;
+        if ($uid > 0) {
+            $u = $db->table('users')->select('nama, username')->where('id', $uid)->get()->getRowArray();
+            if ($u) {
+                $dicatatNama = trim((string) ($u['nama'] ?? ''));
+                if ($dicatatNama === '') {
+                    $dicatatNama = trim((string) ($u['username'] ?? ''));
+                }
+            }
+        }
+
+        $permintaan = null;
+        $permId = !empty($r['permintaan_id']) ? (int) $r['permintaan_id'] : 0;
+        if ($permId > 0) {
+            try {
+                $pr = $db->table('pembayaran_permintaan')->where('id', $permId)->get()->getRowArray();
+                if ($pr) {
+                    $rekening = null;
+                    $rekId = !empty($pr['rekening_id']) ? (int) $pr['rekening_id'] : 0;
+                    if ($rekId > 0) {
+                        try {
+                            $rr = $db->table('rekening_pembayaran')->where('id', $rekId)->get()->getRowArray();
+                            if ($rr) {
+                                $rekening = [
+                                    'id'        => (int) $rr['id'],
+                                    'jenis'     => $rr['jenis'] ?? null,
+                                    'nama'      => $rr['nama'] ?? null,
+                                    'nomor'     => $rr['nomor'] ?? null,
+                                    'atas_nama' => $rr['atas_nama'] ?? null,
+                                ];
+                            }
+                        } catch (\Throwable $e) {
+                        }
+                    }
+                    $permintaan = [
+                        'id'               => (int) $pr['id'],
+                        'status'           => $pr['status'] ?? null,
+                        'nominal_diajukan' => (int) ($pr['nominal_diajukan'] ?? 0),
+                        'nama_pengirim'    => $pr['nama_pengirim'] ?? null,
+                        'bank_pengirim'    => $pr['bank_pengirim'] ?? null,
+                        'bukti_file'       => $pr['bukti_file'] ?? null,
+                        'diajukan_pada'    => $pr['diajukan_pada'] ?? null,
+                        'rekening'         => $rekening,
+                    ];
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        return [
+            'id'            => (int) $r['id'],
+            'keluarga_id'   => $kid,
+            'alamat'        => $alamat,
+            'nama'          => $nama,
+            'tanggal_bayar' => $r['tanggal_bayar'] ?? null,
+            'metode'        => $r['metode'] ?? 'tunai',
+            'nominal'       => (int) ($r['nominal'] ?? 0),
+            'catatan'       => $r['catatan'] ?? null,
+            'tagihan_ids'   => $r['tagihan_ids'] ?? null,
+            'dibatalkan'    => (int) ($r['dibatalkan'] ?? 0) === 1,
+            'alasan_batal'  => $r['alasan_batal'] ?? null,
+            'dibatalkan_pada' => $r['dibatalkan_pada'] ?? null,
+            'dicatat_oleh'  => $uid ?: null,
+            'dicatat_nama'  => $dicatatNama,
+            'dicatat_pada'  => $r['dicatat_pada'] ?? null,
+            'permintaan_id' => $permId ?: null,
+            'permintaan'    => $permintaan,
+            'bukti_file'    => $permintaan['bukti_file'] ?? null,
+        ];
+    }
+
     public function batalkanPembayaran(int $id, string $alasan, int $userId): array
     {
         $alasan = trim($alasan);
