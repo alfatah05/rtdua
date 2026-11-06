@@ -24,9 +24,19 @@ class AktivitasService
                 ->where('a.waktu <', $end);
         }
         $limit = min(300, max(1, (int) ($filter['limit'] ?? 200)));
-        $rows = $q->limit($limit)->get()->getResultArray();
-
-        return array_map(fn ($r) => $this->mapRow($r), $rows);
+        // Ambil lebih banyak lalu saring login/logout warga
+        $rows = $q->limit(min(500, $limit * 3))->get()->getResultArray();
+        $out = [];
+        foreach ($rows as $r) {
+            if ($this->isLoginLogoutWarga($r)) {
+                continue;
+            }
+            $out[] = $this->mapRow($r);
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+        return $out;
     }
 
     public function detail(int $id): ?array

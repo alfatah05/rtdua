@@ -140,7 +140,17 @@ async function load() {
   if (res.ok) {
     // Cadangan filter client jika backend belum ter-deploy / gagal filter
     const raw = res.data || []
-    items.value = raw.filter(inSelectedMonth)
+    items.value = raw
+      .filter((a) => {
+        const aksi = String(a?.aksi || '')
+        if (aksi !== 'login' && aksi !== 'logout') return true
+        // sembunyikan login/logout warga
+        if (String(a?.role || '').toLowerCase() === 'warga') return false
+        const side = a?.sesudah?.side || a?.sumber
+        if (side === 'warga') return false
+        return true
+      })
+      .filter(inSelectedMonth)
   } else {
     items.value = []
   }

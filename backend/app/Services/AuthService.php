@@ -45,7 +45,7 @@ class AuthService
         $this->startSession($side, $user);
 
         try {
-            (new AuditService())->log('login', 'users', $user['id'], null, ['side' => $side], 'pengguna', true, (int) $user['id']);
+            (new AuditService())->log('login', 'users', $user['id'], null, ['side' => $side], 'pengguna', $side !== 'warga', (int) $user['id']);
         } catch (\Throwable $e) {
         }
 
@@ -66,7 +66,7 @@ class AuthService
         $session->remove($key . '_user');
         if ($uid) {
             try {
-                (new AuditService())->log('logout', 'users', $uid, null, ['side' => $side], 'pengguna', true, (int) $uid);
+                (new AuditService())->log('logout', 'users', $uid, null, ['side' => $side], 'pengguna', $side !== 'warga', (int) $uid);
             } catch (\Throwable $e) {
             }
         }
