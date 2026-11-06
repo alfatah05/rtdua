@@ -142,12 +142,12 @@ async function load() {
     const raw = res.data || []
     items.value = raw
       .filter((a) => {
+        // Hanya hide login/logout warga — aktivitas lain biarkan
         const aksi = String(a?.aksi || '')
         if (aksi !== 'login' && aksi !== 'logout') return true
-        // sembunyikan login/logout warga
-        if (String(a?.role || '').toLowerCase() === 'warga') return false
-        const side = a?.sesudah?.side || a?.sumber
-        if (side === 'warga') return false
+        const role = String(a?.role || '').toLowerCase()
+        if (role === 'warga') return false
+        if (a?.sesudah && typeof a.sesudah === 'object' && a.sesudah.side === 'warga') return false
         return true
       })
       .filter(inSelectedMonth)

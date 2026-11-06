@@ -247,4 +247,28 @@ class AktivitasService
         return (bool) preg_match('/^[A-Za-z]{1,4}-?\d+[A-Za-z]?$/', $v)
             || (bool) preg_match('/\bblok\b/i', $v);
     }
+
+    /**
+     * Hanya hide login/logout dari app warga.
+     * Aktivitas lain (keuangan, pengurus, dll) tetap tampil.
+     */
+    private function isLoginLogoutWarga(array $r): bool
+    {
+        $aksi = (string) ($r['aksi'] ?? '');
+        if ($aksi !== 'login' && $aksi !== 'logout') {
+            return false;
+        }
+        $role = strtolower(trim((string) ($r['role'] ?? '')));
+        if ($role === 'warga') {
+            return true;
+        }
+        $sesudah = (string) ($r['sesudah'] ?? '');
+        if ($sesudah !== '' && (
+            str_contains($sesudah, '"side":"warga"')
+            || str_contains($sesudah, '"side": "warga"')
+        )) {
+            return true;
+        }
+        return false;
+    }
 }
