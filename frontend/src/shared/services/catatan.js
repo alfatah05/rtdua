@@ -2,11 +2,17 @@ import { api } from '../api/http.js'
 
 export async function listCatatan({ page, per_page = 50 } = {}) {
   try {
+    // Path-based agar tidak tergantung query string (beberapa hosting hilangkan QS)
+    // page undefined/null → fokus (0)
+    const hal = page == null ? 0 : Number(page)
     const q = new URLSearchParams()
-    // Backend baca 'hal' (hindari bentrok query 'page' di CI)
-    if (page != null) q.set('hal', String(page))
     q.set('per_page', String(per_page))
-    const res = await api('/catatan?' + q.toString())
+    q.set('hal', String(hal))
+    const res = await api('/catatan/hal/' + encodeURIComponent(String(hal)) + '?' + q.toString(), {
+      headers: {
+        'X-Catatan-Hal': String(hal),
+      },
+    })
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
