@@ -196,8 +196,6 @@ class CatatanService
                 $this->insertBlank($userId);
             }
         } elseif ($total % $perPage !== 0) {
-            // jangan pad halaman ekstra kosong di sini — hanya lengkapi jika kurang dari keep
-            // (setelah delete seharusnya pas)
             $mod = $total % $perPage;
             if ($mod !== 0 && $total < $keep) {
                 for ($i = 0; $i < $perPage - $mod; $i++) {
@@ -262,11 +260,11 @@ class CatatanService
         return ['rank' => $lastRank, 'page' => $page, 'id' => $lastId];
     }
 
-    private function mapRow(array $r): array
+    private function mapRow(array $r, ?int $no = null): array
     {
         return [
             'id'          => (int) $r['id'],
-            'no'          => (int) $r['id'],
+            'no'          => $no !== null ? $no : (int) $r['id'],
             'tanggal'     => $r['tanggal'] ?: null,
             'nama'        => $r['nama'] ?? '',
             'alamat'      => $r['alamat'] ?? '',
@@ -335,8 +333,13 @@ class CatatanService
                 ->getResultArray();
         }
 
+        $mapped = [];
+        foreach ($rows as $i => $r) {
+            $mapped[] = $this->mapRow($r, $offset + $i + 1);
+        }
+
         return [
-            'rows'         => array_map(fn ($r) => $this->mapRow($r), $rows),
+            'rows'         => $mapped,
             'page'         => $page,
             'per_page'     => $perPage,
             'total'        => $total,
@@ -356,32 +359,40 @@ class CatatanService
         $limit = max(1, min(300, $limit));
         $offset = max(0, $offset);
         $db = $this->db();
-        $like = '%' . $db->escapeLikeString($q) . '%';
 
-        $sql = "SELECT *,
-            (CASE
-                WHEN nama LIKE ? THEN 40
-                WHEN keperluan LIKE ? THEN 30
-                WHEN alamat LIKE ? THEN 20
-                WHEN keterangan LIKE ? THEN 10
-                ELSE 0
-            END) AS _rank
-            FROM catatan_pengurus
-            WHERE (nama LIKE ? OR alamat LIKE ? OR keperluan LIKE ? OR keterangan LIKE ?
-               OR CAST(id AS CHAR) = ?)
-              AND NOT (
-                (tanggal IS NULL OR tanggal = '')
-                AND (nama IS NULL OR nama = '')
-                AND (alamat IS NULL OR alamat = '')
-                AND (keperluan IS NULL OR keperluan = '')
-                AND (keterangan IS NULL OR keterangan = '')
-                AND (dokumentasi IS NULL OR dokumentasi = '')
-              )
-            ORDER BY _rank DESC, id ASC
-            LIMIT ? OFFSET ?";
-        $params = [$like, $like, $like, $like, $like, $like, $like, $like, $q, $limit, $offset];
-        $rows = $db->query($sql, $params)->getResultArray();
-        return array_map(fn ($r) => $this->mapRow($r), $rows);
+        $builder = $db->table('catatan_pengurus');
+        $builder->groupStart()
+            ->like('nama', $q)
+            ->orLike('alamat', $q)
+            ->orLike('keperluan', $q)
+            ->orLike('keterangan', $q);
+        if (ctype_digit($q)) {
+            $builder->orWhere('id', (int) $q);
+        }
+        $builder->groupEnd();
+
+        // Hanya baris yang tidak sepenuhnya kosong
+        $builder->groupStart()
+            ->where('tanggal IS NOT NULL', null, false)
+            ->orWhere('nama !=', '')
+            ->orWhere('alamat !=', '')
+            ->orWhere('keperluan !=', '')
+            ->orWhere('keterangan !=', '')
+            ->orWhere('dokumentasi IS NOT NULL', null, false)
+            ->groupEnd();
+
+        $builder->orderBy('id', 'ASC');
+        $builder->limit($limit, $offset);
+        $rows = $builder->get()->getResultArray();
+
+        $out = [];
+        foreach ($rows as $r) {
+            if ($this->isBlankRow($r)) {
+                continue;
+            }
+            $out[] = $this->mapRow($r);
+        }
+        return $out;
     }
 
     public function createEmpty(?int $userId): array
