@@ -89,50 +89,50 @@
       </div>
     </div>
 
-    <Teleport to="body">
-      <div class="catatan-float-bar">
-        <button
-          type="button"
-          class="circle-btn"
-          :class="{ 'is-disabled': !canPrev }"
-          :disabled="!canPrev"
-          aria-label="Halaman sebelumnya"
-          @click.prevent="prevPage"
-        >
-          <ChevronLeft :size="20" />
-        </button>
+    <!-- Floating pagination: fixed di halaman, tanpa Teleport -->
+    <div class="catatan-float-bar" role="navigation" aria-label="Navigasi halaman">
+      <button
+        type="button"
+        class="circle-btn"
+        :class="{ 'is-disabled': !canPrev }"
+        aria-label="Halaman sebelumnya"
+        @click.stop="onPrev"
+        
+      >
+        <ChevronLeft :size="20" />
+      </button>
 
-        <div class="search-pill">
-          <input
-            v-model="searchInput"
-            type="search"
-            placeholder="cari data"
-            enterkeyhint="search"
-            @keydown.enter.prevent="doSearch"
-          />
-          <button
-            v-if="searchInput"
-            type="button"
-            class="clear-btn"
-            aria-label="Hapus pencarian"
-            @click="clearSearch"
-          >
-            <X :size="16" />
-          </button>
-        </div>
-
+      <div class="search-pill">
+        <input
+          v-model="searchInput"
+          type="search"
+          placeholder="cari data"
+          enterkeyhint="search"
+          @keydown.enter.prevent="doSearch"
+        />
         <button
+          v-if="searchInput"
           type="button"
-          class="circle-btn"
-          :class="{ 'is-disabled': !canNext }"
-          :disabled="!canNext"
-          aria-label="Halaman berikutnya"
-          @click.prevent="nextPage"
+          class="clear-btn"
+          aria-label="Hapus pencarian"
+          @click.stop="clearSearch"
         >
-          <ChevronRight :size="20" />
+          <X :size="16" />
         </button>
       </div>
-    </Teleport>
+
+      <button
+        type="button"
+        class="circle-btn"
+        :class="{ 'is-disabled': !canNext }"
+        aria-label="Halaman berikutnya"
+        @click.stop="onNext"
+        
+      >
+        <ChevronRight :size="20" />
+      </button>
+    </div>
+
 
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFile" />
 
@@ -181,12 +181,8 @@ let observer = null
 let prevHtmlBg = ''
 let prevBodyBg = ''
 
-const canPrev = computed(
-  () => mode.value === 'book' && !loading.value && page.value > 1,
-)
-const canNext = computed(
-  () => mode.value === 'book' && !loading.value && page.value < totalPages.value,
-)
+const canPrev = computed(() => mode.value === 'book' && Number(page.value) > 1)
+const canNext = computed(() => mode.value === 'book' && Number(page.value) < Number(totalPages.value))
 
 function setDateRef(id, el) {
   if (el) dateRefs[id] = el
@@ -203,48 +199,64 @@ function blurEl(e) {
   e.target.blur()
 }
 
-async function loadPage(p) {
+async function loadPage(p, { scrollToFocus = false } = {}) {
+  const target = Math.max(0, Number(p) || 0)
   loading.value = true
   try {
-    const res = await listCatatan({ page: p, per_page: PER })
+    const res = await listCatatan({ page: target, per_page: PER })
     if (!res.ok) {
       toastError(res.error || 'Gagal memuat')
       return
     }
     const d = res.data || {}
-    rows.value = d.rows || []
-    page.value = Number(d.page) || 1
+    rows.value = Array.isArray(d.rows) ? d.rows : []
+    page.value = Math.max(1, Number(d.page) || 1)
     totalPages.value = Math.max(1, Number(d.total_pages) || 1)
     mode.value = 'book'
-    await nextTick()
-    const sid = d.scroll_to_id
-    if (sid && p < 1) {
-      // hanya auto-scroll saat buka otomatis (page=0)
-      const el = document.querySelector(`[data-row-id="${sid}"]`)
-      if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+
+    // Auto-scroll HANYA saat buka fokus, bukan saat chevron
+    if (scrollToFocus && d.focus_row_id) {
+      await nextTick()
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-row-id="${d.focus_row_id}"]`)
+        if (el && typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }
+      })
+    } else {
+      // Chevron: ke atas tabel
+      await nextTick()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   } finally {
     loading.value = false
   }
 }
 
-function prevPage() {
-  const p = Number(page.value)
-  const tp = Number(totalPages.value)
-  if (mode.value !== 'book' || loading.value || p <= 1) return
-  loadPage(p - 1)
+let navLock = false
+function onPrev() {
+  if (navLock || loading.value || mode.value !== 'book') return
+  const cur = Number(page.value) || 1
+  if (cur <= 1) return
+  navLock = true
+  Promise.resolve(loadPage(cur - 1, { scrollToFocus: false })).finally(() => {
+    navLock = false
+  })
 }
 
-function nextPage() {
-  const p = Number(page.value)
-  const tp = Number(totalPages.value)
-  if (mode.value !== 'book' || loading.value || p >= tp) return
-  loadPage(p + 1)
+function onNext() {
+  if (navLock || loading.value || mode.value !== 'book') return
+  const cur = Number(page.value) || 1
+  const max = Number(totalPages.value) || 1
+  if (cur >= max) return
+  navLock = true
+  Promise.resolve(loadPage(cur + 1, { scrollToFocus: false })).finally(() => {
+    navLock = false
+  })
 }
 
-async function openLastPage() {
-  // page=0 → backend halaman terakhir
-  await loadPage(0)
+async function openFocusPage() {
+  await loadPage(0, { scrollToFocus: true })
 }
 
 async function doSearch() {
@@ -293,7 +305,7 @@ function clearSearch() {
   searchInput.value = ''
   searchQ.value = ''
   mode.value = 'book'
-  openLastPage()
+  openFocusPage()
 }
 
 async function onBlur(e, row, field) {
@@ -410,7 +422,7 @@ function restorePageBg() {
 
 onMounted(async () => {
   applyPageBg()
-  await openLastPage()
+  await openFocusPage()
   observer = new IntersectionObserver(
     (entries) => {
       if (entries.some((x) => x.isIntersecting)) loadMoreSearch()
@@ -562,18 +574,15 @@ th.sticky-col {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 100;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
-  pointer-events: none;
+  pointer-events: auto;
   background: transparent;
   box-sizing: border-box;
-}
-.catatan-float-bar > * {
-  pointer-events: auto;
 }
 .catatan-float-bar .circle-btn {
   width: 42px;
