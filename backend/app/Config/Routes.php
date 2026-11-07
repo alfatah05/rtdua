@@ -149,4 +149,71 @@ $routes->get('tugas/5menit', 'TugasController::tiapLimaMenit', ['filter' => 'cro
 $routes->get('pengumuman', 'KontenController::listPengumuman', ['filter' => 'auth']);
 $routes->get('pengumuman/(:num)', 'KontenController::detailPengumuman/$1', ['filter' => 'auth']);
 $routes->post('pengumuman', 'KontenController::buatPengumuman', ['filter' => 'auth']);
-$routes->put('pengumuman/(:num debatable'); // truncated intentionally - NEED FULL FILE
+$routes->put('pengumuman/(:num)', 'KontenController::ubahPengumuman/$1', ['filter' => 'auth']);
+$routes->delete('pengumuman/(:num)', 'KontenController::hapusPengumuman/$1', ['filter' => 'auth']);
+$routes->get('program', 'KontenController::listProgram', ['filter' => 'auth']);
+$routes->get('program/(:num)', 'KontenController::detailProgram/$1', ['filter' => 'auth']);
+$routes->post('program', 'KontenController::buatProgram', ['filter' => 'auth']);
+$routes->put('program/(:num)', 'KontenController::ubahProgram/$1', ['filter' => 'auth']);
+$routes->delete('program/(:num)', 'KontenController::hapusProgram/$1', ['filter' => 'auth']);
+// kader-konten API — force sync 2026-10-18
+$routes->get('kader-konten', 'KontenController::listKaderKonten', ['filter' => 'auth']);
+$routes->get('kader-konten/(:num)', 'KontenController::detailKaderKonten/$1', ['filter' => 'auth']);
+$routes->post('kader-konten', 'KontenController::buatKaderKonten', ['filter' => 'auth']);
+$routes->put('kader-konten/(:num)', 'KontenController::ubahKaderKonten/$1', ['filter' => 'auth']);
+$routes->delete('kader-konten/(:num)', 'KontenController::hapusKaderKonten/$1', ['filter' => 'auth']);
+$routes->get('kader_konten', 'KontenController::listKaderKonten', ['filter' => 'auth']);
+$routes->get('kader_konten/(:num)', 'KontenController::detailKaderKonten/$1', ['filter' => 'auth']);
+$routes->post('kader_konten', 'KontenController::buatKaderKonten', ['filter' => 'auth']);
+$routes->put('kader_konten/(:num)', 'KontenController::ubahKaderKonten/$1', ['filter' => 'auth']);
+$routes->delete('kader_konten/(:num)', 'KontenController::hapusKaderKonten/$1', ['filter' => 'auth']);
+$routes->get('bazis', 'KontenController::getBazis', ['filter' => 'auth']);
+$routes->put('bazis', 'KontenController::simpanBazis', ['filter' => 'auth']);
+$routes->post('bazis', 'KontenController::simpanBazis', ['filter' => 'auth']);
+$routes->get('galeri', 'KontenController::listAlbum', ['filter' => 'auth']);
+$routes->get('galeri/(:num)', 'KontenController::detailAlbum/$1', ['filter' => 'auth']);
+$routes->post('galeri', 'KontenController::buatAlbum', ['filter' => 'auth']);
+$routes->delete('galeri/(:num)', 'KontenController::hapusAlbum/$1', ['filter' => 'auth']);
+$routes->post('galeri/(:num)/foto', 'KontenController::tambahFoto/$1', ['filter' => 'auth']);
+$routes->post('galeri/foto/hapus', 'KontenController::hapusFoto', ['filter' => 'auth']);
+
+$routes->get('ronda/kalender', 'RondaController::kalender', ['filter' => 'auth']);
+$routes->get('ronda/malam-ini', 'RondaController::malamIni', ['filter' => 'auth']);
+$routes->get('ronda/terdekat', 'RondaController::malamTerdekat', ['filter' => 'auth']);
+$routes->get('ronda/malam/(:segment)', 'RondaController::detailMalam/$1', ['filter' => 'auth']);
+$routes->get('ronda/jadwal-tetap', 'RondaController::listJadwalTetap', ['filter' => 'auth']);
+$routes->post('ronda/jadwal-tetap', 'RondaController::simpanJadwalTetap', ['filter' => 'auth']);
+$routes->get('ronda/jadwal-khusus', 'RondaController::listJadwalKhusus', ['filter' => 'auth']);
+$routes->post('ronda/jadwal-khusus', 'RondaController::simpanJadwalKhusus', ['filter' => 'auth']);
+$routes->post('ronda/generate', 'RondaController::generateBulan', ['filter' => 'auth']);
+$routes->post('ronda/isi-otomatis', 'RondaController::isiOtomatis', ['filter' => 'auth']);
+$routes->post('ronda/buat-slot', 'RondaController::buatSlotKosong', ['filter' => 'auth']);
+$routes->get('ronda/template', 'RondaController::listTemplate', ['filter' => 'auth']);
+$routes->post('ronda/template', 'RondaController::buatTemplate', ['filter' => 'auth']);
+$routes->post('ronda/template/(:num)/keluarga', 'RondaController::simpanTemplateKeluarga/$1', ['filter' => 'auth']);
+$routes->put('ronda/template/(:num)/nama', 'RondaController::ubahNamaGroup/$1', ['filter' => 'auth']);
+$routes->post('ronda/template/(:num)/nama', 'RondaController::ubahNamaGroup/$1', ['filter' => 'auth']);
+$routes->post('ronda/absen-manual', 'RondaController::absenManual', ['filter' => 'auth']);
+$routes->post('ronda/absen', 'RondaController::absenWarga', ['filter' => 'auth']);
+$routes->post('ronda/malam/(:num)/ganti-keluarga', 'RondaController::gantiKeluarga/$1', ['filter' => 'auth']);
+$routes->post('ronda/absen/(:num)/batal', 'RondaController::batalkanAbsen/$1', ['filter' => 'auth']);
+$routes->post('ronda/terbitkan-denda', 'RondaController::terbitkanDenda', ['filter' => 'auth']);
+$routes->get('ronda/denda', 'RondaController::getDenda', ['filter' => 'auth']);
+$routes->put('ronda/denda', 'RondaController::setDenda', ['filter' => 'auth']);
+$routes->post('ronda/denda', 'RondaController::setDenda', ['filter' => 'auth']);
+$routes->post('ronda/hapus-jadwal', 'RondaController::hapusJadwal', ['filter' => 'auth']);
+
+
+// Reward / undian
+$routes->get('reward', 'RewardController::list', ['filter' => 'auth']);
+$routes->get('reward/(:num)', 'RewardController::detail/$1', ['filter' => 'auth']);
+$routes->post('reward', 'RewardController::buat', ['filter' => 'auth']);
+$routes->put('reward/(:num)', 'RewardController::ubah/$1', ['filter' => 'auth']);
+$routes->delete('reward/(:num)', 'RewardController::hapus/$1', ['filter' => 'auth']);
+$routes->post('reward/(:num)/undi', 'RewardController::undi/$1', ['filter' => 'auth']);
+$routes->post('reward/(:num)/reset-siklus', 'RewardController::resetSiklus/$1', ['filter' => 'auth']);
+$routes->post('reward/batch/(:num)/batal', 'RewardController::batalkanBatch/$1', ['filter' => 'auth']);
+$routes->post('reward/pemenang/(:num)/klaim', 'RewardController::klaim/$1', ['filter' => 'auth']);
+
+$routes->post('upload', 'UploadController::store');
+$routes->get('media/(:segment)/(:segment)', 'UploadController::media/$1/$2');
