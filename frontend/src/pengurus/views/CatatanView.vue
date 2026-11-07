@@ -19,7 +19,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in rows" :key="row.id">
+            <tr v-for="row in rows" :key="row.id" :data-row-id="row.id">
               <td class="col-no sticky-col muted-no">{{ row.no }}</td>
 
               <td class="col-tgl cell-pad" @click="openDate(row)">
@@ -216,19 +216,30 @@ async function loadPage(p) {
     page.value = Number(d.page) || 1
     totalPages.value = Math.max(1, Number(d.total_pages) || 1)
     mode.value = 'book'
+    await nextTick()
+    const sid = d.scroll_to_id
+    if (sid && p < 1) {
+      // hanya auto-scroll saat buka otomatis (page=0)
+      const el = document.querySelector(`[data-row-id="${sid}"]`)
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
   } finally {
     loading.value = false
   }
 }
 
 function prevPage() {
-  if (!canPrev.value) return
-  loadPage(page.value - 1)
+  const p = Number(page.value)
+  const tp = Number(totalPages.value)
+  if (mode.value !== 'book' || loading.value || p <= 1) return
+  loadPage(p - 1)
 }
 
 function nextPage() {
-  if (!canNext.value) return
-  loadPage(page.value + 1)
+  const p = Number(page.value)
+  const tp = Number(totalPages.value)
+  if (mode.value !== 'book' || loading.value || p >= tp) return
+  loadPage(p + 1)
 }
 
 async function openLastPage() {
