@@ -5,7 +5,11 @@
     <div class="catatan-body">
       <AppPageSpinner v-if="loading && !rows.length" class="!py-10" />
 
-      <div v-else class="table-scroll">
+      <div v-else-if="mode === 'search' && !loading && !rows.length" class="empty-search">
+        Tidak ada data untuk “{{ searchQ }}”
+      </div>
+
+      <div v-else ref="tableScroll" class="table-scroll">
         <table class="catatan-table">
           <thead>
             <tr>
@@ -18,7 +22,7 @@
               <th class="col-dok">Dokumentasi</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody :key="tableKey">
             <tr v-for="row in rows" :key="row.id" :data-row-id="row.id">
               <td class="col-no sticky-col muted-no">{{ row.no }}</td>
 
@@ -37,32 +41,40 @@
                 <div
                   class="cell-edit"
                   contenteditable="true"
+                  spellcheck="false"
                   @blur="onBlur($event, row, 'nama')"
                   @keydown.enter.prevent="blurEl($event)"
-                >{{ row.nama }}</div>
+                  v-text="row.nama"
+                ></div>
               </td>
               <td class="col-alamat">
                 <div
                   class="cell-edit"
                   contenteditable="true"
+                  spellcheck="false"
                   @blur="onBlur($event, row, 'alamat')"
                   @keydown.enter.prevent="blurEl($event)"
-                >{{ row.alamat }}</div>
+                  v-text="row.alamat"
+                ></div>
               </td>
               <td class="col-kep">
                 <div
                   class="cell-edit"
                   contenteditable="true"
+                  spellcheck="false"
                   @blur="onBlur($event, row, 'keperluan')"
                   @keydown.enter.prevent="blurEl($event)"
-                >{{ row.keperluan }}</div>
+                  v-text="row.keperluan"
+                ></div>
               </td>
               <td class="col-ket">
                 <div
                   class="cell-edit"
                   contenteditable="true"
+                  spellcheck="false"
                   @blur="onBlur($event, row, 'keterangan')"
-                >{{ row.keterangan }}</div>
+                  v-text="row.keterangan"
+                ></div>
               </td>
               <td class="col-dok">
                 <button
@@ -89,7 +101,7 @@
       </div>
     </div>
 
-    <!-- Floating pagination: fixed di halaman, tanpa Teleport -->
+    <!-- Floating pagination -->
     <div class="catatan-float-bar" role="navigation" aria-label="Navigasi halaman">
       <button
         type="button"
@@ -97,7 +109,6 @@
         :class="{ 'is-disabled': !canPrev }"
         aria-label="Halaman sebelumnya"
         @click.stop="onPrev"
-        
       >
         <ChevronLeft :size="20" />
       </button>
@@ -105,13 +116,15 @@
       <div class="search-pill">
         <input
           v-model="searchInput"
-          type="search"
+          type="text"
+          inputmode="search"
           placeholder="cari data"
           enterkeyhint="search"
+          autocomplete="off"
           @keydown.enter.prevent="doSearch"
         />
         <button
-          v-if="searchInput"
+          v-if="searchInput || mode === 'search'"
           type="button"
           class="clear-btn"
           aria-label="Hapus pencarian"
@@ -127,12 +140,14 @@
         :class="{ 'is-disabled': !canNext }"
         aria-label="Halaman berikutnya"
         @click.stop="onNext"
-        
       >
         <ChevronRight :size="20" />
       </button>
     </div>
 
+    <p v-if="mode === 'book'" class="page-indicator">
+      Halaman {{ page }} / {{ totalPages }}
+    </p>
 
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFile" />
 
@@ -177,12 +192,16 @@ const fileInput = ref(null)
 const fotoTargetId = ref(null)
 const dateRefs = {}
 const sentinel = ref(null)
+const tableScroll = ref(null)
 let observer = null
 let prevHtmlBg = ''
 let prevBodyBg = ''
+let navLock = false
 
 const canPrev = computed(() => mode.value === 'book' && Number(page.value) > 1)
 const canNext = computed(() => mode.value === 'book' && Number(page.value) < Number(totalPages.value))
+/** Paksa Vue remount tbody saat ganti halaman / mode (contenteditable tidak ikut patch). */
+const tableKey = computed(() => `${mode.value}-${page.value}-${rows.value.map((r) => r.id).join(',')}`)
 
 function setDateRef(id, el) {
   if (el) dateRefs[id] = el
@@ -199,6 +218,15 @@ function blurEl(e) {
   e.target.blur()
 }
 
+function scrollTableTop() {
+  nextTick(() => {
+    if (tableScroll.value) {
+      tableScroll.value.scrollLeft = 0
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
+}
+
 async function loadPage(p, { scrollToFocus = false } = {}) {
   const target = Math.max(0, Number(p) || 0)
   loading.value = true
@@ -209,12 +237,13 @@ async function loadPage(p, { scrollToFocus = false } = {}) {
       return
     }
     const d = res.data || {}
-    rows.value = Array.isArray(d.rows) ? d.rows : []
+    const nextRows = Array.isArray(d.rows) ? d.rows : []
+    // Ganti array baru supaya Vue pasti reaktif
+    rows.value = nextRows.slice()
     page.value = Math.max(1, Number(d.page) || 1)
     totalPages.value = Math.max(1, Number(d.total_pages) || 1)
     mode.value = 'book'
 
-    // Auto-scroll HANYA saat buka fokus, bukan saat chevron
     if (scrollToFocus && d.focus_row_id) {
       await nextTick()
       requestAnimationFrame(() => {
@@ -224,16 +253,13 @@ async function loadPage(p, { scrollToFocus = false } = {}) {
         }
       })
     } else {
-      // Chevron: ke atas tabel
-      await nextTick()
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollTableTop()
     }
   } finally {
     loading.value = false
   }
 }
 
-let navLock = false
 function onPrev() {
   if (navLock || loading.value || mode.value !== 'book') return
   const cur = Number(page.value) || 1
@@ -273,10 +299,12 @@ async function doSearch() {
     const res = await searchCatatan(q, { limit: 80, offset: 0 })
     if (!res.ok) {
       toastError(res.error || 'Gagal cari')
+      rows.value = []
       return
     }
-    rows.value = res.data?.rows || []
+    rows.value = Array.isArray(res.data?.rows) ? res.data.rows.slice() : []
     if (rows.value.length < 80) searchDone.value = true
+    scrollTableTop()
   } finally {
     loading.value = false
   }
@@ -289,7 +317,7 @@ async function loadMoreSearch() {
     const off = rows.value.length
     const res = await searchCatatan(searchQ.value, { limit: 80, offset: off })
     if (!res.ok) return
-    const more = res.data?.rows || []
+    const more = Array.isArray(res.data?.rows) ? res.data.rows : []
     if (!more.length) {
       searchDone.value = true
       return
@@ -304,7 +332,9 @@ async function loadMoreSearch() {
 function clearSearch() {
   searchInput.value = ''
   searchQ.value = ''
+  searchDone.value = false
   mode.value = 'book'
+  // Kembali ke halaman fokus tanpa full reload browser
   openFocusPage()
 }
 
@@ -455,6 +485,27 @@ onUnmounted(() => {
   background: var(--bg);
   background-color: var(--bg);
   min-height: 50vh;
+}
+
+.empty-search {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--mut);
+  font-size: 14px;
+}
+
+.page-indicator {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  z-index: 9998;
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mut);
+  pointer-events: none;
 }
 
 /* Full lebar layar; overflow hanya di tabel */
@@ -624,6 +675,13 @@ th.sticky-col {
   font-size: 14px;
   color: var(--text);
   min-height: 40px;
+}
+/* Hilangkan X native browser (type=search) — kita pakai tombol X sendiri */
+.catatan-float-bar .search-pill input::-webkit-search-cancel-button,
+.catatan-float-bar .search-pill input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 .catatan-float-bar .search-pill input:focus {
   outline: none;
