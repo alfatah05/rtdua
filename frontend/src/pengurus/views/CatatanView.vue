@@ -200,8 +200,9 @@ let navLock = false
 
 const canPrev = computed(() => mode.value === 'book' && Number(page.value) > 1)
 const canNext = computed(() => mode.value === 'book' && Number(page.value) < Number(totalPages.value))
-/** Paksa Vue remount tbody saat ganti halaman / mode (contenteditable tidak ikut patch). */
-const tableKey = computed(() => `${mode.value}-${page.value}-${rows.value.map((r) => r.id).join(',')}`)
+/** Remount tbody saat ganti halaman/mode supaya cell contenteditable ikut data baru. */
+const tableKey = computed(() => `${mode.value}-p${page.value}`)
+let suppressBlur = false
 
 function setDateRef(id, el) {
   if (el) dateRefs[id] = el
@@ -230,6 +231,7 @@ function scrollTableTop() {
 async function loadPage(p, { scrollToFocus = false } = {}) {
   const target = Math.max(0, Number(p) || 0)
   loading.value = true
+  suppressBlur = true
   try {
     const res = await listCatatan({ page: target, per_page: PER })
     if (!res.ok) {
@@ -238,14 +240,14 @@ async function loadPage(p, { scrollToFocus = false } = {}) {
     }
     const d = res.data || {}
     const nextRows = Array.isArray(d.rows) ? d.rows : []
-    // Ganti array baru supaya Vue pasti reaktif
-    rows.value = nextRows.slice()
+    // Set page dulu supaya indikator + tableKey sinkron
     page.value = Math.max(1, Number(d.page) || 1)
     totalPages.value = Math.max(1, Number(d.total_pages) || 1)
     mode.value = 'book'
+    rows.value = nextRows.slice()
 
+    await nextTick()
     if (scrollToFocus && d.focus_row_id) {
-      await nextTick()
       requestAnimationFrame(() => {
         const el = document.querySelector(`[data-row-id="${d.focus_row_id}"]`)
         if (el && typeof el.scrollIntoView === 'function') {
@@ -257,6 +259,9 @@ async function loadPage(p, { scrollToFocus = false } = {}) {
     }
   } finally {
     loading.value = false
+    // Biarkan cycle DOM selesai sebelum terima blur lagi
+    await nextTick()
+    setTimeout(() => { suppressBlur = false }, 50)
   }
 }
 
@@ -295,6 +300,7 @@ async function doSearch() {
   searchDone.value = false
   mode.value = 'search'
   loading.value = true
+  suppressBlur = true
   try {
     const res = await searchCatatan(q, { limit: 80, offset: 0 })
     if (!res.ok) {
@@ -304,9 +310,12 @@ async function doSearch() {
     }
     rows.value = Array.isArray(res.data?.rows) ? res.data.rows.slice() : []
     if (rows.value.length < 80) searchDone.value = true
+    await nextTick()
     scrollTableTop()
   } finally {
     loading.value = false
+    await nextTick()
+    setTimeout(() => { suppressBlur = false }, 50)
   }
 }
 
@@ -339,6 +348,9 @@ function clearSearch() {
 }
 
 async function onBlur(e, row, field) {
+  // Jangan simpan saat ganti halaman (cell contenteditable di-unmount → blur palsu)
+  if (suppressBlur) return
+  if (!e?.target || !e.target.isConnected) return
   const val = (e.target.innerText || '').replace(/\u00a0/g, ' ').trimEnd()
   const prev = String(row[field] ?? '')
   if (val === prev) return
