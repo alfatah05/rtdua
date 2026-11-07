@@ -37,12 +37,10 @@ class CatatanController extends Controller
     /** Ambil nilai query tanpa mengandalkan empty() — '0' harus tetap '0'. */
     private function queryParam(string $key)
     {
-        // 1) CI request
         $v = $this->request->getGet($key);
         if ($v !== null && $v !== '') {
             return is_array($v) ? (string) reset($v) : (string) $v;
         }
-        // 2) $_GET mentah
         if (array_key_exists($key, $_GET)) {
             $v = $_GET[$key];
             if (is_array($v)) {
@@ -50,7 +48,6 @@ class CatatanController extends Controller
             }
             return (string) $v;
         }
-        // 3) parse QUERY_STRING manual
         $qs = $_SERVER['QUERY_STRING'] ?? '';
         if ($qs !== '') {
             parse_str($qs, $parsed);
@@ -77,7 +74,8 @@ class CatatanController extends Controller
             $rawHal = $this->queryParam('page');
         }
 
-        // $hal = 0; // default: halaman fokus
+        // Default 0 = halaman fokus (baris terakhir terisi)
+        $hal = 0;
         if ($rawHal !== null && $rawHal !== '') {
             $hal = (int) $rawHal;
         }
