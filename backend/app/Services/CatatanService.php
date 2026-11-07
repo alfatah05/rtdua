@@ -3,11 +3,11 @@
 namespace App\Services;
 
 /**
- * Catatan pengurus — 50 baris/halaman.
- *
- * - Buka: fokus ke halaman baris terakhir yang terisi (semua kosong → halaman 1).
- * - Halaman berikutnya (50 kosong) hanya dibuat jika baris ke-45..50 terisi.
- * - Halaman kosong penuh di belakang dibuang (trim), sisa minimal 1 halaman.
+ * Catatan pengurus — model sederhana:
+ * - 50 baris per halaman (OFFSET/LIMIT)
+ * - total_pages = ceil(jumlah_baris / 50)
+ * - Halaman buffer kosong ditambah saat baris ke-45..50 terisi
+ * - Tidak menghapus baris saat edit field (hindari “hilang halaman”)
  */
 class CatatanService
 {
@@ -124,7 +124,7 @@ class CatatanService
         return (int) $this->db()->table('catatan_pengurus')->countAllResults();
     }
 
-    /** Minimal 1 halaman (50 baris), lengkapkan sisa halaman terakhir saja. */
+    /** Minimal 1 halaman penuh (50 baris). */
     private function ensureMinOneFullPage(int $perPage, ?int $userId): void
     {
         $total = $this->countAll();
@@ -136,71 +136,15 @@ class CatatanService
         }
     }
 
-    /**
-     * Buang halaman-halaman yang SELURUHNYA kosong di belakang,
-     * kecuali 1 halaman buffer jika baris terakhir terisi ada di posisi >= 45.
-     * Minimal tetap 1 halaman (50 baris).
-     */
-    public function trimEmptyTrailingPages(int $perPage = self::PER_PAGE, ?int $userId = null): void
+    /** Pastikan jumlah baris kelipatan perPage (lengkapi sisa halaman terakhir). */
+    private function ensureFullPages(int $perPage, ?int $userId): void
     {
-        $this->ensureTable();
-        $perPage = max(10, min(100, $perPage));
-        $db = $this->db();
-
         $this->ensureMinOneFullPage($perPage, $userId);
-
-        $all = $db->table('catatan_pengurus')->orderBy('id', 'ASC')->get()->getResultArray();
-        $n = count($all);
-        if ($n === 0) {
-            return;
-        }
-
-        // Cari ranking terakhir yang terisi (1-based), 0 jika semua kosong
-        $lastFilledRank = 0;
-        foreach ($all as $i => $r) {
-            if (!$this->isBlankRow($r)) {
-                $lastFilledRank = $i + 1;
-            }
-        }
-
-        if ($lastFilledRank === 0) {
-            // Semua kosong → cukup 1 halaman
-            $keep = $perPage;
-        } else {
-            $pageOfLast = (int) ceil($lastFilledRank / $perPage);
-            $posInPage = (($lastFilledRank - 1) % $perPage) + 1;
-            // Buffer halaman berikutnya hanya jika trigger (pos >= 45)
-            $pagesKeep = $pageOfLast + ($posInPage >= self::TRIGGER_ROW ? 1 : 0);
-            $keep = $pagesKeep * $perPage;
-        }
-
-        if ($keep < $perPage) {
-            $keep = $perPage;
-        }
-
-        // Hapus id setelah keep baris pertama
-        if ($n > $keep) {
-            $idsToDelete = [];
-            for ($i = $keep; $i < $n; $i++) {
-                $idsToDelete[] = (int) $all[$i]['id'];
-            }
-            if ($idsToDelete) {
-                $db->table('catatan_pengurus')->whereIn('id', $idsToDelete)->delete();
-            }
-        }
-
-        // Pastikan jumlah pas / minimal 1 halaman
         $total = $this->countAll();
-        if ($total < $perPage) {
-            for ($i = $total; $i < $perPage; $i++) {
+        $mod = $total % $perPage;
+        if ($mod !== 0) {
+            for ($i = 0; $i < $perPage - $mod; $i++) {
                 $this->insertBlank($userId);
-            }
-        } elseif ($total % $perPage !== 0) {
-            $mod = $total % $perPage;
-            if ($mod !== 0 && $total < $keep) {
-                for ($i = 0; $i < $perPage - $mod; $i++) {
-                    $this->insertBlank($userId);
-                }
             }
         }
     }
@@ -239,7 +183,7 @@ class CatatanService
     }
 
     /**
-     * @return array{rank:int, page:int, id:?int} rank 0 = semua kosong
+     * @return array{rank:int, page:int, id:?int}
      */
     public function lastFilledInfo(int $perPage = self::PER_PAGE): array
     {
@@ -280,26 +224,15 @@ class CatatanService
     {
         $perPage = max(10, min(100, $perPage));
         $this->ensureTable();
-
-        // Trim HANYA saat buka fokus (page < 1). Saat chevron (page >= 1)
-        // jangan hapus halaman buffer — biar navigasi tidak “balik sendiri”.
-        if ($page < 1) {
-            $this->trimEmptyTrailingPages($perPage, $userId);
-        } else {
-            $this->ensureMinOneFullPage($perPage, $userId);
-        }
+        $this->ensureFullPages($perPage, $userId);
 
         $db = $this->db();
         $total = $this->countAll();
-        if ($total < $perPage) {
-            $this->ensureMinOneFullPage($perPage, $userId);
-            $total = $this->countAll();
-        }
-
         $totalPages = max(1, (int) ceil($total / $perPage));
 
-        // page = 0 → halaman fokus (baris terakhir terisi / halaman 1 jika kosong)
         $focus = $this->lastFilledInfo($perPage);
+
+        // page = 0 → halaman fokus (baris terakhir terisi)
         if ($page < 1) {
             $page = (int) $focus['page'];
         }
@@ -317,8 +250,8 @@ class CatatanService
             ->get()
             ->getResultArray();
 
-        // Jaminan tampil 50 baris di halaman ini
-        if (count($rows) < $perPage && $page === $totalPages) {
+        // Jaminan 50 baris di halaman terakhir
+        if (count($rows) < $perPage) {
             $need = $perPage - count($rows);
             for ($i = 0; $i < $need; $i++) {
                 $this->insertBlank($userId);
@@ -349,7 +282,7 @@ class CatatanService
         ];
     }
 
-    public function search(string $q, int $limit = 200, int $offset = 0): array
+    public functionsearch(string $q, int $limit = 200, int $offset = 0): array
     {
         $this->ensureTable();
         $q = trim($q);
@@ -358,9 +291,8 @@ class CatatanService
         }
         $limit = max(1, min(300, $limit));
         $offset = max(0, $offset);
-        $db = $this->db();
 
-        $builder = $db->table('catatan_pengurus');
+        $builder = $this->db()->table('catatan_pengurus');
         $builder->groupStart()
             ->like('nama', $q)
             ->orLike('alamat', $q)
@@ -370,17 +302,6 @@ class CatatanService
             $builder->orWhere('id', (int) $q);
         }
         $builder->groupEnd();
-
-        // Hanya baris yang tidak sepenuhnya kosong
-        $builder->groupStart()
-            ->where('tanggal IS NOT NULL', null, false)
-            ->orWhere('nama !=', '')
-            ->orWhere('alamat !=', '')
-            ->orWhere('keperluan !=', '')
-            ->orWhere('keterangan !=', '')
-            ->orWhere('dokumentasi IS NOT NULL', null, false)
-            ->groupEnd();
-
         $builder->orderBy('id', 'ASC');
         $builder->limit($limit, $offset);
         $rows = $builder->get()->getResultArray();
@@ -436,12 +357,10 @@ class CatatanService
         ]);
         $row = $db->table('catatan_pengurus')->where('id', $id)->get()->getRowArray();
 
+        // Hanya tambah halaman buffer bila perlu — JANGAN hapus baris
         if ($row && !$this->isBlankRow($row)) {
             $this->ensureNextPageAfterFill($id, $userId, self::PER_PAGE);
         }
-
-        // Rapikan halaman kosong berlebih setelah edit
-        $this->trimEmptyTrailingPages(self::PER_PAGE, $userId);
 
         $mapped = $this->mapRow($row);
         $total = $this->countAll();
