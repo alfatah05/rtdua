@@ -29,7 +29,6 @@ class CatatanController extends Controller
 
     private function noStore($response)
     {
-        // Cegah browser/proxy/SW menyajikan response halaman lama
         return $response
             ->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->setHeader('Pragma', 'no-cache');
@@ -41,12 +40,33 @@ class CatatanController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $pageParam = $this->request->getGet('page');
-        $page = ($pageParam === null || $pageParam === '') ? 0 : (int) $pageParam;
-        $per  = (int) ($this->request->getGet('per_page') ?? 50);
+
+        // Jangan pakai nama 'page' — di beberapa setup CI/Pager bisa tertimpa jadi 1.
+        // Terima 'hal' (utama) dan fallback 'page'.
+        $raw = $this->request->getGet('hal');
+        if ($raw === null || $raw === '') {
+            $raw = $this->request->getGet('page');
+        }
+        if ($raw === null || $raw === '') {
+            $hal = 0; // 0 = fokus ke baris terakhir terisi
+        } else {
+            $hal = (int) $raw;
+        }
+
+        $per = (int) ($this->request->getGet('per_page') ?? 50);
+        if ($per < 10) {
+            $per = 10;
+        }
+        if ($per > 100) {
+            $per = 100;
+        }
+
         $uid = isset($user['id']) ? (int) $user['id'] : null;
         try {
-            $data = (new CatatanService())->listPage($page, $per, $uid);
+            $data = (new CatatanService())->listPage($hal, $per, $uid);
+            // debug sementara — pastikan request terbaca
+            $data['request_hal'] = $hal;
+            $data['request_raw'] = $raw;
             return $this->noStore(ApiResponse::ok($data));
         } catch (\Throwable $e) {
             log_message('error', 'Catatan listPage: {msg}', ['msg' => $e->getMessage()]);
