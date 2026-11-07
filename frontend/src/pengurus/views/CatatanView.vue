@@ -110,7 +110,7 @@
         aria-label="Halaman sebelumnya"
         @click.stop="onPrev"
       >
-        <ChevronLeft :size="20" />
+        <ChevronLeft :size="20" class="chev-l" />
       </button>
 
       <div class="search-pill">
@@ -141,7 +141,7 @@
         aria-label="Halaman berikutnya"
         @click.stop="onNext"
       >
-        <ChevronRight :size="20" />
+        <ChevronRight :size="20" class="chev-r" />
       </button>
     </div>
 
@@ -223,6 +223,7 @@ function scrollTableTop() {
   nextTick(() => {
     if (tableScroll.value) {
       tableScroll.value.scrollLeft = 0
+      tableScroll.value.scrollTop = 0
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   })
@@ -520,13 +521,15 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-/* Full lebar layar; overflow hanya di tabel */
+/* Full lebar; scroll di dalam supaya thead sticky bisa nempel */
 .table-scroll {
   width: 100vw;
   max-width: 100vw;
   margin-left: calc(50% - 50vw);
-  overflow-x: auto;
-  overflow-y: visible;
+  /* tinggi sisa layar: header app ~52px + float bar ~88px */
+  max-height: calc(100dvh - 52px - 88px - env(safe-area-inset-bottom, 0px));
+  max-height: calc(100svh - 52px - 88px - env(safe-area-inset-bottom, 0px));
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--bg);
   background-color: var(--bg);
@@ -558,6 +561,7 @@ onUnmounted(() => {
   background: var(--card2);
   color: var(--mut);
   white-space: nowrap;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 14%, transparent);
 }
 .col-no { width: 44px; min-width: 44px; max-width: 44px; text-align: center !important; }
 .col-tgl { width: 108px; min-width: 108px; max-width: 108px; }
@@ -574,7 +578,10 @@ onUnmounted(() => {
   background: var(--bg);
 }
 th.sticky-col {
-  z-index: 3;
+  /* pojok: sticky top + left */
+  z-index: 4;
+  top: 0;
+  left: 0;
   background: var(--card2);
 }
 .muted-no {
@@ -662,8 +669,18 @@ th.sticky-col {
 }
 .catatan-float-bar .circle-btn.is-disabled,
 .catatan-float-bar .circle-btn:disabled {
-  opacity: 0.35;
+  opacity: 1;
+  color: var(--mut);
   cursor: default;
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--text) 8%, transparent);
+}
+/* Optical center: chevron lucide agak melenceng di lingkaran */
+.catatan-float-bar .circle-btn .chev-l {
+  transform: translateX(2px);
+}
+.catatan-float-bar .circle-btn .chev-r {
+  transform: translateX(-2px);
 }
 .catatan-float-bar .search-pill {
   flex: 1;
