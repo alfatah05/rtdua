@@ -228,7 +228,6 @@ function scrollTableTop() {
   })
 }
 
-/** Scroll baris ke tengah area tabel saja (bukan window) — jaga sticky thead. */
 function scrollRowInTable(rowId) {
   const box = tableScroll.value
   if (!box || rowId == null) return
@@ -487,18 +486,24 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Full layar — lepas dari padding MainLayout (px-4 / pb) */
 .catatan-page {
-  height: 100dvh;
-  height: 100svh;
-  max-height: 100dvh;
-  max-height: 100svh;
-  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--bg);
   background-color: var(--bg);
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+}
+
+/* AppBackHeader sudah pakai -mx-4; parent full-bleed → netralkan */
+.catatan-page :deep(header) {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  flex-shrink: 0;
 }
 
 .catatan-body {
@@ -534,11 +539,11 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-/* Satu-satunya area scroll — thead sticky relatif ke sini */
+/* Tabel full lebar + tinggi sisa layar; float bar melayang di atas */
 .table-scroll {
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: calc(50% - 50vw);
+  width: 100%;
+  max-width: none;
+  margin: 0;
   flex: 1;
   min-height: 0;
   overflow: auto;
