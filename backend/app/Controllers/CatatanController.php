@@ -27,6 +27,14 @@ class CatatanController extends Controller
         return null;
     }
 
+    private function noStore($response)
+    {
+        // Cegah browser/proxy/SW menyajikan response halaman lama
+        return $response
+            ->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->setHeader('Pragma', 'no-cache');
+    }
+
     public function index()
     {
         $user = $this->requirePengurus();
@@ -39,7 +47,7 @@ class CatatanController extends Controller
         $uid = isset($user['id']) ? (int) $user['id'] : null;
         try {
             $data = (new CatatanService())->listPage($page, $per, $uid);
-            return ApiResponse::ok($data);
+            return $this->noStore(ApiResponse::ok($data));
         } catch (\Throwable $e) {
             log_message('error', 'Catatan listPage: {msg}', ['msg' => $e->getMessage()]);
             return ApiResponse::fail('Gagal memuat catatan: ' . $e->getMessage(), 500);
@@ -57,7 +65,7 @@ class CatatanController extends Controller
         $offset = (int) ($this->request->getGet('offset') ?? 0);
         try {
             $rows = (new CatatanService())->search($q, $limit, $offset);
-            return ApiResponse::ok(['rows' => $rows, 'q' => $q]);
+            return $this->noStore(ApiResponse::ok(['rows' => $rows, 'q' => $q]));
         } catch (\Throwable $e) {
             log_message('error', 'Catatan search: {msg}', ['msg' => $e->getMessage()]);
             return ApiResponse::fail('Gagal cari catatan: ' . $e->getMessage(), 500);
