@@ -34,6 +34,37 @@ class CatatanController extends Controller
             ->setHeader('Pragma', 'no-cache');
     }
 
+    /** Ambil nilai query tanpa mengandalkan empty() — '0' harus tetap '0'. */
+    private function queryParam(string $key)
+    {
+        // 1) CI request
+        $v = $this->request->getGet($key);
+        if ($v !== null && $v !== '') {
+            return is_array($v) ? (string) reset($v) : (string) $v;
+        }
+        // 2) $_GET mentah
+        if (array_key_exists($key, $_GET)) {
+            $v = $_GET[$key];
+            if (is_array($v)) {
+                $v = reset($v);
+            }
+            return (string) $v;
+        }
+        // 3) parse QUERY_STRING manual
+        $qs = $_SERVER['QUERY_STRING'] ?? '';
+        if ($qs !== '') {
+            parse_str($qs, $parsed);
+            if (array_key_exists($key, $parsed)) {
+                $v = $parsed[$key];
+                if (is_array($v)) {
+                    $v = reset($v);
+                }
+                return (string) $v;
+            }
+        }
+        return null;
+    }
+
     public function index()
     {
         $user = $this->requirePengurus();
@@ -41,19 +72,18 @@ class CatatanController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
 
-        // Jangan pakai nama 'page' — di beberapa setup CI/Pager bisa tertimpa jadi 1.
-        // Terima 'hal' (utama) dan fallback 'page'.
-        $raw = $this->request->getGet('hal');
-        if ($raw === null || $raw === '') {
-            $raw = $this->request->getGet('page');
-        }
-        if ($raw === null || $raw === '') {
-            $hal = 0; // 0 = fokus ke baris terakhir terisi
-        } else {
-            $hal = (int) $raw;
+        $rawHal = $this->queryParam('hal');
+        if ($rawHal === null) {
+            $rawHal = $this->queryParam('page');
         }
 
-        $per = (int) ($this->request->getGet('per_page') ?? 50);
+        // $hal = 0; // default: halaman fokus
+        if ($rawHal !== null && $rawHal !== '') {
+            $hal = (int) $rawHal;
+        }
+
+        $rawPer = $this->queryParam('per_page');
+        $per = ($rawPer !== null && $rawPer !== '') ? (int) $rawPer : 50;
         if ($per < 10) {
             $per = 10;
         }
@@ -64,9 +94,9 @@ class CatatanController extends Controller
         $uid = isset($user['id']) ? (int) $user['id'] : null;
         try {
             $data = (new CatatanService())->listPage($hal, $per, $uid);
-            // debug sementara — pastikan request terbaca
             $data['request_hal'] = $hal;
-            $data['request_raw'] = $raw;
+            $data['request_raw'] = $rawHal;
+            $data['debug_qs'] = $_SERVER['QUERY_STRING'] ?? '';
             return $this->noStore(ApiResponse::ok($data));
         } catch (\Throwable $e) {
             log_message('error', 'Catatan listPage: {msg}', ['msg' => $e->getMessage()]);
@@ -80,9 +110,9 @@ class CatatanController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $q = (string) ($this->request->getGet('q') ?? '');
-        $limit = (int) ($this->request->getGet('limit') ?? 80);
-        $offset = (int) ($this->request->getGet('offset') ?? 0);
+        $q = (string) ($this->queryParam('q') ?? '');
+        $limit = (int) ($this->queryParam('limit') ?? 80);
+        $offset = (int) ($this->queryParam('offset') ?? 0);
         try {
             $rows = (new CatatanService())->search($q, $limit, $offset);
             return $this->noStore(ApiResponse::ok(['rows' => $rows, 'q' => $q]));
