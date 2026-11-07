@@ -21,12 +21,15 @@ export async function listCatatan({ page, per_page = 50 } = {}) {
 
 export async function searchCatatan(q, { limit = 80, offset = 0 } = {}) {
   try {
-    const qs = new URLSearchParams({
-      q: String(q || ''),
-      limit: String(limit),
-      offset: String(offset),
+    // POST body — query string di hosting ini sering tidak sampai ke PHP
+    const res = await api('/catatan/search', {
+      method: 'POST',
+      body: {
+        q: String(q || ''),
+        limit: Number(limit) || 80,
+        offset: Number(offset) || 0,
+      },
     })
-    const res = await api('/catatan/search?' + qs.toString())
     return { ok: true, data: res.data }
   } catch (e) {
     return { ok: false, error: e.message }
