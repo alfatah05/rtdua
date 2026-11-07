@@ -37,8 +37,13 @@ class CatatanController extends Controller
         $page = ($pageParam === null || $pageParam === '') ? 0 : (int) $pageParam;
         $per  = (int) ($this->request->getGet('per_page') ?? 50);
         $uid = isset($user['id']) ? (int) $user['id'] : null;
-        $data = (new CatatanService())->listPage($page, $per, $uid);
-        return ApiResponse::ok($data);
+        try {
+            $data = (new CatatanService())->listPage($page, $per, $uid);
+            return ApiResponse::ok($data);
+        } catch (\Throwable $e) {
+            log_message('error', 'Catatan listPage: {msg}', ['msg' => $e->getMessage()]);
+            return ApiResponse::fail('Gagal memuat catatan: ' . $e->getMessage(), 500);
+        }
     }
 
     public function search()
@@ -50,8 +55,13 @@ class CatatanController extends Controller
         $q = (string) ($this->request->getGet('q') ?? '');
         $limit = (int) ($this->request->getGet('limit') ?? 80);
         $offset = (int) ($this->request->getGet('offset') ?? 0);
-        $rows = (new CatatanService())->search($q, $limit, $offset);
-        return ApiResponse::ok(['rows' => $rows, 'q' => $q]);
+        try {
+            $rows = (new CatatanService())->search($q, $limit, $offset);
+            return ApiResponse::ok(['rows' => $rows, 'q' => $q]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Catatan search: {msg}', ['msg' => $e->getMessage()]);
+            return ApiResponse::fail('Gagal cari catatan: ' . $e->getMessage(), 500);
+        }
     }
 
     public function create()
@@ -60,8 +70,12 @@ class CatatanController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $row = (new CatatanService())->createEmpty(isset($user['id']) ? (int) $user['id'] : null);
-        return ApiResponse::ok($row, 'Baris ditambah');
+        try {
+            $row = (new CatatanService())->createEmpty(isset($user['id']) ? (int) $user['id'] : null);
+            return ApiResponse::ok($row, 'Baris ditambah');
+        } catch (\Throwable $e) {
+            return ApiResponse::fail('Gagal tambah baris: ' . $e->getMessage(), 500);
+        }
     }
 
     public function patch($id)
@@ -76,16 +90,19 @@ class CatatanController extends Controller
         }
         $field = (string) ($json['field'] ?? '');
         $value = $json['value'] ?? '';
-        $res = (new CatatanService())->updateField(
-            (int) $id,
-            $field,
-            $value,
-            isset($user['id']) ? (int) $user['id'] : null
-        );
+        try {
+            $res = (new CatatanService())->updateField(
+                (int) $id,
+                $field,
+                $value,
+                isset($user['id']) ? (int) $user['id'] : null
+            );
+        } catch (\Throwable $e) {
+            return ApiResponse::fail('Gagal simpan: ' . $e->getMessage(), 500);
+        }
         if (empty($res['ok'])) {
             return ApiResponse::fail($res['message'] ?? 'Gagal', 422);
         }
-        // sertakan total_pages agar chevron kanan bisa nyala tanpa reload
         $payload = $res['data'];
         if (is_array($payload) && !empty($res['meta'])) {
             $payload = array_merge($payload, ['_meta' => $res['meta']]);
@@ -99,7 +116,11 @@ class CatatanController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $res = (new CatatanService())->deleteRow((int) $id);
+        try {
+            $res = (new CatatanService())->deleteRow((int) $id);
+        } catch (\Throwable $e) {
+            return ApiResponse::fail('Gagal hapus: ' . $e->getMessage(), 500);
+        }
         if (empty($res['ok'])) {
             return ApiResponse::fail($res['message'] ?? 'Gagal', 422);
         }
