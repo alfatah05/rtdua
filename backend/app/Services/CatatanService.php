@@ -132,6 +132,15 @@ class CatatanService
         return (int) ($row['c'] ?? 0);
     }
 
+    /** Ambil baris per halaman — SQL LIMIT/OFFSET eksplisit (hindari bug QB). */
+    private function fetchPageRows($perPage, $offset)
+    {
+        $perPage = max(1, (int) $perPage);
+        $offset  = max(0, (int) $offset);
+        $sql = 'SELECT * FROM catatan_pengurus ORDER BY id ASC LIMIT ' . $perPage . ' OFFSET ' . $offset;
+        return $this->db()->query($sql)->getResultArray();
+    }
+
     private function ensureMinRows($perPage, $userId)
     {
         $total = $this->countAll();
@@ -150,7 +159,7 @@ class CatatanService
         $perPage = max(10, min(100, (int) $perPage));
         $db = $this->db();
 
-        $ids = $db->table('catatan_pengurus')->select('id')->orderBy('id', 'ASC')->get()->getResultArray();
+        $ids = $db->query('SELECT id FROM catatan_pengurus ORDER BY id ASC')->getResultArray();
         $rank = 0;
         foreach ($ids as $i => $row) {
             if ((int) $row['id'] === (int) $id) {
@@ -179,7 +188,7 @@ class CatatanService
     public function lastFilledInfo($perPage = self::PER_PAGE)
     {
         $this->ensureTable();
-        $all = $this->db()->table('catatan_pengurus')->orderBy('id', 'ASC')->get()->getResultArray();
+        $all = $this->db()->query('SELECT * FROM catatan_pengurus ORDER BY id ASC')->getResultArray();
         $lastRank = 0;
         $lastId = null;
         foreach ($all as $i => $r) {
@@ -235,13 +244,9 @@ class CatatanService
         }
 
         $offset = ($page - 1) * $perPage;
-        $rows = $this->db()->table('catatan_pengurus')
-            ->orderBy('id', 'ASC')
-            ->limit($perPage, $offset)
-            ->get()
-            ->getResultArray();
+        $rows = $this->fetchPageRows($perPage, $offset);
 
-        // Lengkapi sisa baris halaman terakhir saja (maks 50)
+        // Lengkapi sisa baris halaman terakhir saja (maks perPage)
         if (count($rows) < $perPage) {
             $need = $perPage - count($rows);
             for ($i = 0; $i < $need; $i++) {
@@ -249,12 +254,12 @@ class CatatanService
             }
             $total = $this->countAll();
             $totalPages = max(1, (int) ceil($total / $perPage));
+            // jaga page tetap valid setelah insert
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
             $offset = ($page - 1) * $perPage;
-            $rows = $this->db()->table('catatan_pengurus')
-                ->orderBy('id', 'ASC')
-                ->limit($perPage, $offset)
-                ->get()
-                ->getResultArray();
+            $rows = $this->fetchPageRows($perPage, $offset);
         }
 
         $mapped = [];
@@ -266,6 +271,7 @@ class CatatanService
             'rows'         => $mapped,
             'page'         => $page,
             'per_page'     => $perPage,
+            'offset'       => $offset,
             'total'        => $total,
             'total_pages'  => $totalPages,
             'focus_row_id' => $focus['id'],
@@ -283,6 +289,7 @@ class CatatanService
         $limit = max(1, min(300, (int) $limit));
         $offset = max(0, (int) $offset);
 
+        // Query Builder like + limit/offset terpisah
         $builder = $this->db()->table('catatan_pengurus');
         $builder->groupStart()
             ->like('nama', $q)
@@ -294,7 +301,10 @@ class CatatanService
         }
         $builder->groupEnd();
         $builder->orderBy('id', 'ASC');
-        $builder->limit($limit, $offset);
+        $builder->limit($limit);
+        if ($offset > 0) {
+            $builder->offset($offset);
+        }
         $rows = $builder->get()->getResultArray();
 
         $out = [];
