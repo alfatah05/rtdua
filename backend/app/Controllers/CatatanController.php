@@ -85,7 +85,12 @@ class CatatanController extends Controller
         if (empty($res['ok'])) {
             return ApiResponse::fail($res['message'] ?? 'Gagal', 422);
         }
-        return ApiResponse::ok($res['data'], 'Tersimpan');
+        // sertakan total_pages agar chevron kanan bisa nyala tanpa reload
+        $payload = $res['data'];
+        if (is_array($payload) && !empty($res['meta'])) {
+            $payload = array_merge($payload, ['_meta' => $res['meta']]);
+        }
+        return ApiResponse::ok($payload, 'Tersimpan');
     }
 
     public function delete($id)

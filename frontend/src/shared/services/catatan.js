@@ -41,7 +41,20 @@ export async function patchCatatanField(id, field, value) {
       method: 'PATCH',
       body: { field, value },
     })
-    return { ok: true, data: res.data }
+    const raw = res.data
+    const meta = (raw && raw._meta) || res.meta || {}
+    const total_pages = meta.total_pages ?? null
+    let row = raw
+    if (row && typeof row === 'object' && row._meta) {
+      row = { ...row }
+      delete row._meta
+    }
+    return {
+      ok: true,
+      data: row,
+      total_pages,
+      total: meta.total ?? null,
+    }
   } catch (e) {
     return { ok: false, error: e.message }
   }

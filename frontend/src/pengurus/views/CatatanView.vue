@@ -89,15 +89,15 @@
       </div>
     </div>
 
-    <!-- Floating di body: selalu di bawah layar HP, tidak ikut scroll -->
     <Teleport to="body">
       <div class="catatan-float-bar">
         <button
           type="button"
           class="circle-btn"
-          :disabled="mode === 'search' || page <= 1 || loading"
+          :class="{ 'is-disabled': !canPrev }"
+          :disabled="!canPrev"
           aria-label="Halaman sebelumnya"
-          @click="goPage(page - 1)"
+          @click.prevent="prevPage"
         >
           <ChevronLeft :size="20" />
         </button>
@@ -124,9 +124,10 @@
         <button
           type="button"
           class="circle-btn"
-          :disabled="mode === 'search' || page >= totalPages || loading"
+          :class="{ 'is-disabled': !canNext }"
+          :disabled="!canNext"
           aria-label="Halaman berikutnya"
-          @click="goPage(page + 1)"
+          @click.prevent="nextPage"
         >
           <ChevronRight :size="20" />
         </button>
@@ -150,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
@@ -177,6 +178,15 @@ const fotoTargetId = ref(null)
 const dateRefs = {}
 const sentinel = ref(null)
 let observer = null
+let prevHtmlBg = ''
+let prevBodyBg = ''
+
+const canPrev = computed(
+  () => mode.value === 'book' && !loading.value && page.value > 1,
+)
+const canNext = computed(
+  () => mode.value === 'book' && !loading.value && page.value < totalPages.value,
+)
 
 function setDateRef(id, el) {
   if (el) dateRefs[id] = el
@@ -195,26 +205,34 @@ function blurEl(e) {
 
 async function loadPage(p) {
   loading.value = true
-  const res = await listCatatan({ page: p, per_page: PER })
-  loading.value = false
-  if (!res.ok) {
-    toastError(res.error || 'Gagal memuat')
-    return
+  try {
+    const res = await listCatatan({ page: p, per_page: PER })
+    if (!res.ok) {
+      toastError(res.error || 'Gagal memuat')
+      return
+    }
+    const d = res.data || {}
+    rows.value = d.rows || []
+    page.value = Number(d.page) || 1
+    totalPages.value = Math.max(1, Number(d.total_pages) || 1)
+    mode.value = 'book'
+  } finally {
+    loading.value = false
   }
-  const d = res.data || {}
-  rows.value = d.rows || []
-  page.value = d.page || 1
-  totalPages.value = d.total_pages || 1
-  mode.value = 'book'
 }
 
-async function goPage(p) {
-  if (mode.value === 'search') return
-  if (p < 1 || p > totalPages.value) return
-  await loadPage(p)
+function prevPage() {
+  if (!canPrev.value) return
+  loadPage(page.value - 1)
+}
+
+function nextPage() {
+  if (!canNext.value) return
+  loadPage(page.value + 1)
 }
 
 async function openLastPage() {
+  // page=0 → backend halaman terakhir
   await loadPage(0)
 }
 
@@ -228,30 +246,36 @@ async function doSearch() {
   searchDone.value = false
   mode.value = 'search'
   loading.value = true
-  const res = await searchCatatan(q, { limit: 80, offset: 0 })
-  loading.value = false
-  if (!res.ok) {
-    toastError(res.error || 'Gagal cari')
-    return
+  try {
+    const res = await searchCatatan(q, { limit: 80, offset: 0 })
+    if (!res.ok) {
+      toastError(res.error || 'Gagal cari')
+      return
+    }
+    rows.value = res.data?.rows || []
+    if (rows.value.length < 80) searchDone.value = true
+  } finally {
+    loading.value = false
   }
-  rows.value = res.data?.rows || []
-  if (rows.value.length < 80) searchDone.value = true
 }
 
 async function loadMoreSearch() {
   if (mode.value !== 'search' || loading.value || searchDone.value) return
   loading.value = true
-  const off = rows.value.length
-  const res = await searchCatatan(searchQ.value, { limit: 80, offset: off })
-  loading.value = false
-  if (!res.ok) return
-  const more = res.data?.rows || []
-  if (!more.length) {
-    searchDone.value = true
-    return
+  try {
+    const off = rows.value.length
+    const res = await searchCatatan(searchQ.value, { limit: 80, offset: off })
+    if (!res.ok) return
+    const more = res.data?.rows || []
+    if (!more.length) {
+      searchDone.value = true
+      return
+    }
+    rows.value = rows.value.concat(more)
+    if (more.length < 80) searchDone.value = true
+  } finally {
+    loading.value = false
   }
-  rows.value = rows.value.concat(more)
-  if (more.length < 80) searchDone.value = true
 }
 
 function clearSearch() {
@@ -271,6 +295,17 @@ async function onBlur(e, row, field) {
     toastError(res.error || 'Gagal simpan')
     e.target.innerText = prev
     row[field] = prev
+    return
+  }
+  if (res.data && typeof res.data === 'object') {
+    const { _meta, ...rest } = res.data
+    Object.assign(row, rest)
+    if (_meta?.total_pages != null) {
+      totalPages.value = Math.max(1, Number(_meta.total_pages))
+    }
+  }
+  if (res.total_pages != null) {
+    totalPages.value = Math.max(1, Number(res.total_pages))
   }
 }
 
@@ -293,6 +328,13 @@ async function onDateChange(row, e) {
   if (!res.ok) {
     toastError(res.error || 'Gagal simpan tanggal')
     row.tanggal = prev
+    return
+  }
+  if (res.total_pages != null) {
+    totalPages.value = Math.max(1, Number(res.total_pages))
+  }
+  if (res.data?._meta?.total_pages != null) {
+    totalPages.value = Math.max(1, Number(res.data._meta.total_pages))
   }
 }
 
@@ -328,11 +370,35 @@ async function onFile(e) {
   }
   const row = rows.value.find((r) => r.id === id)
   if (row) row.dokumentasi = path
+  if (res.total_pages != null) {
+    totalPages.value = Math.max(1, Number(res.total_pages))
+  }
+  if (res.data?._meta?.total_pages != null) {
+    totalPages.value = Math.max(1, Number(res.data._meta.total_pages))
+  }
   previewFoto.value = path
   success('Foto tersimpan')
 }
 
+function applyPageBg() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#fff'
+  prevHtmlBg = document.documentElement.style.background
+  prevBodyBg = document.body.style.background
+  document.documentElement.style.background = bg
+  document.documentElement.style.backgroundColor = bg
+  document.body.style.background = bg
+  document.body.style.backgroundColor = bg
+}
+
+function restorePageBg() {
+  document.documentElement.style.background = prevHtmlBg
+  document.documentElement.style.backgroundColor = prevHtmlBg
+  document.body.style.background = prevBodyBg
+  document.body.style.backgroundColor = prevBodyBg
+}
+
 onMounted(async () => {
+  applyPageBg()
   await openLastPage()
   observer = new IntersectionObserver(
     (entries) => {
@@ -346,20 +412,29 @@ onMounted(async () => {
 
 onUnmounted(() => {
   observer?.disconnect()
+  restorePageBg()
 })
 </script>
 
 <style scoped>
 .catatan-page {
-  /* layout parent tetap px-4 → header AppBackHeader (-mx-4) normal */
+  min-height: 100dvh;
+  min-height: 100svh;
+  background: var(--bg);
+  background-color: var(--bg);
   padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  overscroll-behavior-y: none;
 }
 
-/* Tabel full lebar layar (keluar dari padding), halaman tidak ikut geser */
 .catatan-body {
   padding: 0;
   margin: 0;
+  background: var(--bg);
+  background-color: var(--bg);
+  min-height: 50vh;
 }
+
+/* Full lebar layar; overflow hanya di tabel */
 .table-scroll {
   width: 100vw;
   max-width: 100vw;
@@ -367,6 +442,8 @@ onUnmounted(() => {
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+  background-color: var(--bg);
 }
 .catatan-table {
   border-collapse: collapse;
@@ -375,6 +452,7 @@ onUnmounted(() => {
   min-width: 100%;
   font-size: 13px;
   margin: 0;
+  background: var(--bg);
 }
 .catatan-table th,
 .catatan-table td {
@@ -467,7 +545,6 @@ th.sticky-col {
 .hidden { display: none; }
 </style>
 
-<!-- Float bar & overlay di body: unscoped supaya Teleport dapat style -->
 <style>
 .catatan-float-bar {
   position: fixed;
@@ -498,9 +575,12 @@ th.sticky-col {
   place-items: center;
   box-shadow: var(--sh);
   flex-shrink: 0;
+  cursor: pointer;
 }
+.catatan-float-bar .circle-btn.is-disabled,
 .catatan-float-bar .circle-btn:disabled {
   opacity: 0.35;
+  cursor: default;
 }
 .catatan-float-bar .search-pill {
   flex: 1;

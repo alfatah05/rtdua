@@ -3,11 +3,20 @@
 namespace App\Services;
 
 /**
- * Catatan pengurus standalone (bukan keuangan).
- * Tabel + baris kosong (grid Excel) dibuat otomatis.
+ * Catatan pengurus — grid Excel, 50 baris/halaman.
+ *
+ * Aturan:
+ * - Jumlah baris selalu kelipatan 50 (halaman penuh).
+ * - Saat baris ke-45..50 di suatu halaman terisi → halaman berikutnya
+ *   (50 baris kosong) otomatis dibuat.
  */
 class CatatanService
 {
+    public const PER_PAGE = 50;
+
+    /** Posisi di halaman (1–50) yang memicu halaman baru */
+    public const TRIGGER_ROW = 45;
+
     private bool $ensured = false;
 
     private function db()
@@ -113,37 +122,77 @@ class CatatanService
         ]);
     }
 
+    private function countAll(): int
+    {
+        return (int) $this->db()->table('catatan_pengurus')->countAllResults();
+    }
+
+    /** Lengkapi agar total selalu kelipatan $perPage (tiap halaman 50 baris). */
+    private function padToFullPages(int $perPage, ?int $userId): void
+    {
+        $total = $this->countAll();
+        if ($total < $perPage) {
+            $need = $perPage - $total;
+            for ($i = 0; $i < $need; $i++) {
+                $this->insertBlank($userId);
+            }
+            return;
+        }
+        $mod = $total % $perPage;
+        if ($mod !== 0) {
+            $need = $perPage - $mod;
+            for ($i = 0; $i < $need; $i++) {
+                $this->insertBlank($userId);
+            }
+        }
+    }
+
     /**
-     * Pastikan grid seperti Excel: minimal $minTotal baris,
-     * dan selalu ada ~$trailingEmpty baris kosong di akhir.
+     * Pastikan ada halaman penuh 50 baris SETELAH halaman tempat $id berada,
+     * jika posisi baris di halaman >= TRIGGER_ROW (45).
      */
-    public function ensureGrid(int $minTotal = 50, int $trailingEmpty = 50, ?int $userId = null): void
+    public function ensureNextPageAfterFill(int $id, ?int $userId = null, int $perPage = self::PER_PAGE): void
     {
         $this->ensureTable();
+        $perPage = max(10, min(100, $perPage));
         $db = $this->db();
-        $total = (int) $db->table('catatan_pengurus')->countAllResults();
-        while ($total < $minTotal) {
-            $this->insertBlank($userId);
-            $total++;
-        }
 
-        $tail = $db->table('catatan_pengurus')
-            ->orderBy('id', 'DESC')
-            ->limit(max(50, $trailingEmpty))
-            ->get()
-            ->getResultArray();
-        $emptyAtEnd = 0;
-        foreach ($tail as $r) {
-            if ($this->isBlankRow($r)) {
-                $emptyAtEnd++;
-            } else {
+        // Urutan baris = id ASC → ranking 1..N
+        $ids = $db->table('catatan_pengurus')->select('id')->orderBy('id', 'ASC')->get()->getResultArray();
+        $rank = 0; // 1-based
+        foreach ($ids as $i => $row) {
+            if ((int) $row['id'] === $id) {
+                $rank = $i + 1;
                 break;
             }
         }
-        while ($emptyAtEnd < $trailingEmpty) {
-            $this->insertBlank($userId);
-            $emptyAtEnd++;
+        if ($rank < 1) {
+            return;
         }
+
+        $posInPage = (($rank - 1) % $perPage) + 1; // 1..perPage
+        if ($posInPage < self::TRIGGER_ROW) {
+            return;
+        }
+
+        $pageOfRow = (int) ceil($rank / $perPage);
+        $total = count($ids);
+        $totalPages = max(1, (int) ceil($total / $perPage));
+
+        // Butuh minimal satu halaman penuh setelah halaman baris ini
+        $needPages = $pageOfRow + 1;
+        $needTotal = $needPages * $perPage;
+        while ($total < $needTotal) {
+            $this->insertBlank($userId);
+            $total++;
+        }
+    }
+
+    public function ensureGrid(int $perPage = self::PER_PAGE, ?int $userId = null): void
+    {
+        $this->ensureTable();
+        $perPage = max(10, min(100, $perPage));
+        $this->padToFullPages($perPage, $userId);
     }
 
     private function mapRow(array $r): array
@@ -162,25 +211,53 @@ class CatatanService
         ];
     }
 
-    public function listPage(int $page, int $perPage = 50, ?int $userId = null): array
+    public function listPage(int $page, int $perPage = self::PER_PAGE, ?int $userId = null): array
     {
-        $this->ensureGrid(50, 50, $userId);
         $perPage = max(10, min(100, $perPage));
+        $this->ensureGrid($perPage, $userId);
+
         $db = $this->db();
-        $total = (int) $db->table('catatan_pengurus')->countAllResults();
+        $total = $this->countAll();
+        // pad lagi jika perlu
+        if ($total % $perPage !== 0 || $total < $perPage) {
+            $this->padToFullPages($perPage, $userId);
+            $total = $this->countAll();
+        }
+
         $totalPages = max(1, (int) ceil($total / $perPage));
+
         if ($page < 1) {
             $page = $totalPages;
         }
         if ($page > $totalPages) {
             $page = $totalPages;
         }
+
         $offset = ($page - 1) * $perPage;
         $rows = $db->table('catatan_pengurus')
             ->orderBy('id', 'ASC')
             ->limit($perPage, $offset)
             ->get()
             ->getResultArray();
+
+        // Jaminan: selalu $perPage baris di response
+        if (count($rows) < $perPage) {
+            $need = $perPage - count($rows);
+            for ($i = 0; $i < $need; $i++) {
+                $this->insertBlank($userId);
+            }
+            $total = $this->countAll();
+            $totalPages = max(1, (int) ceil($total / $perPage));
+            if ($page > $totalPages) {
+                $page = $totalPages;
+            }
+            $offset = ($page - 1) * $perPage;
+            $rows = $db->table('catatan_pengurus')
+                ->orderBy('id', 'ASC')
+                ->limit($perPage, $offset)
+                ->get()
+                ->getResultArray();
+        }
 
         return [
             'rows'        => array_map(fn ($r) => $this->mapRow($r), $rows),
@@ -269,7 +346,25 @@ class CatatanService
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
         $row = $db->table('catatan_pengurus')->where('id', $id)->get()->getRowArray();
-        return ['ok' => true, 'data' => $this->mapRow($row)];
+
+        // Jika baris ini sudah terisi dan posisinya >= 45 di halaman → buat halaman berikutnya
+        if ($row && !$this->isBlankRow($row)) {
+            $this->ensureNextPageAfterFill($id, $userId, self::PER_PAGE);
+        }
+
+        $mapped = $this->mapRow($row);
+        $total = $this->countAll();
+        $totalPages = max(1, (int) ceil($total / self::PER_PAGE));
+
+        return [
+            'ok'   => true,
+            'data' => $mapped,
+            // info opsional agar frontend bisa update chevron tanpa reload penuh
+            'meta' => [
+                'total'       => $total,
+                'total_pages' => $totalPages,
+            ],
+        ];
     }
 
     public function deleteRow(int $id): array
