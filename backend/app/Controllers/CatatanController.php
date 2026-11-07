@@ -61,13 +61,6 @@ class CatatanController extends Controller
         return null;
     }
 
-    /**
-     * Prioritas sumber nomor halaman:
-     * 1. Path segment ($halArg dari route /catatan/hal/(:num))
-     * 2. Header X-Catatan-Hal
-     * 3. Query ?hal= / ?page=
-     * Default 0 = halaman fokus.
-     */
     private function resolveHal($halArg = null)
     {
         $source = 'default';
@@ -159,12 +152,48 @@ class CatatanController extends Controller
         if (!$user) {
             return ApiResponse::fail('Unauthorized', 401);
         }
-        $q = (string) ($this->queryParam('q') ?? '');
-        $limit = (int) ($this->queryParam('limit') ?? 80);
-        $offset = (int) ($this->queryParam('offset') ?? 0);
+
+        // Prioritas: JSON body (POST) → form POST → query string
+        $json = $this->request->getJSON(true);
+        if (!is_array($json)) {
+            $json = [];
+        }
+
+        $q = '';
+        if (isset($json['q']) && $json['q'] !== null && $json['q'] !== '') {
+            $q = trim((string) $json['q']);
+        } elseif ($this->request->getPost('q') !== null) {
+            $q = trim((string) $this->request->getPost('q'));
+        } else {
+            $q = trim((string) ($this->queryParam('q') ?? ''));
+        }
+
+        $limit = 80;
+        if (isset($json['limit']) && is_numeric($json['limit'])) {
+            $limit = (int) $json['limit'];
+        } elseif ($this->request->getPost('limit') !== null) {
+            $limit = (int) $this->request->getPost('limit');
+        } else {
+            $limit = (int) ($this->queryParam('limit') ?? 80);
+        }
+
+        $offset = 0;
+        if (isset($json['offset']) && is_numeric($json['offset'])) {
+            $offset = (int) $json['offset'];
+        } elseif ($this->request->getPost('offset') !== null) {
+            $offset = (int) $this->request->getPost('offset');
+        } else {
+            $offset = (int) ($this->queryParam('offset') ?? 0);
+        }
+
         try {
             $rows = (new CatatanService())->search($q, $limit, $offset);
-            return $this->noStore(ApiResponse::ok(['rows' => $rows, 'q' => $q]));
+            return $this->noStore(ApiResponse::ok([
+                'rows' => $rows,
+                'q'    => $q,
+                'limit' => $limit,
+                'offset' => $offset,
+            ]));
         } catch (\Throwable $e) {
             log_message('error', 'Catatan search: {msg}', ['msg' => $e->getMessage()]);
             return ApiResponse::fail('Gagal cari catatan: ' . $e->getMessage(), 500);
