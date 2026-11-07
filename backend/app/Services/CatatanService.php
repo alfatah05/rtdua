@@ -3,95 +3,102 @@
 namespace App\Services;
 
 /**
- * Catatan pengurus — model sederhana:
- * - 50 baris per halaman (OFFSET/LIMIT)
- * - total_pages = ceil(jumlah_baris / 50)
- * - Halaman buffer kosong ditambah saat baris ke-45..50 terisi
- * - Tidak menghapus baris saat edit field (hindari “hilang halaman”)
+ * Catatan pengurus — 50 baris/halaman (OFFSET/LIMIT).
  */
 class CatatanService
 {
     public const PER_PAGE = 50;
     public const TRIGGER_ROW = 45;
 
-    private bool $ensured = false;
+    private const FIELDS = ['tanggal', 'nama', 'alamat', 'keperluan', 'keterangan', 'dokumentasi'];
+
+    /** @var bool */
+    private $ensured = false;
 
     private function db()
     {
         return \Config\Database::connect();
     }
 
-    public function ensureTable(): void
+    public function ensureTable()
     {
         if ($this->ensured) {
             return;
         }
         $db = $this->db();
-        if ($db->tableExists('catatan_pengurus')) {
-            $this->ensured = true;
-            return;
+        try {
+            if ($db->tableExists('catatan_pengurus')) {
+                $this->ensured = true;
+                return;
+            }
+        } catch (\Throwable $e) {
+            // lanjut coba create
         }
-        $forge = \Config\Database::forge();
-        $forge->addField([
-            'id' => [
-                'type'           => 'INT',
-                'unsigned'       => true,
-                'auto_increment' => true,
-            ],
-            'tanggal' => [
-                'type' => 'DATE',
-                'null' => true,
-            ],
-            'nama' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 191,
-                'null'       => true,
-            ],
-            'alamat' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 191,
-                'null'       => true,
-            ],
-            'keperluan' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 255,
-                'null'       => true,
-            ],
-            'keterangan' => [
-                'type' => 'TEXT',
-                'null' => true,
-            ],
-            'dokumentasi' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 255,
-                'null'       => true,
-            ],
-            'created_by' => [
-                'type'     => 'INT',
-                'unsigned' => true,
-                'null'     => true,
-            ],
-            'updated_by' => [
-                'type'     => 'INT',
-                'unsigned' => true,
-                'null'     => true,
-            ],
-            'created_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-            'updated_at' => [
-                'type' => 'DATETIME',
-                'null' => true,
-            ],
-        ]);
-        $forge->addKey('id', true);
-        $forge->addKey('tanggal');
-        $forge->createTable('catatan_pengurus', true);
+        try {
+            $forge = \Config\Database::forge();
+            $forge->addField([
+                'id' => [
+                    'type'           => 'INT',
+                    'unsigned'       => true,
+                    'auto_increment' => true,
+                ],
+                'tanggal' => [
+                    'type' => 'DATE',
+                    'null' => true,
+                ],
+                'nama' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 191,
+                    'null'       => true,
+                ],
+                'alamat' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 191,
+                    'null'       => true,
+                ],
+                'keperluan' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 255,
+                    'null'       => true,
+                ],
+                'keterangan' => [
+                    'type' => 'TEXT',
+                    'null' => true,
+                ],
+                'dokumentasi' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 255,
+                    'null'       => true,
+                ],
+                'created_by' => [
+                    'type'     => 'INT',
+                    'unsigned' => true,
+                    'null'     => true,
+                ],
+                'updated_by' => [
+                    'type'     => 'INT',
+                    'unsigned' => true,
+                    'null'     => true,
+                ],
+                'created_at' => [
+                    'type' => 'DATETIME',
+                    'null' => true,
+                ],
+                'updated_at' => [
+                    'type' => 'DATETIME',
+                    'null' => true,
+                ],
+            ]);
+            $forge->addKey('id', true);
+            $forge->addKey('tanggal');
+            $forge->createTable('catatan_pengurus', true);
+        } catch (\Throwable $e) {
+            // tabel mungkin sudah ada (race)
+        }
         $this->ensured = true;
     }
 
-    private function isBlankRow(array $r): bool
+    private function isBlankRow(array $r)
     {
         $tanggal = trim((string) ($r['tanggal'] ?? ''));
         $nama = trim((string) ($r['nama'] ?? ''));
@@ -102,7 +109,7 @@ class CatatanService
         return $tanggal === '' && $nama === '' && $alamat === '' && $kep === '' && $ket === '' && $dok === '';
     }
 
-    private function insertBlank(?int $userId): void
+    private function insertBlank($userId)
     {
         $now = date('Y-m-d H:i:s');
         $this->db()->table('catatan_pengurus')->insert([
@@ -119,47 +126,34 @@ class CatatanService
         ]);
     }
 
-    private function countAll(): int
+    private function countAll()
     {
-        return (int) $this->db()->table('catatan_pengurus')->countAllResults();
+        $row = $this->db()->query('SELECT COUNT(*) AS c FROM catatan_pengurus')->getRowArray();
+        return (int) ($row['c'] ?? 0);
     }
 
-    /** Minimal 1 halaman penuh (50 baris). */
-    private function ensureMinOneFullPage(int $perPage, ?int $userId): void
+    private function ensureMinRows($perPage, $userId)
     {
         $total = $this->countAll();
-        if ($total < $perPage) {
-            $need = $perPage - $total;
-            for ($i = 0; $i < $need; $i++) {
-                $this->insertBlank($userId);
-            }
+        if ($total >= $perPage) {
+            return;
+        }
+        $need = $perPage - $total;
+        for ($i = 0; $i < $need; $i++) {
+            $this->insertBlank($userId);
         }
     }
 
-    /** Pastikan jumlah baris kelipatan perPage (lengkapi sisa halaman terakhir). */
-    private function ensureFullPages(int $perPage, ?int $userId): void
-    {
-        $this->ensureMinOneFullPage($perPage, $userId);
-        $total = $this->countAll();
-        $mod = $total % $perPage;
-        if ($mod !== 0) {
-            for ($i = 0; $i < $perPage - $mod; $i++) {
-                $this->insertBlank($userId);
-            }
-        }
-    }
-
-    /** Halaman berikutnya penuh 50 kosong setelah baris terisi di pos >= 45. */
-    public function ensureNextPageAfterFill(int $id, ?int $userId = null, int $perPage = self::PER_PAGE): void
+    public function ensureNextPageAfterFill($id, $userId = null, $perPage = self::PER_PAGE)
     {
         $this->ensureTable();
-        $perPage = max(10, min(100, $perPage));
+        $perPage = max(10, min(100, (int) $perPage));
         $db = $this->db();
 
         $ids = $db->table('catatan_pengurus')->select('id')->orderBy('id', 'ASC')->get()->getResultArray();
         $rank = 0;
         foreach ($ids as $i => $row) {
-            if ((int) $row['id'] === $id) {
+            if ((int) $row['id'] === (int) $id) {
                 $rank = $i + 1;
                 break;
             }
@@ -182,10 +176,7 @@ class CatatanService
         }
     }
 
-    /**
-     * @return array{rank:int, page:int, id:?int}
-     */
-    public function lastFilledInfo(int $perPage = self::PER_PAGE): array
+    public function lastFilledInfo($perPage = self::PER_PAGE)
     {
         $this->ensureTable();
         $all = $this->db()->table('catatan_pengurus')->orderBy('id', 'ASC')->get()->getResultArray();
@@ -204,12 +195,12 @@ class CatatanService
         return ['rank' => $lastRank, 'page' => $page, 'id' => $lastId];
     }
 
-    private function mapRow(array $r, ?int $no = null): array
+    private function mapRow(array $r, $no = null)
     {
         return [
             'id'          => (int) $r['id'],
-            'no'          => $no !== null ? $no : (int) $r['id'],
-            'tanggal'     => $r['tanggal'] ?: null,
+            'no'          => $no !== null ? (int) $no : (int) $r['id'],
+            'tanggal'     => !empty($r['tanggal']) ? $r['tanggal'] : null,
             'nama'        => $r['nama'] ?? '',
             'alamat'      => $r['alamat'] ?? '',
             'keperluan'   => $r['keperluan'] ?? '',
@@ -220,13 +211,13 @@ class CatatanService
         ];
     }
 
-    public function listPage(int $page, int $perPage = self::PER_PAGE, ?int $userId = null): array
+    public function listPage($page, $perPage = self::PER_PAGE, $userId = null)
     {
-        $perPage = max(10, min(100, $perPage));
+        $perPage = max(10, min(100, (int) $perPage));
+        $page = (int) $page;
         $this->ensureTable();
-        $this->ensureFullPages($perPage, $userId);
+        $this->ensureMinRows($perPage, $userId);
 
-        $db = $this->db();
         $total = $this->countAll();
         $totalPages = max(1, (int) ceil($total / $perPage));
 
@@ -244,13 +235,13 @@ class CatatanService
         }
 
         $offset = ($page - 1) * $perPage;
-        $rows = $db->table('catatan_pengurus')
+        $rows = $this->db()->table('catatan_pengurus')
             ->orderBy('id', 'ASC')
             ->limit($perPage, $offset)
             ->get()
             ->getResultArray();
 
-        // Jaminan 50 baris di halaman terakhir
+        // Lengkapi sisa baris halaman terakhir saja (maks 50)
         if (count($rows) < $perPage) {
             $need = $perPage - count($rows);
             for ($i = 0; $i < $need; $i++) {
@@ -259,7 +250,7 @@ class CatatanService
             $total = $this->countAll();
             $totalPages = max(1, (int) ceil($total / $perPage));
             $offset = ($page - 1) * $perPage;
-            $rows = $db->table('catatan_pengurus')
+            $rows = $this->db()->table('catatan_pengurus')
                 ->orderBy('id', 'ASC')
                 ->limit($perPage, $offset)
                 ->get()
@@ -282,15 +273,15 @@ class CatatanService
         ];
     }
 
-    public functionsearch(string $q, int $limit = 200, int $offset = 0): array
+    public function search($q, $limit = 200, $offset = 0)
     {
         $this->ensureTable();
-        $q = trim($q);
+        $q = trim((string) $q);
         if ($q === '') {
             return [];
         }
-        $limit = max(1, min(300, $limit));
-        $offset = max(0, $offset);
+        $limit = max(1, min(300, (int) $limit));
+        $offset = max(0, (int) $offset);
 
         $builder = $this->db()->table('catatan_pengurus');
         $builder->groupStart()
@@ -316,7 +307,7 @@ class CatatanService
         return $out;
     }
 
-    public function createEmpty(?int $userId): array
+    public function createEmpty($userId)
     {
         $this->ensureTable();
         $this->insertBlank($userId);
@@ -325,11 +316,11 @@ class CatatanService
         return $this->mapRow($row ?: ['id' => $id]);
     }
 
-    private const FIELDS = ['tanggal', 'nama', 'alamat', 'keperluan', 'keterangan', 'dokumentasi'];
-
-    public function updateField(int $id, string $field, $value, ?int $userId): array
+    public function updateField($id, $field, $value, $userId)
     {
         $this->ensureTable();
+        $id = (int) $id;
+        $field = (string) $field;
         if ($id < 1 || !in_array($field, self::FIELDS, true)) {
             return ['ok' => false, 'message' => 'Field tidak valid.'];
         }
@@ -357,7 +348,6 @@ class CatatanService
         ]);
         $row = $db->table('catatan_pengurus')->where('id', $id)->get()->getRowArray();
 
-        // Hanya tambah halaman buffer bila perlu — JANGAN hapus baris
         if ($row && !$this->isBlankRow($row)) {
             $this->ensureNextPageAfterFill($id, $userId, self::PER_PAGE);
         }
@@ -376,14 +366,14 @@ class CatatanService
         ];
     }
 
-    public function deleteRow(int $id): array
+    public function deleteRow($id)
     {
         $this->ensureTable();
+        $id = (int) $id;
         if ($id < 1) {
             return ['ok' => false, 'message' => 'ID tidak valid.'];
         }
-        $db = $this->db();
-        $n = $db->table('catatan_pengurus')->where('id', $id)->delete();
+        $n = $this->db()->table('catatan_pengurus')->where('id', $id)->delete();
         return $n ? ['ok' => true] : ['ok' => false, 'message' => 'Gagal hapus.'];
     }
 }
