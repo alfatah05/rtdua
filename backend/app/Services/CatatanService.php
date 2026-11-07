@@ -132,12 +132,15 @@ class CatatanService
         return (int) ($row['c'] ?? 0);
     }
 
-    /** Ambil baris per halaman — SQL LIMIT/OFFSET eksplisit (hindari bug QB). */
+    /**
+     * Ambil baris per halaman.
+     * MySQL: LIMIT offset, count  (bukan hanya LIMIT n OFFSET m — lebih kompatibel).
+     */
     private function fetchPageRows($perPage, $offset)
     {
         $perPage = max(1, (int) $perPage);
         $offset  = max(0, (int) $offset);
-        $sql = 'SELECT * FROM catatan_pengurus ORDER BY id ASC LIMIT ' . $perPage . ' OFFSET ' . $offset;
+        $sql = 'SELECT * FROM catatan_pengurus ORDER BY id ASC LIMIT ' . $offset . ', ' . $perPage;
         return $this->db()->query($sql)->getResultArray();
     }
 
@@ -157,9 +160,8 @@ class CatatanService
     {
         $this->ensureTable();
         $perPage = max(10, min(100, (int) $perPage));
-        $db = $this->db();
 
-        $ids = $db->query('SELECT id FROM catatan_pengurus ORDER BY id ASC')->getResultArray();
+        $ids = $this->db()->query('SELECT id FROM catatan_pengurus ORDER BY id ASC')->getResultArray();
         $rank = 0;
         foreach ($ids as $i => $row) {
             if ((int) $row['id'] === (int) $id) {
@@ -254,7 +256,6 @@ class CatatanService
             }
             $total = $this->countAll();
             $totalPages = max(1, (int) ceil($total / $perPage));
-            // jaga page tetap valid setelah insert
             if ($page > $totalPages) {
                 $page = $totalPages;
             }
@@ -267,6 +268,13 @@ class CatatanService
             $mapped[] = $this->mapRow($r, $offset + $i + 1);
         }
 
+        $firstId = null;
+        $lastId = null;
+        if (!empty($mapped)) {
+            $firstId = $mapped[0]['id'];
+            $lastId = $mapped[count($mapped) - 1]['id'];
+        }
+
         return [
             'rows'         => $mapped,
             'page'         => $page,
@@ -274,6 +282,8 @@ class CatatanService
             'offset'       => $offset,
             'total'        => $total,
             'total_pages'  => $totalPages,
+            'first_id'     => $firstId,
+            'last_id'      => $lastId,
             'focus_row_id' => $focus['id'],
             'focus_rank'   => $focus['rank'],
         ];
@@ -289,7 +299,6 @@ class CatatanService
         $limit = max(1, min(300, (int) $limit));
         $offset = max(0, (int) $offset);
 
-        // Query Builder like + limit/offset terpisah
         $builder = $this->db()->table('catatan_pengurus');
         $builder->groupStart()
             ->like('nama', $q)
