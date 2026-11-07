@@ -1,6 +1,9 @@
 <template>
-  <router-view />
-  <AppToast />
+  <div class="app-shell">
+    <router-view />
+    <AppToast />
+    <div id="system-nav-underlay" aria-hidden="true" />
+  </div>
 </template>
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
@@ -29,3 +32,15 @@ onUnmounted(() => {
   window.removeEventListener('rtdua:unauthorized', onUnauthorized)
 })
 </script>
+
+<style>
+.app-shell {
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: 100svh;
+  background: var(--bg);
+  background-color: var(--bg);
+  position: relative;
+  z-index: 1;
+}
+</style>

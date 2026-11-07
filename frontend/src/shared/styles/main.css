@@ -44,20 +44,26 @@
 }
 
 /*
- * Area di belakang system navigation bar (bawah) = hitam.
- * Konten app (#app) = --bg. Status bar (atas) = theme-color di useTheme.
+ * System UI di PWA/Android Chrome:
+ * - Notif/status bar (ATAS)  → meta theme-color (useTheme) = ikut light/dark app
+ * - Navigation bar (BAWAH)   → sering ikut warna tepi bawah dokumen.
+ *   html = #000 agar nav bar cenderung hitam; body/#app = var(--bg) menutupi
+ *   full viewport supaya animasi pindah halaman TIDAK bocor hitam.
+ * - Strip fixed di safe-area-inset-bottom sebagai cadangan (gesture bar).
  */
 html {
   font-size: 16px;
   scroll-padding-top: env(safe-area-inset-top, 0px);
-  background: var(--bg);
-  background-color: var(--bg);
+  /* Hitam hanya di layer html (di belakang body) — untuk sampling nav bar */
+  background: #000000;
+  background-color: #000000;
   min-height: 100%;
   min-height: 100dvh;
 }
 
 body {
   margin: 0;
+  /* Konten penuh: selalu warna theme, menutupi html hitam */
   background: var(--bg);
   background-color: var(--bg);
   color: var(--text);
@@ -70,6 +76,9 @@ body {
   padding-bottom: 0;
   min-height: 100%;
   min-height: 100dvh;
+  min-height: 100svh;
+  position: relative;
+  isolation: isolate;
 }
 
 #app {
@@ -78,6 +87,20 @@ body {
   min-height: 100svh;
   background: var(--bg);
   background-color: var(--bg);
+  position: relative;
+  z-index: 1;
+}
+
+/* Cadangan: area gesture/nav inset bawah tetap hitam, tidak ikut animasi page */
+#system-nav-underlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background: #000000;
+  pointer-events: none;
+  z-index: 2147483646;
 }
 
 :focus-visible {

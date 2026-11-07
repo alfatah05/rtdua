@@ -2,16 +2,16 @@ import { ref, onMounted } from 'vue'
 
 const mode = ref('light')
 
-/** Warna status bar (atas) — ikut --bg aplikasi */
+/**
+ * Notif / status bar ATAS — ikut theme aplikasi (bukan hitam).
+ * Navigation bar BAWAH tidak bisa di-set terpisah via meta di semua Android;
+ * di CSS: html #000 di belakang body --bg (lihat main.css).
+ */
 const STATUS_BAR = {
   light: '#FFFFFF',
   dark: '#111314',
 }
 
-/**
- * Status bar (notif bar HP) mengikuti theme app.
- * Navbar sistem bawah di-handle lewat CSS (html/body #000 + safe-area).
- */
 function setSystemBarColor(value) {
   const v = value === 'dark' ? 'dark' : 'light'
   const color = STATUS_BAR[v]

@@ -1,11 +1,14 @@
 <template>
-  <router-view v-slot="{ Component, route }">
-    <Transition :name="appTransitionName" mode="out-in">
-      <component :is="Component" :key="route.matched[0]?.path || route.path" />
-    </Transition>
-  </router-view>
-  <AppToast />
-  <AppFullscreenToggle />
+  <div class="app-shell">
+    <router-view v-slot="{ Component, route }">
+      <Transition :name="appTransitionName" mode="out-in">
+        <component :is="Component" :key="route.matched[0]?.path || route.path" />
+      </Transition>
+    </router-view>
+    <AppToast />
+    <AppFullscreenToggle />
+    <div id="system-nav-underlay" aria-hidden="true" />
+  </div>
 </template>
 <script setup>
 import { computed, onMounted, onUnmounted } from 'vue'
@@ -40,7 +43,17 @@ onUnmounted(() => {
 </script>
 
 <style>
-/* Aplikasi warga: cegah zoom & seleksi teks di semua halaman */
+/* Shell solid = tidak ada frame kosong yang menembus ke html hitam saat out-in */
+.app-shell {
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: 100svh;
+  background: var(--bg);
+  background-color: var(--bg);
+  position: relative;
+  z-index: 1;
+}
+
 html,
 body,
 #app {
