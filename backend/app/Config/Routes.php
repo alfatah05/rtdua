@@ -50,6 +50,7 @@ $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 $routes->get('aktivitas/(:num)', 'AktivitasController::detail/$1', ['filter' => 'auth']);
 $routes->get('catatan', 'CatatanController::index', ['filter' => 'auth']);
 $routes->get('catatan/search', 'CatatanController::search', ['filter' => 'auth']);
+$routes->post('catatan/search', 'CatatanController::search', ['filter' => 'auth']);
 $routes->get('catatan/hal/(:num)', 'CatatanController::byHal/$1', ['filter' => 'auth']);
 $routes->post('catatan', 'CatatanController::create', ['filter' => 'auth']);
 $routes->patch('catatan/(:num)', 'CatatanController::patch/$1', ['filter' => 'auth']);
