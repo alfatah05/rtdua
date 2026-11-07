@@ -178,7 +178,8 @@ class CatatanController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         try {
-            $row = (new CatatanService())->createEmpty((isset($user['id']) ? (int) $user['id'] : null);
+            $uid = isset($user['id']) ? (int) $user['id'] : null;
+            $row = (new CatatanService())->createEmpty($uid);
             return ApiResponse::ok($row, 'Baris ditambah');
         } catch (\Throwable $e) {
             return ApiResponse::fail('Gagal tambah baris: ' . $e->getMessage(), 500);
