@@ -24,7 +24,7 @@ class UploadController extends Controller
         // galeri / banner / logo / lampiran: hanya pengurus
         if ($jenis === 'bukti' || $jenis === 'ronda' || $jenis === 'foto_profil') {
             // ok
-        } elseif (in_array($jenis, ['galeri', 'banner', 'logo', 'lampiran'], true)) {
+        } elseif (in_array($jenis, ['galeri', 'banner', 'logo', 'lampiran', 'catatan'], true)) {
             if ($side !== 'pengurus' || !in_array($user['role'], ['ketua', 'pengurus'], true)) {
                 return ApiResponse::fail('Hanya pengurus.', 403);
             }

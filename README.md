@@ -1,16 +1,14 @@
-# Patch: Detail kas + Batalkan transaksi
+# Fitur Catatan Pengurus
 
-## Fitur
-- Halaman `/keuangan/kas/:id` memuat data nyata (bukan placeholder)
-- Field: keterangan, nominal, jenis, kategori, pos kas, metode, tanggal, dicatat oleh, waktu
-- **Batalkan transaksi** memanggil `POST /keuangan/kas/{id}/batal`
-- Kas otomatis dari iuran: tombol batal disembunyikan (batal lewat pembatalan pembayaran)
-- Alokasi antar pos: konfirmasi, kedua sisi dibatalkan (logika backend yang sudah ada)
+## Database — otomatis
+Tabel `catatan_pengurus` **dibuat otomatis** saat API catatan pertama kali dipanggil.
+Tidak wajib import SQL. Opsional: `backend/sql/catatan_pengurus.optional.sql`.
 
-## Backend
-- `KasService::detail($id)`
-- `GET /keuangan/kas/(:num)` → `detailKas`
-- `batalkanKas` tetap
+## Akses
+Menu → **Catatan** (`/catatan`)
 
-## Setelah push
-Deploy Dev (frontend + backend).
+## Deploy
+```bash
+unzip -o catatan-pengurus.zip
+# deploy backend + rebuild frontend pengurus
+```

@@ -13,6 +13,7 @@ class UploadService
         'foto_profil' => ['dir' => 'profil', 'max' => 1_500_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
         'logo'        => ['dir' => 'logo', 'max' => 1_500_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
         'lampiran'    => ['dir' => 'lampiran', 'max' => 5_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']],
+        'catatan'     => ['dir' => 'catatan', 'max' => 3_000_000, 'public' => true, 'mimes' => ['image/jpeg', 'image/png', 'image/webp']],
     ];
 
     public function simpan(?object $file, string $jenis, ?string $thumbDataUrl = null): array
@@ -169,6 +170,7 @@ class UploadService
             'profil' => true,
             'logo' => true,
             'lampiran' => true,
+            'catatan' => true,
         ];
         return !empty($map[$jenis]);
     }

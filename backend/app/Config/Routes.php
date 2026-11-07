@@ -48,6 +48,13 @@ $routes->get('bantuan', 'PengurusController::bantuan', ['filter' => 'auth']);
 
 $routes->get('aktivitas', 'AktivitasController::index', ['filter' => 'auth']);
 $routes->get('aktivitas/(:num)', 'AktivitasController::detail/$1', ['filter' => 'auth']);
+$routes->get('catatan', 'CatatanController::index', ['filter' => 'auth']);
+$routes->get('catatan/search', 'CatatanController::search', ['filter' => 'auth']);
+$routes->post('catatan', 'CatatanController::create', ['filter' => 'auth']);
+$routes->patch('catatan/(:num)', 'CatatanController::patch/$1', ['filter' => 'auth']);
+$routes->put('catatan/(:num)', 'CatatanController::patch/$1', ['filter' => 'auth']);
+$routes->delete('catatan/(:num)', 'CatatanController::delete/$1', ['filter' => 'auth']);
+
 
 $routes->get('portal/warga', 'PortalController::daftarWarga', ['filter' => 'auth']);
 $routes->get('portal/warga/(:num)', 'PortalController::detailKeluarga/$1', ['filter' => 'auth']);

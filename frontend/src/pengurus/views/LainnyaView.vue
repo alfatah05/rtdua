@@ -59,6 +59,7 @@ const groups = [
   {
     title: 'Warga',
     items: [
+      { label: 'Catatan', icon: BookOpen, to: '/catatan', bg: MENU.laporan },
       { label: 'Tambah', icon: UserPlus, to: '/warga/tambah', bg: MENU.tambahKeluarga },
       { label: 'Scan KK', icon: ScanLine, to: '/warga/scan-kk', bg: MENU.scanKk },
       { label: 'Ekspor', icon: Download, to: '/warga/ekspor', bg: MENU.ekspor },

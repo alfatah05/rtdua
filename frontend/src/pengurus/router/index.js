@@ -28,6 +28,7 @@ import AktivitasView from '../views/AktivitasView.vue'
 import AktivitasDetailView from '../views/AktivitasDetailView.vue'
 import ProfilView from '../views/ProfilView.vue'
 import LainnyaView from '../views/LainnyaView.vue'
+import CatatanView from '../views/CatatanView.vue'
 import RewardListView from '../views/RewardListView.vue'
 import RewardFormView from '../views/RewardFormView.vue'
 import RewardDetailView from '../views/RewardDetailView.vue'
@@ -120,6 +121,7 @@ const routes = [
       { path: 'aktivitas/:id', component: AktivitasDetailView },
       { path: 'profil', name: 'profil', component: ProfilView },
       { path: 'lainnya', name: 'lainnya', component: LainnyaView },
+      { path: 'catatan', name: 'catatan', component: CatatanView },
       { path: 'reward', name: 'reward', component: RewardListView },
       { path: 'reward/tambah', name: 'reward-tambah', component: RewardFormView },
       { path: 'reward/:id/edit', name: 'reward-edit', component: RewardFormView },
