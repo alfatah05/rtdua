@@ -4,7 +4,7 @@ namespace App\Services;
 
 /**
  * Catatan pengurus standalone (bukan keuangan).
- * Tabel dibuat otomatis saat first use — tidak perlu import SQL manual.
+ * Tabel + baris kosong (grid Excel) dibuat otomatis.
  */
 class CatatanService
 {
@@ -85,11 +85,72 @@ class CatatanService
         $this->ensured = true;
     }
 
+    private function isBlankRow(array $r): bool
+    {
+        $tanggal = trim((string) ($r['tanggal'] ?? ''));
+        $nama = trim((string) ($r['nama'] ?? ''));
+        $alamat = trim((string) ($r['alamat'] ?? ''));
+        $kep = trim((string) ($r['keperluan'] ?? ''));
+        $ket = trim((string) ($r['keterangan'] ?? ''));
+        $dok = trim((string) ($r['dokumentasi'] ?? ''));
+        return $tanggal === '' && $nama === '' && $alamat === '' && $kep === '' && $ket === '' && $dok === '';
+    }
+
+    private function insertBlank(?int $userId): void
+    {
+        $now = date('Y-m-d H:i:s');
+        $this->db()->table('catatan_pengurus')->insert([
+            'tanggal'     => null,
+            'nama'        => '',
+            'alamat'      => '',
+            'keperluan'   => '',
+            'keterangan'  => '',
+            'dokumentasi' => null,
+            'created_by'  => $userId,
+            'updated_by'  => $userId,
+            'created_at'  => $now,
+            'updated_at'  => $now,
+        ]);
+    }
+
+    /**
+     * Pastikan grid seperti Excel: minimal $minTotal baris,
+     * dan selalu ada ~$trailingEmpty baris kosong di akhir.
+     */
+    public function ensureGrid(int $minTotal = 50, int $trailingEmpty = 50, ?int $userId = null): void
+    {
+        $this->ensureTable();
+        $db = $this->db();
+        $total = (int) $db->table('catatan_pengurus')->countAllResults();
+        while ($total < $minTotal) {
+            $this->insertBlank($userId);
+            $total++;
+        }
+
+        $tail = $db->table('catatan_pengurus')
+            ->orderBy('id', 'DESC')
+            ->limit(max(50, $trailingEmpty))
+            ->get()
+            ->getResultArray();
+        $emptyAtEnd = 0;
+        foreach ($tail as $r) {
+            if ($this->isBlankRow($r)) {
+                $emptyAtEnd++;
+            } else {
+                break;
+            }
+        }
+        while ($emptyAtEnd < $trailingEmpty) {
+            $this->insertBlank($userId);
+            $emptyAtEnd++;
+        }
+    }
+
     private function mapRow(array $r): array
     {
         return [
             'id'          => (int) $r['id'],
-            'no'          => (int) $r['id'], // nomor asli = id
+            'no'          => (int) $r['id'],
             'tanggal'     => $r['tanggal'] ?: null,
             'nama'        => $r['nama'] ?? '',
             'alamat'      => $r['alamat'] ?? '',
@@ -101,18 +162,15 @@ class CatatanService
         ];
     }
 
-    /**
-     * @return array{rows: list, page: int, per_page: int, total: int, total_pages: int}
-     */
-    public function listPage(int $page, int $perPage = 50): array
+    public function listPage(int $page, int $perPage = 50, ?int $userId = null): array
     {
-        $this->ensureTable();
+        $this->ensureGrid(50, 50, $userId);
         $perPage = max(10, min(100, $perPage));
         $db = $this->db();
         $total = (int) $db->table('catatan_pengurus')->countAllResults();
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page < 1) {
-            $page = $totalPages; // page terakhir
+            $page = $totalPages;
         }
         if ($page > $totalPages) {
             $page = $totalPages;
@@ -125,18 +183,14 @@ class CatatanService
             ->getResultArray();
 
         return [
-            'rows'         => array_map(fn ($r) => $this->mapRow($r), $rows),
-            'page'         => $page,
-            'per_page'     => $perPage,
-            'total'        => $total,
-            'total_pages'  => $totalPages,
+            'rows'        => array_map(fn ($r) => $this->mapRow($r), $rows),
+            'page'        => $page,
+            'per_page'    => $perPage,
+            'total'       => $total,
+            'total_pages' => $totalPages,
         ];
     }
 
-    /**
-     * Search global, ranking sederhana, untuk infinite scroll.
-     * @return list
-     */
     public function search(string $q, int $limit = 200, int $offset = 0): array
     {
         $this->ensureTable();
@@ -149,7 +203,6 @@ class CatatanService
         $db = $this->db();
         $like = '%' . $db->escapeLikeString($q) . '%';
 
-        // Ranking kasar: cocok di nama > keperluan > alamat > keterangan
         $sql = "SELECT *,
             (CASE
                 WHEN nama LIKE ? THEN 40
@@ -159,8 +212,16 @@ class CatatanService
                 ELSE 0
             END) AS _rank
             FROM catatan_pengurus
-            WHERE nama LIKE ? OR alamat LIKE ? OR keperluan LIKE ? OR keterangan LIKE ?
-               OR CAST(id AS CHAR) = ?
+            WHERE (nama LIKE ? OR alamat LIKE ? OR keperluan LIKE ? OR keterangan LIKE ?
+               OR CAST(id AS CHAR) = ?)
+              AND NOT (
+                (tanggal IS NULL OR tanggal = '')
+                AND (nama IS NULL OR nama = '')
+                AND (alamat IS NULL OR alamat = '')
+                AND (keperluan IS NULL OR keperluan = '')
+                AND (keterangan IS NULL OR keterangan = '')
+                AND (dokumentasi IS NULL OR dokumentasi = '')
+              )
             ORDER BY _rank DESC, id ASC
             LIMIT ? OFFSET ?";
         $params = [$like, $like, $like, $like, $like, $like, $like, $like, $q, $limit, $offset];
@@ -171,19 +232,7 @@ class CatatanService
     public function createEmpty(?int $userId): array
     {
         $this->ensureTable();
-        $now = date('Y-m-d H:i:s');
-        $this->db()->table('catatan_pengurus')->insert([
-            'tanggal'    => date('Y-m-d'),
-            'nama'       => '',
-            'alamat'     => '',
-            'keperluan'  => '',
-            'keterangan' => '',
-            'dokumentasi'=> null,
-            'created_by' => $userId,
-            'updated_by' => $userId,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        $this->insertBlank($userId);
         $id = (int) $this->db()->insertID();
         $row = $this->db()->table('catatan_pengurus')->where('id', $id)->get()->getRowArray();
         return $this->mapRow($row ?: ['id' => $id]);

@@ -36,7 +36,8 @@ class CatatanController extends Controller
         $pageParam = $this->request->getGet('page');
         $page = ($pageParam === null || $pageParam === '') ? 0 : (int) $pageParam;
         $per  = (int) ($this->request->getGet('per_page') ?? 50);
-        $data = (new CatatanService())->listPage($page, $per);
+        $uid = isset($user['id']) ? (int) $user['id'] : null;
+        $data = (new CatatanService())->listPage($page, $per, $uid);
         return ApiResponse::ok($data);
     }
 

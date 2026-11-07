@@ -22,9 +22,8 @@
             <tr v-for="row in rows" :key="row.id">
               <td class="col-no sticky-col muted-no">{{ row.no }}</td>
 
-              <!-- Tanggal -->
-              <td class="col-tgl" @click="openDate(row)">
-                <span class="cell-text">{{ formatTgl(row.tanggal) || '—' }}</span>
+              <td class="col-tgl cell-pad" @click="openDate(row)">
+                <span class="cell-text">{{ formatTgl(row.tanggal) }}</span>
                 <input
                   :ref="(el) => setDateRef(row.id, el)"
                   type="date"
@@ -34,18 +33,14 @@
                 />
               </td>
 
-              <!-- Nama -->
               <td class="col-nama">
                 <div
                   class="cell-edit"
                   contenteditable="true"
-                  :data-id="row.id"
-                  data-field="nama"
                   @blur="onBlur($event, row, 'nama')"
                   @keydown.enter.prevent="blurEl($event)"
                 >{{ row.nama }}</div>
               </td>
-
               <td class="col-alamat">
                 <div
                   class="cell-edit"
@@ -54,7 +49,6 @@
                   @keydown.enter.prevent="blurEl($event)"
                 >{{ row.alamat }}</div>
               </td>
-
               <td class="col-kep">
                 <div
                   class="cell-edit"
@@ -63,15 +57,13 @@
                   @keydown.enter.prevent="blurEl($event)"
                 >{{ row.keperluan }}</div>
               </td>
-
               <td class="col-ket">
                 <div
-                  class="cell-edit cell-wrap"
+                  class="cell-edit"
                   contenteditable="true"
                   @blur="onBlur($event, row, 'keterangan')"
                 >{{ row.keterangan }}</div>
               </td>
-
               <td class="col-dok">
                 <button
                   v-if="row.dokumentasi"
@@ -91,91 +83,79 @@
                 </button>
               </td>
             </tr>
-            <tr v-if="!rows.length && !loading">
-              <td colspan="7" class="empty-cell">
-                {{ mode === 'search' ? 'Tidak ada hasil' : 'Belum ada baris — tap + di bawah' }}
-              </td>
-            </tr>
           </tbody>
         </table>
         <div ref="sentinel" class="sentinel" />
       </div>
     </div>
 
-    <!-- Floating: prev | search | next (+ add on book mode) -->
-    <div class="float-bar">
-      <button
-        type="button"
-        class="circle-btn"
-        :disabled="mode === 'search' || page <= 1 || loading"
-        aria-label="Halaman sebelumnya"
-        @click="goPage(page - 1)"
-      >
-        <ChevronLeft :size="20" />
-      </button>
-
-      <div class="search-pill">
-        <input
-          v-model="searchInput"
-          type="search"
-          placeholder="cari data"
-          enterkeyhint="search"
-          @keydown.enter.prevent="doSearch"
-        />
+    <!-- Floating di body: selalu di bawah layar HP, tidak ikut scroll -->
+    <Teleport to="body">
+      <div class="catatan-float-bar">
         <button
-          v-if="searchInput"
           type="button"
-          class="clear-btn"
-          aria-label="Hapus pencarian"
-          @click="clearSearch"
+          class="circle-btn"
+          :disabled="mode === 'search' || page <= 1 || loading"
+          aria-label="Halaman sebelumnya"
+          @click="goPage(page - 1)"
         >
-          <X :size="16" />
+          <ChevronLeft :size="20" />
+        </button>
+
+        <div class="search-pill">
+          <input
+            v-model="searchInput"
+            type="search"
+            placeholder="cari data"
+            enterkeyhint="search"
+            @keydown.enter.prevent="doSearch"
+          />
+          <button
+            v-if="searchInput"
+            type="button"
+            class="clear-btn"
+            aria-label="Hapus pencarian"
+            @click="clearSearch"
+          >
+            <X :size="16" />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="circle-btn"
+          :disabled="mode === 'search' || page >= totalPages || loading"
+          aria-label="Halaman berikutnya"
+          @click="goPage(page + 1)"
+        >
+          <ChevronRight :size="20" />
         </button>
       </div>
-
-      <button
-        type="button"
-        class="circle-btn"
-        :disabled="mode === 'search' || page >= totalPages || loading"
-        aria-label="Halaman berikutnya"
-        @click="goPage(page + 1)"
-      >
-        <ChevronRight :size="20" />
-      </button>
-    </div>
-
-    <button
-      v-if="mode === 'book'"
-      type="button"
-      class="fab-add"
-      aria-label="Tambah baris"
-      @click="addRow"
-    >
-      <Plus :size="22" />
-    </button>
+    </Teleport>
 
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFile" />
 
-    <!-- Overlay foto -->
-    <div
-      v-if="previewFoto"
-      class="foto-overlay"
-      @click.self="previewFoto = null"
-    >
-      <button type="button" class="foto-close" @click="previewFoto = null">Tutup</button>
-      <img :src="mediaUrl(previewFoto)" alt="Dokumentasi" />
-      <button type="button" class="foto-change" @click="pickFotoFromPreview">Ganti foto</button>
-    </div>
+    <Teleport to="body">
+      <div
+        v-if="previewFoto"
+        class="foto-overlay"
+        @click.self="previewFoto = null"
+      >
+        <button type="button" class="foto-close" @click="previewFoto = null">Tutup</button>
+        <img :src="mediaUrl(previewFoto)" alt="Dokumentasi" />
+        <button type="button" class="foto-change" @click="pickFotoFromPreview">Ganti foto</button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { ChevronLeft, ChevronRight, X, Plus } from 'lucide-vue-next'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
 import AppBackHeader from '@shared/components/AppBackHeader.vue'
 import AppPageSpinner from '@shared/components/AppPageSpinner.vue'
 import {
-  listCatatan, searchCatatan, createCatatanRow, patchCatatanField,
+  listCatatan, searchCatatan, patchCatatanField,
 } from '@shared/services/catatan.js'
 import { uploadGambar, mediaUrl } from '@shared/services/upload.js'
 import { useToast } from '@shared/composables/useToast.js'
@@ -183,14 +163,13 @@ import { useToast } from '@shared/composables/useToast.js'
 const { success, error: toastError } = useToast()
 
 const PER = 50
-const mode = ref('book') // book | search
+const mode = ref('book')
 const rows = ref([])
 const page = ref(1)
 const totalPages = ref(1)
 const loading = ref(false)
 const searchInput = ref('')
 const searchQ = ref('')
-const searchOffset = ref(0)
 const searchDone = ref(false)
 const previewFoto = ref(null)
 const fileInput = ref(null)
@@ -236,7 +215,6 @@ async function goPage(p) {
 }
 
 async function openLastPage() {
-  // page=0 → backend kirim halaman terakhir
   await loadPage(0)
 }
 
@@ -247,7 +225,6 @@ async function doSearch() {
     return
   }
   searchQ.value = q
-  searchOffset.value = 0
   searchDone.value = false
   mode.value = 'search'
   loading.value = true
@@ -325,7 +302,6 @@ function pickFoto(row) {
 }
 
 function pickFotoFromPreview() {
-  // cari row dari preview path
   const row = rows.value.find((r) => r.dokumentasi === previewFoto.value)
   if (row) pickFoto(row)
 }
@@ -356,17 +332,6 @@ async function onFile(e) {
   success('Foto tersimpan')
 }
 
-async function addRow() {
-  const res = await createCatatanRow()
-  if (!res.ok) {
-    toastError(res.error || 'Gagal tambah baris')
-    return
-  }
-  // muat ulang page terakhir agar baris baru terlihat
-  await openLastPage()
-  success('Baris ditambah')
-}
-
 onMounted(async () => {
   await openLastPage()
   observer = new IntersectionObserver(
@@ -386,19 +351,22 @@ onUnmounted(() => {
 
 <style scoped>
 .catatan-page {
-  margin: 0 calc(-1 * var(--page-pad, 0px));
-  /* full bleed: parent layout sering punya padding — override lokal */
-  margin-left: -16px;
-  margin-right: -16px;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  /* layout parent tetap px-4 → header AppBackHeader (-mx-4) normal */
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
 }
+
+/* Tabel full lebar layar (keluar dari padding), halaman tidak ikut geser */
 .catatan-body {
   padding: 0;
+  margin: 0;
 }
 .table-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  width: 100vw;
   max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
 }
 .catatan-table {
   border-collapse: collapse;
@@ -406,6 +374,7 @@ onUnmounted(() => {
   width: max-content;
   min-width: 100%;
   font-size: 13px;
+  margin: 0;
 }
 .catatan-table th,
 .catatan-table td {
@@ -468,6 +437,10 @@ th.sticky-col {
   padding: 8px 6px;
   min-height: 36px;
 }
+.cell-pad {
+  position: relative;
+  cursor: pointer;
+}
 .hidden-date {
   position: absolute;
   opacity: 0;
@@ -490,32 +463,31 @@ th.sticky-col {
   text-decoration: none;
   font-weight: 500;
 }
-.empty-cell {
-  padding: 24px 12px !important;
-  text-align: center;
-  color: var(--mut);
-  font-size: 13px;
-}
 .sentinel { height: 1px; }
+.hidden { display: none; }
+</style>
 
-.float-bar {
+<!-- Float bar & overlay di body: unscoped supaya Teleport dapat style -->
+<style>
+.catatan-float-bar {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  z-index: 40;
+  bottom: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 0 14px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
   background: transparent;
+  box-sizing: border-box;
 }
-.float-bar > * {
+.catatan-float-bar > * {
   pointer-events: auto;
 }
-.circle-btn {
+.catatan-float-bar .circle-btn {
   width: 42px;
   height: 42px;
   border-radius: 9999px;
@@ -527,10 +499,10 @@ th.sticky-col {
   box-shadow: var(--sh);
   flex-shrink: 0;
 }
-.circle-btn:disabled {
+.catatan-float-bar .circle-btn:disabled {
   opacity: 0.35;
 }
-.search-pill {
+.catatan-float-bar .search-pill {
   flex: 1;
   max-width: 280px;
   display: flex;
@@ -543,7 +515,7 @@ th.sticky-col {
   border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
   box-shadow: var(--sh);
 }
-.search-pill input {
+.catatan-float-bar .search-pill input {
   flex: 1;
   min-width: 0;
   border: 0;
@@ -553,11 +525,12 @@ th.sticky-col {
   color: var(--text);
   min-height: 40px;
 }
-.search-pill input:focus {
+.catatan-float-bar .search-pill input:focus {
   outline: none;
   box-shadow: none;
+  border: 0;
 }
-.clear-btn {
+.catatan-float-bar .clear-btn {
   width: 32px;
   height: 32px;
   border: 0;
@@ -567,25 +540,10 @@ th.sticky-col {
   place-items: center;
   border-radius: 9999px;
 }
-.fab-add {
-  position: fixed;
-  right: 16px;
-  bottom: calc(68px + env(safe-area-inset-bottom, 0px));
-  z-index: 41;
-  width: 48px;
-  height: 48px;
-  border-radius: 9999px;
-  border: 0;
-  background: var(--g);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  box-shadow: var(--sh);
-}
 .foto-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 110;
   background: rgba(0, 0, 0, 0.88);
   display: flex;
   flex-direction: column;
@@ -617,5 +575,4 @@ th.sticky-col {
   color: #93c5fd;
   text-decoration: underline;
 }
-.hidden { display: none; }
 </style>
