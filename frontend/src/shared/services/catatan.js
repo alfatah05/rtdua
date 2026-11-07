@@ -3,7 +3,8 @@ import { api } from '../api/http.js'
 export async function listCatatan({ page, per_page = 50 } = {}) {
   try {
     const q = new URLSearchParams()
-    if (page != null) q.set('page', String(page))
+    // Backend baca 'hal' (hindari bentrok query 'page' di CI)
+    if (page != null) q.set('hal', String(page))
     q.set('per_page', String(per_page))
     const res = await api('/catatan?' + q.toString())
     return { ok: true, data: res.data }
