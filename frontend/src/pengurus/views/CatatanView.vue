@@ -101,7 +101,6 @@
       </div>
     </div>
 
-    <!-- Floating pagination -->
     <div class="catatan-float-bar" role="navigation" aria-label="Navigasi halaman">
       <button
         type="button"
@@ -200,7 +199,6 @@ let navLock = false
 
 const canPrev = computed(() => mode.value === 'book' && Number(page.value) > 1)
 const canNext = computed(() => mode.value === 'book' && Number(page.value) < Number(totalPages.value))
-/** Remount tbody saat ganti halaman/mode supaya cell contenteditable ikut data baru. */
 const tableKey = computed(() => `${mode.value}-p${page.value}`)
 let suppressBlur = false
 
@@ -221,12 +219,25 @@ function blurEl(e) {
 
 function scrollTableTop() {
   nextTick(() => {
-    if (tableScroll.value) {
-      tableScroll.value.scrollLeft = 0
-      tableScroll.value.scrollTop = 0
+    const box = tableScroll.value
+    if (box) {
+      box.scrollLeft = 0
+      box.scrollTop = 0
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: 'auto' })
   })
+}
+
+/** Scroll baris ke tengah area tabel saja (bukan window) — jaga sticky thead. */
+function scrollRowInTable(rowId) {
+  const box = tableScroll.value
+  if (!box || rowId == null) return
+  const el = box.querySelector(`[data-row-id="${rowId}"]`)
+  if (!el) return
+  const cRect = box.getBoundingClientRect()
+  const eRect = el.getBoundingClientRect()
+  const delta = (eRect.top - cRect.top) - (cRect.height / 2) + (eRect.height / 2)
+  box.scrollTop += delta
 }
 
 async function loadPage(p, { scrollToFocus = false } = {}) {
@@ -241,7 +252,6 @@ async function loadPage(p, { scrollToFocus = false } = {}) {
     }
     const d = res.data || {}
     const nextRows = Array.isArray(d.rows) ? d.rows : []
-    // Set page dulu supaya indikator + tableKey sinkron
     page.value = Math.max(1, Number(d.page) || 1)
     totalPages.value = Math.max(1, Number(d.total_pages) || 1)
     mode.value = 'book'
@@ -250,17 +260,13 @@ async function loadPage(p, { scrollToFocus = false } = {}) {
     await nextTick()
     if (scrollToFocus && d.focus_row_id) {
       requestAnimationFrame(() => {
-        const el = document.querySelector(`[data-row-id="${d.focus_row_id}"]`)
-        if (el && typeof el.scrollIntoView === 'function') {
-          el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-        }
+        scrollRowInTable(d.focus_row_id)
       })
     } else {
       scrollTableTop()
     }
   } finally {
     loading.value = false
-    // Biarkan cycle DOM selesai sebelum terima blur lagi
     await nextTick()
     setTimeout(() => { suppressBlur = false }, 50)
   }
@@ -344,12 +350,10 @@ function clearSearch() {
   searchQ.value = ''
   searchDone.value = false
   mode.value = 'book'
-  // Kembali ke halaman fokus tanpa full reload browser
   openFocusPage()
 }
 
 async function onBlur(e, row, field) {
-  // Jangan simpan saat ganti halaman (cell contenteditable di-unmount → blur palsu)
   if (suppressBlur) return
   if (!e?.target || !e.target.isConnected) return
   const val = (e.target.innerText || '').replace(/\u00a0/g, ' ').trimEnd()
@@ -484,8 +488,13 @@ onUnmounted(() => {
 
 <style scoped>
 .catatan-page {
-  min-height: 100dvh;
-  min-height: 100svh;
+  height: 100dvh;
+  height: 100svh;
+  max-height: 100dvh;
+  max-height: 100svh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   background-color: var(--bg);
   padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
@@ -497,7 +506,11 @@ onUnmounted(() => {
   margin: 0;
   background: var(--bg);
   background-color: var(--bg);
-  min-height: 50vh;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .empty-search {
@@ -521,14 +534,13 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-/* Full lebar; scroll di dalam supaya thead sticky bisa nempel */
+/* Satu-satunya area scroll — thead sticky relatif ke sini */
 .table-scroll {
   width: 100vw;
   max-width: 100vw;
   margin-left: calc(50% - 50vw);
-  /* tinggi sisa layar: header app ~52px + float bar ~88px */
-  max-height: calc(100dvh - 52px - 88px - env(safe-area-inset-bottom, 0px));
-  max-height: calc(100svh - 52px - 88px - env(safe-area-inset-bottom, 0px));
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--bg);
@@ -578,7 +590,6 @@ onUnmounted(() => {
   background: var(--bg);
 }
 th.sticky-col {
-  /* pojok: sticky top + left */
   z-index: 4;
   top: 0;
   left: 0;
@@ -675,12 +686,11 @@ th.sticky-col {
   box-shadow: none;
   border-color: color-mix(in srgb, var(--text) 8%, transparent);
 }
-/* Optical center: chevron lucide agak melenceng di lingkaran */
 .catatan-float-bar .circle-btn .chev-l {
-  transform: translateX(2px);
+  transform: translateX(-2px);
 }
 .catatan-float-bar .circle-btn .chev-r {
-  transform: translateX(-2px);
+  transform: translateX(2px);
 }
 .catatan-float-bar .search-pill {
   flex: 1;
@@ -705,7 +715,6 @@ th.sticky-col {
   color: var(--text);
   min-height: 40px;
 }
-/* Hilangkan X native browser (type=search) — kita pakai tombol X sendiri */
 .catatan-float-bar .search-pill input::-webkit-search-cancel-button,
 .catatan-float-bar .search-pill input::-webkit-search-decoration {
   -webkit-appearance: none;
