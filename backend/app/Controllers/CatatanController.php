@@ -34,7 +34,6 @@ class CatatanController extends Controller
             ->setHeader('Pragma', 'no-cache');
     }
 
-    /** Ambil nilai query tanpa mengandalkan empty() — '0' harus tetap '0'. */
     private function queryParam(string $key)
     {
         $v = $this->request->getGet($key);
@@ -62,24 +61,52 @@ class CatatanController extends Controller
         return null;
     }
 
-    public function index()
+    /**
+     * Prioritas sumber nomor halaman:
+     * 1. Path segment ($halArg dari route /catatan/hal/(:num))
+     * 2. Header X-Catatan-Hal
+     * 3. Query ?hal= / ?page=
+     * Default 0 = halaman fokus.
+     */
+    private function resolveHal($halArg = null)
     {
-        $user = $this->requirePengurus();
-        if (!$user) {
-            return ApiResponse::fail('Unauthorized', 401);
+        $source = 'default';
+        $raw = null;
+
+        if ($halArg !== null && $halArg !== '') {
+            $raw = (string) $halArg;
+            $source = 'path';
         }
 
-        $rawHal = $this->queryParam('hal');
-        if ($rawHal === null) {
-            $rawHal = $this->queryParam('page');
+        if ($raw === null) {
+            $hdr = trim((string) $this->request->getHeaderLine('X-Catatan-Hal'));
+            if ($hdr !== '') {
+                $raw = $hdr;
+                $source = 'header';
+            }
         }
 
-        // Default 0 = halaman fokus (baris terakhir terisi)
+        if ($raw === null) {
+            $q = $this->queryParam('hal');
+            if ($q === null) {
+                $q = $this->queryParam('page');
+            }
+            if ($q !== null && $q !== '') {
+                $raw = $q;
+                $source = 'query';
+            }
+        }
+
         $hal = 0;
-        if ($rawHal !== null && $rawHal !== '') {
-            $hal = (int) $rawHal;
+        if ($raw !== null && $raw !== '') {
+            $hal = (int) $raw;
         }
 
+        return [$hal, $raw, $source];
+    }
+
+    private function resolvePerPage()
+    {
         $rawPer = $this->queryParam('per_page');
         $per = ($rawPer !== null && $rawPer !== '') ? (int) $rawPer : 50;
         if ($per < 10) {
@@ -88,18 +115,42 @@ class CatatanController extends Controller
         if ($per > 100) {
             $per = 100;
         }
+        return $per;
+    }
 
+    private function respondList($halArg = null)
+    {
+        $user = $this->requirePengurus();
+        if (!$user) {
+            return ApiResponse::fail('Unauthorized', 401);
+        }
+
+        list($hal, $raw, $source) = $this->resolveHal($halArg);
+        $per = $this->resolvePerPage();
         $uid = isset($user['id']) ? (int) $user['id'] : null;
+
         try {
             $data = (new CatatanService())->listPage($hal, $per, $uid);
             $data['request_hal'] = $hal;
-            $data['request_raw'] = $rawHal;
+            $data['request_raw'] = $raw;
+            $data['request_source'] = $source;
             $data['debug_qs'] = $_SERVER['QUERY_STRING'] ?? '';
             return $this->noStore(ApiResponse::ok($data));
         } catch (\Throwable $e) {
             log_message('error', 'Catatan listPage: {msg}', ['msg' => $e->getMessage()]);
             return ApiResponse::fail('Gagal memuat catatan: ' . $e->getMessage(), 500);
         }
+    }
+
+    public function index()
+    {
+        return $this->respondList(null);
+    }
+
+    /** GET /catatan/hal/(:num) */
+    public function byHal($hal = 0)
+    {
+        return $this->respondList($hal);
     }
 
     public function search()
@@ -127,7 +178,7 @@ class CatatanController extends Controller
             return ApiResponse::fail('Unauthorized', 401);
         }
         try {
-            $row = (new CatatanService())->createEmpty(isset($user['id']) ? (int) $user['id'] : null);
+            $row = (new CatatanService())->createEmpty((isset($user['id']) ? (int) $user['id'] : null);
             return ApiResponse::ok($row, 'Baris ditambah');
         } catch (\Throwable $e) {
             return ApiResponse::fail('Gagal tambah baris: ' . $e->getMessage(), 500);
